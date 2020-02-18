@@ -1,0 +1,34 @@
+<div class="container">
+  <div class="row">
+    <div class="col d-flex">
+      <div class="d-flex align-items-center left">
+        <span>Remember Me</span>
+        <i class="fas fa-tasks d-block"></i>
+      </div>
+
+      <div *ngIf="!authService.isLoggedIn" class="d-flex align-items-center right">
+        <button class="btn btn-primary" type="button" (click)="authService.googleAuth()">
+          <i class="fas fa-user-circle"></i>
+          <span>  Log In</span>
+        </button>
+      </div>
+
+      <div *ngIf="authService.isLoggedIn" class="d-flex align-items-center right">
+        <div class="menu-toggle">
+          <input type="checkbox" id="menu-toggle-checkbox"/>
+          <label for="menu-toggle-checkbox">
+            <i class="fas fa-list-ul" id="icon-bars"></i>
+          </label>
+          <div class="shadow nav-list">
+            <div class="item" (click)="authService.signOut()">
+              <i class="fas fa-sign-out-alt"></i>
+              <span class="my-list-item-span"> Log out</span>
+            </div>
+          </div>
+        </div>
+        <img [src]="authService.userData.photoURL"/>
+      </div>
+
+    </div>
+  </div>
+</div>

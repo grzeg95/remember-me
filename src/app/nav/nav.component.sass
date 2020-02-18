@@ -1,0 +1,52 @@
+// app-nav
+\:host
+  background-color: white
+  margin: 1rem 0
+  .container
+    position: relative
+    .row
+      .col
+        justify-content: space-between
+        .left
+          span, i
+            font-size: 1.2rem
+          span
+            font-weight: 400
+          i
+            margin-left: 1rem
+        .right
+          img
+            width: 2.5rem
+            margin-left: 1rem
+            border-radius: 100%
+            border: solid 1px rgba(212, 212, 212, 0.5)
+          button
+            padding: .125rem .375rem
+          .menu-toggle
+            input
+              display: none
+              &:checked + label
+                color: black
+              &:checked ~ .nav-list
+                display: block
+            &:hover label
+              color: black
+            label
+              cursor: pointer
+              display: block
+              margin-bottom: 0
+              color: #828282
+              i
+                font-size: 1.2rem
+            .nav-list
+              background: rgb(255, 255, 255)
+              position: absolute
+              user-select: none
+              cursor: pointer
+              border: solid 1px silver
+              right: 0.9375rem
+              z-index: 100
+              top: 2.5rem
+              display: none
+              .item
+                padding: .2rem .8rem

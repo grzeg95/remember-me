@@ -1,0 +1,42 @@
+<div class="container">
+  <div class="col">
+
+    <span *ngIf="todayItemsFirstLoading">Loading...</span>
+
+    <div *ngIf="isEmpty && !todayItemsFirstLoading" class="row">
+      <div class="col">
+        <span>There is no one</span>
+      </div>
+      <div class="col">
+        <div class="add-task">
+          <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new&nbsp;<i class="fas fa-plus-circle"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeOfDayRow" *ngFor="let todayItem of todayItems; let i = index; trackBy: trackByTodayItems">
+
+      <div class="row">
+        <div class="col">
+          <span><i [hidden]="!todayItemDone(todayItem.task)" class="fas fa-check-circle"></i> {{timesOfDayDict[todayItem.name]}}</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="form-check" *ngFor="let button of todayItem.task | keyvalue; let j = index; trackBy: trackByTodayItem">
+            <input #checkbox class="form-check-input d-none" type="checkbox" id="today-item__{{i+''+j}}" [disabled]="false" [checked]="button.value.done" >
+            <label class="form-check-label btn" [ngClass]="checkbox.checked ? 'btn-success' : 'border rounded'" for="today-item__{{i+''+j}}" (click)="setProgress(checkbox, $event, button.key, todayItem.name)">
+              <i [hidden]="!checkbox.checked" class="fas fa-check-circle"></i>
+              <i [hidden]="checkbox.checked" class="fas fa-question-circle"></i>
+              &nbsp;{{button.value.description}}
+              <mat-progress-bar *ngIf="checkbox.disabled" mode="indeterminate"></mat-progress-bar>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,15 @@
+<div class="container">
+  <div class="btn-group" role="group">
+    <button
+      *ngFor="let route of routes"
+      [routerLink]="route.href"
+      routerLinkActive="text-dark active"
+      #routerLinkActiveRef="routerLinkActive"
+      [ngClass]="{'text-muted': !routerLinkActiveRef.isActive}"
+      class="btn"
+      type="button">
+        <i class="{{ route.icon }}"></i>
+        {{ route.label }}
+    </button>
+  </div>
+</div>

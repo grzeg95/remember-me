@@ -1,0 +1,43 @@
+$btn-success-bg-color: #12ab49
+$btn-success-border-color: $btn-success-bg-color
+
+$btn-success-bg-color-hover: #0f8a3b
+$btn-success-border-color-hover: $btn-success-bg-color-hover
+
+// app-today
+\:host
+  .container
+    padding: 1rem
+    .col
+      .row
+        .add-task
+          text-align: right
+    .timeOfDayRow
+      padding-bottom: 1rem
+      &:first-child
+        margin-top: 0
+      .row
+        .col
+          margin-top: 1rem
+          .form-check
+            display: inline-flex
+            padding: 0
+            position: relative
+            label
+              position: relative
+              .mat-progress-bar
+                height: .125rem
+                position: absolute
+                transition: opacity 250ms linear
+                width: calc(100% - 2 * .75rem)
+              &.btn
+                margin: .15rem
+                &-success
+                  background-color: $btn-success-bg-color
+                  border-color: $btn-success-border-color
+                  &:hover
+                    background-color: $btn-success-bg-color-hover
+                    border-color: $btn-success-border-color-hover
+        span
+          font-size: 1.4rem
+          font-weight: 500

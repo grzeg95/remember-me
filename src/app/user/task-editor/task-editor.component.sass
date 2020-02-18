@@ -1,0 +1,32 @@
+// app-task-editor
+\:host
+  .container
+    .col
+      background-color: white
+      padding: 1rem
+      border-radius: .25rem
+      .form-check
+        display: inline-flex
+        padding: 0
+      input
+        width: 100%
+        padding: .5rem
+        font-size: large
+      .btn
+        margin: .5rem
+        .mat-progress-bar
+          height: 0.125rem
+          transition: opacity 250ms linear
+      .btn-outline-dark:not(:disabled):not(.disabled):active, .btn-outline-dark:not(:disabled):not(.disabled).active, .show > .btn-outline-dark.dropdown-toggle
+        color: #343a40
+        background-color: #ffffff
+        border-color: #6b7580
+      .btn-outline-dark:hover
+        color: #343a40
+        background-color: #ffffff
+        border-color: #343a40
+      .error
+        color: red !important
+      .btn:focus, .btn.focus
+        outline: 0
+        box-shadow: none
