@@ -14,7 +14,7 @@ export const environment = {
     appId: '1:824512670781:web:1deb2cdcdb73bee8'
   },
   functions: {
-    port: 5001
+    port: 5000
   }
 };
 
