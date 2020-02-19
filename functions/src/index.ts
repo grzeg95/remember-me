@@ -1,6 +1,5 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {Task} from './task';
 import {Transaction} from '@google-cloud/firestore';
 
@@ -17,7 +16,7 @@ const runtimeOptions: functions.RuntimeOptions = {
 
 export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall((data, context) => {
 
-  const auth = (context as CallableContext).auth;
+  const auth = context.auth;
 
   // interrupt if data.taskId is not correct or !auth
   if (!data.taskId || typeof data.taskId !== 'string' || !auth) {
@@ -157,7 +156,7 @@ export const saveTaskTransaction = async (transaction: Transaction, saveTaskDocS
 
 export const saveTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall((data, context) => {
 
-  const auth = (context as CallableContext).auth;
+  const auth = context.auth;
 
   if (!data.task || !auth) {
     throw new functions.https.HttpsError(
@@ -246,7 +245,7 @@ export const saveTask = functions.runWith(runtimeOptions).region('europe-west2')
 
 export const setProgress = functions.runWith(runtimeOptions).region('europe-west2').https.onCall((data, context) => {
 
-  const auth = (context as CallableContext).auth;
+  const auth = context.auth;
 
   if (!(data.taskId && typeof data.taskId === 'string' &&
     data.todayName && typeof data.todayName === 'string' && Task.daysOfTheWeek.includes(data.todayName) &&
