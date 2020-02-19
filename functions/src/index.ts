@@ -6,6 +6,7 @@ import {Transaction} from '@google-cloud/firestore';
 admin.initializeApp({
     credential: admin.credential.cert('./remember-me-3-admin-meta.json')
 });
+
 const db = admin.firestore();
 
 const runtimeOptions: functions.RuntimeOptions = {
@@ -13,65 +14,50 @@ const runtimeOptions: functions.RuntimeOptions = {
     memory: "128MB"
 };
 
-const onCallResponse = {
-    checkFunctionRequirements: {
-        code: 400,
-        status: 'Bad Request',
-        message: 'Check function requirements'
-    },
-    callWhileAuthenticated: {
-        code: 401,
-        status: 'Unauthorized',
-        message: 'The function must be called while authenticated'
-    }
-};
-
 export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall((data, context) => {
 
-    if (!context.auth) {
-        return onCallResponse.callWhileAuthenticated;
-    }
-    
-    if (!data.taskId || typeof data.taskId !== 'string') {
-        return onCallResponse.checkFunctionRequirements;
-    }
-    
-    const uid = context.auth.uid;
-    const taskId = data.taskId;
+  if (!data.taskId || typeof data.taskId !== 'string') {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Check function requirements'
+    );
+  }
 
-    return db.runTransaction(async transaction => {
+  const uid = context.auth?.uid;
+  const taskId = data.taskId;
 
-        const promises = [];
-        const userRef = db.collection('users').doc(uid);
+  return db.runTransaction(async transaction => {
 
-        promises.push(
-            transaction.get(
-                userRef.collection('task').doc(taskId)
-            ).then(doc => transaction.delete(doc.ref))
-        );
+    const promises = [];
+    const userRef = db.collection('users').doc(uid + '');
 
-        Task.daysOfTheWeek.forEach(day => {
-            promises.push(
-                transaction.get(
-                    userRef.collection('today').doc(day).collection('task').doc(taskId)
-                ).then(doc => transaction.delete(doc.ref))
-            );
-        });
+    promises.push(
+      transaction.get(
+        userRef.collection('task').doc(taskId)
+      ).then(doc => transaction.delete(doc.ref))
+    );
 
-        return Promise.all(promises);
+    Task.daysOfTheWeek.forEach(day => {
+      promises.push(
+        transaction.get(
+          userRef.collection('today').doc(day).collection('task').doc(taskId)
+        ).then(doc => transaction.delete(doc.ref))
+      );
+    });
+
+    return Promise.all(promises);
 
     }).then(() => {
-        return {
-            code: 202,
-            status: 'Accepted',
-            message: 'Your task has been deleted'
-        };
-    }).catch(() => {
-        return {
-            code: 400,
-            status: 'Bad Request',
-            message: 'Your task has not been deleted'
-        };
+      return {
+        message: 'Your task has been deleted'
+      };
+    }).catch((e) => {
+      throw new functions.https.HttpsError(
+        'internal',
+        e,
+        'Your task has not been deleted'
+      );
     });
 
 });
@@ -126,7 +112,7 @@ export const saveTaskTransaction = async (saveTaskTransactionDocSnap: FirebaseFi
                                     newTimesOfDay[time] = false;
                                 }
                             }
-                            
+
                             // store current timesOfDay to oldTimesOfDay
                             let oldTimesOfDay: {
                                 [key: string]: boolean;
@@ -135,7 +121,7 @@ export const saveTaskTransaction = async (saveTaskTransactionDocSnap: FirebaseFi
                             if (docData) {
                                 oldTimesOfDay = docData['timesOfDay'];
                             }
-                            
+
                             // set newTimesOfDay base on oldTimesOfDay
                             // maybe there exist selected timesOfDay
                             for (const timeOfDay in newTimesOfDay) {
@@ -148,7 +134,7 @@ export const saveTaskTransaction = async (saveTaskTransactionDocSnap: FirebaseFi
                                 description: task.description,
                                 timesOfDay: newTimesOfDay
                             });
-                            
+
                         } else { // do nothing
                             return transaction.delete(taskDocSnap.ref);
                         }
@@ -196,81 +182,85 @@ export const saveTaskTransaction = async (saveTaskTransactionDocSnap: FirebaseFi
 
 export const saveTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall((data, context) => {
 
-    if (!context.auth) {
-        return onCallResponse.callWhileAuthenticated;
-    }
+  const uid = context.auth?.uid;
 
-    const uid = context.auth.uid;
+  if (!data.task) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Check function requirements'
+    );
+  }
 
-    if (!data.task) {
-        return onCallResponse.checkFunctionRequirements;
-    }
+  const task = data.task;
 
-    const task = data.task;
+  if (!(data.taskId && typeof data.taskId === 'string')) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Check function requirements'
+    );
+  }
 
-    if (!(data.taskId && typeof data.taskId === 'string')) {
-        return onCallResponse.checkFunctionRequirements;
-    }
+  const taskId = data.taskId;
 
-    const taskId = data.taskId;
+  // TASK VALIDATION
+  if (!Task.isValid(task)) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Check function requirements'
+    );
+  }
 
-    // TASK VALIDATION
-    if (!Task.isValid(task)) {
-        return onCallResponse.checkFunctionRequirements;
-    }
+  const user = db.collection('users').doc(uid + '');
 
-    const user = db.collection('users').doc(uid);
+  return user.collection('task').doc(taskId).get().then(docSnap => {
 
-    return user.collection('task').doc(taskId).get().then(docSnap => {
-
-        if (!docSnap.exists) {
-            return docSnap.ref.delete().then(() => {
-                return user.collection('task').doc().get().then(doc => {
-                    console.log(docSnap.data(), task);
-                    return saveTaskTransaction(doc, user, task, true)
-                });
-            });
-        } else {
-            console.log(docSnap.data(), task);
-            return saveTaskTransaction(docSnap, user, task, false);
-        }
-
+  if (!docSnap.exists) {
+    return docSnap.ref.delete().then(() => {
+      return user.collection('task').doc().get().then(doc => {
+        return saveTaskTransaction(doc, user, task, true)
+      });
     });
+  } else {
+    return saveTaskTransaction(docSnap, user, task, false);
+  }
+
+  });
 
 });
 
 export const setProgress = functions.runWith(runtimeOptions).region('europe-west2').https.onCall((data, context) => {
 
-    if (!context.auth) {
-        return onCallResponse.callWhileAuthenticated;
-    }
+  if (!(data.taskId && typeof data.taskId === 'string' &&
+    data.todayName && typeof data.todayName === 'string' && Task.daysOfTheWeek.includes(data.todayName) &&
+    data.timeOfDay && typeof data.timeOfDay === 'string' && Task.timesOfDay.includes(data.timeOfDay) &&
+    data.hasOwnProperty('checked') && typeof data.checked === 'boolean')) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Check function requirements'
+    );
+  }
 
-    if (!(data.taskId && typeof data.taskId === 'string' &&
-        data.todayName && typeof data.todayName === 'string' && Task.daysOfTheWeek.includes(data.todayName) &&
-        data.timeOfDay && typeof data.timeOfDay === 'string' && Task.timesOfDay.includes(data.timeOfDay) &&
-        data.hasOwnProperty('checked') && typeof data.checked === 'boolean')) {
-        return onCallResponse.checkFunctionRequirements;
-    }
-    
-    const uid = context.auth.uid;
-    const task = db.collection('users').doc(uid).collection('today').doc(data.todayName).collection('task').doc(data.taskId);
+  const uid = context.auth?.uid;
+  const task = db.collection('users').doc(uid + '').collection('today').doc(data.todayName).collection('task').doc(data.taskId);
 
-    const toUpdateOneTimeOfDay = {
-        timesOfDay: JSON.parse('{"'+data.timeOfDay+'":'+data.checked+'}')
+  const toUpdateOneTimeOfDay = {
+    timesOfDay: JSON.parse('{"'+data.timeOfDay+'":'+data.checked+'}')
+  };
+
+  return task.set(toUpdateOneTimeOfDay, {merge: true}).then(() => {
+    return {
+      message: 'Your progress has been updated'
     };
-
-    return task.set(toUpdateOneTimeOfDay, {merge: true}).then(() => {
-        return {
-            code: 202,
-            status: 'Accepted',
-            message: 'Your progress has been updated'
-        };
-    }).catch(() => {
-        return {
-            code: 400,
-            status: 'Bad Request',
-            message: 'Your progress has not been touched'
-        };
-    });
+  }).catch((e) => {
+    throw new functions.https.HttpsError(
+      'internal',
+      e,
+      'Your task has not been deleted'
+    );
+  });
 
 });
