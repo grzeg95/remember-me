@@ -43,8 +43,12 @@ export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2
         );
       }
 
-      // remove all today tasks
       const promises: Promise<any>[] = [];
+
+      // remove task it self
+      promises.push(transaction.get(userDoc.ref.collection('task').doc(taskId)).then(taskDoc => transaction.delete(taskDoc.ref)));
+
+      // remove all today tasks
       promises.push(userDoc.ref.collection('today').listDocuments().then(taskDaysDoc => {
         const taskDaysDocPromises: Promise<Transaction>[] = [];
         taskDaysDoc.forEach((taskDayDoc) =>
@@ -55,9 +59,6 @@ export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2
         );
         return Promise.all(taskDaysDocPromises);
       }));
-
-      // remove task it self
-      promises.push(transaction.get(userDoc.ref.collection('task').doc(taskId)).then(taskDoc => transaction.delete(taskDoc.ref)));
 
       // close all operations in the transaction
       return Promise.all(promises);
@@ -70,8 +71,8 @@ export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2
   }).catch((e) => {
     throw new functions.https.HttpsError(
       'internal',
-      e,
-      'Your task has not been deleted'
+      'Your task has not been deleted',
+      e
     );
   });
 
@@ -88,67 +89,68 @@ export const saveTaskTransaction = async (transaction: Transaction, saveTaskDocS
     // set or update task for user/{userId}/today/{day}/task/{taskId}
     Task.daysOfTheWeek.forEach(day => {
       const promise = transaction.get(user.collection('today').doc(day).collection('task').doc(saveTaskDocSnap.id)).then(taskDocSnap => {
-          if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
-            // add task timesOfDay
-            const timesOfDay: {
-              [key: string]: boolean;
-            } = {};
-            if (task.timesOfDay['duringTheDay']) {
-              timesOfDay['duringTheDay'] = false;
-            } else {
-              for (const time in task.timesOfDay) {
-                if (task.timesOfDay.hasOwnProperty(time)) {
-                  timesOfDay[time] = false;
-                }
-              }
-            }
-            return transaction.set(taskDocSnap.ref, {
-              description: task.description,
-              timesOfDay: timesOfDay
-            });
-          } else if(taskDocSnap.exists && !task.daysOfTheWeek[day]) { // delete
-            return transaction.delete(taskDocSnap.ref);
-          } else if(taskDocSnap.exists && task.daysOfTheWeek[day]) { // update
 
-            // add task timesOfDay to newTimesOfDay
-            const newTimesOfDay: {
-              [key: string]: boolean;
-            } = {};
-
-            // set only used timesOfDay to newTimesOfDay
+        if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
+          // add task timesOfDay
+          const timesOfDay: {
+            [key: string]: boolean;
+          } = {};
+          if (task.timesOfDay['duringTheDay']) {
+            timesOfDay['duringTheDay'] = false;
+          } else {
             for (const time in task.timesOfDay) {
-              if (task.timesOfDay.hasOwnProperty(time)) {
-                newTimesOfDay[time] = false;
+              if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
+                timesOfDay[time] = false;
               }
             }
-
-            // store current timesOfDay to oldTimesOfDay
-            let oldTimesOfDay: {
-              [key: string]: boolean;
-            } = {};
-            const docData = taskDocSnap.data();
-            if (docData) {
-              oldTimesOfDay = docData['timesOfDay'];
-            }
-
-            // set newTimesOfDay base on oldTimesOfDay
-            // maybe there exist selected timesOfDay
-            for (const timeOfDay in newTimesOfDay) {
-              if (oldTimesOfDay[timeOfDay]) {
-                newTimesOfDay[timeOfDay] = oldTimesOfDay[timeOfDay];
-              }
-            }
-
-            return transaction.update(taskDocSnap.ref, {
-              description: task.description,
-              timesOfDay: newTimesOfDay
-            });
-
-          } else { // do nothing
-            return transaction.delete(taskDocSnap.ref);
           }
+          return transaction.set(taskDocSnap.ref, {
+            description: task.description,
+            timesOfDay: timesOfDay
+          });
+        } else if(taskDocSnap.exists && !task.daysOfTheWeek[day]) { // delete
+          return transaction.delete(taskDocSnap.ref);
+        } else if(taskDocSnap.exists && task.daysOfTheWeek[day]) { // update
+
+          // add task timesOfDay to newTimesOfDay
+          const newTimesOfDay: {
+            [key: string]: boolean;
+          } = {};
+
+          // set only used timesOfDay to newTimesOfDay
+          for (const time in task.timesOfDay) {
+            if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
+              newTimesOfDay[time] = false;
+            }
+          }
+
+          // store current timesOfDay to oldTimesOfDay
+          let oldTimesOfDay: {
+            [key: string]: boolean;
+          } = {};
+          const docData = taskDocSnap.data();
+          if (docData) {
+            oldTimesOfDay = docData['timesOfDay'];
+          }
+
+          // set newTimesOfDay base on oldTimesOfDay
+          // maybe there exist selected timesOfDay
+          for (const timeOfDay in newTimesOfDay) {
+            if (oldTimesOfDay[timeOfDay]) {
+              newTimesOfDay[timeOfDay] = oldTimesOfDay[timeOfDay];
+            }
+          }
+
+          return transaction.update(taskDocSnap.ref, {
+            description: task.description,
+            timesOfDay: newTimesOfDay
+          });
+
+        } else { // do nothing
+          return transaction.delete(taskDocSnap.ref);
         }
-      );
+      });
+
       promises.push(promise);
     });
     return Promise.all(promises);
