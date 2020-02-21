@@ -1,7 +1,7 @@
-import {listEqual} from "./tools";
+import {listEqual} from "../tools";
 
 export class Task {
-    
+
     static timesOfDay = ['atDawn', 'morning', 'beforeNoon', 'atNoon', 'inTheAfternoon', 'beforeEvening', 'inTheEvening', 'inTheNight', 'duringTheDay'];
     static daysOfTheWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
