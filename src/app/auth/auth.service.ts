@@ -27,7 +27,12 @@ export class AuthService {
 
       if (user) {
 
-        this.userData = user;
+        this.userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL
+        };
 
         localStorage.setItem('user', JSON.stringify(this.userData));
         this.registerUser(this.userData);

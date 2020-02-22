@@ -16,9 +16,11 @@ export class NavComponent {
 
   @HostListener('document:click', ['$event'])
   documentClick(event: Event): void {
-    const id = (event.target as HTMLElement).id;
-    if (!['icon-bars', 'menu-toggle-checkbox'].includes(id)) {
-      (this.menuToggleCheckbox.nativeElement as HTMLInputElement).checked = false;
+    if (this.menuToggleCheckbox) {
+      const id = (event.target as HTMLElement).id;
+      if (!['icon-bars', 'menu-toggle-checkbox'].includes(id)) {
+        (this.menuToggleCheckbox.nativeElement as HTMLInputElement).checked = false;
+      }
     }
   }
 
