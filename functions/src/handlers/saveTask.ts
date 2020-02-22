@@ -3,7 +3,7 @@ import * as functions from 'firebase-functions';
 import {db} from '../index';
 import {Task} from './task';
 
-export const whatToDo = (transaction: Transaction, taskDocSnap: any, task: any, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
+export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: any, task: any, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
@@ -81,13 +81,13 @@ export const saveTaskTransaction = async (transaction: Transaction, saveTaskDocS
               transaction.get(user.collection('today').doc('fri').collection('task').doc(saveTaskDocSnap.id)).then((friDocSnap) =>
                 transaction.get(user.collection('today').doc('sat').collection('task').doc(saveTaskDocSnap.id)).then((satDocSnap) =>
                   transaction.get(user.collection('today').doc('sun').collection('task').doc(saveTaskDocSnap.id)).then((sunDocSnap) =>
-                    whatToDo(
-                      whatToDo(
-                        whatToDo(
-                          whatToDo(
-                            whatToDo(
-                              whatToDo(
-                                whatToDo(transaction
+                    proceedNextTaskDocSnap(
+                      proceedNextTaskDocSnap(
+                        proceedNextTaskDocSnap(
+                          proceedNextTaskDocSnap(
+                            proceedNextTaskDocSnap(
+                              proceedNextTaskDocSnap(
+                                proceedNextTaskDocSnap(transaction
                                   , sunDocSnap, task, 'sun')
                                 , satDocSnap, task, 'sat')
                               , friDocSnap, task, 'fri')
