@@ -1,69 +1,55 @@
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-  	function isAdmin(){
-    	return request.auth.token.admin == true;
-    }
-    
-    function isNull(value){
-    	return value == null;
-    }
-    
+
     function isStringInTheRangeOf(str, from, to){
-    	return 
+    	return
       	str is string &&
         str.size() >= from &&
         str.size() <= to;
     }
-    
-    function isNotNullBool(logic){
-    	return 
-      	logic is bool &&
-        !isNull(logic);
-    }
-  
+
     match /users/{userId}{
-    	
+
       function isUserEmailValid(){
       	return request.resource.data.email == request.auth.token.email
       }
-      
+
       function isUserDisplayNameValid(){
       	return isStringInTheRangeOf(request.resource.data.displayName, 1, 100);
       }
-      
+
       function isUserPhotoURLValid(){
       	return isStringInTheRangeOf(request.resource.data.photoURL, 12, 100);
       }
-      
+
     	function isUserProfileValid(){
-        return 
+        return
           isUserEmailValid() &&
           isUserDisplayNameValid() &&
           isUserPhotoURLValid();
     	}
-      
+
       function isOwner(){
       	return userId == request.auth.uid;
       }
-      
+
       function isLogged(){
       	return request.auth != null;
       }
-      
+
     	allow get: if isLogged() && isOwner();
       allow update: if isLogged() && isOwner() && isUserProfileValid();
       allow create: if isLogged() && isUserProfileValid();
-      
+
       match /today/{dayShort}/task/{taskId}{
       	allow list: if isLogged() && isOwner();
       }
-      
+
       match /task/{taskId}{
         allow get, list: if isLogged() && isOwner();
       }
-      
+
     }
-    
+
   }
 }

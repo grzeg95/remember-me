@@ -10,12 +10,7 @@ import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 @Injectable()
 export class AuthService {
 
-  userData: IUserAuth = {
-    uid: '',
-    email: '',
-    displayName: '',
-    photoURL: ''
-  };
+  userData: IUserAuth;
 
   isLoggedEventEmitter: EventEmitter<boolean>;
 
@@ -32,12 +27,7 @@ export class AuthService {
 
       if (user) {
 
-        this.userData = {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL
-        };
+        this.userData = user;
 
         localStorage.setItem('user', JSON.stringify(this.userData));
         this.registerUser(this.userData);
@@ -97,21 +87,11 @@ export class AuthService {
   }
 
   signOut(): Promise<boolean> {
-
     return this.afAuth.auth.signOut().then(() => {
-
-      this.userData = {
-        uid: '',
-        email: '',
-        displayName: '',
-        photoURL: ''
-      };
-
+      this.userData = {} as IUserAuth;
       localStorage.setItem('user', null);
       return this.router.navigate(['/']);
-
     });
-
   }
 
 }

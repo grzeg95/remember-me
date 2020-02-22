@@ -1,5 +1,4 @@
-import {Component, HostListener} from '@angular/core';
-import * as $ from 'jquery';
+import {Component, ElementRef, HostListener, ViewChild} from '@angular/core';
 import {AuthService} from '../auth/auth.service';
 
 @Component({
@@ -10,16 +9,17 @@ import {AuthService} from '../auth/auth.service';
 })
 export class NavComponent {
 
+  @ViewChild('menuToggleCheckbox')
+  menuToggleCheckbox: ElementRef;
+
   constructor(public authService: AuthService) {}
 
   @HostListener('document:click', ['$event'])
-  documentClick(event: any): void {
-
-    const id = event.target.id;
+  documentClick(event: Event): void {
+    const id = (event.target as HTMLElement).id;
     if (!['icon-bars', 'menu-toggle-checkbox'].includes(id)) {
-      $('#menu-toggle-checkbox').prop('checked', false);
+      (this.menuToggleCheckbox.nativeElement as HTMLInputElement).checked = false;
     }
-
   }
 
 }
