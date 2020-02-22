@@ -1,7 +1,7 @@
 import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
-import {MatProgressBarModule} from '@angular/material';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
 import {SharedModule} from '../shared.module';
