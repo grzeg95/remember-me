@@ -3,8 +3,9 @@ import * as functions from 'firebase-functions';
 import {db} from '../index';
 import {ITask} from '../interfaces';
 import {Task} from '../models';
+import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
-export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: any, task: ITask, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
+export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: DocumentSnapshot, task: ITask, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
