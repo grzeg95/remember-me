@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import * as handlers from './handlers/index';
+import {deleteTaskHandler, saveTaskHandler, setProgressHandler} from './handlers/index';
 
 const runtimeOptions: functions.RuntimeOptions = {
   timeoutSeconds: 5,
@@ -13,8 +13,8 @@ admin.initializeApp({
 
 export const db = admin.firestore();
 
-export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(handlers.deleteTask);
+export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(deleteTaskHandler);
 
-export const saveTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(handlers.saveTask);
+export const saveTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(saveTaskHandler);
 
-export const setProgress = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(handlers.setProgress);
+export const setProgress = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(setProgressHandler);

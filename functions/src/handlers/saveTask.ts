@@ -1,17 +1,18 @@
 import {Transaction} from "@google-cloud/firestore";
 import * as functions from 'firebase-functions';
 import {db} from '../index';
-import {Task} from './task';
+import {ITask} from '../interfaces';
+import {Task} from '../models';
 
-export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: any, task: any, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
+export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: any, task: ITask, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
     const timesOfDay: {
       [key: string]: boolean;
     } = {};
-    if (task.timesOfDay['duringTheDay']) {
-      timesOfDay['duringTheDay'] = false;
+    if (task.timesOfDay.duringTheDay) {
+      timesOfDay.duringTheDay = false;
     } else {
       for (const time in task.timesOfDay) {
         if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
@@ -43,9 +44,9 @@ export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: an
     let oldTimesOfDay: {
       [key: string]: boolean;
     } = {};
-    const docData = taskDocSnap.data();
+    const docData = taskDocSnap.data() as ITask;
     if (docData) {
-      oldTimesOfDay = docData['timesOfDay'];
+      oldTimesOfDay = docData.timesOfDay;
     }
 
     // set newTimesOfDay base on oldTimesOfDay
@@ -67,45 +68,26 @@ export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: an
 
 };
 
-export const saveTaskTransaction = async (transaction: Transaction, saveTaskDocSnap: FirebaseFirestore.DocumentSnapshot, user: FirebaseFirestore.DocumentReference, task: any) => {
-  return transaction.get(saveTaskDocSnap.ref).then(saveTaskTransactionDocSnapRefDocSnap =>
+export const saveTaskTransaction = async (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
+  // set or update task for user/{userId}/task/{taskId}
+  // set or update task for user/{userId}/today/{day}/task/{taskId}
 
-    // set or update task for user/{userId}/task/{taskId}
-    transaction.get(saveTaskTransactionDocSnapRefDocSnap.ref).then(docSnap =>
+  return Promise.all([
+    transaction.get(user.collection('today').doc('mon').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'mon' }}),
+    transaction.get(user.collection('today').doc('tue').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'tue' }}),
+    transaction.get(user.collection('today').doc('wed').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'wed' }}),
+    transaction.get(user.collection('today').doc('thu').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'thu' }}),
+    transaction.get(user.collection('today').doc('fri').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'fri' }}),
+    transaction.get(user.collection('today').doc('sat').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'sat' }}),
+    transaction.get(user.collection('today').doc('sun').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'sun' }})
+  ]).then((arr) => {
+    arr.forEach((element) =>
+      proceedNextTaskDocSnap(transaction, element.docSnap, task, element.name as 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun' )
+    );
+    return transaction.set(taskDocSnap.ref, task);
+  });
 
-      // set or update task for user/{userId}/today/{day}/task/{taskId}
-      transaction.get(user.collection('today').doc('mon').collection('task').doc(saveTaskDocSnap.id)).then((monDocSnap) =>
-        transaction.get(user.collection('today').doc('tue').collection('task').doc(saveTaskDocSnap.id)).then((tueDocSnap) =>
-          transaction.get(user.collection('today').doc('wed').collection('task').doc(saveTaskDocSnap.id)).then((wedDocSnap) =>
-            transaction.get(user.collection('today').doc('thu').collection('task').doc(saveTaskDocSnap.id)).then((thuDocSnap) =>
-              transaction.get(user.collection('today').doc('fri').collection('task').doc(saveTaskDocSnap.id)).then((friDocSnap) =>
-                transaction.get(user.collection('today').doc('sat').collection('task').doc(saveTaskDocSnap.id)).then((satDocSnap) =>
-                  transaction.get(user.collection('today').doc('sun').collection('task').doc(saveTaskDocSnap.id)).then((sunDocSnap) =>
-                    proceedNextTaskDocSnap(
-                      proceedNextTaskDocSnap(
-                        proceedNextTaskDocSnap(
-                          proceedNextTaskDocSnap(
-                            proceedNextTaskDocSnap(
-                              proceedNextTaskDocSnap(
-                                proceedNextTaskDocSnap(transaction
-                                  , sunDocSnap, task, 'sun')
-                                , satDocSnap, task, 'sat')
-                              , friDocSnap, task, 'fri')
-                            , thuDocSnap, task, 'thu')
-                          , wedDocSnap, task, 'wed')
-                        , tueDocSnap, task, 'tue')
-                      , monDocSnap, task, 'mon').set(docSnap.ref, task)
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    )
-  )
 };
-
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
   const auth = context.auth;
@@ -118,7 +100,7 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
     );
   }
 
-  const task = data.task;
+  const task: ITask = data.task;
 
   if (!(data.taskId && typeof data.taskId === 'string')) {
     throw new functions.https.HttpsError(

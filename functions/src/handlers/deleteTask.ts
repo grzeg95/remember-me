@@ -30,31 +30,21 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
         );
       }
 
-      return transaction.get(userSnap.ref.collection('task').doc(taskId)).then((taskSnap) =>
-        transaction.get(userSnap.ref.collection('today').doc('mon').collection('task').doc(taskId)).then((monTaskSnap) =>
-          transaction.get(userSnap.ref.collection('today').doc('tue').collection('task').doc(taskId)).then((tueTaskSnap) =>
-            transaction.get(userSnap.ref.collection('today').doc('wed').collection('task').doc(taskId)).then((wedTaskSnap) =>
-              transaction.get(userSnap.ref.collection('today').doc('thu').collection('task').doc(taskId)).then((thuTaskSnap) =>
-                transaction.get(userSnap.ref.collection('today').doc('fri').collection('task').doc(taskId)).then((friTaskSnap) =>
-                  transaction.get(userSnap.ref.collection('today').doc('sat').collection('task').doc(taskId)).then((satTaskSnap) =>
-                    transaction.get(userSnap.ref.collection('today').doc('sun').collection('task').doc(taskId)).then((sunTaskSnap) =>
-                      transaction
-                        .delete(sunTaskSnap.ref)
-                        .delete(satTaskSnap.ref)
-                        .delete(friTaskSnap.ref)
-                        .delete(thuTaskSnap.ref)
-                        .delete(wedTaskSnap.ref)
-                        .delete(tueTaskSnap.ref)
-                        .delete(monTaskSnap.ref)
-                        .delete(taskSnap.ref)
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      );
+      return Promise.all([
+        transaction.get(userSnap.ref.collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('mon').collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('tue').collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('wed').collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('thu').collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('fri').collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('sat').collection('task').doc(taskId)),
+        transaction.get(userSnap.ref.collection('today').doc('sun').collection('task').doc(taskId)),
+      ]).then((docsSnaps) => {
+        docsSnaps.forEach((docSnap) =>
+          transaction.delete(docSnap.ref)
+        );
+        return transaction;
+      });
 
     })
   ).then(() => {
