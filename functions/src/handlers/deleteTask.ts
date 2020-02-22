@@ -1,6 +1,5 @@
 import * as functions from 'firebase-functions';
 import {db} from '../index';
-import {Task} from './task';
 
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
@@ -20,10 +19,10 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
   return db.runTransaction((transaction) =>
 
     // get user from firestore
-    transaction.get(db.collection('users').doc(auth.uid)).then((userDoc) => {
+    transaction.get(db.collection('users').doc(auth.uid)).then((userSnap) => {
 
       // interrupt if user is not in my firestore
-      if (!userDoc.exists) {
+      if (!userSnap.exists) {
         throw new functions.https.HttpsError(
           'unauthenticated',
           'Bad Request',
@@ -31,20 +30,31 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
         );
       }
 
-      const promises: Promise<any>[] = [];
-
-      // remove task it self
-      promises.push(transaction.get(userDoc.ref.collection('task').doc(taskId)).then(taskDoc => transaction.delete(taskDoc.ref)));
-
-      // remove all today tasks
-      Task.daysOfTheWeek.forEach(dayOfTheWeek => {
-        promises.push(transaction.get(userDoc.ref.collection('today').doc(dayOfTheWeek).collection('task').doc(taskId)).then((taskDayDocTask) =>
-          transaction.delete(taskDayDocTask.ref)
-        ));
-      });
-
-      // close all operations in the transaction
-      return Promise.all(promises);
+      return transaction.get(userSnap.ref.collection('task').doc(taskId)).then((taskSnap) =>
+        transaction.get(userSnap.ref.collection('today').doc('mon').collection('task').doc(taskId)).then((monTaskSnap) =>
+          transaction.get(userSnap.ref.collection('today').doc('tue').collection('task').doc(taskId)).then((tueTaskSnap) =>
+            transaction.get(userSnap.ref.collection('today').doc('wed').collection('task').doc(taskId)).then((wedTaskSnap) =>
+              transaction.get(userSnap.ref.collection('today').doc('thu').collection('task').doc(taskId)).then((thuTaskSnap) =>
+                transaction.get(userSnap.ref.collection('today').doc('fri').collection('task').doc(taskId)).then((friTaskSnap) =>
+                  transaction.get(userSnap.ref.collection('today').doc('sat').collection('task').doc(taskId)).then((satTaskSnap) =>
+                    transaction.get(userSnap.ref.collection('today').doc('sun').collection('task').doc(taskId)).then((sunTaskSnap) =>
+                      transaction
+                        .delete(sunTaskSnap.ref)
+                        .delete(satTaskSnap.ref)
+                        .delete(friTaskSnap.ref)
+                        .delete(thuTaskSnap.ref)
+                        .delete(wedTaskSnap.ref)
+                        .delete(tueTaskSnap.ref)
+                        .delete(monTaskSnap.ref)
+                        .delete(taskSnap.ref)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      );
 
     })
   ).then(() => {
