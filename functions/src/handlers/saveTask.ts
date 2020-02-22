@@ -1,17 +1,18 @@
 import {Transaction} from "@google-cloud/firestore";
 import * as functions from 'firebase-functions';
 import {db} from '../index';
-import {Task} from './task';
+import {ITask} from '../interfaces';
+import {Task} from '../models';
 
-export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: any, task: any, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
+export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: any, task: ITask, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
     const timesOfDay: {
       [key: string]: boolean;
     } = {};
-    if (task.timesOfDay['duringTheDay']) {
-      timesOfDay['duringTheDay'] = false;
+    if (task.timesOfDay.duringTheDay) {
+      timesOfDay.duringTheDay = false;
     } else {
       for (const time in task.timesOfDay) {
         if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
@@ -45,7 +46,7 @@ export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: an
     } = {};
     const docData = taskDocSnap.data();
     if (docData) {
-      oldTimesOfDay = docData['timesOfDay'];
+      oldTimesOfDay = docData.timesOfDay;
     }
 
     // set newTimesOfDay base on oldTimesOfDay

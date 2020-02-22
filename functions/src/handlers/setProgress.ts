@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 import {db} from '../index';
-import {Task} from './task';
+import {Task} from '../models';
 
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
