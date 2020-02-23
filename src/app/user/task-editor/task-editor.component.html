@@ -83,7 +83,7 @@
         <button
           class="btn btn-primary border-primary shadow"
           type="submit"
-          [disabled]="!formAbility || !taskForm.dirty || taskForm.invalid || deepEqual(initValues, taskForm.getRawValue())"
+          [disabled]="taskForm.disabled || !taskForm.dirty || taskForm.invalid || deepEqual(initValues, taskForm.getRawValue())"
           (click)="saveTask()"
         >{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<i class="fas fa-check-circle"></i>
           <mat-progress-bar *ngIf="savingInProgress" mode="indeterminate"></mat-progress-bar>
@@ -96,7 +96,7 @@
         <button
           class="btn btn-outline-danger border rounded-0"
           type="button"
-          [disabled]="!formAbility || idIsNull()"
+          [disabled]="taskForm.disabled || idIsNull()"
           (click)="deleteTask()"
         >Delete<mat-progress-bar *ngIf="deletingInProgress" mode="indeterminate"></mat-progress-bar></button>
       </div>

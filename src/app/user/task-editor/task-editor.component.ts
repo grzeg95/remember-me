@@ -19,27 +19,6 @@ import {daysOfTheWeek, timesOfDay, timesOfDayDict} from '../models';
 })
 export class TaskEditorComponent implements OnInit, OnDestroy {
 
-  set formAbility(ability: boolean) {
-
-    if (ability) {
-      this.taskForm.get('description').enable();
-      this.taskForm.get('daysOfTheWeek').enable();
-      this.taskForm.get('timesOfDay').enable();
-    } else {
-      this.taskForm.get('description').enable();
-      this.taskForm.get('daysOfTheWeek').enable();
-      this.taskForm.get('timesOfDay').enable();
-      this.onDuringTheDayChange();
-    }
-
-    this.FORM_ABILITY = ability;
-
-  }
-
-  get formAbility(): boolean {
-    return this.FORM_ABILITY;
-  }
-
   constructor(private authService: AuthService,
               private router: Router,
               private activeRoute: ActivatedRoute,
@@ -47,10 +26,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               private cdRef: ChangeDetectorRef,
               private fns: AngularFireFunctions,
               private afs: AngularFirestore) {
-    this.formAbility = true;
+    this.taskForm.enable();
   }
-
-  private FORM_ABILITY: boolean;
 
   deepEqual = deepEqual;
   initValues: ITask;
@@ -130,27 +107,24 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         this.taskSubscriber.unsubscribe();
       }
 
-      this.formAbility = false;
+      this.taskForm.disable();
 
       this.taskSubscriber = this.afs.doc(`users/${this.authService.userData.uid}/`)
-        .collection('task').doc(this.id).snapshotChanges().pipe(tap(() => {
-        this.formAbility = false;
-      })).subscribe((change) => {
+        .collection('task').doc(this.id).snapshotChanges().subscribe((change) => {
         const task = change.payload.data() as ITask;
         if (!task) {
           this.taskForm.reset();
           this.resetId();
           this.location.go('/user/task-editor');
-          this.formAbility = true;
         } else {
           this.setAll(task);
-          this.formAbility = true;
         }
+        this.taskForm.enable();
       });
 
     } else {
       this.initValues = {} as ITask;
-      this.formAbility = true;
+      this.taskForm.enable();
     }
 
   }
@@ -186,7 +160,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.formAbility = false;
+    this.taskForm.disable();
     this.savingInProgress = true;
 
     const task: ITask = this.taskForm.getRawValue();
@@ -217,10 +191,10 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
     }, (error) => {
       console.log(error);
-      this.formAbility = true;
+      this.taskForm.enable();
       this.savingInProgress = false;
     }, () => {
-      this.formAbility = true;
+      this.taskForm.enable();
       this.savingInProgress = false;
     });
 
@@ -259,12 +233,12 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     if (this.taskSubscriber && !this.taskSubscriber.closed) {
       this.taskSubscriber.unsubscribe();
     }
-    this.formAbility = false;
+    this.taskForm.disable();
   }
 
   deleteTask(): void {
 
-    this.formAbility = false;
+    this.taskForm.disable();
     this.deletingInProgress = true;
 
     if (this.deleteTaskSubscription && !this.deleteTaskSubscription.closed) {
@@ -276,21 +250,19 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       this.deepResetForm();
     }, (error) => {
       console.log(error);
-      this.formAbility = true;
+      this.taskForm.enable();
       this.deletingInProgress = false;
     }, () => {
-      this.formAbility = true;
+      this.taskForm.enable();
       this.deletingInProgress = false;
     });
 
   }
 
   setAll(task: ITask): void {
-
     this.initValues = task;
     this.taskForm.setValue(task);
-    this.formAbility = false;
-
+    this.taskForm.disable();
   }
 
   onDuringTheDayChange(): void {

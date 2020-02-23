@@ -89,6 +89,7 @@ export const saveTaskTransaction = async (transaction: Transaction, taskDocSnap:
   });
 
 };
+
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
   const auth = context.auth;
