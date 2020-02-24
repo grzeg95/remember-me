@@ -169,6 +169,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       console.log(next);
     }, (error) => {
       console.log(error);
+      checkbox.disabled = false;
     }, () => {
       checkbox.disabled = false;
     });
