@@ -69,7 +69,7 @@ export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: Do
 
 };
 
-export const saveTaskTransaction = async (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
+export const saveTaskTransaction = async (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, oldTaskDocSnap: FirebaseFirestore.DocumentSnapshot | null, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
   // set or update task for user/{userId}/task/{taskId}
   // set or update task for user/{userId}/today/{day}/task/{taskId}
 
@@ -85,10 +85,14 @@ export const saveTaskTransaction = async (transaction: Transaction, taskDocSnap:
     arr.forEach((element) =>
       proceedNextTaskDocSnap(transaction, element.docSnap, task, element.name as 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun' )
     );
+    if (oldTaskDocSnap) {
+      transaction.delete(oldTaskDocSnap.ref);
+    }
     return transaction.set(taskDocSnap.ref, task);
   });
 
 };
+
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
   const auth = context.auth;
@@ -142,10 +146,10 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
           created = true;
           return transaction.get(userDoc.ref.collection('task').doc()).then((newTaskSnap) => {
             taskId = newTaskSnap.id;
-            return saveTaskTransaction(transaction, newTaskSnap, userDoc.ref, task);
+            return saveTaskTransaction(transaction, newTaskSnap, taskSnap, userDoc.ref, task);
           });
         } else {
-          return saveTaskTransaction(transaction, taskSnap, userDoc.ref, task);
+          return saveTaskTransaction(transaction, taskSnap, null, userDoc.ref, task);
         }
 
       });
