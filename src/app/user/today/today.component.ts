@@ -38,6 +38,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   todayItems: Array<{name: string, task: ITodayTimesOfDayItems}> = [];
   tasksListSub: Subscription;
   setProgressSubs: Subscription = new Subscription();
+  setProgressSubsActiveConnections = 0;
   changeDayInterval: Subscription = new Subscription();
   isEmpty = true;
 
@@ -66,7 +67,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.tasksListSub.unsubscribe();
     }
 
-    this.tasksListSub = this.tasksCollection.snapshotChanges().pipe(map((changes) => {
+    this.tasksListSub = this.tasksCollection.snapshotChanges().pipe(
+      map((changes) => {
 
         const todayTasksByTimeOfDay: ITodayTimesOfDay = {};
 
@@ -142,9 +144,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       .collection('today').doc(this.todayName).collection('task');
     this.observeTasksList();
 
-    this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => {
-      this.changeDay();
-    });
+    this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => this.changeDay());
 
   }
 
@@ -163,15 +163,39 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       todayName: this.todayName
     };
 
+    const lastCheckboxState = checkbox.checked;
     checkbox.disabled = true;
 
-    const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe((next) => {
+    const handleSetProgressSubscriptionErrorComplete = (error: any | null) => {
+      checkbox.disabled = false;
+      this.setProgressSubsActiveConnections--;
+      if (this.setProgressSubsActiveConnections === 0) {
+        console.log('all setProgressSubsActiveConnections done');
+        this.changeDay();
+      } else if (error) {
+        console.log(error);
+      } else { // complete  with active others
+        checkbox.checked = !lastCheckboxState;
+        console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
+      }
+    };
+
+    const handleSetProgressSubscriptionSuccess = (next) => {
       console.log(next);
+    };
+
+    this.setProgressSubsActiveConnections++;
+    if (!this.tasksListSub.closed) {
+      console.log('this.tasksListSub.unsubscribe()');
+      this.tasksListSub.unsubscribe();
+    }
+
+    const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe((next) => {
+      handleSetProgressSubscriptionSuccess(next);
     }, (error) => {
-      console.log(error);
-      checkbox.disabled = false;
+      handleSetProgressSubscriptionErrorComplete(error);
     }, () => {
-      checkbox.disabled = false;
+      handleSetProgressSubscriptionErrorComplete(null);
     });
 
     this.setProgressSubs.add(setProgressSubscription);
