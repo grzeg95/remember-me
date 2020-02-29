@@ -1,6 +1,7 @@
 import {NgModule} from '@angular/core';
 import {AngularFireFunctions, FUNCTIONS_REGION} from '@angular/fire/functions';
 import {environment} from '../environments/environment';
+import {AppService} from './app.service';
 import {AuthGuardGuestService} from './auth/auth.guard.guest.service';
 import {AuthGuardUserService} from './auth/auth.guard.user.service';
 import {AuthService} from './auth/auth.service';
@@ -11,7 +12,8 @@ import {AuthService} from './auth/auth.service';
     AuthGuardUserService,
     AuthGuardGuestService,
     AngularFireFunctions,
-    { provide: FUNCTIONS_REGION, useValue: 'europe-west2' }
+    { provide: FUNCTIONS_REGION, useValue: 'europe-west2' },
+    AppService
   ]
 })
 export class CoreModule {
