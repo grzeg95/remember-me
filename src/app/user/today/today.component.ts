@@ -1,10 +1,9 @@
+
 import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
-import {UserIdleService} from 'angular-user-idle';
 import {interval, Subscription} from 'rxjs';
 import {map, take} from 'rxjs/operators';
-import {AppService} from '../../app.service';
 import {AuthService} from '../../auth/auth.service';
 import {ITask, ITimesOfDay, ITodayItem, ITodayTimesOfDay, ITodayTimesOfDayItems} from '../models';
 import {daysOfTheWeekOrderUS, timesOfDayDict, timesOfDayOrder} from '../models';
@@ -30,9 +29,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private cdRef: ChangeDetectorRef,
               private authService: AuthService,
               private userService: UserService,
-              private afs: AngularFirestore,
-              private idle: UserIdleService,
-              private app: AppService) {}
+              private afs: AngularFirestore) {}
 
   timesOfDayDict = timesOfDayDict;
   timesOfDayOrder = timesOfDayOrder;
@@ -45,7 +42,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   setProgressSubsActiveConnections = 0;
   changeDayInterval: Subscription = new Subscription();
   isEmpty = true;
-  idleSubscription: Subscription;
 
   ngOnInit(): void {
 
@@ -54,22 +50,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.generateView(this.userService.todayItems);
     }
 
-    this.idleSubscription = this.idle.onIdleStatusChanged().subscribe((isIdle) => {
-      this.idleCallBack(isIdle);
-    });
+    this.changeDay();
 
-    this.app.restartIdle();
-
-  }
-
-  idleCallBack(isIdle: boolean): void {
-    if (isIdle && this.setProgressSubsActiveConnections === 0) {
-      console.log('unsubscribe');
-      this.tasksListSub.unsubscribe();
-    } else if (!isIdle && this.setProgressSubsActiveConnections === 0) {
-      console.log('changeDay');
-      this.changeDay();
-    }
   }
 
   trackByTodayItems(index: number, item: {name: string, task: {[id: string]: ITodayItem}}): string {
@@ -189,7 +171,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.setProgressSubsActiveConnections--;
       if (this.setProgressSubsActiveConnections === 0) {
         console.log('all setProgressSubsActiveConnections done');
-        this.app.restartIdle();
+        this.changeDay();
       } else if (error) {
         console.log(error);
       } else { // complete with active others
@@ -204,7 +186,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
       if (this.setProgressSubsActiveConnections === 0) {
         console.log('all setProgressSubsActiveConnections done');
-        this.app.restartIdle();
+        this.changeDay();
       } else {
         console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
       }
@@ -231,7 +213,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.changeDayInterval.unsubscribe();
     this.tasksListSub.unsubscribe();
     this.setProgressSubs.unsubscribe();
-    this.idleSubscription.unsubscribe();
   }
 
   todayItemDone(todayItemElement: ITodayTimesOfDayItems): boolean {
