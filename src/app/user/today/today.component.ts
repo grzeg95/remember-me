@@ -163,10 +163,9 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       todayName: this.todayName
     };
 
-    const lastCheckboxState = checkbox.checked;
     checkbox.disabled = true;
 
-    const handleSetProgressSubscriptionErrorComplete = (error: any | null) => {
+    const handleSetProgressSubscriptionError = (error: any | null) => {
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
       if (this.setProgressSubsActiveConnections === 0) {
@@ -174,14 +173,23 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.changeDay();
       } else if (error) {
         console.log(error);
-      } else { // complete  with active others
-        checkbox.checked = !lastCheckboxState;
+      } else { // complete with active others
         console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
       }
     };
 
-    const handleSetProgressSubscriptionSuccess = (next) => {
-      console.log(next);
+    const handleSetProgressSubscriptionSuccess = () => {
+      checkbox.checked = toUpdateOneTimeOfDay.checked;
+      checkbox.disabled = false;
+      this.setProgressSubsActiveConnections--;
+
+      if (this.setProgressSubsActiveConnections === 0) {
+        console.log('all setProgressSubsActiveConnections done');
+        this.changeDay();
+      } else {
+        console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
+      }
+
     };
 
     this.setProgressSubsActiveConnections++;
@@ -190,12 +198,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.tasksListSub.unsubscribe();
     }
 
-    const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe((next) => {
-      handleSetProgressSubscriptionSuccess(next);
+    const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe(() => {
+      handleSetProgressSubscriptionSuccess();
     }, (error) => {
-      handleSetProgressSubscriptionErrorComplete(error);
-    }, () => {
-      handleSetProgressSubscriptionErrorComplete(null);
+      handleSetProgressSubscriptionError(error);
     });
 
     this.setProgressSubs.add(setProgressSubscription);
