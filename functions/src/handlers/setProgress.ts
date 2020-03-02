@@ -36,11 +36,9 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
         return transaction.set(todayTaskSnap.ref, toUpdateOneTimeOfDay, {merge: true});
       });
 
-    })).then(() => {
-    return {
+    })).then(() => ({
       message: 'Your progress has been updated'
-    };
-  }).catch((e) => {
+    })).catch((e) => {
     throw new functions.https.HttpsError(
       'internal',
       e,
