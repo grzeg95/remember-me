@@ -46,11 +46,9 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
       });
 
     })
-  ).then(() => {
-    return {
-      message: 'Your task has been deleted'
-    };
-  }).catch((e) => {
+  ).then(() => ({
+    message: 'Your task has been deleted'
+  })).catch((e) => {
     throw new functions.https.HttpsError(
       'internal',
       e,
