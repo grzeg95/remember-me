@@ -5,7 +5,9 @@ import {ITask} from '../interfaces';
 import {Task} from '../models';
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
-export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: DocumentSnapshot, task: ITask, day: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'): Transaction => {
+type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, task: ITask, day: Day): Transaction => {
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
@@ -69,25 +71,21 @@ export const proceedNextTaskDocSnap = (transaction: Transaction, taskDocSnap: Do
 
 };
 
-export const saveTaskTransaction = async (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, oldTaskDocSnap: FirebaseFirestore.DocumentSnapshot | null, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
+const proceedAllDays = (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, oldTaskDocSnap: FirebaseFirestore.DocumentSnapshot | null, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
   // set or update task for user/{userId}/task/{taskId}
   // set or update task for user/{userId}/today/{day}/task/{taskId}
 
-  return Promise.all([
-    transaction.get(user.collection('today').doc('mon').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'mon' }}),
-    transaction.get(user.collection('today').doc('tue').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'tue' }}),
-    transaction.get(user.collection('today').doc('wed').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'wed' }}),
-    transaction.get(user.collection('today').doc('thu').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'thu' }}),
-    transaction.get(user.collection('today').doc('fri').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'fri' }}),
-    transaction.get(user.collection('today').doc('sat').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'sat' }}),
-    transaction.get(user.collection('today').doc('sun').collection('task').doc(taskDocSnap.id)).then((docSnap) => { return { docSnap, name: 'sun' }})
-  ]).then((arr) => {
-    arr.forEach((element) =>
-      proceedNextTaskDocSnap(transaction, element.docSnap, task, element.name as 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun' )
+  const reads: Promise<{docSnap: FirebaseFirestore.DocumentSnapshot, day: Day}>[] = [];
+
+  (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
+    reads.push(transaction.get(user.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
+  });
+
+  return Promise.all(reads).then((readsReady) => {
+    readsReady.forEach((readReady) =>
+      proceedTask(transaction, readReady.docSnap, task, readReady.day)
     );
-    if (oldTaskDocSnap) {
-      transaction.delete(oldTaskDocSnap.ref);
-    }
+    oldTaskDocSnap && transaction.delete(oldTaskDocSnap.ref);
     return transaction.set(taskDocSnap.ref, task);
   });
 
@@ -146,32 +144,28 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
           created = true;
           return transaction.get(userDoc.ref.collection('task').doc()).then((newTaskSnap) => {
             taskId = newTaskSnap.id;
-            return saveTaskTransaction(transaction, newTaskSnap, taskSnap, userDoc.ref, task);
+            return proceedAllDays(transaction, newTaskSnap, taskSnap, userDoc.ref, task);
           });
         } else {
-          return saveTaskTransaction(transaction, taskSnap, null, userDoc.ref, task);
+          return proceedAllDays(transaction, taskSnap, null, userDoc.ref, task);
         }
 
       });
 
     })
-  ).then(() => {
-    if (created) {
-      return {
-        code: 201,
-        status: 'Created',
-        created: true,
-        message: 'Your task has been created',
-        taskId: taskId
-      };
-    } else {
-      return {
-        code: 202,
-        status: 'Accepted',
-        message: 'Your task has been updated'
-      };
-    }
-  }).catch((e) => {
+  ).then(() =>
+    created ? ({
+      status: 'Created',
+      created: true,
+      message: 'Your task has been created',
+      taskId: taskId
+    }) : ({
+      status: 'Updated',
+      created: false,
+      message: 'Your task has been updated',
+      taskId: taskId
+    })
+  ).catch((e) => {
       throw new functions.https.HttpsError(
         'internal',
         e,
