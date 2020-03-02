@@ -30,16 +30,15 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
         );
       }
 
-      return Promise.all([
-        transaction.get(userSnap.ref.collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('mon').collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('tue').collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('wed').collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('thu').collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('fri').collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('sat').collection('task').doc(taskId)),
-        transaction.get(userSnap.ref.collection('today').doc('sun').collection('task').doc(taskId)),
-      ]).then((docsSnaps) => {
+      const reads: Promise<FirebaseFirestore.DocumentSnapshot>[] = [];
+
+      reads.push(transaction.get(userSnap.ref.collection('task').doc(taskId)));
+
+      (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).forEach((day) =>
+        reads.push(transaction.get(userSnap.ref.collection('today').doc(`${day}/task/${taskId}`)))
+      );
+
+      return Promise.all(reads).then((docsSnaps) => {
         docsSnaps.forEach((docSnap) =>
           transaction.delete(docSnap.ref)
         );
@@ -47,11 +46,9 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
       });
 
     })
-  ).then(() => {
-    return {
-      message: 'Your task has been deleted'
-    };
-  }).catch((e) => {
+  ).then(() => ({
+    message: 'Your task has been deleted'
+  })).catch((e) => {
     throw new functions.https.HttpsError(
       'internal',
       e,
