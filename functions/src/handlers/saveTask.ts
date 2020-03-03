@@ -5,8 +5,19 @@ import {ITask} from '../interfaces';
 import {Task} from '../models';
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
+/**
+ * @type day: Day
+ **/
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+/**
+ * Save new task for every day and then prepare today's tasks
+ * @param transaction Transaction
+ * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
+ * @param task: ITask
+ * @param day: Day
+ * @return Promise<T>
+ **/
 const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, task: ITask, day: Day): Transaction => {
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
@@ -71,6 +82,15 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 
 };
 
+/**
+ * Save new task for every day and then prepare today's tasks
+ * @param transaction Transaction
+ * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
+ * @param oldTaskDocSnap FirebaseFirestore.DocumentSnapshot | null
+ * @param user: FirebaseFirestore.DocumentReference
+ * @param task: ITask
+ * @return Promise<T>
+ **/
 const proceedAllDays = (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, oldTaskDocSnap: FirebaseFirestore.DocumentSnapshot | null, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
   // set or update task for user/{userId}/task/{taskId}
   // set or update task for user/{userId}/today/{day}/task/{taskId}
@@ -91,6 +111,12 @@ const proceedAllDays = (transaction: Transaction, taskDocSnap: FirebaseFirestore
 
 };
 
+/**
+ * Save new task
+ * @param data any
+ * @param context functions.https.CallableContext
+ * @return Promise<T>
+ **/
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
   const auth = context.auth;
