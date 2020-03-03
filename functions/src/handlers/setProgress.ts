@@ -3,6 +3,12 @@ import * as functions from 'firebase-functions';
 import {db} from '../index';
 import {Task} from '../models';
 
+/**
+ * Try to set progress of today task by time of day
+ * @param data any
+ * @param context functions.https.CallableContext
+ * @return Promise<T>
+ **/
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
   const auth: {
