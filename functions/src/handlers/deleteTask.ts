@@ -1,9 +1,19 @@
+import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {db} from '../index';
 
+/**
+ * Read all user data about task and remove it
+ * @param data any
+ * @param context functions.https.CallableContext
+ * @return Promise<T>
+**/
 export const handler = (data: any, context: functions.https.CallableContext) => {
 
-  const auth = context.auth;
+  const auth: {
+    uid: string;
+    token: firebase.auth.DecodedIdToken;
+  } | undefined = context.auth;
 
   // interrupt if data.taskId is not correct or !auth
   if (!data.taskId || typeof data.taskId !== 'string' || !auth) {
