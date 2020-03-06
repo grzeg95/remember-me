@@ -52,6 +52,7 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
           );
         }
 
+        // TODO data.timeOfDay can be anything, that's security issue !!!
         return transaction.set(todayTaskSnap.ref, {
           timesOfDay: JSON.parse(`{"${data.timeOfDay}":${data.checked}}`)
         }, {merge: true});
