@@ -30,30 +30,31 @@ export interface ITodayItem {
   description: string;
   done: boolean;
   type: string;
-}
-
-export interface ITodayTimesOfDayItems {
-  [id: string]: ITodayItem;
+  id: string;
 }
 
 export interface ITodayTimesOfDay {
-  atDawn?: ITodayTimesOfDayItems;
-  morning?: ITodayTimesOfDayItems;
-  beforeNoon?: ITodayTimesOfDayItems;
-  atNoon?: ITodayTimesOfDayItems;
-  inTheAfternoon?: ITodayTimesOfDayItems;
-  beforeEvening?: ITodayTimesOfDayItems;
-  inTheEvening?: ITodayTimesOfDayItems;
-  inTheNight?: ITodayTimesOfDayItems;
-  duringTheDay?: ITodayTimesOfDayItems;
+  atDawn?: ITodayItem[];
+  morning?: ITodayItem[];
+  beforeNoon?: ITodayItem[];
+  atNoon?: ITodayItem[];
+  inTheAfternoon?: ITodayItem[];
+  beforeEvening?: ITodayItem[];
+  inTheEvening?: ITodayItem[];
+  inTheNight?: ITodayItem[];
+  duringTheDay?: ITodayItem[];
 }
 
 export const timesOfDayOrder = [
   'atDawn', 'morning', 'duringTheDay', 'beforeNoon', 'atNoon', 'inTheAfternoon', 'beforeEvening', 'inTheEvening', 'inTheNight'
 ];
+
 export const timesOfDay = ['atDawn', 'morning', 'beforeNoon', 'atNoon', 'inTheAfternoon', 'beforeEvening', 'inTheEvening', 'inTheNight'];
+
 export const daysOfTheWeekOrderUS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
 export const daysOfTheWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
 export const timesOfDayDict = {
   atDawn: 'At dawn',
   morning: 'Morning',

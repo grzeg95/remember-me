@@ -5,7 +5,7 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {interval, Subscription} from 'rxjs';
 import {map, take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
-import {ITask, ITimesOfDay, ITodayItem, ITodayTimesOfDay, ITodayTimesOfDayItems} from '../models';
+import {ITask, ITimesOfDay, ITodayItem, ITodayTimesOfDay} from '../models';
 import {daysOfTheWeekOrderUS, timesOfDayDict, timesOfDayOrder} from '../models';
 import {UserService} from '../user.service';
 
@@ -36,7 +36,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   daysOfTheWeekOrderUS = daysOfTheWeekOrderUS;
   todayName: string;
   tasksCollection: AngularFirestoreCollection<ITask>;
-  todayItems: Array<{name: string, task: ITodayTimesOfDayItems}> = [];
+  todayItems: {timeOfDay: string, task: ITodayItem[]}[] = [];
   tasksListSub: Subscription;
   setProgressSubs: Subscription = new Subscription();
   setProgressSubsActiveConnections = 0;
@@ -54,8 +54,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   }
 
-  trackByTodayItems(index: number, item: {name: string, task: {[id: string]: ITodayItem}}): string {
-    return item.name;
+  trackByTodayItems(index: number, item: {timeOfDay: string, task: ITodayItem[]}): string {
+    return index + item.timeOfDay;
   }
 
   trackByTodayItem(index: number, item: {key: any, value: ITodayItem}): string {
@@ -81,24 +81,26 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
           if (typeof task.timesOfDay.duringTheDay === 'boolean') {
             if (!todayTasksByTimeOfDay.duringTheDay) {
-              todayTasksByTimeOfDay.duringTheDay = {};
+              todayTasksByTimeOfDay.duringTheDay = [];
             }
-            todayTasksByTimeOfDay.duringTheDay[id] = {
+            todayTasksByTimeOfDay.duringTheDay = [{
               description: task.description,
               done: task.timesOfDay.duringTheDay,
-              type
-            };
+              type,
+              id
+            }];
           } else {
             for (const timeOfDay in task.timesOfDay as ITimesOfDay) {
               if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
                 if (!todayTasksByTimeOfDay[timeOfDay]) {
-                  todayTasksByTimeOfDay[timeOfDay] = {};
+                  todayTasksByTimeOfDay[timeOfDay] = [];
                 }
-                todayTasksByTimeOfDay[timeOfDay][id] = {
+                todayTasksByTimeOfDay[timeOfDay].push({
+                  id,
                   description: task.description,
                   done: task.timesOfDay[timeOfDay],
                   type
-                };
+                });
               }
             }
           }
@@ -108,21 +110,22 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
         return todayTasksByTimeOfDay;
 
       })).subscribe((todayTasksByTimeOfDay) => {
-      this.userService.todayItems = todayTasksByTimeOfDay;
-      this.generateView(this.userService.todayItems);
+        console.log(todayTasksByTimeOfDay);
+        this.userService.todayItems = todayTasksByTimeOfDay;
+        this.generateView(this.userService.todayItems);
     });
 
   }
 
   generateView(todayTasksByTimeOfDay: ITodayTimesOfDay): void {
 
-    const todayItemsTMP: Array<{name: string, task: ITodayTimesOfDayItems}> = [];
+    const todayItemsTMP: {timeOfDay: string, task: ITodayItem[]}[] = [];
 
     this.timesOfDayOrder.forEach((next) => {
       if (todayTasksByTimeOfDay[next]) {
 
         const day = {
-          name: next,
+          timeOfDay: next,
           task: todayTasksByTimeOfDay[next]
         };
 
@@ -215,16 +218,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.setProgressSubs.unsubscribe();
   }
 
-  todayItemDone(todayItemElement: ITodayTimesOfDayItems): boolean {
-    for (const taskId in todayItemElement) {
-      if (todayItemElement.hasOwnProperty(taskId)) {
-        const task = todayItemElement[taskId];
-        if (!task.done) {
-          return false;
-        }
-      }
-    }
-    return true;
+  todayItemDone(todayItemElement: ITodayItem[]): boolean {
+    return !todayItemElement.some((item) => !item.done);
   }
 
   private static toNextDayCalc(): number {

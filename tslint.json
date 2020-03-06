@@ -6,6 +6,7 @@
       "arguments",
       "parameters"
     ],
+    "array-type": [true, "array"],
     "array-bracket-spacing": false,
     "arrow-return-shortinterface-namehand": true,
     "callable-types": true,
