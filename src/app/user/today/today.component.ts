@@ -83,12 +83,12 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
             if (!todayTasksByTimeOfDay.duringTheDay) {
               todayTasksByTimeOfDay.duringTheDay = [];
             }
-            todayTasksByTimeOfDay.duringTheDay = [{
+            todayTasksByTimeOfDay.duringTheDay.push({
               description: task.description,
               done: task.timesOfDay.duringTheDay,
               type,
               id
-            }];
+            });
           } else {
             for (const timeOfDay in task.timesOfDay as ITimesOfDay) {
               if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
