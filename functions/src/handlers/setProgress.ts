@@ -9,7 +9,7 @@ import {Task} from '../models';
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: any, context: functions.https.CallableContext) => {
+export const handler = (data: { taskId: any, todayName: any, checked: any, timeOfDay: any }, context: functions.https.CallableContext) => {
 
   const auth: {
     uid: string;
@@ -19,8 +19,8 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
   if (
     !data.taskId || typeof data.taskId !== 'string' ||
     !data.todayName || typeof data.todayName !== 'string' || !Task.daysOfTheWeek.includes(data.todayName) ||
-    !data.hasOwnProperty('checked') || typeof data.checked !== 'boolean' ||
-    !auth
+    !data.hasOwnProperty('checked') ||
+    !data.timeOfDay || typeof data.timeOfDay !== 'string'
   ) {
     throw new functions.https.HttpsError(
       'invalid-argument',
@@ -30,7 +30,7 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
   }
 
   return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth.uid)).then(userDoc => {
+    transaction.get(db.collection('users').doc(auth?.uid as string)).then(userDoc => {
 
       // interrupt if user is not in my firestore
       if (!userDoc.exists) {
@@ -52,10 +52,21 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
           );
         }
 
-        // TODO data.timeOfDay can be anything, that's security issue !!!
-        return transaction.set(todayTaskSnap.ref, {
-          timesOfDay: JSON.parse(`{"${data.timeOfDay}":${data.checked}}`)
-        }, {merge: true});
+        return transaction.get(userDoc.ref.collection('task').doc(data.taskId)).then((taskDocSnap) => {
+
+          if (!taskDocSnap.exists || !(taskDocSnap.data()?.timesOfDay as Object).hasOwnProperty(data.timeOfDay)) {
+            throw new functions.https.HttpsError(
+              'invalid-argument',
+              'Bad Request',
+              'Check function requirements'
+            );
+          }
+
+          return transaction.set(todayTaskSnap.ref, {
+            timesOfDay: JSON.parse(`{"${data.timeOfDay}":${data.checked}}`)
+          }, {merge: true});
+
+        });
 
       });
 
