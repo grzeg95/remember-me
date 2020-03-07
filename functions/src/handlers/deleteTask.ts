@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import {db} from '../index';
 
 /**
+ * 9 reads, 7 deletes
  * Read all user data about task and remove it
  * @param data any
  * @param context functions.https.CallableContext

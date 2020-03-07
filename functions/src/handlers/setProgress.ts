@@ -4,6 +4,7 @@ import {db} from '../index';
 import {Task} from '../models';
 
 /**
+ * 3 reads, 1 write
  * Try to set progress of today task by time of day
  * @param data any
  * @param context functions.https.CallableContext

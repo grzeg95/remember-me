@@ -11,6 +11,7 @@ import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /**
+ * 1 delete or 1 write
  * Save new task for every day and then prepare today's tasks
  * @param transaction Transaction
  * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
@@ -83,6 +84,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 };
 
 /**
+ * 7 reads, 1 write
  * Save new task for every day and then prepare today's tasks
  * @param transaction Transaction
  * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
@@ -112,6 +114,7 @@ const proceedAllDays = (transaction: Transaction, taskDocSnap: FirebaseFirestore
 };
 
 /**
+ * 3 reads
  * Save new task
  * @param data any
  * @param context functions.https.CallableContext
