@@ -14,7 +14,7 @@ type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /**
  * 1 delete or 1 write
- * Save new task for every day and then prepare today's tasks
+ * Prepare today tasks
  * @param transaction Transaction
  * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
  * @param task: ITask
@@ -87,7 +87,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 
 /**
  * 7 reads, 1 write
- * Save new task for every day and then prepare today's tasks
+ * Save new task for every day
  * @param transaction Transaction
  * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
  * @param oldTaskDocSnap FirebaseFirestore.DocumentSnapshot | null
@@ -95,7 +95,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * @param task: ITask
  * @return Promise<T>
  **/
-const proceedAllDays = (transaction: Transaction, taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Promise<Transaction> => {
+const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Promise<Transaction> => {
   // set or update task for user/{userId}/task/{taskId}
   // set or update task for user/{userId}/today/{day}/task/{taskId}
 
@@ -209,10 +209,10 @@ export const handler = (data: {
           created = true;
           return transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => {
             taskId = newTaskSnap.id;
-            return proceedAllDays(transaction, newTaskSnap, taskSnap, userDocSnap.ref, data.task);
+            return proceedEveryDay(transaction, newTaskSnap, taskSnap, userDocSnap.ref, data.task);
           });
         } else {
-          return proceedAllDays(transaction, taskSnap, null, userDocSnap.ref, data.task);
+          return proceedEveryDay(transaction, taskSnap, null, userDocSnap.ref, data.task);
         }
 
       });
