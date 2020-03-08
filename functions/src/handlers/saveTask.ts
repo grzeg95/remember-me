@@ -162,24 +162,23 @@ export const handler = (data: {
     token: firebase.auth.DecodedIdToken;
   } | undefined = context.auth;
 
+  const taskKes = Object.keys((data.task as Object));
+  const daysOfTheWeekKeys = Object.keys((data.task.daysOfTheWeek as Object));
+  const timesOfDayKeys = Object.keys((data.task.timesOfDay as Object));
+
   if (
     !data.task || !data.taskId || typeof data.taskId !== 'string' ||
-    Object.keys((data.task as Object)).length !== 3 || // task is based on 3 objects ...
-    !listEqual(Object.keys((data.task as Object)), ['description','daysOfTheWeek','timesOfDay']) || // ... description, daysOfTheWeek, timesOfDay
+    taskKes.length !== 3 || // task is based on 3 objects ...
+    !listEqual(taskKes, ['description','daysOfTheWeek','timesOfDay']) || // ... description, daysOfTheWeek, timesOfDay
     !data.task.description || typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 100 || // description length must be between 4 add 100
-    Object.keys((data.task.daysOfTheWeek as Object)).length !== 7 ||
-    !listEqual(Object.keys((data.task.daysOfTheWeek as Object)), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // task.daysOfTheWeek is based on 7 objects ...
-    typeof data.task.daysOfTheWeek.mon !== 'boolean' || // mon boolean
-    typeof data.task.daysOfTheWeek.tue !== 'boolean' || // tue boolean
-    typeof data.task.daysOfTheWeek.wed !== 'boolean' || // wed boolean
-    typeof data.task.daysOfTheWeek.thu !== 'boolean' || // thu boolean
-    typeof data.task.daysOfTheWeek.fri !== 'boolean' || // fri boolean
-    typeof data.task.daysOfTheWeek.sat !== 'boolean' || // sat boolean
-    typeof data.task.daysOfTheWeek.sun !== 'boolean' || // sun boolean
-    !Object.keys((data.task.daysOfTheWeek as Object)).some((e) => data.task.daysOfTheWeek[e as Day]) || // some true
-    Object.keys((data.task.timesOfDay as Object)).some((e) => typeof data.task.timesOfDay[e] !== 'boolean') || // task.timesOfDay must contains booleans properties ...
-    !Object.keys((data.task.timesOfDay as Object)).some((e) => data.task.timesOfDay[e]) || // ... that one is true and ...
-    Object.keys((data.task.timesOfDay as Object)).some((e) => e.length < 1 || e.length > 20) // timesOfDay length must be between 1 add 20
+    daysOfTheWeekKeys.length !== 7 || // task.daysOfTheWeek is based on 7 object ...
+    !listEqual(daysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
+    daysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
+    !daysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
+    timesOfDayKeys.length === 0 || // data.timesOfDayKeys is based on at least one object ...
+    timesOfDayKeys.some((e) => typeof data.task.timesOfDay[e] !== 'boolean') || // that contain boolean property ...
+    !timesOfDayKeys.some((e) => data.task.timesOfDay[e]) || // ... that one is true and ...
+    timesOfDayKeys.some((e) => e.length < 1 || e.length > 20) // ... timesOfDay length must be between 1 add 20
   ) {
     throw new functions.https.HttpsError(
       'invalid-argument',
@@ -187,6 +186,8 @@ export const handler = (data: {
       'Check function requirements'
     );
   }
+
+  console.log(2);
 
   let created = false;
   let taskId = data.taskId;
