@@ -60,6 +60,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
           docsSnaps.forEach((docSnap) =>
             transaction.delete(docSnap.ref)
           );
+          transaction.delete(taskDocSnap.ref);
           return transaction;
         });
       });
