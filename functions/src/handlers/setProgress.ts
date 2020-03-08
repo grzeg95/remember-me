@@ -1,7 +1,6 @@
 import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {db} from '../index';
-import {Task} from '../models';
 
 /**
  * 3 reads, 1 write
@@ -19,7 +18,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
 
   if (
     !data.taskId || typeof data.taskId !== 'string' ||
-    !data.todayName || typeof data.todayName !== 'string' || !Task.daysOfTheWeek.includes(data.todayName) ||
+    !data.todayName || typeof data.todayName !== 'string' || !['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].includes(data.todayName) ||
     !data.hasOwnProperty('checked') ||
     !data.timeOfDay || typeof data.timeOfDay !== 'string'
   ) {
@@ -31,39 +30,48 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
   }
 
   return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then(userDoc => {
+    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
 
       // interrupt if user is not in my firestore
-      if (!userDoc.exists) {
+      if (!userDocSnap.exists) {
         throw new functions.https.HttpsError(
           'unauthenticated',
-          'Bad Request',
-          'Check function requirements'
+          'Register to use this functionality',
+          `User ${auth?.uid} does not exist`
         );
       }
 
-      return transaction.get(userDoc.ref.collection('today').doc(`${data.todayName}/task/${data.taskId}`)).then((todayTaskSnap) => {
+      return transaction.get(userDocSnap.ref.collection('today').doc(`${data.todayName}/task/${data.taskId}`)).then((todayTaskDocSnap) => {
 
-        // interrupt if there is no task to update
-        if (!todayTaskSnap.exists) {
+        // interrupt if user has not this task
+        if (!todayTaskDocSnap.exists) {
           throw new functions.https.HttpsError(
             'invalid-argument',
-            'Bad Request',
-            'Check function requirements'
+            'Task does not exist',
+            `User ${userDocSnap.data()?.id} has not task ${data.todayName}/task/${data.taskId}`
           );
         }
 
-        return transaction.get(userDoc.ref.collection('task').doc(data.taskId)).then((taskDocSnap) => {
+        return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then((taskDocSnap) => {
 
-          if (!taskDocSnap.exists || !(taskDocSnap.data()?.timesOfDay as Object).hasOwnProperty(data.timeOfDay)) {
+          // interrupt if user has not this task
+          if (!taskDocSnap.exists) {
             throw new functions.https.HttpsError(
               'invalid-argument',
-              'Bad Request',
-              'Check function requirements'
+              'Task does not exist',
+              `User ${userDocSnap.data()?.id} has not task ${data.taskId}`
             );
           }
 
-          return transaction.set(todayTaskSnap.ref, {
+          if (!(taskDocSnap.data()?.timesOfDay as Object).hasOwnProperty(data.timeOfDay)) {
+            throw new functions.https.HttpsError(
+              'invalid-argument',
+              'Invalid time of day',
+              `User ${userDocSnap.data()?.id} has not task ${data.taskId} with ${data.timeOfDay}`
+            );
+          }
+
+          return transaction.set(todayTaskDocSnap.ref, {
             timesOfDay: JSON.parse(`{"${data.timeOfDay}":${data.checked}}`)
           }, {merge: true});
 

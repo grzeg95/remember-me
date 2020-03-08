@@ -5,11 +5,11 @@ import {db} from '../index';
 /**
  * 9 reads, 7 deletes
  * Read all user data about task and remove it
- * @param data any
+ * @param data {taskId: any}
  * @param context functions.https.CallableContext
  * @return Promise<T>
 **/
-export const handler = (data: any, context: functions.https.CallableContext) => {
+export const handler = (data: {taskId: any}, context: functions.https.CallableContext) => {
 
   const auth: {
     uid: string;
@@ -17,7 +17,7 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
   } | undefined = context.auth;
 
   // interrupt if data.taskId is not correct or !auth
-  if (!data.taskId || typeof data.taskId !== 'string' || !auth) {
+  if (!data.taskId || typeof data.taskId !== 'string') {
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
@@ -25,35 +25,43 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
     );
   }
 
-  const taskId = data.taskId;
-
   return db.runTransaction((transaction) =>
 
     // get user from firestore
-    transaction.get(db.collection('users').doc(auth.uid)).then((userSnap) => {
+    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
 
       // interrupt if user is not in my firestore
-      if (!userSnap.exists) {
+      if (!userDocSnap.exists) {
         throw new functions.https.HttpsError(
           'unauthenticated',
-          'Bad Request',
-          'Check function requirements'
+          'Register to use this functionality',
+          `User ${auth?.uid} does not exist`
         );
       }
 
-      const reads: Promise<FirebaseFirestore.DocumentSnapshot>[] = [];
+      return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then((taskDocSnap) => {
 
-      reads.push(transaction.get(userSnap.ref.collection('task').doc(taskId)));
+        // interrupt if user has not this task
+        if (!taskDocSnap.exists) {
+          throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Task does not exist',
+            `User ${userDocSnap.data()?.id} has not task ${data.taskId}`
+          );
+        }
 
-      (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).forEach((day) =>
-        reads.push(transaction.get(userSnap.ref.collection('today').doc(`${day}/task/${taskId}`)))
-      );
+        const reads: Promise<FirebaseFirestore.DocumentSnapshot>[] = [];
 
-      return Promise.all(reads).then((docsSnaps) => {
-        docsSnaps.forEach((docSnap) =>
-          transaction.delete(docSnap.ref)
+        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).forEach((day) =>
+          reads.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`)))
         );
-        return transaction;
+
+        return Promise.all(reads).then((docsSnaps) => {
+          docsSnaps.forEach((docSnap) =>
+            transaction.delete(docSnap.ref)
+          );
+          return transaction;
+        });
       });
 
     })

@@ -1,9 +1,11 @@
 import {Transaction} from "@google-cloud/firestore";
+import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {db} from '../index';
 import {ITask} from '../interfaces';
-import {Task} from '../models';
+import {listEqual} from '../tools';
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
+import DocumentReference = FirebaseFirestore.DocumentReference;
 
 /**
  * @type day: Day
@@ -93,11 +95,11 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * @param task: ITask
  * @return Promise<T>
  **/
-const proceedAllDays = (transaction: Transaction, taskDocSnap: FirebaseFirestore.DocumentSnapshot, oldTaskDocSnap: FirebaseFirestore.DocumentSnapshot | null, user: FirebaseFirestore.DocumentReference, task: ITask): Promise<Transaction> => {
+const proceedAllDays = (transaction: Transaction, taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Promise<Transaction> => {
   // set or update task for user/{userId}/task/{taskId}
   // set or update task for user/{userId}/today/{day}/task/{taskId}
 
-  const reads: Promise<{docSnap: FirebaseFirestore.DocumentSnapshot, day: Day}>[] = [];
+  const reads: Promise<{docSnap: DocumentSnapshot, day: Day}>[] = [];
 
   (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
     reads.push(transaction.get(user.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
@@ -114,38 +116,71 @@ const proceedAllDays = (transaction: Transaction, taskDocSnap: FirebaseFirestore
 };
 
 /**
- * 3 reads
+ * 3 reads when create
+ * 2 reads when update
  * Save new task
- * @param data any
+ * @param data {
+    task: {
+      timesOfDay: {
+        [key: string]: any
+      };
+      daysOfTheWeek: {
+        mon: any;
+        tue: any;
+        wed: any;
+        thu: any;
+        fri: any;
+        sat: any;
+        sun: any;
+      }
+      description: any;
+    }
+  }
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: any, context: functions.https.CallableContext) => {
+export const handler = (data: {
+  task: {
+    timesOfDay: {
+      [key: string]: any
+    };
+    daysOfTheWeek: {
+      mon: any;
+      tue: any;
+      wed: any;
+      thu: any;
+      fri: any;
+      sat: any;
+      sun: any;
+    }
+    description: any;
+  }, taskId: any}, context: functions.https.CallableContext) =>
+{
 
-  const auth = context.auth;
+  const auth: {
+    uid: string;
+    token: firebase.auth.DecodedIdToken;
+  } | undefined = context.auth;
 
-  if (!data.task || !auth) {
-    throw new functions.https.HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Check function requirements'
-    );
-  }
-
-  const task: ITask = data.task;
-
-  if (!(data.taskId && typeof data.taskId === 'string')) {
-    throw new functions.https.HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Check function requirements'
-    );
-  }
-
-  let taskId = data.taskId;
-
-  // TASK VALIDATION
-  if (!Task.isValid(task)) {
+  if (
+    !data.task || !data.taskId || typeof data.taskId !== 'string' ||
+    Object.keys((data.task as Object)).length !== 3 || // task is based on 3 objects ...
+    !listEqual(Object.keys((data.task as Object)), ['description','daysOfTheWeek','timesOfDay']) || // ... description, daysOfTheWeek, timesOfDay
+    !data.task.description || typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 100 || // description length must be between 4 add 100
+    Object.keys((data.task.daysOfTheWeek as Object)).length !== 7 ||
+    !listEqual(Object.keys((data.task.daysOfTheWeek as Object)), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // task.daysOfTheWeek is based on 7 objects ...
+    typeof data.task.daysOfTheWeek.mon !== 'boolean' || // mon boolean
+    typeof data.task.daysOfTheWeek.tue !== 'boolean' || // tue boolean
+    typeof data.task.daysOfTheWeek.wed !== 'boolean' || // wed boolean
+    typeof data.task.daysOfTheWeek.thu !== 'boolean' || // thu boolean
+    typeof data.task.daysOfTheWeek.fri !== 'boolean' || // fri boolean
+    typeof data.task.daysOfTheWeek.sat !== 'boolean' || // sat boolean
+    typeof data.task.daysOfTheWeek.sun !== 'boolean' || // sun boolean
+    !Object.keys((data.task.daysOfTheWeek as Object)).some((e) => data.task.daysOfTheWeek[e as Day]) || // some true
+    Object.keys((data.task.timesOfDay as Object)).some((e) => typeof data.task.timesOfDay[e] !== 'boolean') || // task.timesOfDay must contains booleans properties ...
+    !Object.keys((data.task.timesOfDay as Object)).some((e) => data.task.timesOfDay[e]) || // ... that one is true and ...
+    Object.keys((data.task.timesOfDay as Object)).some((e) => e.length < 1 || e.length > 20) // timesOfDay length must be between 1 add 20
+  ) {
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
@@ -154,29 +189,30 @@ export const handler = (data: any, context: functions.https.CallableContext) => 
   }
 
   let created = false;
+  let taskId = data.taskId;
 
   return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth.uid)).then(userDoc => {
+    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
 
       // interrupt if user is not in my firestore
-      if (!userDoc.exists) {
+      if (!userDocSnap.exists) {
         throw new functions.https.HttpsError(
           'unauthenticated',
-          'Bad Request',
-          'Check function requirements'
+          'Register to use this functionality',
+          `User ${auth?.uid} does not exist`
         );
       }
 
-      return transaction.get(userDoc.ref.collection('task').doc(taskId)).then((taskSnap) => {
+      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then((taskSnap) => {
 
         if (!taskSnap.exists) {
           created = true;
-          return transaction.get(userDoc.ref.collection('task').doc()).then((newTaskSnap) => {
+          return transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => {
             taskId = newTaskSnap.id;
-            return proceedAllDays(transaction, newTaskSnap, taskSnap, userDoc.ref, task);
+            return proceedAllDays(transaction, newTaskSnap, taskSnap, userDocSnap.ref, data.task);
           });
         } else {
-          return proceedAllDays(transaction, taskSnap, null, userDoc.ref, task);
+          return proceedAllDays(transaction, taskSnap, null, userDocSnap.ref, data.task);
         }
 
       });
