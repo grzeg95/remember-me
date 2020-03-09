@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import {deleteTaskHandler, saveTaskHandler, setProgressHandler} from './handlers/index';
+import {deleteTaskHandler, saveTaskHandler, setProgressHandler, setTodayOrderHandler} from './handlers';
 
 const runtimeOptions: functions.RuntimeOptions = {
   timeoutSeconds: 5,
@@ -18,3 +18,5 @@ export const deleteTask = functions.runWith(runtimeOptions).region('europe-west2
 export const saveTask = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(saveTaskHandler);
 
 export const setProgress = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(setProgressHandler);
+
+export const setTodayOrder = functions.runWith(runtimeOptions).region('europe-west2').https.onCall(setTodayOrderHandler);
