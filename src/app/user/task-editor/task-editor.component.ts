@@ -2,14 +2,13 @@ import {Location} from '@angular/common';
 import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
-import {FormControl, FormGroup} from '@angular/forms';
+import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
 import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
-import {tap} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
 import {ITask} from '../models';
-import {daysOfTheWeek, timesOfDay, timesOfDayDict} from '../models';
+import {daysOfTheWeek} from '../models';
 
 @Component({
   selector: 'app-task-editor',
@@ -18,6 +17,12 @@ import {daysOfTheWeek, timesOfDay, timesOfDayDict} from '../models';
   host: { class: 'app' }
 })
 export class TaskEditorComponent implements OnInit, OnDestroy {
+
+  get timesOfDay(): string[] {
+    return Object.keys(this.taskForm.get('timesOfDay').value);
+  }
+
+  formDeepEqual = false;
 
   constructor(private authService: AuthService,
               private router: Router,
@@ -36,8 +41,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   taskSubscriber: Subscription;
 
   daysOfTheWeek = daysOfTheWeek;
-  timesOfDay = timesOfDay;
-  timesOfDayDict = timesOfDayDict;
 
   taskForm: FormGroup = new FormGroup({
     description: new FormControl('', TaskEditorComponent.descriptionValidator),
@@ -50,17 +53,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       sat: new FormControl(false),
       sun: new FormControl(false)
     }, TaskEditorComponent.daysOfTheWeekValidator),
-    timesOfDay: new FormGroup({
-      duringTheDay: new FormControl(false),
-      atDawn: new FormControl(false),
-      morning: new FormControl(false),
-      beforeNoon: new FormControl(false),
-      atNoon: new FormControl(false),
-      inTheAfternoon: new FormControl(false),
-      beforeEvening: new FormControl(false),
-      inTheEvening: new FormControl(false),
-      inTheNight: new FormControl(false)
-    }, TaskEditorComponent.timesOfDayValidator)
+    timesOfDay: new FormGroup({}, TaskEditorComponent.timesOfDayValidator)
   });
 
   deleteTaskSubscription: Subscription;
@@ -163,7 +156,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.taskForm.disable();
     this.savingInProgress = true;
 
-    const task: ITask = this.taskForm.getRawValue();
+    const task = this.taskForm.getRawValue();
+    console.log(task);
 
     // call onCall functions
     // get
@@ -174,8 +168,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     // transaction
     // set, update         => user/{userId}/task/{taskId}
     // set, update, delete => user/{userId}/today/{[mon, tue, wed, thu, fri, sat, sun]}/task/{taskId}
-
-    console.log(task, this.id);
 
     this.saveTaskSubscription = this.fns.httpsCallable('saveTask')({
       task,
@@ -205,8 +197,21 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   deepResetForm(): void {
+
     this.location.go('/user/task-editor');
     this.resetId();
+
+    this.restartForm();
+
+    if (this.taskSubscriber && !this.taskSubscriber.closed) {
+      this.taskSubscriber.unsubscribe();
+    }
+
+    this.taskForm.disable();
+
+  }
+
+  restartForm(): void {
     this.taskForm.reset({
       description: '',
       daysOfTheWeek: {
@@ -217,23 +222,13 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         fri: false,
         sat: false,
         sun: false
-      },
-      timesOfDay: {
-        duringTheDay: false,
-        atDawn: false,
-        morning: false,
-        beforeNoon: false,
-        atNoon: false,
-        inTheAfternoon: false,
-        beforeEvening: false,
-        inTheEvening: false,
-        inTheNight: false
       }
     });
-    if (this.taskSubscriber && !this.taskSubscriber.closed) {
-      this.taskSubscriber.unsubscribe();
-    }
-    this.taskForm.disable();
+
+    this.timesOfDay.forEach((day) => {
+      (this.taskForm.get('timesOfDay') as FormGroup).removeControl(day);
+    });
+
   }
 
   deleteTask(): void {
@@ -260,23 +255,49 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   setAll(task: ITask): void {
+
     this.initValues = task;
-    this.taskForm.setValue(task);
+    this.taskForm.get('description').setValue(task.description);
+    this.taskForm.get('daysOfTheWeek').setValue(task.daysOfTheWeek);
+
+    const currentTimesOfDays = this.timesOfDay;
+
+    Object.keys(task.timesOfDay).forEach((timeOfDay) => {
+      if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
+        this.taskForm.get('timesOfDay').get(timeOfDay).setValue(task.timesOfDay[timeOfDay]);
+      } else {
+        (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(task.timesOfDay[timeOfDay], Validators.required));
+      }
+      currentTimesOfDays.splice(currentTimesOfDays.indexOf(timeOfDay), 1);
+    });
+
+    currentTimesOfDays.forEach((timeOfDay) => {
+      (this.taskForm.get('timesOfDay') as FormGroup).removeControl(timeOfDay);
+    });
+
     this.taskForm.disable();
   }
 
-  onDuringTheDayChange(): void {
+  removeTimeOfDay(timeOfDay: string): void {
+    (this.taskForm.get('timesOfDay') as FormGroup).removeControl(timeOfDay);
+    this.getDeepEqual();
+  }
 
-    const duringTheDayChecked = this.taskForm.get('timesOfDay.duringTheDay').value;
+  addTimeOfDay(): void {
+    const timeOfDay = window.prompt('Add time of day').trim();
 
-    this.timesOfDay.forEach((timeOfDay) => {
-      if (duringTheDayChecked) {
-        this.taskForm.get('timesOfDay').get(timeOfDay).disable();
-      } else {
-        this.taskForm.get('timesOfDay').get(timeOfDay).enable();
-      }
-    });
+    if (!this.taskForm.get('timesOfDay').get(timeOfDay) && timeOfDay.length > 0 && timeOfDay.length > 10) {
+      (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(true, Validators.required));
+      this.getDeepEqual();
+    }
 
+  }
+
+  getDeepEqual(): boolean {
+    const res = this.deepEqual(this.initValues, this.taskForm.getRawValue());
+    this.formDeepEqual = res;
+    console.log(res, this.taskForm.disabled, !this.taskForm.dirty, this.taskForm.invalid);
+    return res;
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {
@@ -286,17 +307,15 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     return some ? null : { required: true };
   }
 
-  static timesOfDayValidator(g: FormGroup): { required: boolean } {
-    const toValid = [
-      'duringTheDay', 'atDawn', 'morning', 'beforeNoon', 'atNoon', 'inTheAfternoon', 'beforeEvening', 'inTheEvening', 'inTheNight'
-    ];
-    return toValid.some((checkbox) => g.get(checkbox).value) ? null : { required: true };
-  }
-
   static descriptionValidator(g: FormControl): { required: boolean } {
     const reg = /^\d+$/;
     return (typeof g.value === 'string') &&
     (!reg.test(g.value)) && (g.value.length > 3) && (g.value.length <= 100) ? null : { required: true };
+  }
+
+  static timesOfDayValidator(g: FormGroup): { required: boolean } {
+    console.log('timesOfDayValidator');
+    return Object.keys(g.value).length > 0 ? null : { required: true };
   }
 
 }

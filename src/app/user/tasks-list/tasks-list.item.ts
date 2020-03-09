@@ -1,4 +1,4 @@
-import {IDaysOfTheWeek, ITimesOfDay, timesOfDayDict} from '../models';
+import {IDaysOfTheWeek} from '../models';
 
 export class TasksListItem {
 
@@ -20,7 +20,10 @@ export class TasksListItem {
 
   }
 
-  setTimesOfDay(timesOfDay: ITimesOfDay): void  {
+  setTimesOfDay(timesOfDay: {
+    'During the day': boolean,
+    [name: string]: boolean
+  }): void  {
 
     const generated = TasksListItem.generateTimeOfDay(timesOfDay);
 
@@ -57,17 +60,15 @@ export class TasksListItem {
 
   }
 
-  static generateTimeOfDay(timesOfDay: ITimesOfDay): string {
+  static generateTimeOfDay(timesOfDay: {
+    [name: string]: boolean
+  }): string {
 
     const generated = [];
 
-    if (timesOfDay.duringTheDay) {
-      generated.push(timesOfDayDict.duringTheDay);
-    } else {
-      for (const timeOfDayKey in timesOfDay) {
-        if (timesOfDay.hasOwnProperty(timeOfDayKey) && timesOfDay[timeOfDayKey]) {
-          generated.push(timesOfDayDict[timeOfDayKey]);
-        }
+    for (const timeOfDayKey in timesOfDay) {
+      if (timesOfDay.hasOwnProperty(timeOfDayKey) && timesOfDay[timeOfDayKey]) {
+        generated.push(timeOfDayKey);
       }
     }
 

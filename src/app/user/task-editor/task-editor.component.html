@@ -39,42 +39,28 @@
     <small
       class="form-text text-center text-muted"
       [ngClass]="!taskForm.disabled && (!taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty) ? 'error' : ''"
-    >Click and select at least one time of day</small>
+    >Add own times of day</small>
+
     <div class="row">
       <div formGroupName="timesOfDay" class="col text-center">
-
-        <div class="form-check">
+        <div *ngFor="let timeOfDay of timesOfDay;" class="form-check">
           <input
-            formControlName="duringTheDay"
-            #duringTheDay
-            class="form-check-input d-none"
             type="checkbox"
-            id="timesOfDay-duringTheDay"
-            (change)="onDuringTheDayChange()"
+            class="form-check-input d-none"
+            [attr.id]="'timesOfDay'+timeOfDay"
+            [formControlName]="timeOfDay"
+            [value]="true"
+            (click)="removeTimeOfDay(timeOfDay)"
           >
           <label
             class="form-check-label btn"
-            for="timesOfDay-duringTheDay"
-            [ngClass]="duringTheDay.checked ? 'btn-outline-dark shadow' : 'border rounded'"
-          >During the day</label>
+            [ngClass]="'btn-outline-dark'"
+            [attr.for]="'timesOfDay'+timeOfDay">
+            {{timeOfDay}}</label>
         </div>
-
-        <div *ngFor="let timesOfDay of timesOfDay;" class="form-check">
-          <input
-            #inputRef
-            type="checkbox"
-            class="form-check-input d-none"
-            [attr.id]="'timesOfDay'+timesOfDay"
-            [formControlName]="timesOfDay"
-            [checked]="taskForm.get('timesOfDay').get(timesOfDay).value == true">
-          <label
-            class="form-check-label btn"
-            [ngClass]="[inputRef.checked ? 'btn-outline-dark' : 'border rounded', (inputRef.checked && !duringTheDay.checked) ? 'shadow' : '']"
-            [ngStyle]="duringTheDay.checked && {'pointer-events':'none', 'border-color': '#818a92'}"
-            [attr.for]="'timesOfDay'+timesOfDay">
-            {{timesOfDayDict[timesOfDay]}}</label>
-        </div>
-
+        <button class="btn btn-secondary" (click)="addTimeOfDay()">
+          <i class="fas fa-plus"></i>
+        </button>
       </div>
     </div>
     <hr>
@@ -83,7 +69,7 @@
         <button
           class="btn btn-primary border-primary shadow"
           type="submit"
-          [disabled]="taskForm.disabled || !taskForm.dirty || taskForm.invalid || deepEqual(initValues, taskForm.getRawValue())"
+          [disabled]="formDeepEqual || taskForm.disabled || taskForm.invalid || getDeepEqual()"
           (click)="saveTask()"
         >{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<i class="fas fa-check-circle"></i>
           <mat-progress-bar *ngIf="savingInProgress" mode="indeterminate"></mat-progress-bar>

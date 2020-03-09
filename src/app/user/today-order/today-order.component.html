@@ -1,0 +1,9 @@
+<div class="container">
+  <div class="row">
+    <div class="col" [ngClass]="{'disabled': disabled}">
+      <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
+        <div class="example-box" *ngFor="let item of order" cdkDrag>{{item}}</div>
+      </div>
+    </div>
+  </div>
+</div>
