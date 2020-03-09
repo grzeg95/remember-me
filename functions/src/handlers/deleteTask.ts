@@ -61,7 +61,39 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
             transaction.delete(docSnap.ref)
           );
           transaction.delete(taskDocSnap.ref);
-          return transaction;
+
+          const taskDocSnapData = taskDocSnap.data();
+          let currentTimesOfDayKeys: string[] = [];
+
+          if (taskDocSnapData && taskDocSnapData['timesOfDay']) {
+            currentTimesOfDayKeys = Object.keys(taskDocSnapData['timesOfDay']);
+          }
+
+          const userDocSnapData = userDocSnap.data();
+          let userTimesOfDay: {
+            [name: string]: {
+              position: number,
+              counter: number
+            }
+          } = {};
+
+          if (userDocSnapData && userDocSnapData['timesOfDay']) {
+            userTimesOfDay = userDocSnapData['timesOfDay'];
+          }
+
+          currentTimesOfDayKeys.forEach((i) => {
+            if (userTimesOfDay[i]) {
+              userTimesOfDay[i].counter--;
+              if (userTimesOfDay[i].counter <= 0) {
+                delete userTimesOfDay[i];
+              }
+            }
+          });
+
+          return transaction.update(userDocSnap.ref, {
+            timesOfDay: userTimesOfDay
+          });
+
         });
       });
 

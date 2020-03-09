@@ -11,18 +11,23 @@ export class NavSecondComponent {
   routes = [
     {
       icon: 'fas fa-align-left',
-      label: 'Today tasks',
+      label: 'Today',
       href: '/user/today'
     },
     {
       icon: 'fas fas fa-list-ul',
-      label: 'Tasks list',
+      label: 'Tasks',
       href: '/user/tasks-list'
     },
     {
       icon: 'fas fa-pencil-alt',
-      label: 'Task editor',
+      label: 'Editor',
       href: '/user/task-editor'
+    },
+    {
+      icon: 'fas fa-sort',
+      label: 'Order',
+      href: '/user/today-order'
     }
   ];
 

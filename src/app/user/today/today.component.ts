@@ -1,12 +1,12 @@
-
 import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {interval, Subscription} from 'rxjs';
 import {map, take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
-import {ITask, ITimesOfDay, ITodayItem, ITodayTimesOfDay} from '../models';
-import {daysOfTheWeekOrderUS, timesOfDayDict, timesOfDayOrder} from '../models';
+import {IUserAuth} from '../../auth/user.auth';
+import {ITask, ITodayItem} from '../models';
+import {daysOfTheWeekOrderUS} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -16,6 +16,14 @@ import {UserService} from '../user.service';
   host: { class: 'app' }
 })
 export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
+
+  get order(): string[] {
+    return this.userService.timesOfDayOrder;
+  }
+
+  set order(newOrder: string[]) {
+    this.userService.timesOfDayOrder = newOrder;
+  }
 
   get todayItemsFirstLoading(): boolean {
     return this.userService.todayItemsFirstLoading;
@@ -31,14 +39,13 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private userService: UserService,
               private afs: AngularFirestore) {}
 
-  timesOfDayDict = timesOfDayDict;
-  timesOfDayOrder = timesOfDayOrder;
   daysOfTheWeekOrderUS = daysOfTheWeekOrderUS;
   todayName: string;
   tasksCollection: AngularFirestoreCollection<ITask>;
-  todayItems: {timeOfDay: string, task: ITodayItem[]}[] = [];
+  todayItems: {timeOfDay: string, position: number, task: ITodayItem[], done: boolean}[] = [];
   tasksListSub: Subscription;
   setProgressSubs: Subscription = new Subscription();
+  userSubscription: Subscription = new Subscription();
   setProgressSubsActiveConnections = 0;
   changeDayInterval: Subscription = new Subscription();
   isEmpty = true;
@@ -52,14 +59,41 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.changeDay();
 
+    this.userSubscription = this.afs.doc(`users/${this.authService.userData.uid}`).valueChanges().subscribe((user: IUserAuth) => {
+      if (user.timesOfDay) {
+        this.prepareSort(user.timesOfDay);
+        this.generateView(this.userService.todayItems);
+      }
+    });
+
+  }
+
+  prepareSort(timesOfDay: { [name: string]: { position: number; counter: number; }}): void {
+
+    const orderTMP: {
+      timeOfDay: string,
+      position: number;
+    }[] = [];
+
+    Object.keys(timesOfDay).forEach((timeOfDay) => {
+      orderTMP.push({
+        timeOfDay,
+        position: timesOfDay[timeOfDay].position
+      });
+    });
+
+    this.order = orderTMP.sort((a, b) => {
+      return a.position - b.position;
+    }).map((a) => a.timeOfDay);
+
   }
 
   trackByTodayItems(index: number, item: {timeOfDay: string, task: ITodayItem[]}): string {
     return index + item.timeOfDay;
   }
 
-  trackByTodayItem(index: number, item: {key: any, value: ITodayItem}): string {
-    return index + item.value.type + item.value.done;
+  trackByTodayItem(index: number, item: ITodayItem): string {
+    return index + item.type + item.done;
   }
 
   observeTasksList(): void {
@@ -71,37 +105,24 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.tasksListSub = this.tasksCollection.snapshotChanges().pipe(
       map((changes) => {
 
-        const todayTasksByTimeOfDay: ITodayTimesOfDay = {};
+        const todayTasksByTimeOfDay: any = {};
 
         changes.forEach((change) => {
 
           const task: ITask = change.payload.doc.data() as ITask;
           const id: string = change.payload.doc.id;
           const type: string = change.type;
-
-          if (typeof task.timesOfDay.duringTheDay === 'boolean') {
-            if (!todayTasksByTimeOfDay.duringTheDay) {
-              todayTasksByTimeOfDay.duringTheDay = [];
-            }
-            todayTasksByTimeOfDay.duringTheDay.push({
-              description: task.description,
-              done: task.timesOfDay.duringTheDay,
-              type,
-              id
-            });
-          } else {
-            for (const timeOfDay in task.timesOfDay as ITimesOfDay) {
-              if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
-                if (!todayTasksByTimeOfDay[timeOfDay]) {
-                  todayTasksByTimeOfDay[timeOfDay] = [];
-                }
-                todayTasksByTimeOfDay[timeOfDay].push({
-                  id,
-                  description: task.description,
-                  done: task.timesOfDay[timeOfDay],
-                  type
-                });
+          for (const timeOfDay in task.timesOfDay) {
+            if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
+              if (!todayTasksByTimeOfDay[timeOfDay]) {
+                todayTasksByTimeOfDay[timeOfDay] = [];
               }
+              todayTasksByTimeOfDay[timeOfDay].push({
+                id,
+                description: task.description,
+                done: task.timesOfDay[timeOfDay],
+                type
+              });
             }
           }
 
@@ -110,27 +131,27 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
         return todayTasksByTimeOfDay;
 
       })).subscribe((todayTasksByTimeOfDay) => {
-        console.log(todayTasksByTimeOfDay);
         this.userService.todayItems = todayTasksByTimeOfDay;
         this.generateView(this.userService.todayItems);
     });
 
   }
 
-  generateView(todayTasksByTimeOfDay: ITodayTimesOfDay): void {
+  generateView(todayTasksByTimeOfDay: any): void {
 
-    const todayItemsTMP: {timeOfDay: string, task: ITodayItem[]}[] = [];
+    const todayItemsTMP: {timeOfDay: string, task: ITodayItem[], done: boolean, position: number}[] = [];
 
-    this.timesOfDayOrder.forEach((next) => {
+    this.order.forEach((next) => {
       if (todayTasksByTimeOfDay[next]) {
 
         const day = {
           timeOfDay: next,
-          task: todayTasksByTimeOfDay[next]
+          task: todayTasksByTimeOfDay[next],
+          done: todayTasksByTimeOfDay[next].some((task) => !task.done),
+          position: 0
         };
 
         todayItemsTMP.push(day);
-
       }
     });
 
@@ -216,10 +237,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.changeDayInterval.unsubscribe();
     this.tasksListSub.unsubscribe();
     this.setProgressSubs.unsubscribe();
-  }
-
-  todayItemDone(todayItemElement: ITodayItem[]): boolean {
-    return !todayItemElement.some((item) => !item.done);
+    this.userSubscription.unsubscribe();
   }
 
   private static toNextDayCalc(): number {
