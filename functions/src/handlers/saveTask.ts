@@ -93,7 +93,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * @param oldTaskDocSnap FirebaseFirestore.DocumentSnapshot | null
  * @param user: FirebaseFirestore.DocumentReference
  * @param task: ITask
- * @return Promise<T>
+ * @return Promise<Transaction>
  **/
 const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Promise<Transaction> => {
   // set or update task for user/{userId}/task/{taskId}
@@ -142,6 +142,7 @@ const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot
 export const handler = (data: {
   task: {
     timesOfDay: {
+      'During the day': any
       [key: string]: any
     };
     daysOfTheWeek: {
@@ -154,7 +155,7 @@ export const handler = (data: {
       sun: any;
     }
     description: any;
-  }, taskId: any}, context: functions.https.CallableContext) =>
+  }, taskId: any}, context: functions.https.CallableContext): Promise<any> =>
 {
 
   const auth: {
@@ -178,7 +179,7 @@ export const handler = (data: {
     timesOfDayKeys.length === 0 || // data.timesOfDayKeys is based on at least one object ...
     timesOfDayKeys.some((e) => typeof data.task.timesOfDay[e] !== 'boolean') || // that contain boolean property ...
     !timesOfDayKeys.some((e) => data.task.timesOfDay[e]) || // ... that one is true and ...
-    timesOfDayKeys.some((e) => e.length < 1 || e.length > 20) // ... timesOfDay length must be between 1 add 20
+    timesOfDayKeys.some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
   ) {
     throw new functions.https.HttpsError(
       'invalid-argument',
@@ -187,13 +188,11 @@ export const handler = (data: {
     );
   }
 
-  console.log(2);
-
   let created = false;
   let taskId = data.taskId;
 
   return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
+    transaction.get(db.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -204,17 +203,88 @@ export const handler = (data: {
         );
       }
 
-      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then((taskSnap) => {
+      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnap) => {
 
-        if (!taskSnap.exists) {
+        const userDocSnapData = userDocSnap.data();
+        let userTimesOfDay: {
+          [name: string]: {
+            position: number,
+            counter: number
+          }
+        } = {};
+
+        if (userDocSnapData && userDocSnapData['timesOfDay']) {
+          userTimesOfDay = userDocSnapData['timesOfDay'];
+        }
+
+        const taskDocSnapData = taskDocSnap.data();
+        let currentTimesOfDay: {
+          [name: string]: boolean
+        } = {};
+
+        if (taskDocSnapData && taskDocSnapData['timesOfDay']) {
+          currentTimesOfDay = taskDocSnapData['timesOfDay'];
+        }
+
+        const currentTimesOfDayKeys: string[] = Object.keys(currentTimesOfDay);
+
+        const toRemove: string[] = [];
+        currentTimesOfDayKeys.forEach((e) => {
+          if (timesOfDayKeys.indexOf(e) === -1) {
+            toRemove.push(e);
+          }
+        });
+        toRemove.forEach(i => {
+          if (userTimesOfDay[i]) {
+            userTimesOfDay[i].counter--;
+            if (userTimesOfDay[i].counter <= 0) {
+              delete userTimesOfDay[i];
+            }
+          }
+        });
+
+        const toAdd: string[] = [];
+        timesOfDayKeys.forEach((e) => {
+          if (currentTimesOfDayKeys.indexOf(e) === -1) {
+            toAdd.push(e);
+          }
+        });
+
+        toAdd.forEach(i => {
+          if (userTimesOfDay[i]) {
+            userTimesOfDay[i].counter++;
+          } else {
+            userTimesOfDay[i] = {
+              position: 0,
+              counter: 1
+            }
+          }
+        });
+
+        /*
+        * WAIT FOR MESSAGE
+        * */
+
+        let message;
+
+        if (!taskDocSnap.exists) {
           created = true;
-          return transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => {
+          message = transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => {
             taskId = newTaskSnap.id;
-            return proceedEveryDay(transaction, newTaskSnap, taskSnap, userDocSnap.ref, data.task);
+            return proceedEveryDay(transaction, newTaskSnap, taskDocSnap, userDocSnap.ref, data.task);
           });
         } else {
-          return proceedEveryDay(transaction, taskSnap, null, userDocSnap.ref, data.task);
+          message = proceedEveryDay(transaction, taskDocSnap, null, userDocSnap.ref, data.task);
         }
+
+        await message;
+        /*
+        * WAIT FOR MESSAGE DONE
+        * */
+
+        transaction.update(userDocSnap.ref, {
+          timesOfDay: userTimesOfDay
+        });
 
       });
 
