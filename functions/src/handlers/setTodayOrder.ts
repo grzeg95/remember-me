@@ -12,7 +12,9 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
   if (
     !data ||
     !Array.isArray(data) ||
-    data.some((timesOfDay) => typeof timesOfDay !== 'string' || timesOfDay.length > 20)
+    data.some((timeOfDay) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0) ||
+    (new Set(data).size !== data.length) ||
+    data.length > 20
   ) {
     throw new functions.https.HttpsError(
       'invalid-argument',
