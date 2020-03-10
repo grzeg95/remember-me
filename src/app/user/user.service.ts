@@ -7,6 +7,7 @@ export class UserService {
 
   todayItemsFirstLoading = true;
   taskListItemsFirstLoading = true;
+  todayOrderFirstLoading = true;
 
   todayItems: {timeOfDay: string, position: number, task: ITodayItem[], done: boolean}[] = [];
   taskListItems: TasksListItem[] = [];
@@ -18,6 +19,7 @@ export class UserService {
     this.timesOfDayOrder = [];
     this.todayItemsFirstLoading = true;
     this.taskListItemsFirstLoading = true;
+    this.todayOrderFirstLoading = true;
   }
 
 }

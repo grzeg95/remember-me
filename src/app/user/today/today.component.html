@@ -1,15 +1,19 @@
 <div class="container">
   <div class="col">
 
-    <span *ngIf="todayItemsFirstLoading">Loading...</span>
+    <div *ngIf="todayItemsFirstLoading" class="row message">
+      <div class="col">
+        <span>Loading...</span>
+      </div>
+    </div>
 
-    <div *ngIf="isEmpty && !todayItemsFirstLoading" class="row">
+    <div *ngIf="isEmpty && !todayItemsFirstLoading" class="row message">
       <div class="col">
         <span>There is no one</span>
       </div>
       <div class="col">
         <div class="add-task">
-          <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new&nbsp;<i class="fas fa-plus-circle"></i></button>
+          <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new</button>
         </div>
       </div>
     </div>
