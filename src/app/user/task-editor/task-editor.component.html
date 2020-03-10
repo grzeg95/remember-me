@@ -69,7 +69,7 @@
         <button
           class="btn btn-primary border-primary shadow"
           type="submit"
-          [disabled]="formDeepEqual || taskForm.disabled || taskForm.invalid || getDeepEqual()"
+          [disabled]="taskForm.disabled || taskForm.invalid || getDeepEqual()"
           (click)="saveTask()"
         >{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<i class="fas fa-check-circle"></i>
           <mat-progress-bar *ngIf="savingInProgress" mode="indeterminate"></mat-progress-bar>

@@ -22,8 +22,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     return Object.keys(this.taskForm.get('timesOfDay').value);
   }
 
-  formDeepEqual = false;
-
   constructor(private authService: AuthService,
               private router: Router,
               private activeRoute: ActivatedRoute,
@@ -294,10 +292,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   getDeepEqual(): boolean {
-    const res = this.deepEqual(this.initValues, this.taskForm.getRawValue());
-    this.formDeepEqual = res;
-    console.log(res, this.taskForm.disabled, !this.taskForm.dirty, this.taskForm.invalid);
-    return res;
+    return this.deepEqual(this.initValues, this.taskForm.getRawValue());
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {
@@ -314,7 +309,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   static timesOfDayValidator(g: FormGroup): { required: boolean } {
-    console.log('timesOfDayValidator');
     return Object.keys(g.value).length > 0 ? null : { required: true };
   }
 
