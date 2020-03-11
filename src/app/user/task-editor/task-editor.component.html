@@ -5,7 +5,7 @@
         <div class="form-group">
           <small
             class="form-text text-muted"
-            [ngClass]="!taskForm.disabled && !taskForm.get('description').valid ? 'error' : ''"
+            [ngClass]="!taskForm.disabled && !taskForm.get('description').valid && taskForm.get('description').dirty ? 'error' : ''"
           >Enter description from 4 to 20 characters</small>
           <input formControlName="description" class="border rounded" type="text" name="description" value="" />
         </div>
@@ -13,7 +13,7 @@
     </div>
     <small
       class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && !taskForm.get('daysOfTheWeek').valid ? 'error' : ''"
+      [ngClass]="!taskForm.disabled && !taskForm.get('daysOfTheWeek').valid && taskForm.get('daysOfTheWeek').dirty ? 'error' : ''"
     >Click and select at least one day</small>
     <div class="row">
       <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center">
@@ -38,7 +38,7 @@
     </div>
     <small
       class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid ? 'error' : ''"
+      [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty ? 'error' : ''"
     >Add own times of day up to 20 for all tasks</small>
 
     <div class="row">
