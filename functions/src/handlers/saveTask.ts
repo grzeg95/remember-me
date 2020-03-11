@@ -256,6 +256,14 @@ export const handler = (data: {
           }
         });
 
+        if (Object.keys(userTimesOfDay).length > 20) {
+          throw new functions.https.HttpsError(
+            'invalid-argument',
+            'Bad Request',
+            `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(userTimesOfDay).length}`
+          );
+        }
+
         /*
         * WAIT FOR MESSAGE
         * */

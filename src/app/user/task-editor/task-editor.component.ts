@@ -308,7 +308,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   static timesOfDayValidator(g: FormGroup): { required: boolean } {
-    return Object.keys(g.value).length > 0 ? null : { required: true };
+    return Object.keys(g.value).length > 0 && Object.keys(g.value).length <= 20 ? null : { required: true };
   }
 
 }

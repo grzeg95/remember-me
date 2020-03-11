@@ -38,8 +38,8 @@
     </div>
     <small
       class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && (!taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty) ? 'error' : ''"
-    >Add own times of day</small>
+      [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid ? 'error' : ''"
+    >Add own times of day up to 20 for all tasks</small>
 
     <div class="row">
       <div formGroupName="timesOfDay" class="col text-center">
