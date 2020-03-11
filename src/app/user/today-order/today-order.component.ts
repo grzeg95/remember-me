@@ -40,29 +40,11 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
               private afs: AngularFirestore,
               private userService: UserService) {}
 
-  drop(event: CdkDragDrop<string[]>): void {
-
-    if (event.previousIndex === event.currentIndex) {
-      return;
-    }
-
-    moveItemInArray(this.order, event.previousIndex, event.currentIndex);
-
-    this.disabled = true;
-    this.fns.httpsCallable('setTodayOrder')(this.order).subscribe(() => {
-      console.log('OK');
-      this.disabled = false;
-    }, (error) => {
-      console.log(error);
-      this.disabled = false;
-    });
-
-  }
-
   ngOnInit(): void {
 
     if (this.order.length !== 0) {
       this.isEmpty = false;
+      this.todayOrderFirstLoading = false;
     }
 
     this.userSubscription = this.afs.doc(`users/${this.authService.userData.uid}`).valueChanges().subscribe((user: IUserAuth) => {
@@ -93,6 +75,25 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.userSubscription.unsubscribe();
+  }
+
+  drop(event: CdkDragDrop<string[]>): void {
+
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    moveItemInArray(this.order, event.previousIndex, event.currentIndex);
+
+    this.disabled = true;
+    this.fns.httpsCallable('setTodayOrder')(this.order).subscribe(() => {
+      console.log('OK');
+      this.disabled = false;
+    }, (error) => {
+      console.log(error);
+      this.disabled = false;
+    });
+
   }
 
 }
