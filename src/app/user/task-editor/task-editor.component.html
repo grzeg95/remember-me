@@ -13,7 +13,7 @@
     </div>
     <small
       class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && (!taskForm.get('daysOfTheWeek').valid && taskForm.get('daysOfTheWeek').dirty) ? 'error' : ''"
+      [ngClass]="!taskForm.disabled && !taskForm.get('daysOfTheWeek').valid ? 'error' : ''"
     >Click and select at least one day</small>
     <div class="row">
       <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center">
