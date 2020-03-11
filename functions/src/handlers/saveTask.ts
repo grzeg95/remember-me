@@ -28,13 +28,9 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
     const timesOfDay: {
       [key: string]: boolean;
     } = {};
-    if (task.timesOfDay.duringTheDay) {
-      timesOfDay.duringTheDay = false;
-    } else {
-      for (const time in task.timesOfDay) {
-        if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
-          timesOfDay[time] = false;
-        }
+    for (const time in task.timesOfDay) {
+      if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
+        timesOfDay[time] = false;
       }
     }
     return transaction.set(taskDocSnap.ref, {
@@ -142,7 +138,6 @@ const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot
 export const handler = (data: {
   task: {
     timesOfDay: {
-      'During the day': any
       [key: string]: any
     };
     daysOfTheWeek: {
