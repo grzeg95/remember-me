@@ -5,8 +5,8 @@
         <div class="form-group">
           <small
             class="form-text text-muted"
-            [ngClass]="!taskForm.disabled && (!taskForm.get('description').valid && taskForm.get('description').dirty) ? 'error' : ''"
-          >Enter description from 4 to 100 and not only number</small>
+            [ngClass]="!taskForm.disabled && !taskForm.get('description').valid ? 'error' : ''"
+          >Enter description from 4 to 20 characters</small>
           <input formControlName="description" class="border rounded" type="text" name="description" value="" />
         </div>
       </div>
