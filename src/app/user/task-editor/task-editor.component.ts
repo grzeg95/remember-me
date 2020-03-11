@@ -282,7 +282,15 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   addTimeOfDay(): void {
-    const timeOfDay = window.prompt('Add time of day').trim();
+    let timeOfDay = window.prompt('Add time of day');
+
+    this.taskForm.get('timesOfDay').markAsDirty();
+
+    if (!timeOfDay) {
+      return;
+    }
+
+    timeOfDay = timeOfDay.trim();
 
     if (!this.taskForm.get('timesOfDay').get(timeOfDay) && timeOfDay.length !== 0 && timeOfDay.length <= 20) {
       (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(true, Validators.required));
