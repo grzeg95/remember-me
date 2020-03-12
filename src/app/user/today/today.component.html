@@ -22,7 +22,7 @@
 
       <div class="row">
         <div class="col">
-          <span><i [hidden]="todayItem.done" class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
+          <span><i [hidden]="!todayItem.done" class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
         </div>
       </div>
 

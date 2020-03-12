@@ -147,7 +147,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
         const day = {
           timeOfDay: next,
           task: todayTasksByTimeOfDay[next],
-          done: todayTasksByTimeOfDay[next].some((task) => !task.done),
+          done: !todayTasksByTimeOfDay[next].some((task) => !task.done),
           position: 0
         };
 
@@ -207,6 +207,12 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       checkbox.checked = toUpdateOneTimeOfDay.checked;
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
+
+      const todayItem = this.todayItems.find((item) => item.timeOfDay === timeOfDay);
+      const todayItemTask = todayItem.task.find((item) => item.id === taskId);
+
+      todayItemTask.done = toUpdateOneTimeOfDay.checked;
+      todayItem.done = !todayItem.task.some((task) => !task.done);
 
       if (this.setProgressSubsActiveConnections === 0) {
         console.log('all setProgressSubsActiveConnections done');
