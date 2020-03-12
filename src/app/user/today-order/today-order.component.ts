@@ -49,28 +49,10 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
     this.userSubscription = this.afs.doc(`users/${this.authService.userData.uid}`).valueChanges().subscribe((user: IUserAuth) => {
       if (user.timesOfDay) {
-
-        const orderTMP: {
-          timeOfDay: string,
-          position: number;
-        }[] = [];
-
-        Object.keys(user.timesOfDay).forEach((timeOfDay) => {
-          orderTMP.push({
-            timeOfDay,
-            position: user.timesOfDay[timeOfDay].position
-          });
-        });
-
-        this.order = orderTMP.sort((a, b) => {
-          return a.position - b.position;
-        }).map((a) => a.timeOfDay);
-
-        this.todayOrderFirstLoading = false;
-        this.isEmpty = this.order.length === 0;
-
+        this.userService.prepareSort(user.timesOfDay);
       }
     });
+
   }
 
   ngOnDestroy(): void {

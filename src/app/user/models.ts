@@ -19,7 +19,6 @@ export interface ITask {
 export interface ITodayItem {
   description: string;
   done: boolean;
-  type: string;
   id: string;
 }
 
