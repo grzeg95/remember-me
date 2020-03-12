@@ -21,7 +21,6 @@ export class TasksListItem {
   }
 
   setTimesOfDay(timesOfDay: {
-    'During the day': boolean,
     [name: string]: boolean
   }): void  {
 

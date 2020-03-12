@@ -12,7 +12,6 @@ export interface ITask {
   description: string;
   daysOfTheWeek: IDaysOfTheWeek;
   timesOfDay: {
-    'During the day': boolean,
     [name: string]: boolean
   };
 }
