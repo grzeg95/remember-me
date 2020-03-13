@@ -3,9 +3,8 @@ import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firest
 import {Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
-import {ITask} from '../models';
+import {ITask, ITasksListItem} from '../models';
 import {UserService} from '../user.service';
-import {TasksListItem} from './tasks-list.item';
 
 @Component({
   selector: 'app-tasks-list',
@@ -15,14 +14,13 @@ import {TasksListItem} from './tasks-list.item';
 })
 export class TasksListComponent implements OnInit, OnDestroy {
 
-  get taskListItems(): TasksListItem[] {
+  get taskListItems(): ITasksListItem[] {
     return this.userService.taskListItems.sort(this.descriptionOrder);
   }
 
-  tasksCollection: AngularFirestoreCollection<ITask>;
-  tasksSub: Subscription;
-
-  isEmpty = true;
+  set taskListItems(newTaskListItems: ITasksListItem[]) {
+    this.userService.taskListItems = newTaskListItems;
+  }
 
   get taskListItemsFirstLoading(): boolean {
     return this.userService.taskListItemsFirstLoading;
@@ -31,6 +29,10 @@ export class TasksListComponent implements OnInit, OnDestroy {
   set taskListItemsFirstLoading(value: boolean) {
     this.userService.taskListItemsFirstLoading = value;
   }
+
+  tasksCollection: AngularFirestoreCollection<ITask>;
+  tasksSub: Subscription;
+  isEmpty = true;
 
   constructor(private authService: AuthService,
               public userService: UserService,
@@ -46,17 +48,34 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
     this.tasksSub = this.tasksCollection.snapshotChanges().pipe(map((changes) => {
 
-      const tasksItemsReceived: TasksListItem[] = [];
+      const tasksItemsReceived: ITasksListItem[] = [];
 
       changes.forEach((change) => {
 
         const task = change.payload.doc.data() as ITask;
-        const taskItem = new TasksListItem();
+        const id = change.payload.doc.id;
+        const timesOfDay = Object.keys(task.timesOfDay).join(', ');
+        const description = task.description;
+        let daysOfTheWeek: any = [];
 
-        taskItem.description = task.description;
-        taskItem.setDaysOfTheWeek(task.daysOfTheWeek);
-        taskItem.setTimesOfDay(task.timesOfDay);
-        taskItem.id = change.payload.doc.id;
+        ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach((dayOfTheWeek) => {
+          if (typeof task.daysOfTheWeek[dayOfTheWeek] === 'boolean' && task.daysOfTheWeek[dayOfTheWeek]) {
+            daysOfTheWeek.push(dayOfTheWeek);
+          }
+        });
+
+        if (daysOfTheWeek.length === 7) {
+          daysOfTheWeek = 'Every day';
+        } else {
+          daysOfTheWeek = daysOfTheWeek.join(', ');
+        }
+
+        const taskItem: ITasksListItem = {
+          description,
+          timesOfDay,
+          daysOfTheWeek,
+          id
+        };
 
         tasksItemsReceived.push(taskItem);
       });
@@ -64,7 +83,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
       return tasksItemsReceived;
 
     })).subscribe((tasksItemsReceived) => {
-      this.userService.taskListItems = tasksItemsReceived;
+      this.taskListItems = tasksItemsReceived;
       this.isEmpty = tasksItemsReceived.length === 0;
       this.taskListItemsFirstLoading = false;
     });
@@ -79,7 +98,6 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
   }
 
-  descriptionOrder = (a: TasksListItem, b: TasksListItem):
-    number => a.description.localeCompare(b.description);
+  descriptionOrder = (a: ITasksListItem, b: ITasksListItem): number => a.description.localeCompare(b.description);
 
 }

@@ -23,11 +23,11 @@
         <div class="table-responsive">
           <table class="table table-hover">
             <tbody id="tasksTable">
-              <tr *ngFor="let item of taskListItems">
-                <td>{{item.description}}</td>
-                <td>{{item.daysOfTheWeek}}</td>
-                <td>{{item.timesOfDay}}</td>
-                <td><button class="btn" type="button" [routerLink]="['/user/task-editor/'+ item.id]">
+              <tr *ngFor="let task of taskListItems">
+                <td>{{ task.description }}</td>
+                <td>{{ task.daysOfTheWeek }}</td>
+                <td>{{ task.timesOfDay }}</td>
+                <td><button class="btn" type="button" [routerLink]="['/user/task-editor/'+ task.id]">
                   <i class="far fa-edit"></i></button>
                 </td>
               </tr>

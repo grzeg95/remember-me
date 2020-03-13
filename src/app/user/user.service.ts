@@ -1,6 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ITodayItem} from './models';
-import {TasksListItem} from './tasks-list/tasks-list.item';
+import {ITasksListItem, ITodayItem} from './models';
 
 @Injectable()
 export class UserService {
@@ -10,7 +9,7 @@ export class UserService {
   todayOrderFirstLoading = true;
 
   todayItems: {[timeOfDay: string]: ITodayItem[]} = {};
-  taskListItems: TasksListItem[] = [];
+  taskListItems: ITasksListItem[] = [];
   timesOfDayOrder: string[] = [];
 
   clearCache(): void {
