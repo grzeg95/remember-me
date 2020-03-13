@@ -6,7 +6,7 @@ export const environment = {
   production: false,
   firebase: {
     apiKey: 'AIzaSyAd1jkuwewCK3iRcDBPep7kh1HBD9L-aqg',
-    authDomain: 'remember-me-3.firebaseapp.com',
+    authDomain: 'rem.grzeg.pl',
     databaseURL: 'https://remember-me-3.firebaseio.com',
     projectId: 'remember-me-3',
     storageBucket: 'remember-me-3.appspot.com',

@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   firebase: {
     apiKey: 'AIzaSyAd1jkuwewCK3iRcDBPep7kh1HBD9L-aqg',
-    authDomain: 'remember-me-3.firebaseapp.com',
+    authDomain: 'rem.grzeg.pl',
     databaseURL: 'https://remember-me-3.firebaseio.com',
     projectId: 'remember-me-3',
     storageBucket: 'remember-me-3.appspot.com',
@@ -10,6 +10,6 @@ export const environment = {
     appId: '1:824512670781:web:1deb2cdcdb73bee8'
   },
   functions: {
-    port: 5000
+    port: 0
   }
 };
