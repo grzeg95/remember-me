@@ -3,12 +3,14 @@ import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {MatDialog} from '@angular/material/dialog';
 import {ActivatedRoute, Router} from '@angular/router';
 import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../auth/auth.service';
 import {ITask} from '../models';
 import {daysOfTheWeek} from '../models';
+import {DialogComponent} from './dialog/dialog.component';
 
 @Component({
   selector: 'app-task-editor',
@@ -28,7 +30,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               private location: Location,
               private cdRef: ChangeDetectorRef,
               private fns: AngularFireFunctions,
-              private afs: AngularFirestore) {
+              private afs: AngularFirestore,
+              public dialog: MatDialog) {
     this.taskForm.enable();
   }
 
@@ -77,6 +80,35 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     if (this.saveTaskSubscription && !this.saveTaskSubscription.closed) {
       this.saveTaskSubscription.unsubscribe();
     }
+
+  }
+
+  openDialog(): void {
+
+    const dialogRef = this.dialog.open(DialogComponent, {
+      width: '250px',
+      data: {timeOfDay: ''}
+    });
+
+    dialogRef.afterClosed().subscribe((timeOfDay) => {
+
+      console.log('The dialog was closed');
+      this.taskForm.get('timesOfDay').markAsDirty();
+
+      if (!timeOfDay) {
+        return;
+      }
+
+      timeOfDay = timeOfDay.trim();
+
+      console.log(timeOfDay);
+
+      if (!this.taskForm.get('timesOfDay').get(timeOfDay) && timeOfDay.length !== 0 && timeOfDay.length <= 20) {
+        (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(true, Validators.required));
+        this.getDeepEqual();
+      }
+
+    });
 
   }
 
@@ -279,24 +311,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   removeTimeOfDay(timeOfDay: string): void {
     (this.taskForm.get('timesOfDay') as FormGroup).removeControl(timeOfDay);
     this.getDeepEqual();
-  }
-
-  addTimeOfDay(): void {
-    let timeOfDay = window.prompt('Add time of day');
-
-    this.taskForm.get('timesOfDay').markAsDirty();
-
-    if (!timeOfDay) {
-      return;
-    }
-
-    timeOfDay = timeOfDay.trim();
-
-    if (!this.taskForm.get('timesOfDay').get(timeOfDay) && timeOfDay.length !== 0 && timeOfDay.length <= 20) {
-      (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(true, Validators.required));
-      this.getDeepEqual();
-    }
-
   }
 
   getDeepEqual(): boolean {

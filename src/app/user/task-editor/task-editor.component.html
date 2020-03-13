@@ -2,13 +2,13 @@
   <div class="col" [formGroup]="taskForm">
     <div class="row">
       <div class="col">
-        <div class="form-group">
-          <small
-            class="form-text text-muted"
-            [ngClass]="!taskForm.disabled && !taskForm.get('description').valid && taskForm.get('description').dirty ? 'error' : ''"
-          >Enter description from 4 to 20 characters</small>
-          <input formControlName="description" class="border rounded" type="text" name="description" value="" />
-        </div>
+        <mat-form-field class="form-group">
+          <mat-label>Description</mat-label>
+          <input matInput formControlName="description">
+          <mat-error *ngIf="!taskForm.disabled && !taskForm.get('description').valid && (taskForm.get('description').dirty || taskForm.get('description').touched)">
+            Enter description from 4 to 20 characters
+          </mat-error>
+        </mat-form-field>
       </div>
     </div>
     <small
@@ -40,6 +40,7 @@
       class="form-text text-center text-muted"
       [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty ? 'error' : ''"
     >Add own times of day up to 20 for all tasks</small>
+    <small class="form-text text-center text-muted">Click one to remove</small>
 
     <div class="row">
       <div formGroupName="timesOfDay" class="col text-center">
@@ -58,7 +59,7 @@
             [attr.for]="'timesOfDay'+timeOfDay">
             {{timeOfDay}}</label>
         </div>
-        <button class="btn btn-secondary" (click)="addTimeOfDay()">
+        <button [disabled]="taskForm.disabled" class="btn btn-secondary" (click)="openDialog()">
           <i class="fas fa-plus"></i>
         </button>
       </div>

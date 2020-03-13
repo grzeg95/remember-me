@@ -1,5 +1,11 @@
+import {OverlayModule} from '@angular/cdk/overlay';
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
+import {FormsModule} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
@@ -10,12 +16,14 @@ import {CoreModule} from './core.module';
 import {GuestComponent} from './guest/guest.component';
 import {NavComponent} from './nav/nav.component';
 import {SharedModule} from './shared.module';
+import {DialogComponent} from './user/task-editor/dialog/dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavComponent,
-    GuestComponent
+    GuestComponent,
+    DialogComponent
   ],
   imports: [
     BrowserModule,
@@ -24,7 +32,13 @@ import {SharedModule} from './shared.module';
     SharedModule,
     CoreModule,
     HttpClientModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    OverlayModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule,
+    MatButtonModule
   ],
   bootstrap: [AppComponent]
 })
