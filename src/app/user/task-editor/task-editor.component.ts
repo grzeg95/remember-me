@@ -97,9 +97,14 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     });
 
     // apply if dialogRef.open forgot to add
-    html.style.top = -scrollY + 'px';
-    html.style.left = -scrollX + 'px';
-    html.classList.add('cdk-global-scrollblock');
+    if (scrollY > 0) {
+      html.style.top = -scrollY + 'px';
+      html.classList.add('cdk-global-scrollblock');
+    }
+    if (scrollX > 0) {
+      html.style.left = -scrollX + 'px';
+      html.classList.add('cdk-global-scrollblock');
+    }
 
     dialogRef.afterClosed().subscribe((timeOfDay) => {
 
