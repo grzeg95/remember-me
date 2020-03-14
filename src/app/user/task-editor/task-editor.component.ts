@@ -1,5 +1,5 @@
-import {Location} from '@angular/common';
-import {ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import {DOCUMENT, Location} from '@angular/common';
+import {ChangeDetectorRef, Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
@@ -31,7 +31,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               private cdRef: ChangeDetectorRef,
               private fns: AngularFireFunctions,
               private afs: AngularFirestore,
-              public dialog: MatDialog) {
+              public dialog: MatDialog,
+              @Inject(DOCUMENT) private document: Document) {
     this.taskForm.enable();
   }
 
@@ -85,12 +86,30 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   openDialog(): void {
 
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+    const html = window.document.documentElement;
+
+    // this changes scrollY, scrollX, html
     const dialogRef = this.dialog.open(DialogComponent, {
       width: '250px',
       data: {timeOfDay: ''}
     });
 
+    // apply if dialogRef.open forgot to add
+    html.style.top = -scrollY + 'px';
+    html.style.left = -scrollX + 'px';
+    html.classList.add('cdk-global-scrollblock');
+
+    // this.document.body.parentElement.style.left = 'px'
+
     dialogRef.afterClosed().subscribe((timeOfDay) => {
+
+      // apply if dialogRef.open forgot to add
+      html.removeAttribute('style');
+      html.classList.remove('cdk-global-scrollblock');
+      html.scrollTop = scrollY;
+      html.scrollLeft = scrollX;
 
       console.log('The dialog was closed');
       this.taskForm.get('timesOfDay').markAsDirty();
