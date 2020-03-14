@@ -88,7 +88,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
     const scrollY = window.scrollY;
     const scrollX = window.scrollX;
-    const html = window.document.documentElement;
+    const html = this.document.documentElement;
 
     // this changes scrollY, scrollX, html
     const dialogRef = this.dialog.open(DialogComponent, {
@@ -100,8 +100,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     html.style.top = -scrollY + 'px';
     html.style.left = -scrollX + 'px';
     html.classList.add('cdk-global-scrollblock');
-
-    // this.document.body.parentElement.style.left = 'px'
 
     dialogRef.afterClosed().subscribe((timeOfDay) => {
 
