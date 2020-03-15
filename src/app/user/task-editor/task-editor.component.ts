@@ -4,6 +4,7 @@ import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
@@ -32,7 +33,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               private fns: AngularFireFunctions,
               private afs: AngularFirestore,
               public dialog: MatDialog,
-              @Inject(DOCUMENT) private document: Document) {
+              @Inject(DOCUMENT) private document: Document,
+              private snackBar: MatSnackBar) {
     this.taskForm.enable();
   }
 
@@ -117,16 +119,14 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       console.log('The dialog was closed');
       this.taskForm.get('timesOfDay').markAsDirty();
 
-      if (!timeOfDay) {
-        return;
-      }
-
-      timeOfDay = timeOfDay.trim();
-
-      console.log(timeOfDay);
-
-      if (!this.taskForm.get('timesOfDay').get(timeOfDay) && timeOfDay.length !== 0 && timeOfDay.length <= 20) {
-        (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(true, Validators.required));
+      if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
+        this.snackBar.open('Enter new one');
+        console.log('Enter new one');
+      } if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
+        this.snackBar.open('Enter between 1 and 20 length');
+        console.log('Enter between 1 and 20 length');
+      } else {
+        (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay.trim(), new FormControl(true, Validators.required));
         this.getDeepEqual();
       }
 
@@ -231,12 +231,13 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         this.subscribeTaskByParamId(data.taskId);
       }
 
+      this.snackBar.open(`${data.message}`);
       this.taskForm.reset(this.taskForm.value);
 
     }, (error) => {
-      console.log(error);
       this.taskForm.enable();
       this.savingInProgress = false;
+      this.snackBar.open(`Error: ${error.message}`);
     }, () => {
       this.taskForm.enable();
       this.savingInProgress = false;

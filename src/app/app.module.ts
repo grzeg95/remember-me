@@ -6,6 +6,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
@@ -38,7 +39,8 @@ import {DialogComponent} from './user/task-editor/dialog/dialog.component';
     MatFormFieldModule,
     MatInputModule,
     FormsModule,
-    MatButtonModule
+    MatButtonModule,
+    MatSnackBarModule
   ],
   bootstrap: [AppComponent]
 })

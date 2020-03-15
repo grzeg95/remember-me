@@ -27,8 +27,10 @@
                 <td>{{ task.description }}</td>
                 <td>{{ task.daysOfTheWeek }}</td>
                 <td>{{ task.timesOfDay }}</td>
-                <td><button class="btn" type="button" [routerLink]="['/user/task-editor/'+ task.id]">
-                  <i class="far fa-edit"></i></button>
+                <td>
+                  <button class="btn" type="button" [routerLink]="['/user/task-editor/'+ task.id]">
+                    <i class="far fa-edit"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>

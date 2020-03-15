@@ -1,6 +1,7 @@
 import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {interval, Subscription} from 'rxjs';
 import {map, take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
@@ -68,7 +69,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private cdRef: ChangeDetectorRef,
               private authService: AuthService,
               private userService: UserService,
-              private afs: AngularFirestore) {}
+              private afs: AngularFirestore,
+              private snackBar: MatSnackBar) {}
 
   daysOfTheWeekOrderUS = daysOfTheWeekOrderUS;
   todayName: string;
@@ -182,6 +184,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     const handleSetProgressSubscriptionError = (error: any | null) => {
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
+      this.snackBar.open(`Error: ${error?.message}`);
       if (this.setProgressSubsActiveConnections === 0) {
         console.log('all setProgressSubsActiveConnections done');
         this.changeDay();

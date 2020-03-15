@@ -2,6 +2,7 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../auth/auth.service';
 import {IUserAuth} from '../../auth/user.auth';
@@ -38,7 +39,8 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   constructor(private authService: AuthService,
               private fns: AngularFireFunctions,
               private afs: AngularFirestore,
-              private userService: UserService) {}
+              private userService: UserService,
+              private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
 
@@ -50,6 +52,8 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
     this.userSubscription = this.afs.doc(`users/${this.authService.userData.uid}`).valueChanges().subscribe((user: IUserAuth) => {
       if (user.timesOfDay) {
         this.userService.prepareSort(user.timesOfDay);
+        this.todayOrderFirstLoading = false;
+        this.isEmpty = this.order.length === 0;
       }
     });
 
@@ -70,9 +74,11 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
     this.disabled = true;
     this.fns.httpsCallable('setTodayOrder')(this.order).subscribe(() => {
       console.log('OK');
+      this.snackBar.open('Order has been updated');
       this.disabled = false;
     }, (error) => {
       console.log(error);
+      this.snackBar.open('Error on order update');
       this.disabled = false;
     });
 
