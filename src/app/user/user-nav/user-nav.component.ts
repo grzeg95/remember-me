@@ -2,11 +2,11 @@ import {Component} from '@angular/core';
 
 @Component({
   selector: 'app-nav-second',
-  templateUrl: './nav-second.component.html',
-  styleUrls: ['./nav-second.component.sass'],
+  templateUrl: './user-nav.component.html',
+  styleUrls: ['./user-nav.component.sass'],
   host: { class: 'app' }
 })
-export class NavSecondComponent {
+export class UserNavComponent {
 
   routes = [
     {
