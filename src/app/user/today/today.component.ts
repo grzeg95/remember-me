@@ -60,7 +60,9 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     });
 
     this.isEmpty = todayItemsViewContainer.length === 0;
-    this.todayItemsFirstLoading = false;
+    if (!this.isEmpty && this.todayItemsFirstLoading) {
+      this.todayItemsFirstLoading = false;
+    }
 
     return todayItemsViewContainer;
   }

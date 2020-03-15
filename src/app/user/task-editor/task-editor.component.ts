@@ -295,11 +295,13 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
     this.deleteTaskSubscription = this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((next) => {
       console.log(next);
+      this.snackBar.open(`${next.message}`);
       this.deepResetForm();
     }, (error) => {
       console.log(error);
       this.taskForm.enable();
       this.deletingInProgress = false;
+      this.snackBar.open(`${error.message}`);
     }, () => {
       this.taskForm.enable();
       this.deletingInProgress = false;
