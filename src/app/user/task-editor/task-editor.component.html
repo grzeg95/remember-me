@@ -18,7 +18,7 @@
     <div class="row">
       <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center">
 
-        <div *ngFor="let dayOfTheWeek of daysOfTheWeek;" class="form-check">
+        <div *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];" class="form-check">
           <input
             #inputRef
             type="checkbox"

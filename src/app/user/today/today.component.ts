@@ -7,7 +7,6 @@ import {map, take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
 import {IUserAuth} from '../../auth/user.auth';
 import {ITask, ITodayItem} from '../models';
-import {daysOfTheWeekOrderUS} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -74,7 +73,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private afs: AngularFirestore,
               private snackBar: MatSnackBar) {}
 
-  daysOfTheWeekOrderUS = daysOfTheWeekOrderUS;
   todayName: string;
   tasksCollection: AngularFirestoreCollection<ITask>;
   tasksListSub: Subscription;
@@ -157,7 +155,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     const now = new Date();
-    this.todayName = this.daysOfTheWeekOrderUS[now.getDay()];
+    this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
     this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/`)
       .collection('today').doc(this.todayName).collection('task');
     this.observeTasksList();

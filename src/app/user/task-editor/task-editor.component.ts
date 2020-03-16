@@ -10,7 +10,6 @@ import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../auth/auth.service';
 import {ITask} from '../models';
-import {daysOfTheWeek} from '../models';
 import {DialogComponent} from './dialog/dialog.component';
 
 @Component({
@@ -43,8 +42,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   id = 'null';
   taskSubscriber: Subscription;
-
-  daysOfTheWeek = daysOfTheWeek;
 
   taskForm: FormGroup = new FormGroup({
     description: new FormControl('', TaskEditorComponent.descriptionValidator),
