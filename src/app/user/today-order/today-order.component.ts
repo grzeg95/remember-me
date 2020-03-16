@@ -1,11 +1,9 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
-import {AuthService} from '../../auth/auth.service';
-import {IUserAuth} from '../../auth/user.auth';
+import {IUser} from '../../auth/i-user';
 import {UserService} from '../user.service';
 
 @Component({
@@ -36,11 +34,9 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   userSubscription: Subscription = new Subscription();
   isEmpty = true;
 
-  constructor(private authService: AuthService,
-              private fns: AngularFireFunctions,
-              private afs: AngularFirestore,
-              private userService: UserService,
-              private snackBar: MatSnackBar) {}
+  constructor(private userService: UserService,
+              private snackBar: MatSnackBar,
+              private fns: AngularFireFunctions) {}
 
   ngOnInit(): void {
 
@@ -49,7 +45,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
       this.todayOrderFirstLoading = false;
     }
 
-    this.userSubscription = this.afs.doc(`users/${this.authService.userData.uid}`).valueChanges().subscribe((user: IUserAuth) => {
+    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
       if (user.timesOfDay) {
         this.userService.prepareSort(user.timesOfDay);
         this.todayOrderFirstLoading = false;
@@ -72,6 +68,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
     moveItemInArray(this.order, event.previousIndex, event.currentIndex);
 
     this.disabled = true;
+
     this.fns.httpsCallable('setTodayOrder')(this.order).subscribe(() => {
       console.log('OK');
       this.snackBar.open('Order has been updated');

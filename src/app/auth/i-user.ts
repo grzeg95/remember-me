@@ -1,4 +1,4 @@
-export interface IUserAuth {
+export interface IUser {
   uid: string;
   email: string;
   displayName: string;

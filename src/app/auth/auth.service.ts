@@ -3,14 +3,14 @@ import {AngularFireAuth} from '@angular/fire/auth';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import * as firebase from 'firebase';
-import {auth} from 'firebase/app';
-import {IUserAuth} from './user.auth';
+import {auth, User} from 'firebase/app';
+import {IUser} from './i-user';
 import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 
 @Injectable()
 export class AuthService {
 
-  userData: IUserAuth;
+  userData: IUser;
 
   isLoggedEventEmitter: EventEmitter<boolean>;
 
@@ -79,9 +79,9 @@ export class AuthService {
 
   }
 
-  registerUser(user: IUserAuth): void {
+  registerUser(user: IUser): void {
 
-    this.afs.doc(`users/${user.uid}`).set(this.userData, {
+    this.afs.doc(`users/${user.uid}`).set(user, {
       merge: true
     }).catch((error) => {
       console.log(error);
@@ -93,7 +93,7 @@ export class AuthService {
 
   signOut(): Promise<boolean> {
     return this.afAuth.auth.signOut().then(() => {
-      this.userData = {} as IUserAuth;
+      this.userData = {} as User;
       localStorage.setItem('user', null);
       return this.router.navigate(['/']);
     });

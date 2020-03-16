@@ -1,4 +1,8 @@
 import {Injectable} from '@angular/core';
+import {AngularFirestore} from '@angular/fire/firestore';
+import {Observable} from 'rxjs';
+import {AuthService} from '../auth/auth.service';
+import {IUser} from '../auth/i-user';
 import {ITasksListItem, ITodayItem} from './models';
 
 @Injectable()
@@ -11,6 +15,8 @@ export class UserService {
   todayItems: {[timeOfDay: string]: ITodayItem[]} = {};
   taskListItems: ITasksListItem[] = [];
   timesOfDayOrder: string[] = [];
+
+  user$: Observable<IUser> = new Observable<IUser>();
 
   clearCache(): void {
     this.todayItems = {};
@@ -39,6 +45,11 @@ export class UserService {
       return a.position - b.position;
     }).map((a) => a.timeOfDay);
 
+  }
+
+  constructor(private afs: AngularFirestore,
+              private authService: AuthService) {
+    this.user$ = this.afs.doc<IUser>(`users/${this.authService.userData.uid}`).valueChanges();
   }
 
 }

@@ -5,7 +5,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {interval, Subscription} from 'rxjs';
 import {map, take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
-import {IUserAuth} from '../../auth/user.auth';
+import {IUser} from '../../auth/i-user';
 import {ITask, ITodayItem} from '../models';
 import {UserService} from '../user.service';
 
@@ -83,12 +83,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.changeDay();
 
-    this.userSubscription = this.afs.doc(`users/${this.authService.userData.uid}`).valueChanges().subscribe((user: IUserAuth) => {
-      if (user.timesOfDay) {
-        this.userService.prepareSort(user.timesOfDay);
-      }
-    });
-
   }
 
   todayItemIsDone(timeOfDay: string): boolean {
@@ -101,6 +95,14 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   trackByTodayItem(index: number, item: ITodayItem): string {
     return index + ('' + item.done) + item.description;
+  }
+
+  observeUser(): void {
+    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
+      if (user.timesOfDay) {
+        this.userService.prepareSort(user.timesOfDay);
+      }
+    });
   }
 
   observeTasksList(): void {
@@ -153,6 +155,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/`)
       .collection('today').doc(this.todayName).collection('task');
     this.observeTasksList();
+    this.observeUser();
 
     this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => this.changeDay());
 
@@ -209,6 +212,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     if (!this.tasksListSub.closed) {
       console.log('this.tasksListSub.unsubscribe()');
       this.tasksListSub.unsubscribe();
+      console.log('this.userSubscription.unsubscribe()');
+      this.userSubscription.unsubscribe();
     }
 
     const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe(() => {

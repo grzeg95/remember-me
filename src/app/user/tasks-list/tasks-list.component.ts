@@ -3,6 +3,7 @@ import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firest
 import {Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
+import {IUser} from '../../auth/i-user';
 import {ITask, ITasksListItem} from '../models';
 import {UserService} from '../user.service';
 
@@ -13,6 +14,14 @@ import {UserService} from '../user.service';
   host: { class: 'app' }
 })
 export class TasksListComponent implements OnInit, OnDestroy {
+
+  get order(): string[] {
+    return this.userService.timesOfDayOrder;
+  }
+
+  set order(newOrder: string[]) {
+    this.userService.timesOfDayOrder = newOrder;
+  }
 
   get taskListItems(): ITasksListItem[] {
     return this.userService.taskListItems.sort(this.descriptionOrder);
@@ -33,6 +42,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
   tasksCollection: AngularFirestoreCollection<ITask>;
   tasksSub: Subscription;
   isEmpty = true;
+  userSubscription: Subscription = new Subscription();
 
   constructor(private authService: AuthService,
               public userService: UserService,
@@ -44,6 +54,12 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
+    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
+      if (user.timesOfDay) {
+        this.userService.prepareSort(user.timesOfDay);
+      }
+    });
+
     this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/`).collection('task');
 
     this.tasksSub = this.tasksCollection.snapshotChanges().pipe(map((changes) => {
@@ -54,7 +70,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
         const task = change.payload.doc.data() as ITask;
         const id = change.payload.doc.id;
-        const timesOfDay = Object.keys(task.timesOfDay).join(', ');
+        const timesOfDay = Object.keys(task.timesOfDay);
         const description = task.description;
         let daysOfTheWeek: any = [];
 
@@ -91,11 +107,18 @@ export class TasksListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void  {
+    this.tasksSub.unsubscribe();
+    this.userSubscription.unsubscribe();
+  }
 
-    if (this.tasksSub && !this.tasksSub.closed) {
-      this.tasksSub.unsubscribe();
-    }
-
+  sortTimesOfDay(timesOfDay: string[]): string {
+    const timesOfDayOrder = [];
+    this.order.forEach((timeOfDay) => {
+      if (timesOfDay.includes(timeOfDay)) {
+        timesOfDayOrder.push(timeOfDay);
+      }
+    });
+    return timesOfDayOrder.length > 0 ? timesOfDayOrder.join(', ') : '';
   }
 
   descriptionOrder = (a: ITasksListItem, b: ITasksListItem): number => a.description.localeCompare(b.description);

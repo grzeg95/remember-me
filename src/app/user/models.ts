@@ -24,7 +24,7 @@ export interface ITodayItem {
 
 export interface ITasksListItem {
   description: string;
-  timesOfDay: string;
+  timesOfDay: string[];
   daysOfTheWeek: string;
   id: string;
 }
