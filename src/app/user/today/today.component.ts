@@ -43,10 +43,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   get todayItemsView(): {timeOfDay: string, tasks: ITodayItem[]}[] {
 
-    if (this.order.length === 0) {
-      return [];
-    }
-
     const todayItemsViewContainer = [];
 
     this.order.forEach((timeOfDay) => {
@@ -58,10 +54,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       }
     });
 
-    this.isEmpty = todayItemsViewContainer.length === 0;
-    if (!this.isEmpty && this.todayItemsFirstLoading) {
-      this.todayItemsFirstLoading = false;
-    }
+    this.isEmpty = this.order.length === 0 && Object.keys(this.todayItems).length === 0;
 
     return todayItemsViewContainer;
   }
@@ -141,6 +134,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
         });
 
+        this.todayItemsFirstLoading = false;
         return todayTasksByTimeOfDay;
 
       }))
