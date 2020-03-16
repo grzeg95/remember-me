@@ -6,7 +6,7 @@
           <mat-label>Description</mat-label>
           <input autocomplete="off" matInput formControlName="description">
           <mat-error *ngIf="!taskForm.disabled && !taskForm.get('description').valid && (taskForm.get('description').dirty || taskForm.get('description').touched)">
-            Enter description from 4 to 20 characters
+            Enter description from 4 to 40 characters
           </mat-error>
         </mat-form-field>
       </div>

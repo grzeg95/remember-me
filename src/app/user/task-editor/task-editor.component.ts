@@ -348,7 +348,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   static descriptionValidator(g: FormControl): { required: boolean } {
     return (typeof g.value === 'string') &&
-    (g.value.length > 3) && (g.value.length <= 20) ? null : { required: true };
+    (g.value.length > 3) && (g.value.length <= 40) ? null : { required: true };
   }
 
   static timesOfDayValidator(g: FormGroup): { required: boolean } {
