@@ -100,7 +100,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   observeUser(): void {
     this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
       if (user.timesOfDay) {
-        this.userService.prepareSort(user.timesOfDay);
+        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
       }
     });
   }
@@ -152,8 +152,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     const now = new Date();
     this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
-    this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/`)
-      .collection('today').doc(this.todayName).collection('task');
+    this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName}`)
+      .collection('task', (ref) => ref.orderBy('description', 'asc'));
     this.observeTasksList();
     this.observeUser();
 

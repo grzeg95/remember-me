@@ -27,7 +27,7 @@ export class UserService {
     this.todayOrderFirstLoading = true;
   }
 
-  prepareSort(timesOfDay: { [name: string]: { position: number; counter: number; }}): void {
+  prepareTimesOfDayOrder(timesOfDay: { [name: string]: { position: number; counter: number; }}): void {
 
     const orderTMP: {
       timeOfDay: string,

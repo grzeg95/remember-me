@@ -47,7 +47,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
     this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
       if (user.timesOfDay) {
-        this.userService.prepareSort(user.timesOfDay);
+        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
         this.todayOrderFirstLoading = false;
         this.isEmpty = this.order.length === 0;
       }

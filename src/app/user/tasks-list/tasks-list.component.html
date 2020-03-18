@@ -26,7 +26,7 @@
               <tr *ngFor="let task of taskListItems">
                 <td>{{ task.description }}</td>
                 <td>{{ task.daysOfTheWeek }}</td>
-                <td>{{ sortTimesOfDay(task.timesOfDay) }}</td>
+                <td>{{ task.timesOfDay | sortTimesOfDay: order }}</td>
                 <td>
                   <button class="btn" type="button" [routerLink]="['/user/task-editor/'+ task.id]">
                     <i class="far fa-edit"></i>
