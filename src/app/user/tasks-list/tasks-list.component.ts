@@ -41,7 +41,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
   tasksSub: Subscription;
   isEmpty = true;
-  userSubscription: Subscription = new Subscription();
+  timesOfDaySubscription: Subscription = new Subscription();
 
   constructor(private authService: AuthService,
               public userService: UserService,
@@ -53,10 +53,8 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
-      if (user.timesOfDay) {
-        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
-      }
+    this.timesOfDaySubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) => {
+      this.order = timesOfDayOrder;
     });
 
     this.tasksSub = this.afs.doc(`users/${this.authService.userData.uid}/`)
@@ -100,7 +98,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void  {
     this.tasksSub.unsubscribe();
-    this.userSubscription.unsubscribe();
+    this.timesOfDaySubscription.unsubscribe();
   }
 
 }

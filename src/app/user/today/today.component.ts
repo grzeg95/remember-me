@@ -5,7 +5,6 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {interval, Subscription} from 'rxjs';
 import {map, take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
-import {IUser} from '../../auth/i-user';
 import {ITask, ITodayItem} from '../models';
 import {UserService} from '../user.service';
 
@@ -54,7 +53,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       }
     });
 
-    this.isEmpty = this.order.length === 0 && Object.keys(this.todayItems).length === 0;
+    this.isEmpty = Object.keys(todayItemsViewContainer).length === 0;
 
     return todayItemsViewContainer;
   }
@@ -97,12 +96,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return index + ('' + item.done) + item.description;
   }
 
-  observeUser(): void {
-    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
-      if (user.timesOfDay) {
-        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
-      }
-    });
+  observeTimesOfDayOrder(): void {
+    this.userSubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) =>
+      this.order = timesOfDayOrder
+    );
   }
 
   observeTasksList(): void {
@@ -155,7 +152,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName}`)
       .collection('task', (ref) => ref.orderBy('description', 'asc'));
     this.observeTasksList();
-    this.observeUser();
+    this.observeTimesOfDayOrder();
 
     this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => this.changeDay());
 

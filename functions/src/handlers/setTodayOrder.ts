@@ -1,6 +1,8 @@
 import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {db} from '../index';
+import DocumentData = FirebaseFirestore.DocumentData;
+import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
 export const handler = (data: any[], context: functions.https.CallableContext) => {
 
@@ -24,7 +26,7 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
   }
 
   return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
+    transaction.get(db.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -35,38 +37,41 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
         );
       }
 
-      const userData = userDocSnap.data();
-      let userTimesOfDay: {
-        [name: string]: {
-          position: number;
-          counter: number;
-        }
-      } = {};
-      if (userData && userData['timesOfDay']) {
-        userTimesOfDay = userData['timesOfDay'];
-      }
+      /*
+      * Read all data
+      * */
 
-      for (let i = 0; i < data.length; ++i) {
-        if (!userTimesOfDay[data[i]]) {
+      // read all times of day
+      const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
+        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
+
+        docsRef.forEach((docRef) => {
+          timesOfDayDocSnapsPromise.push(docRef.get());
+        });
+
+        return await Promise.all(timesOfDayDocSnapsPromise);
+      });
+
+      /*
+      * Proceed all data
+      * */
+
+      data.forEach((timeOfDay: string, index) => {
+
+        const timesOfDayDocSnap = timesOfDayDocSnaps.find((timesOfDayDocSnapNext) => timesOfDayDocSnapNext.data()?.name === timeOfDay);
+
+        if (!timesOfDayDocSnap) {
           throw new functions.https.HttpsError(
             'invalid-argument',
             'Bad Request',
             'Check function requirements'
           );
         }
-        userTimesOfDay[data[i]].position = i;
-      }
 
-      if (Object.keys(userTimesOfDay).length > 20) {
-        throw new functions.https.HttpsError(
-          'invalid-argument',
-          'Max times of day is 20',
-          'Check function requirements'
-        );
-      }
+        transaction.update(timesOfDayDocSnap.ref, {
+          position: index
+        });
 
-      transaction.update(userDocSnap.ref, {
-        timesOfDay: userTimesOfDay
       });
 
     }));

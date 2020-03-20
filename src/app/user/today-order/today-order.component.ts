@@ -31,7 +31,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   }
 
   disabled = false;
-  userSubscription: Subscription = new Subscription();
+  timesOfDaySubscription: Subscription = new Subscription();
   isEmpty = true;
 
   constructor(private userService: UserService,
@@ -42,21 +42,18 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
     if (this.order.length !== 0) {
       this.isEmpty = false;
-      this.todayOrderFirstLoading = false;
     }
 
-    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
-      if (user.timesOfDay) {
-        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
-        this.todayOrderFirstLoading = false;
-        this.isEmpty = this.order.length === 0;
-      }
+    this.timesOfDaySubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) => {
+      this.order = timesOfDayOrder;
+      this.todayOrderFirstLoading = false;
+      this.isEmpty = timesOfDayOrder.length === 0;
     });
 
   }
 
   ngOnDestroy(): void {
-    this.userSubscription.unsubscribe();
+    this.timesOfDaySubscription.unsubscribe();
   }
 
   drop(event: CdkDragDrop<string[]>): void {

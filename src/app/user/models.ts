@@ -28,3 +28,9 @@ export interface ITasksListItem {
   daysOfTheWeek: string;
   id: string;
 }
+
+export interface TimeOfDay {
+  counter: number;
+  name: string;
+  position: number;
+}

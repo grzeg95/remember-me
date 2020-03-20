@@ -1,9 +1,10 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
 import {IUser} from '../auth/i-user';
-import {ITasksListItem, ITodayItem} from './models';
+import {ITasksListItem, ITodayItem, TimeOfDay} from './models';
 
 @Injectable()
 export class UserService {
@@ -16,7 +17,7 @@ export class UserService {
   taskListItems: ITasksListItem[] = [];
   timesOfDayOrder: string[] = [];
 
-  user$: Observable<IUser> = new Observable<IUser>();
+  timesOfDayOrder$: Observable<string[]> = new Observable<string[]>();
 
   clearCache(): void {
     this.todayItems = {};
@@ -27,29 +28,22 @@ export class UserService {
     this.todayOrderFirstLoading = true;
   }
 
-  prepareTimesOfDayOrder(timesOfDay: { [name: string]: { position: number; counter: number; }}): void {
-
-    const orderTMP: {
-      timeOfDay: string,
-      position: number;
-    }[] = [];
-
-    Object.keys(timesOfDay).forEach((timeOfDay) => {
-      orderTMP.push({
-        timeOfDay,
-        position: timesOfDay[timeOfDay].position
-      });
-    });
-
-    this.timesOfDayOrder = orderTMP.sort((a, b) => {
-      return a.position - b.position;
-    }).map((a) => a.timeOfDay);
-
-  }
-
   constructor(private afs: AngularFirestore,
               private authService: AuthService) {
-    this.user$ = this.afs.doc<IUser>(`users/${this.authService.userData.uid}`).valueChanges();
+    this.timesOfDayOrder$ = this.afs
+      .doc<IUser>(`users/${this.authService.userData.uid}`)
+      .collection('timesOfDay', (ref) => ref.orderBy('position'))
+      .valueChanges().pipe(map((timesOfDay) => {
+
+        const timesOfDayNames = [];
+
+        timesOfDay.forEach((timeOfDay: TimeOfDay) => {
+          timesOfDayNames.push(timeOfDay.name);
+        });
+
+        return timesOfDayNames;
+
+      }));
   }
 
 }

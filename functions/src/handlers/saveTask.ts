@@ -6,6 +6,7 @@ import {ITask} from '../interfaces';
 import {listEqual} from '../tools';
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 import DocumentReference = FirebaseFirestore.DocumentReference;
+import DocumentData = FirebaseFirestore.DocumentData;
 
 /**
  * @type day: Day
@@ -85,29 +86,90 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * 7 reads, 1 write
  * Save new task for every day
  * @param transaction Transaction
+ * @param timesOfDayDocSnaps {docSnap: DocumentSnapshot, day: Day}[]
  * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
  * @param oldTaskDocSnap FirebaseFirestore.DocumentSnapshot | null
  * @param user: FirebaseFirestore.DocumentReference
  * @param task: ITask
  * @return Promise<Transaction>
  **/
-const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Promise<Transaction> => {
-  // set or update task for user/{userId}/task/{taskId}
-  // set or update task for user/{userId}/today/{day}/task/{taskId}
+const proceedEveryDay = (transaction: Transaction, timesOfDayDocSnaps: {docSnap: DocumentSnapshot, day: Day}[], taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Transaction => {
 
-  const reads: Promise<{docSnap: DocumentSnapshot, day: Day}>[] = [];
+  timesOfDayDocSnaps.forEach((readReady) =>
+    proceedTask(transaction, readReady.docSnap, task, readReady.day)
+  );
 
-  (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
-    reads.push(transaction.get(user.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
+  oldTaskDocSnap && transaction.delete(oldTaskDocSnap.ref);
+
+  return transaction.set(taskDocSnap.ref, task);
+
+};
+
+const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]) => {
+
+  let created = 0;
+  let updated = 0;
+  let removed = 0;
+
+  // for each task.timesOfDay
+  // counter-- those timesOfDay that dont exist in the taskDocSnap (remove if counter === 0)
+  // counter++ those timesOfDay that exist in the taskDocSnap
+
+  // for each timesOfDay
+  Object.keys(taskUpdated.timesOfDay).forEach((timeOfDay) => {
+
+    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+    let existInTheTaskDocSnap = false;
+
+    if (!!taskDocSnap.data()?.timesOfDay && typeof (taskDocSnap.data()?.timesOfDay)[timeOfDay] === 'boolean') {
+      existInTheTaskDocSnap = true;
+    }
+
+    // if timesOfDay dont exists in the timesOfDayDocSnaps than create new one
+    if (!inTheTimesOfDayDocSnaps) {
+      const newTimeOfDay = user.collection('timesOfDay').doc();
+      transaction.create(newTimeOfDay, {
+        name: timeOfDay,
+        counter: 1,
+        position: 0
+      });
+      created++;
+    } else if (!existInTheTaskDocSnap) { // if timesOfDay exists in the timesOfDayDocSnaps and dont in the taskDocSnap
+      transaction.update(inTheTimesOfDayDocSnaps.ref, {
+        counter: inTheTimesOfDayDocSnaps.data()?.counter + 1
+      });
+      updated++;
+    }
+
   });
 
-  return Promise.all(reads).then((readsReady) => {
-    readsReady.forEach((readReady) =>
-      proceedTask(transaction, readReady.docSnap, task, readReady.day)
+  taskDocSnap.data() && taskDocSnap.data()?.timesOfDay && Object.keys(taskDocSnap.data()?.timesOfDay).forEach((timeOfDay) => {
+
+    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+
+    if (inTheTimesOfDayDocSnaps && !taskUpdated.timesOfDay[timeOfDay]) {
+      const counter = inTheTimesOfDayDocSnaps.data()?.counter;
+      if (counter - 1 === 0) {
+        transaction.delete(inTheTimesOfDayDocSnaps.ref);
+        removed++;
+      } else {
+        transaction.update(inTheTimesOfDayDocSnaps.ref, {
+          counter: counter - 1
+        });
+        updated++;
+      }
+    }
+  });
+
+  if (updated + created - removed > 20) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(updated + created - removed).length}`
     );
-    oldTaskDocSnap && transaction.delete(oldTaskDocSnap.ref);
-    return transaction.set(taskDocSnap.ref, task);
-  });
+  }
+
+  return transaction;
 
 };
 
@@ -135,22 +197,23 @@ const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: {
-  task: {
-    timesOfDay: {
-      [key: string]: any
-    };
-    daysOfTheWeek: {
-      mon: any;
-      tue: any;
-      wed: any;
-      thu: any;
-      fri: any;
-      sat: any;
-      sun: any;
-    }
-    description: any;
-  }, taskId: any}, context: functions.https.CallableContext): Promise<any> =>
+export const handler = (
+  data: {
+    task: {
+      timesOfDay: {
+        [key: string]: any
+      };
+      daysOfTheWeek: {
+        mon: any;
+        tue: any;
+        wed: any;
+        thu: any;
+        fri: any;
+        sat: any;
+        sun: any;
+      }
+      description: any;
+    }, taskId: any}, context: functions.https.CallableContext): Promise<any> =>
 {
 
   const auth: {
@@ -198,96 +261,48 @@ export const handler = (data: {
         );
       }
 
-      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnap) => {
-
-        const userDocSnapData = userDocSnap.data();
-        let userTimesOfDay: {
-          [name: string]: {
-            position: number,
-            counter: number
-          }
-        } = {};
-
-        if (userDocSnapData && userDocSnapData['timesOfDay']) {
-          userTimesOfDay = userDocSnapData['timesOfDay'];
-        }
-
-        const taskDocSnapData = taskDocSnap.data();
-        let currentTimesOfDay: {
-          [name: string]: boolean
-        } = {};
-
-        if (taskDocSnapData && taskDocSnapData['timesOfDay']) {
-          currentTimesOfDay = taskDocSnapData['timesOfDay'];
-        }
-
-        const currentTimesOfDayKeys: string[] = Object.keys(currentTimesOfDay);
-
-        const toRemove: string[] = [];
-        currentTimesOfDayKeys.forEach((e) => {
-          if (timesOfDayKeys.indexOf(e) === -1) {
-            toRemove.push(e);
-          }
-        });
-        toRemove.forEach(i => {
-          if (userTimesOfDay[i]) {
-            userTimesOfDay[i].counter--;
-            if (userTimesOfDay[i].counter <= 0) {
-              delete userTimesOfDay[i];
-            }
-          }
-        });
-
-        const toAdd: string[] = [];
-        timesOfDayKeys.forEach((e) => {
-          if (currentTimesOfDayKeys.indexOf(e) === -1) {
-            toAdd.push(e);
-          }
-        });
-
-        toAdd.forEach(i => {
-          if (userTimesOfDay[i]) {
-            userTimesOfDay[i].counter++;
-          } else {
-            userTimesOfDay[i] = {
-              position: 0,
-              counter: 1
-            }
-          }
-        });
-
-        if (Object.keys(userTimesOfDay).length > 20) {
-          throw new functions.https.HttpsError(
-            'invalid-argument',
-            'Bad Request',
-            `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(userTimesOfDay).length}`
-          );
-        }
+      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
         /*
-        * WAIT FOR MESSAGE
+        * Read all data
         * */
 
-        let message;
-
-        if (!taskDocSnap.exists) {
+        // read task or create it
+        let taskDocSnap: DocumentSnapshot<DocumentData>;
+        if (!taskDocSnapTmp.exists) {
           created = true;
-          message = transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => {
-            taskId = newTaskSnap.id;
-            return proceedEveryDay(transaction, newTaskSnap, taskDocSnap, userDocSnap.ref, data.task);
-          });
+          taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => newTaskSnap);
+          taskId = taskDocSnap.id;
         } else {
-          message = proceedEveryDay(transaction, taskDocSnap, null, userDocSnap.ref, data.task);
+          taskDocSnap = taskDocSnapTmp;
         }
 
-        await message;
+        // read all task for user/{userId}/today/{day}/task/{taskId}
+        const todayTaskDocSnapPromise: Promise<{docSnap: DocumentSnapshot, day: Day}>[] = [];
+        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
+          todayTaskDocSnapPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
+        });
+        const todayTaskDocSnaps: {docSnap: DocumentSnapshot, day: Day}[] = await Promise.all(todayTaskDocSnapPromise);
+
+        // read all times of day
+        const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
+          const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
+
+          docsRef.forEach((docRef) => {
+            timesOfDayDocSnapsPromise.push(docRef.get());
+          });
+
+          return await Promise.all(timesOfDayDocSnapsPromise);
+        });
+
         /*
-        * WAIT FOR MESSAGE DONE
+        * Proceed all data
         * */
 
-        transaction.update(userDocSnap.ref, {
-          timesOfDay: userTimesOfDay
-        });
+        proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, data.task, timesOfDayDocSnaps);
+        proceedEveryDay(transaction, todayTaskDocSnaps, taskDocSnap, created ? taskDocSnapTmp : null, userDocSnap.ref, data.task);
+
+        return transaction;
 
       });
 

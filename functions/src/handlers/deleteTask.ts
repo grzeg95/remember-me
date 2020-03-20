@@ -1,6 +1,8 @@
 import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import {db} from '../index';
+import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
+import DocumentData = FirebaseFirestore.DocumentData;
 
 /**
  * 9 reads, 7 deletes
@@ -39,7 +41,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
         );
       }
 
-      return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then((taskDocSnap) => {
+      return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then(async (taskDocSnap) => {
 
         // interrupt if user has not this task
         if (!taskDocSnap.exists) {
@@ -50,51 +52,56 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
           );
         }
 
-        const reads: Promise<FirebaseFirestore.DocumentSnapshot>[] = [];
+        /*
+        * Read all data
+        * */
 
+        // read all task for user/{userId}/today/{day}/task/{taskId}
+        const todayTasksPromise: Promise<DocumentSnapshot>[] = [];
         (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).forEach((day) =>
-          reads.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`)))
+          todayTasksPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`)))
+        );
+        const todayTasks: DocumentSnapshot[] = await Promise.all(todayTasksPromise);
+
+        // read all times of day
+        const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
+          const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
+
+          docsRef.forEach((docRef) => {
+            timesOfDayDocSnapsPromise.push(docRef.get());
+          });
+
+          return await Promise.all(timesOfDayDocSnapsPromise);
+        });
+
+        /*
+        * Proceed all data
+        * */
+
+        // remove todayTasks
+        todayTasks.forEach((docSnap) =>
+          transaction.delete(docSnap.ref)
         );
 
-        return Promise.all(reads).then((docsSnaps) => {
-          docsSnaps.forEach((docSnap) =>
-            transaction.delete(docSnap.ref)
-          );
-          transaction.delete(taskDocSnap.ref);
+        // remove task
+        transaction.delete(taskDocSnap.ref);
 
-          const taskDocSnapData = taskDocSnap.data();
-          let currentTimesOfDayKeys: string[] = [];
-
-          if (taskDocSnapData && taskDocSnapData['timesOfDay']) {
-            currentTimesOfDayKeys = Object.keys(taskDocSnapData['timesOfDay']);
-          }
-
-          const userDocSnapData = userDocSnap.data();
-          let userTimesOfDay: {
-            [name: string]: {
-              position: number,
-              counter: number
+        // proceed timesOfDayDocSnaps
+        Object.keys(taskDocSnap.data()?.timesOfDay).forEach((timeOfDay) => {
+          const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+          if (inTheTimesOfDayDocSnaps) {
+            const counter = inTheTimesOfDayDocSnaps.data()?.counter;
+            if (counter - 1 === 0) {
+              transaction.delete(inTheTimesOfDayDocSnaps.ref);
+            } else {
+              transaction.update(inTheTimesOfDayDocSnaps.ref, {
+                counter: counter - 1
+              });
             }
-          } = {};
-
-          if (userDocSnapData && userDocSnapData['timesOfDay']) {
-            userTimesOfDay = userDocSnapData['timesOfDay'];
           }
-
-          currentTimesOfDayKeys.forEach((i) => {
-            if (userTimesOfDay[i]) {
-              userTimesOfDay[i].counter--;
-              if (userTimesOfDay[i].counter <= 0) {
-                delete userTimesOfDay[i];
-              }
-            }
-          });
-
-          return transaction.update(userDocSnap.ref, {
-            timesOfDay: userTimesOfDay
-          });
-
         });
+
+        return transaction;
       });
 
     })
