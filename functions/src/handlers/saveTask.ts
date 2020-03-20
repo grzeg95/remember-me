@@ -9,7 +9,7 @@ import DocumentReference = FirebaseFirestore.DocumentReference;
 import DocumentData = FirebaseFirestore.DocumentData;
 
 /**
- * @type day: Day
+ * @type Day
  **/
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -17,7 +17,7 @@ type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
  * 1 delete or 1 write
  * Prepare today tasks
  * @param transaction Transaction
- * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
+ * @param taskDocSnap DocumentSnapshot
  * @param task: ITask
  * @param day: Day
  * @return Promise<T>
@@ -87,33 +87,36 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * Save new task for every day
  * @param transaction Transaction
  * @param timesOfDayDocSnaps {docSnap: DocumentSnapshot, day: Day}[]
- * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
- * @param oldTaskDocSnap FirebaseFirestore.DocumentSnapshot | null
- * @param user: FirebaseFirestore.DocumentReference
+ * @param taskDocSnap DocumentSnapshot
+ * @param user: DocumentReference
  * @param task: ITask
  * @return Promise<Transaction>
  **/
-const proceedEveryDay = (transaction: Transaction, timesOfDayDocSnaps: {docSnap: DocumentSnapshot, day: Day}[], taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Transaction => {
+const proceedEveryDay = (transaction: Transaction, timesOfDayDocSnaps: {docSnap: DocumentSnapshot, day: Day}[], taskDocSnap: DocumentSnapshot, user: DocumentReference, task: ITask): Transaction => {
 
   timesOfDayDocSnaps.forEach((readReady) =>
     proceedTask(transaction, readReady.docSnap, task, readReady.day)
   );
 
-  oldTaskDocSnap && transaction.delete(oldTaskDocSnap.ref);
-
   return transaction.set(taskDocSnap.ref, task);
 
 };
 
+/**
+ * MAX[20] writes
+ * MAX[20] deletes
+ * Update times of day
+ * @param transaction Transaction
+ * @param taskDocSnap DocumentSnapshot
+ * @param user: DocumentReference
+ * @param taskUpdated: ITask
+ * @param timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]
+ **/
 const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]) => {
 
   let created = 0;
   let updated = 0;
   let removed = 0;
-
-  // for each task.timesOfDay
-  // counter-- those timesOfDay that dont exist in the taskDocSnap (remove if counter === 0)
-  // counter++ those timesOfDay that exist in the taskDocSnap
 
   // for each timesOfDay
   Object.keys(taskUpdated.timesOfDay).forEach((timeOfDay) => {
@@ -174,8 +177,8 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
 };
 
 /**
- * 3 reads when create
- * 2 reads when update
+ * 10 + MAX[20 * 2] reads
+ * 1 delete
  * Save new task
  * @param data {
     task: {
@@ -197,8 +200,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (
-  data: {
+export const handler = (data: {
     task: {
       timesOfDay: {
         [key: string]: any
@@ -287,11 +289,9 @@ export const handler = (
         // read all times of day
         const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
           const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
-
           docsRef.forEach((docRef) => {
-            timesOfDayDocSnapsPromise.push(docRef.get());
+            timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
           });
-
           return await Promise.all(timesOfDayDocSnapsPromise);
         });
 
@@ -300,7 +300,12 @@ export const handler = (
         * */
 
         proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, data.task, timesOfDayDocSnaps);
-        proceedEveryDay(transaction, todayTaskDocSnaps, taskDocSnap, created ? taskDocSnapTmp : null, userDocSnap.ref, data.task);
+        proceedEveryDay(transaction, todayTaskDocSnaps, taskDocSnap, userDocSnap.ref, data.task);
+
+        // delete taskDocSnapTmp if created
+        if (created) {
+          transaction.delete(taskDocSnapTmp.ref);
+        }
 
         return transaction;
 

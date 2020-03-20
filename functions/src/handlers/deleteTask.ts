@@ -5,7 +5,8 @@ import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 import DocumentData = FirebaseFirestore.DocumentData;
 
 /**
- * 9 reads, 7 deletes
+ * 9 + MAX[20 * 2] reads
+ * 7 + MAX[20] deletes
  * Read all user data about task and remove it
  * @param data {taskId: any}
  * @param context functions.https.CallableContext
@@ -66,25 +67,15 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
         // read all times of day
         const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
           const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
-
           docsRef.forEach((docRef) => {
-            timesOfDayDocSnapsPromise.push(docRef.get());
+            timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
           });
-
           return await Promise.all(timesOfDayDocSnapsPromise);
         });
 
         /*
         * Proceed all data
         * */
-
-        // remove todayTasks
-        todayTasks.forEach((docSnap) =>
-          transaction.delete(docSnap.ref)
-        );
-
-        // remove task
-        transaction.delete(taskDocSnap.ref);
 
         // proceed timesOfDayDocSnaps
         Object.keys(taskDocSnap.data()?.timesOfDay).forEach((timeOfDay) => {
@@ -100,6 +91,14 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
             }
           }
         });
+
+        // remove task
+        transaction.delete(taskDocSnap.ref);
+
+        // remove todayTasks
+        todayTasks.forEach((docSnap) =>
+          transaction.delete(docSnap.ref)
+        );
 
         return transaction;
       });

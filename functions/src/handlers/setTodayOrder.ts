@@ -4,6 +4,14 @@ import {db} from '../index';
 import DocumentData = FirebaseFirestore.DocumentData;
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
+/**
+ * 1 + MAX[20 * 2] reads
+ * MAX[20] writes
+ * Read all user data about task and remove it
+ * @param data {taskId: any}
+ * @param context functions.https.CallableContext
+ * @return Promise<T>
+ **/
 export const handler = (data: any[], context: functions.https.CallableContext) => {
 
   const auth: {
@@ -44,11 +52,9 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
       // read all times of day
       const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
         const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
-
         docsRef.forEach((docRef) => {
-          timesOfDayDocSnapsPromise.push(docRef.get());
+          timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
         });
-
         return await Promise.all(timesOfDayDocSnapsPromise);
       });
 
