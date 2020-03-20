@@ -1,7 +1,7 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -17,14 +17,14 @@ import {CoreModule} from './core.module';
 import {GuestComponent} from './guest/guest.component';
 import {NavComponent} from './nav/nav.component';
 import {SharedModule} from './shared.module';
-import {DialogComponent} from './user/task-editor/dialog/dialog.component';
+import {TimeOfDayDialogComponent} from './user/task-editor/dialog/time-of-day-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavComponent,
     GuestComponent,
-    DialogComponent
+    TimeOfDayDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -40,7 +40,8 @@ import {DialogComponent} from './user/task-editor/dialog/dialog.component';
     MatInputModule,
     FormsModule,
     MatButtonModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    ReactiveFormsModule
   ],
   bootstrap: [AppComponent]
 })

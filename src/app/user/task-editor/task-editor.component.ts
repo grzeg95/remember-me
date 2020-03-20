@@ -10,7 +10,7 @@ import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../auth/auth.service';
 import {ITask} from '../models';
-import {DialogComponent} from './dialog/dialog.component';
+import {TimeOfDayDialogComponent} from './dialog/time-of-day-dialog.component';
 
 @Component({
   selector: 'app-task-editor',
@@ -83,16 +83,15 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   }
 
-  openDialog(): void {
+  openTimeOfDayDialog(): void {
 
     const scrollY = window.scrollY;
     const scrollX = window.scrollX;
     const html = this.document.documentElement;
 
     // this changes scrollY, scrollX, html
-    const dialogRef = this.dialog.open(DialogComponent, {
-      width: '250px',
-      data: {timeOfDay: ''}
+    const dialogRef = this.dialog.open(TimeOfDayDialogComponent, {
+      width: '250px'
     });
 
     // apply if dialogRef.open forgot to add
@@ -120,8 +119,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         this.snackBar.open('Enter new one');
         console.log('Enter new one');
       } if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
-        this.snackBar.open('Enter between 1 and 20 length');
-        console.log('Enter between 1 and 20 length');
+        this.snackBar.open('Enter time of day length from 1 to 20');
+        console.log('EEnter time of day length from 1 to 20');
       } else {
         (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay.trim(), new FormControl(true, Validators.required));
         this.getDeepEqual();
