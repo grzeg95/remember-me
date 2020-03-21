@@ -69,9 +69,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   tasksCollection: AngularFirestoreCollection<ITask>;
   tasksListSub: Subscription;
   setProgressSubs: Subscription = new Subscription();
-  userSubscription: Subscription = new Subscription();
+  timesOfDayOrderSubscription: Subscription = new Subscription();
   changeDayInterval: Subscription = new Subscription();
   isEmpty = true;
+  setProgressSubsActiveConnections = 0;
 
   ngOnInit(): void {
 
@@ -96,7 +97,12 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   observeTimesOfDayOrder(): void {
-    this.userSubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) =>
+
+    if (this.timesOfDayOrderSubscription && !this.timesOfDayOrderSubscription.closed) {
+      this.timesOfDayOrderSubscription.unsubscribe();
+    }
+
+    this.timesOfDayOrderSubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) =>
       this.order = timesOfDayOrder
     );
   }
@@ -175,12 +181,40 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     checkbox.disabled = true;
 
     const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe(() => {
+      checkbox.checked = toUpdateOneTimeOfDay.checked;
+      checkbox.disabled = false;
+      this.setProgressSubsActiveConnections--;
+
       this.todayItems[timeOfDay].find((task) => task.id === taskId).done = toUpdateOneTimeOfDay.checked;
+
+      if (this.setProgressSubsActiveConnections === 0) {
+        console.log('all setProgressSubsActiveConnections done');
+        this.changeDay();
+      } else {
+        console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
+      }
+
+    }, (error) =>  {
       checkbox.disabled = false;
-    }, (error) => {
-      checkbox.disabled = false;
+      this.setProgressSubsActiveConnections--;
       this.snackBar.open(`Error: ${error?.message}`);
+      if (this.setProgressSubsActiveConnections === 0) {
+        console.log('all setProgressSubsActiveConnections done');
+        this.changeDay();
+      } else if (error) {
+        console.log(error);
+      } else { // complete with active others
+        console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
+      }
     });
+
+    this.setProgressSubsActiveConnections++;
+    if (!this.tasksListSub.closed) {
+      console.log('this.tasksListSub.unsubscribe()');
+      this.tasksListSub.unsubscribe();
+      console.log('this.userSubscription.unsubscribe()');
+      this.timesOfDayOrderSubscription.unsubscribe();
+    }
 
     this.setProgressSubs.add(setProgressSubscription);
 
@@ -190,7 +224,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.changeDayInterval.unsubscribe();
     this.tasksListSub.unsubscribe();
     this.setProgressSubs.unsubscribe();
-    this.userSubscription.unsubscribe();
+    this.timesOfDayOrderSubscription.unsubscribe();
   }
 
   private static toNextDayCalc(): number {
