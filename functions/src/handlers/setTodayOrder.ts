@@ -5,7 +5,7 @@ import DocumentData = FirebaseFirestore.DocumentData;
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
 /**
- * 1 + MAX[20 * 2] reads
+ * 1 + MAX[20] reads
  * MAX[20] writes
  * Read all user data about task and remove it
  * @param data {taskId: any}

@@ -83,28 +83,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 };
 
 /**
- * 7 reads, 1 write
- * Save new task for every day
- * @param transaction Transaction
- * @param timesOfDayDocSnaps {docSnap: DocumentSnapshot, day: Day}[]
- * @param taskDocSnap DocumentSnapshot
- * @param user: DocumentReference
- * @param task: ITask
- * @return Promise<Transaction>
- **/
-const proceedEveryDay = (transaction: Transaction, timesOfDayDocSnaps: {docSnap: DocumentSnapshot, day: Day}[], taskDocSnap: DocumentSnapshot, user: DocumentReference, task: ITask): Transaction => {
-
-  timesOfDayDocSnaps.forEach((readReady) =>
-    proceedTask(transaction, readReady.docSnap, task, readReady.day)
-  );
-
-  return transaction.set(taskDocSnap.ref, task);
-
-};
-
-/**
- * MAX[20] writes
- * MAX[20] deletes
+ * MAX[20] writes and deletes
  * Update times of day
  * @param transaction Transaction
  * @param taskDocSnap DocumentSnapshot
@@ -177,8 +156,9 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
 };
 
 /**
- * 10 + MAX[20 * 2] reads
+ * 10 + MAX[20] reads
  * 1 delete
+ * 1 update
  * Save new task
  * @param data {
     task: {
@@ -300,7 +280,14 @@ export const handler = (data: {
         * */
 
         proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, data.task, timesOfDayDocSnaps);
-        proceedEveryDay(transaction, todayTaskDocSnaps, taskDocSnap, userDocSnap.ref, data.task);
+
+        // proceedEveryDay
+        todayTaskDocSnaps.forEach((readReady) =>
+          proceedTask(transaction, readReady.docSnap, data.task, readReady.day)
+        );
+
+        // update task
+        transaction.set(taskDocSnap.ref, data.task);
 
         // delete taskDocSnapTmp if created
         if (created) {

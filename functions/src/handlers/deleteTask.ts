@@ -5,8 +5,8 @@ import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 import DocumentData = FirebaseFirestore.DocumentData;
 
 /**
- * 9 + MAX[20 * 2] reads
- * 7 + MAX[20] deletes
+ * 9 + MAX[20] reads
+ * 8 deletes + (MAX[20] deletes and updates)
  * Read all user data about task and remove it
  * @param data {taskId: any}
  * @param context functions.https.CallableContext

@@ -3,7 +3,8 @@ import * as functions from 'firebase-functions';
 import {db} from '../index';
 
 /**
- * 3 reads, 1 write
+ * 3 reads
+ * 1 write
  * Try to set progress of today task by time of day
  * @param data any
  * @param context functions.https.CallableContext
