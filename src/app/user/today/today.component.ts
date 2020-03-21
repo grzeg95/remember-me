@@ -70,7 +70,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   tasksListSub: Subscription;
   setProgressSubs: Subscription = new Subscription();
   userSubscription: Subscription = new Subscription();
-  setProgressSubsActiveConnections = 0;
   changeDayInterval: Subscription = new Subscription();
   isEmpty = true;
 
@@ -175,48 +174,12 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     checkbox.disabled = true;
 
-    const handleSetProgressSubscriptionError = (error: any | null) => {
-      checkbox.disabled = false;
-      this.setProgressSubsActiveConnections--;
-      this.snackBar.open(`Error: ${error?.message}`);
-      if (this.setProgressSubsActiveConnections === 0) {
-        console.log('all setProgressSubsActiveConnections done');
-        this.changeDay();
-      } else if (error) {
-        console.log(error);
-      } else { // complete with active others
-        console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
-      }
-    };
-
-    const handleSetProgressSubscriptionSuccess = () => {
-      checkbox.checked = toUpdateOneTimeOfDay.checked;
-      checkbox.disabled = false;
-      this.setProgressSubsActiveConnections--;
-
-      this.todayItems[timeOfDay].find((task) => task.id === taskId).done = toUpdateOneTimeOfDay.checked;
-
-      if (this.setProgressSubsActiveConnections === 0) {
-        console.log('all setProgressSubsActiveConnections done');
-        this.changeDay();
-      } else {
-        console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
-      }
-
-    };
-
-    this.setProgressSubsActiveConnections++;
-    if (!this.tasksListSub.closed) {
-      console.log('this.tasksListSub.unsubscribe()');
-      this.tasksListSub.unsubscribe();
-      console.log('this.userSubscription.unsubscribe()');
-      this.userSubscription.unsubscribe();
-    }
-
     const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe(() => {
-      handleSetProgressSubscriptionSuccess();
+      this.todayItems[timeOfDay].find((task) => task.id === taskId).done = toUpdateOneTimeOfDay.checked;
+      checkbox.disabled = false;
     }, (error) => {
-      handleSetProgressSubscriptionError(error);
+      checkbox.disabled = false;
+      this.snackBar.open(`Error: ${error?.message}`);
     });
 
     this.setProgressSubs.add(setProgressSubscription);

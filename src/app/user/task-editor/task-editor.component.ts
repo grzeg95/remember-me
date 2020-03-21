@@ -8,6 +8,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
+import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
 import {ITask} from '../models';
 import {TimeOfDayDialogComponent} from './dialog/time-of-day-dialog.component';
@@ -33,7 +34,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               private afs: AngularFirestore,
               public dialog: MatDialog,
               @Inject(DOCUMENT) private document: Document,
-              private snackBar: MatSnackBar) {
+              private snackBar: MatSnackBar,
+              private appService: AppService) {
     this.taskForm.enable();
   }
 
@@ -94,6 +96,10 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       width: '250px'
     });
 
+    dialogRef.afterOpened().subscribe(() => {
+      this.appService.dialogOpen = true;
+    });
+
     // apply if dialogRef.open forgot to add
     if (scrollY > 0) {
       html.style.top = -scrollY + 'px';
@@ -125,6 +131,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay.trim(), new FormControl(true, Validators.required));
         this.getDeepEqual();
       }
+
+      this.appService.dialogOpen = false;
 
     });
 

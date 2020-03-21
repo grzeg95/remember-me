@@ -31,6 +31,7 @@
     "g": "^2.0.1",
     "jquery": "^3.4.1",
     "mixin-deep": "^2.0.1",
+    "ng-connection-service": "^1.0.4",
     "node-sass": "^4.13.1",
     "popper.js": "^1.16.1",
     "rxjs": "~6.5.4",
