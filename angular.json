@@ -30,7 +30,6 @@
               "node_modules/bootstrap/scss/bootstrap.scss",
               "src/assets/fonts/fontawesome-all.sass",
               "src/style/styles.sass",
-              "src/style/Features-Clean.sass"
             ],
             "scripts": []
           },

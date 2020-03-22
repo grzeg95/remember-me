@@ -2,31 +2,42 @@
 \:host
   .container
     .col
-      background-color: white
       padding: 1rem
-      border-radius: .25rem
+      border-radius: 0.25rem
+      background-color: white
+
       .form-check
         display: inline
         padding: 0
+
       .form-group
         width: 100%
+
       input
         width: 100%
+
       .btn
-        margin: .5rem
+        margin: 0.5rem
+
         .mat-progress-bar
           height: 0.125rem
           transition: opacity 250ms linear
-      .btn-outline-dark:not(:disabled):not(.disabled):active, .btn-outline-dark:not(:disabled):not(.disabled).active, .show > .btn-outline-dark.dropdown-toggle
-        color: #343a40
-        background-color: #ffffff
+
+      .btn-outline-dark:not(:disabled):not(.disabled):active,
+      .btn-outline-dark:not(:disabled):not(.disabled).active,
+      .show > .btn-outline-dark.dropdown-toggle
         border-color: #6b7580
-      .btn-outline-dark:hover
-        color: #343a40
         background-color: #ffffff
+        color: #343a40
+
+      .btn-outline-dark:hover
         border-color: #343a40
+        background-color: #ffffff
+        color: #343a40
+
       .error
-        color: red !important
+        color: red
+
       .btn:focus, .btn.focus
         outline: 0
         box-shadow: none

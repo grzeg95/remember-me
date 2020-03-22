@@ -101,11 +101,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     });
 
     // apply if dialogRef.open forgot to add
-    if (scrollY > 0) {
+    if (this.appService.hasScrollbar()) {
       html.style.top = -scrollY + 'px';
-      html.classList.add('cdk-global-scrollblock');
-    }
-    if (scrollX > 0) {
       html.style.left = -scrollX + 'px';
       html.classList.add('cdk-global-scrollblock');
     }
@@ -126,7 +123,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         console.log('Enter new one');
       } if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
-        console.log('EEnter time of day length from 1 to 20');
+        console.log('Enter time of day length from 1 to 20');
       } else {
         (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay.trim(), new FormControl(true, Validators.required));
         this.getDeepEqual();
