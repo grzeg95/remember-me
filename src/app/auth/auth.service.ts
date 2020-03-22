@@ -1,9 +1,10 @@
-import {EventEmitter, Injectable, NgZone} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import * as firebase from 'firebase';
 import {auth, User} from 'firebase/app';
+import {BehaviorSubject} from 'rxjs';
 import {IUser} from './i-user';
 import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 
@@ -11,17 +12,13 @@ import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 export class AuthService {
 
   userData: IUser;
-
-  isLoggedEventEmitter: EventEmitter<boolean>;
+  whileLoginIn$: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(
     private afs: AngularFirestore,
     public afAuth: AngularFireAuth,
     public router: Router,
-    public ngZone: NgZone
-  ) {
-
-    this.isLoggedEventEmitter = new EventEmitter<boolean>();
+    public ngZone: NgZone) {
 
     this.afAuth.authState.subscribe((user) => {
 
@@ -43,7 +40,6 @@ export class AuthService {
 
       } else {
         localStorage.setItem('user', null);
-        this.isLoggedEventEmitter.emit(this.isLoggedIn);
         return this.router.navigate(['/']);
       }
 
@@ -59,7 +55,7 @@ export class AuthService {
       this.userData = user;
     }
 
-    return (user !== null && user.emailVerified !== false);
+    return (user !== null && user?.emailVerified !== false);
 
   }
 
@@ -69,11 +65,15 @@ export class AuthService {
 
   authLogin(provider: GoogleAuthProvider): void {
 
+    this.whileLoginIn$.next(true);
+
     this.afAuth.auth.signInWithPopup(provider).then(() => {
       return this.ngZone.run(() => {
+        this.whileLoginIn$.next(false);
         return this.router.navigate(['/user/tasks-list']);
       });
     }).catch((error) => {
+      this.whileLoginIn$.next(false);
       console.error(error);
     });
 
@@ -83,11 +83,7 @@ export class AuthService {
 
     this.afs.doc(`users/${user.uid}`).set(user, {
       merge: true
-    }).catch((error) => {
-      console.log(error);
-    }).then(() => {
-      this.isLoggedEventEmitter.emit(this.isLoggedIn);
-    });
+    }).catch(() => this.signOut());
 
   }
 

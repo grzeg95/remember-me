@@ -24,7 +24,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
-      'Check function requirements'
+      'Some went wrong 🤫 Try again 🙂'
     );
   }
 
@@ -38,7 +38,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
         throw new functions.https.HttpsError(
           'unauthenticated',
           'Register to use this functionality',
-          `User ${auth?.uid} does not exist`
+          `You dont't exist 😱`
         );
       }
 
@@ -49,7 +49,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
           throw new functions.https.HttpsError(
             'invalid-argument',
             'Task does not exist',
-            `User ${userDocSnap.data()?.id} has not task ${data.taskId}`
+            `Some went wrong 🤫 Try again 🙂`
           );
         }
 
@@ -105,12 +105,12 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
 
     })
   ).then(() => ({
-    message: 'Your task has been deleted'
-  })).catch((e) => {
+    details: 'Your task has been deleted 🤭'
+  })).catch((error: functions.https.HttpsError) => {
     throw new functions.https.HttpsError(
       'internal',
-      e,
-      'Your task has not been deleted'
+      error.message,
+      error.details || 'Some went wrong 🤫 Try again 🙂'
     );
   });
 

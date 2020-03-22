@@ -2,9 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import {deleteTaskHandler, saveTaskHandler, setProgressHandler, setTodayOrderHandler} from './handlers';
 
-admin.initializeApp({
-  credential: admin.credential.cert('./remember-me-3-admin-meta.json')
-});
+admin.initializeApp();
 
 export const db = admin.firestore();
 
@@ -29,5 +27,5 @@ export const setProgress = functions.runWith({
 // up to 51 operations
 export const setTodayOrder = functions.runWith({
   timeoutSeconds: 5,
-  memory: "128MB"
+  memory: "256MB"
 }).region('europe-west2').https.onCall(setTodayOrderHandler);

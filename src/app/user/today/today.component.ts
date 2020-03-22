@@ -5,7 +5,7 @@ import {interval, Subscription} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {ITodayItem} from '../models';
+import {IError, ITodayItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -55,7 +55,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.isEmpty = Object.keys(todayItemsViewContainer).length === 0;
 
-    this.todayItemsFirstLoading = false;
     return todayItemsViewContainer;
   }
 
@@ -66,10 +65,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private snackBar: MatSnackBar,
               private appService: AppService) {}
 
-  todayName: string;
-  getTodayTasks$: Subscription;
-  timesOfDayOrder$: Subscription = new Subscription();
-  changeDayInterval: Subscription = new Subscription();
+  todayName = '';
+  todayTasks$: Subscription;
+  timesOfDayOrder$: Subscription;
+  changeDayInterval: Subscription;
   setProgressSubsActiveConnections = 0;
   isEmpty = true;
   isConnected$: Subscription;
@@ -86,6 +85,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       }
     });
 
+    this.observeTimesOfDayOrder();
+
   }
 
   todayItemIsDone(timeOfDay: string): boolean {
@@ -100,41 +101,42 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return index + ('' + item.done) + item.description;
   }
 
-  refreshTimesOfDayOrder(): void {
-
-    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
-      this.timesOfDayOrder$.unsubscribe();
+  observeTimesOfDayOrder(): void {
+    if (!this.timesOfDayOrder$ || this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
+        this.order = timesOfDayOrder;
+      });
     }
+  }
 
-    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
-      this.order = timesOfDayOrder;
-      this.timesOfDayOrder$.unsubscribe();
+  private updateTodayTaskList(): void {
+    this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
+      this.todayItems = newTodayItems;
+      this.todayItemsFirstLoading = false;
     });
   }
 
-  refreshTodayTasksList(): void {
+  observeTodayTasksList(): void {
 
-    if (this.getTodayTasks$ && !this.getTodayTasks$.closed) {
-      this.getTodayTasks$.unsubscribe();
+    const now = new Date();
+    const lastTodayName = this.todayName + '';
+    this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
+
+    if (lastTodayName !== this.todayName) {
+      if (this.todayTasks$ && !this.todayTasks$.closed) {
+        this.todayTasks$.unsubscribe();
+      }
+      this.updateTodayTaskList();
+    } else if (!this.todayTasks$ || this.todayTasks$.closed) {
+      this.updateTodayTaskList();
     }
-
-    this.getTodayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
-      this.todayItems = newTodayItems;
-      this.getTodayTasks$.unsubscribe();
-    });
 
   }
 
   changeDay(): void {
-
-    const now = new Date();
-    this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
-
-    this.refreshTodayTasksList();
-    this.refreshTimesOfDayOrder();
-
+    this.observeTodayTasksList();
+    this.observeTimesOfDayOrder();
     this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => this.changeDay());
-
   }
 
   ngAfterViewChecked(): void {
@@ -170,10 +172,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
         console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
       }
 
-    }, (error) => {
+    }, (error: IError) => {
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
-      this.snackBar.open(`Error: ${error?.message}`);
+      this.snackBar.open(error.details);
       if (this.setProgressSubsActiveConnections === 0) {
         console.log('all setProgressSubsActiveConnections done');
         this.changeDay();
@@ -184,13 +186,21 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       }
     });
 
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    if (this.todayTasks$ && !this.todayTasks$.closed) {
+      this.todayTasks$.unsubscribe();
+    }
+
   }
 
   ngOnDestroy(): void {
     this.changeDayInterval.unsubscribe();
 
-    if (this.getTodayTasks$ && !this.getTodayTasks$.closed) {
-      this.getTodayTasks$.unsubscribe();
+    if (this.todayTasks$ && !this.todayTasks$.closed) {
+      this.todayTasks$.unsubscribe();
     }
 
     if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {

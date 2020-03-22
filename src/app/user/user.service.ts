@@ -33,47 +33,68 @@ export class UserService {
   constructor(private afs: AngularFirestore,
               private authService: AuthService) {}
 
+  getTimesOfDayOrder$(): Observable<string[]> {
+    return this.afs
+      .doc<IUser>(`users/${this.authService.userData.uid}`)
+      .collection<ITimeOfDay>('timesOfDay', (ref) => ref.orderBy('position'))
+      .auditTrail().pipe(map((docChangeAction) => {
+
+        console.log(docChangeAction);
+        const timesOfDayNames: string[] = [];
+
+        docChangeAction.forEach((docChangeActionDoc) =>
+          timesOfDayNames.push(docChangeActionDoc.payload.doc.data().name)
+        );
+
+        return timesOfDayNames;
+
+      }));
+  }
+
   getTaskList$(): Observable<ITasksListItem[]> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
       .snapshotChanges().pipe(map((docChangeAction) => {
 
-      const tasksItemsReceived: ITasksListItem[] = [];
+        const tasksItemsReceived: ITasksListItem[] = [];
 
-      docChangeAction.forEach((docChangeActionDoc) => {
+        console.log(docChangeAction);
 
-        const task = docChangeActionDoc.payload.doc.data() as ITask;
-        let daysOfTheWeek: any = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-          .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
+        docChangeAction.forEach((docChangeActionDoc) => {
 
-        if (daysOfTheWeek.length === 7) {
-          daysOfTheWeek = 'Every day';
-        } else {
-          daysOfTheWeek = daysOfTheWeek.join(', ');
-        }
+          const task = docChangeActionDoc.payload.doc.data() as ITask;
+          let daysOfTheWeek: any = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
 
-        const taskItem: ITasksListItem = {
-          description: task.description,
-          timesOfDay: Object.keys(task.timesOfDay),
-          daysOfTheWeek,
-          id: docChangeActionDoc.payload.doc.id
-        };
+          if (daysOfTheWeek.length === 7) {
+            daysOfTheWeek = 'Every day';
+          } else {
+            daysOfTheWeek = daysOfTheWeek.join(', ');
+          }
 
-        tasksItemsReceived.push(taskItem);
-      });
+          const taskItem: ITasksListItem = {
+            description: task.description,
+            timesOfDay: Object.keys(task.timesOfDay),
+            daysOfTheWeek,
+            id: docChangeActionDoc.payload.doc.id
+          };
 
-      return tasksItemsReceived;
+          tasksItemsReceived.push(taskItem);
+        });
 
-    }));
+        return tasksItemsReceived;
+
+      }));
   }
 
   getTodayTasks$(todayName: string): Observable<{ [p: string]: ITodayItem[] }> {
+
     return this.afs.doc(`users/${this.authService.userData.uid}/today/${todayName}`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
       .snapshotChanges().pipe(
         map((docChangeActionDocDataArray) => {
 
-          const todayTasksByTimeOfDay: {[timeOfDay: string]: ITodayItem[]} = {};
+          const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
 
           docChangeActionDocDataArray.forEach((docChangeActionDocData) => {
 
@@ -104,23 +125,6 @@ export class UserService {
   getTaskById$(id: string): Observable<Action<DocumentSnapshot<ITask>>> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
       .collection<ITask>('task').doc<ITask>(id).snapshotChanges();
-  }
-
-  getTimesOfDayOrder$(): Observable<string[]> {
-    return this.afs
-      .doc<IUser>(`users/${this.authService.userData.uid}`)
-      .collection<ITimeOfDay>('timesOfDay', (ref) => ref.orderBy('position'))
-      .snapshotChanges().pipe(map((docChangeAction) => {
-
-        const timesOfDayNames: string[] = [];
-
-        docChangeAction.forEach((docChangeActionDoc) =>
-          timesOfDayNames.push(docChangeActionDoc.payload.doc.data().name)
-        );
-
-        return timesOfDayNames;
-
-      }));
   }
 
 }

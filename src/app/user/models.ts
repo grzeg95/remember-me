@@ -34,3 +34,13 @@ export interface ITimeOfDay {
   name: string;
   position: number;
 }
+
+export interface ISuccess {
+  details: string;
+  taskId?: string;
+  created?: boolean;
+}
+
+export interface IError {
+  details: string;
+}

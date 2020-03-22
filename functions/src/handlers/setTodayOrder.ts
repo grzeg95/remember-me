@@ -29,7 +29,7 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
-      'Check function requirements'
+      'Some went wrong 🤫 Try again 🙂'
     );
   }
 
@@ -41,7 +41,7 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
         throw new functions.https.HttpsError(
           'unauthenticated',
           'Register to use this functionality',
-          `User ${auth?.uid} does not exist`
+          `You dont't exist 😱`
         );
       }
 
@@ -62,6 +62,14 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
       * Proceed all data
       * */
 
+      if (timesOfDayDocSnaps.length !== data.length) {
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'Bad Request',
+          'Some went wrong 🤫 Try again 🙂'
+        );
+      }
+
       data.forEach((timeOfDay: string, index) => {
 
         const timesOfDayDocSnap = timesOfDayDocSnaps.find((timesOfDayDocSnapNext) => timesOfDayDocSnapNext.data()?.name === timeOfDay);
@@ -70,11 +78,9 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
           throw new functions.https.HttpsError(
             'invalid-argument',
             'Bad Request',
-            'Check function requirements'
+            'Some went wrong 🤫 Try again 🙂'
           );
         }
-
-        console.log(timesOfDayDocSnap.data()?.name, index);
 
         transaction.update(timesOfDayDocSnap.ref, {
           position: index
@@ -82,6 +88,15 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
 
       });
 
-    }));
+    })).then(() => ({
+      details: 'Order has been updated 🙃'
+    })
+  ).catch((error: functions.https.HttpsError) => {
+    throw new functions.https.HttpsError(
+      'internal',
+      error.message,
+      error.details || 'Some went wrong 🤫 Try again 🙂'
+    );
+  });
 
 };

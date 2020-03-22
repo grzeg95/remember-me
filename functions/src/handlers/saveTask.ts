@@ -147,7 +147,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
-      `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(updated + created - removed).length}`
+      `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(updated + created - removed).length} 🤔`
     );
   }
 
@@ -224,7 +224,7 @@ export const handler = (data: {
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
-      'Check function requirements'
+      'Some went wrong 🤫 Try again 🙂'
     );
   }
 
@@ -239,7 +239,7 @@ export const handler = (data: {
         throw new functions.https.HttpsError(
           'unauthenticated',
           'Register to use this functionality',
-          `User ${auth?.uid} does not exist`
+          `You dont't exist 😱`
         );
       }
 
@@ -301,21 +301,19 @@ export const handler = (data: {
     })
   ).then(() =>
     created ? ({
-      status: 'Created',
       created: true,
-      message: 'Your task has been created',
+      details: 'Your task has been created 😉',
       taskId: taskId
     }) : ({
-      status: 'Updated',
       created: false,
-      message: 'Your task has been updated',
+      details: 'Your task has been updated 🙃',
       taskId: taskId
     })
-  ).catch((e) => {
+  ).catch((error: functions.https.HttpsError) => {
       throw new functions.https.HttpsError(
         'internal',
-        e,
-        'Your task has not been touched'
+        error.message,
+        error.details || 'Some went wrong 🤫 Try again 🙂'
       );
     }
   );

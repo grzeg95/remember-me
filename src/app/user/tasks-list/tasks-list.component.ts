@@ -70,13 +70,13 @@ export class TasksListComponent implements OnInit, OnDestroy {
       this.taskListItems = tasksItemsReceived;
       this.isEmpty = tasksItemsReceived.length === 0;
       this.taskListItemsFirstLoading = false;
-      this.taskList$.unsubscribe();
     });
   }
 
   ngOnInit(): void {
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
+        console.log(isConnected);
         this.refreshTimesOfDayOrder();
         this.refreshTaskList();
       }

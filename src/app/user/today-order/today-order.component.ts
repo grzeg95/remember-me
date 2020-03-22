@@ -4,6 +4,7 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
+import {IError, ISuccess} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -84,14 +85,11 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
     this.disabled = true;
 
-    this.fns.httpsCallable('setTodayOrder')(this.order).subscribe(() => {
-      console.log('OK');
-      this.snackBar.open('Order has been updated');
+    this.fns.httpsCallable('setTodayOrder')(this.order).subscribe((success: ISuccess) => {
+      this.snackBar.open(success.details);
       this.disabled = false;
-      this.refreshTimesOfDayOrder();
-    }, (error) => {
-      console.log(error);
-      this.snackBar.open('Error on order update');
+    }, (error: IError) => {
+      this.snackBar.open(error.details);
       this.disabled = false;
       this.refreshTimesOfDayOrder();
     });

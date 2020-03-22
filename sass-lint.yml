@@ -5,7 +5,7 @@ rules:
   attribute-quotes:
   - 1
   - include: true
-  bem-depth: # TODO
+  bem-depth:
   - 0
   - max-depth: 1
   border-zero:
@@ -104,7 +104,7 @@ rules:
   no-vendor-prefixes: 1
   no-warn: 0
   one-declaration-per-line: 1
-  placeholder-in-extend: 0 # TODO
+  placeholder-in-extend: 0
   placeholder-name-format:
   - 1
   - allow-leading-underscore: false

@@ -10,7 +10,7 @@ import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {ITask} from '../models';
+import {IError, ISuccess, ITask} from '../models';
 import {UserService} from '../user.service';
 import {TimeOfDayDialogComponent} from './dialog/time-of-day-dialog.component';
 
@@ -152,6 +152,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
       this.getTaskById$ = this.userService.getTaskById$(this.id).subscribe((taskDocSnap) => {
         const task = taskDocSnap.payload.data() as ITask;
+        console.log(task);
         if (!task) {
           this.taskForm.reset();
           this.resetId();
@@ -159,6 +160,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         } else {
           this.setAll(task);
         }
+        this.savingInProgress = false;
         this.taskForm.enable();
         this.getTaskById$.unsubscribe();
       });
@@ -216,19 +218,23 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.fns.httpsCallable('saveTask')({
       task,
       taskId: this.id
-    }).subscribe((data) => {
+    }).subscribe((success: ISuccess) => {
 
-      if (data.created) {
-        this.location.go('/user/task-editor/' + data.taskId);
+      if (success.created) {
+        this.location.go('/user/task-editor/' + success.taskId);
       }
 
-      this.refreshTaskByParamId(data.taskId);
-      this.snackBar.open(`${data.message}`);
-
-    }, (error) => {
+      this.id = success.taskId;
+      this.setAll(task);
       this.taskForm.enable();
       this.savingInProgress = false;
-      this.snackBar.open(`Error: ${error.message}`);
+      this.snackBar.open(success.details);
+
+    }, (error: IError) => {
+      this.taskForm.enable();
+      this.savingInProgress = false;
+      this.snackBar.open(error.details);
+      this.refreshTaskByParamId(this.id);
     });
 
   }
@@ -271,15 +277,12 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.taskForm.disable();
     this.deletingInProgress = true;
 
-    this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((next) => {
-      console.log(next);
-      this.snackBar.open(`${next.message}`);
+    this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: ISuccess) => {
+      this.snackBar.open(success.details);
       this.deepResetForm();
-    }, (error) => {
-      console.log(error);
-      this.taskForm.enable();
-      this.deletingInProgress = false;
-      this.snackBar.open(`${error.message}`);
+    }, (error: IError) => {
+      this.snackBar.open(error.details);
+      this.refreshTaskByParamId(this.id);
     }, () => {
       this.taskForm.enable();
       this.deletingInProgress = false;
@@ -313,7 +316,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   removeTimeOfDay(timeOfDay: string): void {
     (this.taskForm.get('timesOfDay') as FormGroup).removeControl(timeOfDay);
-    this.getDeepEqual();
   }
 
   getDeepEqual(): boolean {

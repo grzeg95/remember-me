@@ -1,19 +1,17 @@
 import {Injectable} from '@angular/core';
 import { ConnectionService } from 'ng-connection-service';
-import {Subject} from 'rxjs';
+import {BehaviorSubject} from 'rxjs';
 
 @Injectable()
 export class AppService {
 
   dialogOpen = false;
-  isConnected$: Subject<boolean> = new Subject();
-  isConnected = true;
+  isConnected$: BehaviorSubject<boolean> = new BehaviorSubject(true);
 
   constructor(private connectionService: ConnectionService) {
-    this.connectionService.monitor().subscribe((isConnected) => {
-      this.isConnected = isConnected;
-      this.isConnected$.next(isConnected);
-    });
+    this.connectionService.monitor().subscribe((isConnected) =>
+      this.isConnected$.next(isConnected)
+    );
   }
 
   hasScrollbar(): boolean {

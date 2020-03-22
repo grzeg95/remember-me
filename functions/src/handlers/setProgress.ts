@@ -26,7 +26,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
     throw new functions.https.HttpsError(
       'invalid-argument',
       'Bad Request',
-      'Check function requirements'
+      'Some went wrong 🤫 Try again 🙂'
     );
   }
 
@@ -38,7 +38,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
         throw new functions.https.HttpsError(
           'unauthenticated',
           'Register to use this functionality',
-          `User ${auth?.uid} does not exist`
+          `You dont't exist 😱`
         );
       }
 
@@ -49,7 +49,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
           throw new functions.https.HttpsError(
             'invalid-argument',
             'Task does not exist',
-            `User ${userDocSnap.data()?.id} has not task ${data.todayName}/task/${data.taskId}`
+            `Some went wrong 🤫 Try again 🙂`
           );
         }
 
@@ -60,7 +60,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
             throw new functions.https.HttpsError(
               'invalid-argument',
               'Task does not exist',
-              `User ${userDocSnap.data()?.id} has not task ${data.taskId}`
+              `Some went wrong 🤫 Try again 🙂`
             );
           }
 
@@ -68,26 +68,25 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
             throw new functions.https.HttpsError(
               'invalid-argument',
               'Invalid time of day',
-              `User ${userDocSnap.data()?.id} has not task ${data.taskId} with ${data.timeOfDay}`
+              `Some went wrong 🤫 Try again 🙂`
             );
           }
 
           return transaction.set(todayTaskDocSnap.ref, {
             timesOfDay: JSON.parse(`{"${data.timeOfDay}":${data.checked}}`)
-          }, {merge: true});
+          }, {merge: true})
 
         });
 
       });
 
-    })).then(() => ({
-      message: 'Your progress has been updated'
-    })).catch((e) => {
-    throw new functions.https.HttpsError(
-      'internal',
-      e,
-      'Your task has not been updated'
-    );
-  });
-
+    })
+  ).catch((error: functions.https.HttpsError) => {
+      throw new functions.https.HttpsError(
+        'internal',
+        error.message,
+        error.details || 'Some went wrong 🤫 Try again 🙂'
+      );
+    }
+  );
 };
