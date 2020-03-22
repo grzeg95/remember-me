@@ -6,13 +6,13 @@ import {Subject} from 'rxjs';
 export class AppService {
 
   dialogOpen = false;
-  $isConnected: Subject<boolean> = new Subject();
+  isConnected$: Subject<boolean> = new Subject();
   isConnected = true;
 
   constructor(private connectionService: ConnectionService) {
     this.connectionService.monitor().subscribe((isConnected) => {
       this.isConnected = isConnected;
-      this.$isConnected.next(isConnected);
+      this.isConnected$.next(isConnected);
     });
   }
 
@@ -20,7 +20,7 @@ export class AppService {
 
     // The Modern solution
     if (typeof window.innerWidth === 'number') {
-      return window.innerWidth > document.documentElement.clientWidth
+      return window.innerWidth > document.documentElement.clientWidth;
     }
 
     // rootElem for quirksmode

@@ -3,6 +3,7 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
+import {AppService} from '../../app-service';
 import {UserService} from '../user.service';
 
 @Component({
@@ -32,10 +33,12 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   disabled = false;
   timesOfDayOrder$: Subscription;
   isEmpty = true;
+  isConnected$: Subscription;
 
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
-              private fns: AngularFireFunctions) {}
+              private fns: AngularFireFunctions,
+              private appService: AppService) {}
 
   ngOnInit(): void {
 
@@ -43,14 +46,19 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
       this.isEmpty = false;
     }
 
-    this.refreshTimesOfDayOrder();
-
+    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+      if (isConnected) {
+        this.refreshTimesOfDayOrder();
+      }
+    });
   }
 
   ngOnDestroy(): void {
     if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
       this.timesOfDayOrder$.unsubscribe();
     }
+
+    this.isConnected$.unsubscribe();
   }
 
   refreshTimesOfDayOrder(): void {

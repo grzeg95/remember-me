@@ -1,5 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
+import {AppService} from '../../app-service';
 import {ITasksListItem} from '../models';
 import {UserService} from '../user.service';
 
@@ -38,8 +39,10 @@ export class TasksListComponent implements OnInit, OnDestroy {
   isEmpty = true;
   timesOfDayOrder$: Subscription;
   taskList$: Subscription;
+  isConnected$: Subscription;
 
-  constructor(public userService: UserService) {
+  constructor(public userService: UserService,
+              private appService: AppService) {
     if (userService.taskListItems.length > 0) {
       this.isEmpty = false;
     }
@@ -72,8 +75,12 @@ export class TasksListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.refreshTimesOfDayOrder();
-    this.refreshTaskList();
+    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+      if (isConnected) {
+        this.refreshTimesOfDayOrder();
+        this.refreshTaskList();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -84,6 +91,8 @@ export class TasksListComponent implements OnInit, OnDestroy {
     if (this.taskList$ && !this.taskList$.closed) {
       this.taskList$.unsubscribe();
     }
+
+    this.isConnected$.unsubscribe();
   }
 
 }

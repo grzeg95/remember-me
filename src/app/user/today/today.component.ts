@@ -3,6 +3,7 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {interval, Subscription} from 'rxjs';
 import {take} from 'rxjs/operators';
+import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
 import {ITodayItem} from '../models';
 import {UserService} from '../user.service';
@@ -54,6 +55,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.isEmpty = Object.keys(todayItemsViewContainer).length === 0;
 
+    this.todayItemsFirstLoading = false;
     return todayItemsViewContainer;
   }
 
@@ -61,7 +63,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private cdRef: ChangeDetectorRef,
               private authService: AuthService,
               private userService: UserService,
-              private snackBar: MatSnackBar) {}
+              private snackBar: MatSnackBar,
+              private appService: AppService) {}
 
   todayName: string;
   getTodayTasks$: Subscription;
@@ -69,6 +72,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   changeDayInterval: Subscription = new Subscription();
   setProgressSubsActiveConnections = 0;
   isEmpty = true;
+  isConnected$: Subscription;
 
   ngOnInit(): void {
 
@@ -76,7 +80,11 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.isEmpty = false;
     }
 
-    this.changeDay();
+    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+      if (isConnected) {
+        this.changeDay();
+      }
+    });
 
   }
 
@@ -188,6 +196,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
       this.timesOfDayOrder$.unsubscribe();
     }
+
+    this.isConnected$.unsubscribe();
   }
 
   private static toNextDayCalc(): number {

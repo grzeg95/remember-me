@@ -63,15 +63,22 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   savingInProgress = false;
   deletingInProgress = false;
   getTaskById$: Subscription;
+  isConnected$: Subscription;
 
   ngOnInit(): void {
-    this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || null);
+    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+      if (isConnected) {
+        this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || null);
+      }
+    });
   }
 
   ngOnDestroy(): void {
     if (this.getTaskById$ && !this.getTaskById$.closed) {
       this.getTaskById$.unsubscribe();
     }
+
+    this.isConnected$.unsubscribe();
   }
 
   openTimeOfDayDialog(): void {
