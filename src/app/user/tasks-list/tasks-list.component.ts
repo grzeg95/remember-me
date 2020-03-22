@@ -1,5 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {AppService} from '../../app-service';
 import {ITasksListItem} from '../models';
 import {UserService} from '../user.service';
@@ -66,7 +67,21 @@ export class TasksListComponent implements OnInit, OnDestroy {
       this.taskList$.unsubscribe();
     }
 
-    this.taskList$ = this.userService.getTaskList$().subscribe((tasksItemsReceived) => {
+    this.taskList$ = this.userService.getTaskList$().pipe(map((tasksItemsReceived) => {
+      return tasksItemsReceived.map((tasksItemReceived) => {
+
+        if (this.order.length === 0) {
+          tasksItemReceived.timesOfDay = Object.keys(tasksItemReceived.timesOfDay).join(', ');
+        } else {
+          tasksItemReceived.timesOfDay = this.order
+            .filter((timeOfDay) => tasksItemReceived.timesOfDay.includes(timeOfDay))
+            .join(', ');
+        }
+
+        return tasksItemReceived;
+
+      });
+    })).subscribe((tasksItemsReceived) => {
       this.taskListItems = tasksItemsReceived;
       this.isEmpty = tasksItemsReceived.length === 0;
       this.taskListItemsFirstLoading = false;

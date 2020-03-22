@@ -5,7 +5,7 @@ import {
   DocumentSnapshot
 } from '@angular/fire/firestore';
 import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {map, tap} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
 import {IUser} from '../auth/i-user';
 import {ITask, ITasksListItem, ITimeOfDay, ITodayItem} from './models';
@@ -96,6 +96,8 @@ export class UserService {
 
           const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
 
+          console.log(docChangeActionDocDataArray);
+
           docChangeActionDocDataArray.forEach((docChangeActionDocData) => {
 
             const task: ITask = docChangeActionDocData.payload.doc.data();
@@ -124,7 +126,9 @@ export class UserService {
 
   getTaskById$(id: string): Observable<Action<DocumentSnapshot<ITask>>> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
-      .collection<ITask>('task').doc<ITask>(id).snapshotChanges();
+      .collection<ITask>('task').doc<ITask>(id).snapshotChanges().pipe(tap((actionDocSnap) => {
+        console.log(actionDocSnap);
+      }));
   }
 
 }

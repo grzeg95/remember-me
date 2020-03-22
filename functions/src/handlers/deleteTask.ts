@@ -12,7 +12,7 @@ import DocumentData = FirebaseFirestore.DocumentData;
  * @param context functions.https.CallableContext
  * @return Promise<T>
 **/
-export const handler = (data: {taskId: any}, context: functions.https.CallableContext) => {
+export const handler = (data: {taskId: any}, context: functions.https.CallableContext): Promise<any> => {
 
   const auth: {
     uid: string;
@@ -31,7 +31,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
   return app.runTransaction((transaction) =>
 
     // get user from firestore
-    transaction.get(app.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {

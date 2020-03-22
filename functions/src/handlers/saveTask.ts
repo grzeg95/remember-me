@@ -48,7 +48,7 @@ type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
  * @param taskDocSnap DocumentSnapshot
  * @param task: ITask
  * @param day: Day
- * @return Promise<T>
+ * @return Transaction
  **/
 const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, task: ITask, day: Day): Transaction => {
 
@@ -119,8 +119,9 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * @param user: DocumentReference
  * @param taskUpdated: ITask
  * @param timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]
+ * @return Transaction
  **/
-const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]) => {
+const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]): Transaction => {
 
   let created = 0;
   let updated = 0;
@@ -283,7 +284,7 @@ export const handler = (data: {
         let taskDocSnap: DocumentSnapshot<DocumentData>;
         if (!taskDocSnapTmp.exists) {
           created = true;
-          taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => newTaskSnap);
+          taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then(async (newTaskSnap) => newTaskSnap);
           taskId = taskDocSnap.id;
         } else {
           taskDocSnap = taskDocSnapTmp;

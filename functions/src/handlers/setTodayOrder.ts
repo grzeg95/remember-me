@@ -13,7 +13,7 @@ import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: any[], context: functions.https.CallableContext) => {
+export const handler = (data: any[], context: functions.https.CallableContext): Promise<any> => {
 
   const auth: {
     uid: string;

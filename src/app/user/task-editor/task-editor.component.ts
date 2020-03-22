@@ -1,6 +1,5 @@
 import {DOCUMENT, Location} from '@angular/common';
-import {ChangeDetectorRef, Component, Inject, OnDestroy, OnInit} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/firestore';
+import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
@@ -30,9 +29,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               private router: Router,
               private activeRoute: ActivatedRoute,
               private location: Location,
-              private cdRef: ChangeDetectorRef,
               private fns: AngularFireFunctions,
-              private afs: AngularFirestore,
               public dialog: MatDialog,
               @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,

@@ -11,7 +11,7 @@ import * as functions from 'firebase-functions';
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: { taskId: any, todayName: any, checked: any, timeOfDay: any }, context: functions.https.CallableContext) => {
+export const handler = (data: { taskId: any, todayName: any, checked: any, timeOfDay: any }, context: functions.https.CallableContext): Promise<any> => {
 
   const auth: {
     uid: string;
@@ -32,7 +32,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
   }
 
   return app.runTransaction((transaction) =>
-    transaction.get(app.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -43,7 +43,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
         );
       }
 
-      return transaction.get(userDocSnap.ref.collection('today').doc(`${data.todayName}/task/${data.taskId}`)).then((todayTaskDocSnap) => {
+      return transaction.get(userDocSnap.ref.collection('today').doc(`${data.todayName}/task/${data.taskId}`)).then(async (todayTaskDocSnap) => {
 
         // interrupt if user has not this task
         if (!todayTaskDocSnap.exists) {
@@ -54,7 +54,7 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
           );
         }
 
-        return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then((taskDocSnap) => {
+        return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then(async (taskDocSnap) => {
 
           // interrupt if user has not this task
           if (!taskDocSnap.exists) {
@@ -75,19 +75,21 @@ export const handler = (data: { taskId: any, todayName: any, checked: any, timeO
 
           return transaction.set(todayTaskDocSnap.ref, {
             timesOfDay: JSON.parse(`{"${data.timeOfDay}":${data.checked}}`)
-          }, {merge: true})
+          }, {merge: true});
 
         });
 
       });
 
     })
-  ).catch((error: functions.https.HttpsError) => {
-      throw new functions.https.HttpsError(
-        'internal',
-        error.message,
-        error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
-      );
-    }
-  );
+  ).then(() => ({
+    details: 'Progress has been updated 🙃'
+  })).catch((error: functions.https.HttpsError) => {
+    console.log(error);
+    throw new functions.https.HttpsError(
+      'internal',
+      error.message,
+      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+    );
+  });
 };

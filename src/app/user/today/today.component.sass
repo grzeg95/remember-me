@@ -1,9 +1,6 @@
 $btn-success-bg-color: #12ab49
 $btn-success-border-color: $btn-success-bg-color
 
-$btn-success-bg-color-hover: #0f8a3b
-$btn-success-border-color-hover: $btn-success-bg-color-hover
-
 // app-today
 \:host
   .container
@@ -30,6 +27,21 @@ $btn-success-border-color-hover: $btn-success-bg-color-hover
             position: relative
             padding: 0
 
+            .form-check-input
+              &:not(checked)
+                &[disabled] ~ .form-check-label,
+                &:disabled ~ .form-check-label
+                  color: black
+                  cursor: auto
+                  pointer-events: none
+
+              &:checked
+                &[disabled] ~ .form-check-label,
+                &:disabled ~ .form-check-label
+                  color: white
+                  cursor: auto
+                  pointer-events: none
+
             label
               position: relative
 
@@ -45,10 +57,6 @@ $btn-success-border-color-hover: $btn-success-bg-color-hover
                 &-success
                   border-color: $btn-success-border-color
                   background-color: $btn-success-bg-color
-
-                  &:hover
-                    border-color: $btn-success-border-color-hover
-                    background-color: $btn-success-bg-color-hover
 
         span
           font-size: 1.4rem
