@@ -1,11 +1,10 @@
 import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
-import {AngularFirestore, AngularFirestoreCollection} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {interval, Subscription} from 'rxjs';
-import {map, take} from 'rxjs/operators';
+import {take} from 'rxjs/operators';
 import {AuthService} from '../../auth/auth.service';
-import {ITask, ITodayItem} from '../models';
+import {ITodayItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -62,17 +61,14 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private cdRef: ChangeDetectorRef,
               private authService: AuthService,
               private userService: UserService,
-              private afs: AngularFirestore,
               private snackBar: MatSnackBar) {}
 
   todayName: string;
-  tasksCollection: AngularFirestoreCollection<ITask>;
-  tasksListSub: Subscription;
-  setProgressSubs: Subscription = new Subscription();
-  timesOfDayOrderSubscription: Subscription = new Subscription();
+  getTodayTasks$: Subscription;
+  timesOfDayOrder$: Subscription = new Subscription();
   changeDayInterval: Subscription = new Subscription();
-  isEmpty = true;
   setProgressSubsActiveConnections = 0;
+  isEmpty = true;
 
   ngOnInit(): void {
 
@@ -96,68 +92,38 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return index + ('' + item.done) + item.description;
   }
 
-  observeTimesOfDayOrder(): void {
+  refreshTimesOfDayOrder(): void {
 
-    if (this.timesOfDayOrderSubscription && !this.timesOfDayOrderSubscription.closed) {
-      this.timesOfDayOrderSubscription.unsubscribe();
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
     }
 
-    this.timesOfDayOrderSubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) =>
-      this.order = timesOfDayOrder
-    );
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
+      this.order = timesOfDayOrder;
+      this.timesOfDayOrder$.unsubscribe();
+    });
   }
 
-  observeTasksList(): void {
+  refreshTodayTasksList(): void {
 
-    if (this.tasksListSub && !this.tasksListSub.closed) {
-      this.tasksListSub.unsubscribe();
+    if (this.getTodayTasks$ && !this.getTodayTasks$.closed) {
+      this.getTodayTasks$.unsubscribe();
     }
 
-    this.tasksListSub = this.tasksCollection.snapshotChanges().pipe(
-      map((changes) => {
-
-        const todayTasksByTimeOfDay: {[timeOfDay: string]: ITodayItem[]} = {};
-
-        changes.forEach((change) => {
-
-          const task: ITask = change.payload.doc.data() as ITask;
-          const id: string = change.payload.doc.id;
-
-          for (const timeOfDay in task.timesOfDay) {
-            if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
-              if (!todayTasksByTimeOfDay[timeOfDay]) {
-                todayTasksByTimeOfDay[timeOfDay] = [];
-              }
-              todayTasksByTimeOfDay[timeOfDay].push({
-                description: task.description,
-                done: task.timesOfDay[timeOfDay],
-                id
-              });
-            }
-          }
-
-        });
-
-        this.todayItemsFirstLoading = false;
-        return todayTasksByTimeOfDay;
-
-      }))
-      .subscribe((newTodayItems) => this.todayItems = newTodayItems);
+    this.getTodayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
+      this.todayItems = newTodayItems;
+      this.getTodayTasks$.unsubscribe();
+    });
 
   }
 
   changeDay(): void {
 
-    if (this.changeDayInterval && !this.changeDayInterval.closed) {
-      this.changeDayInterval.unsubscribe();
-    }
-
     const now = new Date();
     this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
-    this.tasksCollection = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName}`)
-      .collection('task', (ref) => ref.orderBy('description', 'asc'));
-    this.observeTasksList();
-    this.observeTimesOfDayOrder();
+
+    this.refreshTodayTasksList();
+    this.refreshTimesOfDayOrder();
 
     this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => this.changeDay());
 
@@ -180,7 +146,9 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     checkbox.disabled = true;
 
-    const setProgressSubscription = this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe(() => {
+    this.setProgressSubsActiveConnections++;
+
+    this.fns.httpsCallable('setProgress')(toUpdateOneTimeOfDay).subscribe(() => {
       checkbox.checked = toUpdateOneTimeOfDay.checked;
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
@@ -194,7 +162,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
         console.log('complete with active others: ' + this.setProgressSubsActiveConnections);
       }
 
-    }, (error) =>  {
+    }, (error) => {
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
       this.snackBar.open(`Error: ${error?.message}`);
@@ -208,23 +176,18 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       }
     });
 
-    this.setProgressSubsActiveConnections++;
-    if (!this.tasksListSub.closed) {
-      console.log('this.tasksListSub.unsubscribe()');
-      this.tasksListSub.unsubscribe();
-      console.log('this.userSubscription.unsubscribe()');
-      this.timesOfDayOrderSubscription.unsubscribe();
-    }
-
-    this.setProgressSubs.add(setProgressSubscription);
-
   }
 
   ngOnDestroy(): void {
     this.changeDayInterval.unsubscribe();
-    this.tasksListSub.unsubscribe();
-    this.setProgressSubs.unsubscribe();
-    this.timesOfDayOrderSubscription.unsubscribe();
+
+    if (this.getTodayTasks$ && !this.getTodayTasks$.closed) {
+      this.getTodayTasks$.unsubscribe();
+    }
+
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
   }
 
   private static toNextDayCalc(): number {

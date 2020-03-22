@@ -3,7 +3,6 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
-import {IUser} from '../../auth/i-user';
 import {UserService} from '../user.service';
 
 @Component({
@@ -31,7 +30,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   }
 
   disabled = false;
-  timesOfDaySubscription: Subscription = new Subscription();
+  timesOfDayOrder$: Subscription;
   isEmpty = true;
 
   constructor(private userService: UserService,
@@ -44,16 +43,27 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
       this.isEmpty = false;
     }
 
-    this.timesOfDaySubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) => {
-      this.order = timesOfDayOrder;
-      this.todayOrderFirstLoading = false;
-      this.isEmpty = timesOfDayOrder.length === 0;
-    });
+    this.refreshTimesOfDayOrder();
 
   }
 
   ngOnDestroy(): void {
-    this.timesOfDaySubscription.unsubscribe();
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+  }
+
+  refreshTimesOfDayOrder(): void {
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
+      this.order = timesOfDayOrder;
+      this.timesOfDayOrder$.unsubscribe();
+      this.todayOrderFirstLoading = false;
+      this.isEmpty = timesOfDayOrder.length === 0;
+    });
   }
 
   drop(event: CdkDragDrop<string[]>): void {
@@ -70,10 +80,12 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
       console.log('OK');
       this.snackBar.open('Order has been updated');
       this.disabled = false;
+      this.refreshTimesOfDayOrder();
     }, (error) => {
       console.log(error);
       this.snackBar.open('Error on order update');
       this.disabled = false;
+      this.refreshTimesOfDayOrder();
     });
 
   }

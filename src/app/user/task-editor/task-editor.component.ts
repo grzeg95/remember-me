@@ -11,6 +11,7 @@ import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
 import {ITask} from '../models';
+import {UserService} from '../user.service';
 import {TimeOfDayDialogComponent} from './dialog/time-of-day-dialog.component';
 
 @Component({
@@ -35,7 +36,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               public dialog: MatDialog,
               @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,
-              private appService: AppService) {
+              private appService: AppService,
+              private userService: UserService) {
     this.taskForm.enable();
   }
 
@@ -43,7 +45,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   initValues: ITask;
 
   id = 'null';
-  taskSubscriber: Subscription;
 
   taskForm: FormGroup = new FormGroup({
     description: new FormControl('', TaskEditorComponent.descriptionValidator),
@@ -59,30 +60,18 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     timesOfDay: new FormGroup({}, TaskEditorComponent.timesOfDayValidator)
   });
 
-  deleteTaskSubscription: Subscription;
-  saveTaskSubscription: Subscription;
-
   savingInProgress = false;
   deletingInProgress = false;
+  getTaskById$: Subscription;
 
-  ngOnInit(): void  {
-    this.subscribeTaskByParamId(this.activeRoute.snapshot.params.id || null);
+  ngOnInit(): void {
+    this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || null);
   }
 
-  ngOnDestroy(): void  {
-
-    if (this.taskSubscriber && !this.taskSubscriber.closed) {
-      this.taskSubscriber.unsubscribe();
+  ngOnDestroy(): void {
+    if (this.getTaskById$ && !this.getTaskById$.closed) {
+      this.getTaskById$.unsubscribe();
     }
-
-    if (this.deleteTaskSubscription && !this.deleteTaskSubscription.closed) {
-      this.deleteTaskSubscription.unsubscribe();
-    }
-
-    if (this.saveTaskSubscription && !this.saveTaskSubscription.closed) {
-      this.saveTaskSubscription.unsubscribe();
-    }
-
   }
 
   openTimeOfDayDialog(): void {
@@ -143,21 +132,19 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     return this.id === 'null';
   }
 
-  subscribeTaskByParamId(taskId: string): void {
+  refreshTaskByParamId(taskId: string): void {
 
     if (taskId) {
 
-      this.id = taskId;
-
-      if (this.taskSubscriber && !this.taskSubscriber.closed) {
-        this.taskSubscriber.unsubscribe();
+      if (this.getTaskById$ && !this.getTaskById$.closed) {
+        this.getTaskById$.unsubscribe();
       }
 
+      this.id = taskId;
       this.taskForm.disable();
 
-      this.taskSubscriber = this.afs.doc(`users/${this.authService.userData.uid}/`)
-        .collection('task').doc(this.id).snapshotChanges().subscribe((change) => {
-        const task = change.payload.data() as ITask;
+      this.getTaskById$ = this.userService.getTaskById$(this.id).subscribe((taskDocSnap) => {
+        const task = taskDocSnap.payload.data() as ITask;
         if (!task) {
           this.taskForm.reset();
           this.resetId();
@@ -166,6 +153,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
           this.setAll(task);
         }
         this.taskForm.enable();
+        this.getTaskById$.unsubscribe();
       });
 
     } else {
@@ -176,10 +164,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   saveTask(): void {
-
-    if (this.saveTaskSubscription && !this.saveTaskSubscription.closed) {
-      this.saveTaskSubscription.unsubscribe();
-    }
 
     let isInvalid = 0;
 
@@ -222,26 +206,22 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     // set, update         => user/{userId}/task/{taskId}
     // set, update, delete => user/{userId}/today/{[mon, tue, wed, thu, fri, sat, sun]}/task/{taskId}
 
-    this.saveTaskSubscription = this.fns.httpsCallable('saveTask')({
+    this.fns.httpsCallable('saveTask')({
       task,
       taskId: this.id
     }).subscribe((data) => {
 
       if (data.created) {
         this.location.go('/user/task-editor/' + data.taskId);
-        this.subscribeTaskByParamId(data.taskId);
       }
 
+      this.refreshTaskByParamId(data.taskId);
       this.snackBar.open(`${data.message}`);
-      this.taskForm.reset(this.taskForm.value);
 
     }, (error) => {
       this.taskForm.enable();
       this.savingInProgress = false;
       this.snackBar.open(`Error: ${error.message}`);
-    }, () => {
-      this.taskForm.enable();
-      this.savingInProgress = false;
     });
 
   }
@@ -254,13 +234,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
     this.location.go('/user/task-editor');
     this.resetId();
-
     this.restartForm();
-
-    if (this.taskSubscriber && !this.taskSubscriber.closed) {
-      this.taskSubscriber.unsubscribe();
-    }
-
     this.taskForm.disable();
 
   }
@@ -290,11 +264,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.taskForm.disable();
     this.deletingInProgress = true;
 
-    if (this.deleteTaskSubscription && !this.deleteTaskSubscription.closed) {
-      this.deleteTaskSubscription.unsubscribe();
-    }
-
-    this.deleteTaskSubscription = this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((next) => {
+    this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((next) => {
       console.log(next);
       this.snackBar.open(`${next.message}`);
       this.deepResetForm();

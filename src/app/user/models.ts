@@ -29,7 +29,7 @@ export interface ITasksListItem {
   id: string;
 }
 
-export interface TimeOfDay {
+export interface ITimeOfDay {
   counter: number;
   name: string;
   position: number;

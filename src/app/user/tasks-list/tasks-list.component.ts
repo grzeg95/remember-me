@@ -1,10 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/firestore';
 import {Subscription} from 'rxjs';
-import {map} from 'rxjs/operators';
-import {AuthService} from '../../auth/auth.service';
-import {IUser} from '../../auth/i-user';
-import {ITask, ITasksListItem} from '../models';
+import {ITasksListItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -39,66 +35,55 @@ export class TasksListComponent implements OnInit, OnDestroy {
     this.userService.taskListItemsFirstLoading = value;
   }
 
-  tasksSub: Subscription;
   isEmpty = true;
-  timesOfDaySubscription: Subscription = new Subscription();
+  timesOfDayOrder$: Subscription;
+  taskList$: Subscription;
 
-  constructor(private authService: AuthService,
-              public userService: UserService,
-              private afs: AngularFirestore) {
+  constructor(public userService: UserService) {
     if (userService.taskListItems.length > 0) {
       this.isEmpty = false;
     }
   }
 
-  ngOnInit(): void {
+  refreshTimesOfDayOrder(): void {
 
-    this.timesOfDaySubscription = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder: string[]) => {
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
       this.order = timesOfDayOrder;
+      this.timesOfDayOrder$.unsubscribe();
     });
+  }
 
-    this.tasksSub = this.afs.doc(`users/${this.authService.userData.uid}/`)
-      .collection('task', (ref) => ref.orderBy('description', 'asc'))
-      .snapshotChanges()
-      .pipe(map((changes) => {
+  refreshTaskList(): void {
 
-      const tasksItemsReceived: ITasksListItem[] = [];
+    if (this.taskList$ && !this.taskList$.closed) {
+      this.taskList$.unsubscribe();
+    }
 
-      changes.forEach((change) => {
-
-        const task = change.payload.doc.data() as ITask;
-        let daysOfTheWeek: any = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-          .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
-
-        if (daysOfTheWeek.length === 7) {
-          daysOfTheWeek = 'Every day';
-        } else {
-          daysOfTheWeek = daysOfTheWeek.join(', ');
-        }
-
-        const taskItem: ITasksListItem = {
-          description: task.description,
-          timesOfDay: Object.keys(task.timesOfDay),
-          daysOfTheWeek,
-          id: change.payload.doc.id
-        };
-
-        tasksItemsReceived.push(taskItem);
-      });
-
-      return tasksItemsReceived;
-
-    })).subscribe((tasksItemsReceived) => {
+    this.taskList$ = this.userService.getTaskList$().subscribe((tasksItemsReceived) => {
       this.taskListItems = tasksItemsReceived;
       this.isEmpty = tasksItemsReceived.length === 0;
       this.taskListItemsFirstLoading = false;
+      this.taskList$.unsubscribe();
     });
-
   }
 
-  ngOnDestroy(): void  {
-    this.tasksSub.unsubscribe();
-    this.timesOfDaySubscription.unsubscribe();
+  ngOnInit(): void {
+    this.refreshTimesOfDayOrder();
+    this.refreshTaskList();
+  }
+
+  ngOnDestroy(): void {
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    if (this.taskList$ && !this.taskList$.closed) {
+      this.taskList$.unsubscribe();
+    }
   }
 
 }

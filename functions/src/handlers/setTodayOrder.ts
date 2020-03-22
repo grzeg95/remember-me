@@ -74,6 +74,8 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
           );
         }
 
+        console.log(timesOfDayDocSnap.data()?.name, index);
+
         transaction.update(timesOfDayDocSnap.ref, {
           position: index
         });
