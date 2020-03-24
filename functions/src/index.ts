@@ -1,10 +1,11 @@
+import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import {deleteTaskHandler, saveTaskHandler, setProgressHandler, setTodayOrderHandler} from './handlers';
+import {handler as deleteTaskHandler} from './handlers/deleteTask';
+import {handler as saveTaskHandler} from './handlers/saveTask';
+import {handler as setProgressHandler} from './handlers/setProgress';
+import {handler as setTodayOrderHandler} from './handlers/setTodayOrder';
 
-admin.initializeApp();
-
-export const db = admin.firestore();
+export const app = firebase.initializeApp().firestore();
 
 // up to 57 operations
 export const deleteTask = functions.runWith({
@@ -21,7 +22,7 @@ export const saveTask = functions.runWith({
 // 4 operations
 export const setProgress = functions.runWith({
   timeoutSeconds: 5,
-  memory: "128MB"
+  memory: "256MB"
 }).region('europe-west2').https.onCall(setProgressHandler);
 
 // up to 51 operations

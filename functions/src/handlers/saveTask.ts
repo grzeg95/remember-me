@@ -1,12 +1,39 @@
+import {app} from '../index';
 import {Transaction} from "@google-cloud/firestore";
 import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import {db} from '../index';
-import {ITask} from '../interfaces';
-import {listEqual} from '../tools';
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 import DocumentReference = FirebaseFirestore.DocumentReference;
 import DocumentData = FirebaseFirestore.DocumentData;
+
+/**
+ * @function listEqual
+ * Check if two list are the same
+ * @param A T[]
+ * @param B T[]
+ * @return boolean
+ **/
+export const listEqual = <T>(A: T[], B: T[]): boolean =>
+  A.length === B.length && A.every(a => B.includes(a)) && B.every(b => A.includes(b));
+
+/**
+ * @interface ITask
+**/
+interface ITask {
+  timesOfDay: {
+    [key: string]: boolean
+  };
+  daysOfTheWeek: {
+    mon: boolean;
+    tue: boolean;
+    wed: boolean;
+    thu: boolean;
+    fri: boolean;
+    sat: boolean;
+    sun: boolean;
+  }
+  description: string;
+}
 
 /**
  * @type Day
@@ -14,6 +41,7 @@ import DocumentData = FirebaseFirestore.DocumentData;
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /**
+ * @function proceedTask
  * 1 delete or 1 write
  * Prepare today tasks
  * @param transaction Transaction
@@ -83,6 +111,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 };
 
 /**
+ * @function proceedTimesOfDay
  * MAX[20] writes and deletes
  * Update times of day
  * @param transaction Transaction
@@ -156,6 +185,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
 };
 
 /**
+ * @function handler
  * 10 + MAX[20] reads
  * 1 delete
  * 1 update
@@ -231,8 +261,8 @@ export const handler = (data: {
   let created = false;
   let taskId = data.taskId;
 
-  return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+  return app.runTransaction((transaction) =>
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -313,7 +343,7 @@ export const handler = (data: {
       throw new functions.https.HttpsError(
         'internal',
         error.message,
-        error.details || 'Some went wrong 🤫 Try again 🙂'
+        error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
       );
     }
   );

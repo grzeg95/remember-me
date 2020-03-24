@@ -89,7 +89,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
       this.snackBar.open(success.details);
       this.disabled = false;
     }, (error: IError) => {
-      this.snackBar.open(error.details);
+      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.disabled = false;
       this.refreshTimesOfDayOrder();
     });

@@ -175,7 +175,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     }, (error: IError) => {
       checkbox.disabled = false;
       this.setProgressSubsActiveConnections--;
-      this.snackBar.open(error.details);
+      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       if (this.setProgressSubsActiveConnections === 0) {
         console.log('all setProgressSubsActiveConnections done');
         this.changeDay();

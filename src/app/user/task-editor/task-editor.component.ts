@@ -233,7 +233,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     }, (error: IError) => {
       this.taskForm.enable();
       this.savingInProgress = false;
-      this.snackBar.open(error.details);
+      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
 
@@ -281,7 +281,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       this.snackBar.open(success.details);
       this.deepResetForm();
     }, (error: IError) => {
-      this.snackBar.open(error.details);
+      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     }, () => {
       this.taskForm.enable();

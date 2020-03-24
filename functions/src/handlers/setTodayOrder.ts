@@ -1,10 +1,11 @@
+import {app} from '../index';
 import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import {db} from '../index';
 import DocumentData = FirebaseFirestore.DocumentData;
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 
 /**
+ * @function handler
  * 1 + MAX[20] reads
  * MAX[20] writes
  * Read all user data about task and remove it
@@ -33,8 +34,8 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
     );
   }
 
-  return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+  return app.runTransaction((transaction) =>
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -95,7 +96,7 @@ export const handler = (data: any[], context: functions.https.CallableContext) =
     throw new functions.https.HttpsError(
       'internal',
       error.message,
-      error.details || 'Some went wrong 🤫 Try again 🙂'
+      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
     );
   });
 

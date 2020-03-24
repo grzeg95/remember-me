@@ -1,6 +1,6 @@
+import {app} from '../index';
 import * as firebase from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import {db} from '../index';
 import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
 import DocumentData = FirebaseFirestore.DocumentData;
 
@@ -28,10 +28,10 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
     );
   }
 
-  return db.runTransaction((transaction) =>
+  return app.runTransaction((transaction) =>
 
     // get user from firestore
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -110,7 +110,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
     throw new functions.https.HttpsError(
       'internal',
       error.message,
-      error.details || 'Some went wrong 🤫 Try again 🙂'
+      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
     );
   });
 
