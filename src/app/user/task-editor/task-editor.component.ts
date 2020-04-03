@@ -148,7 +148,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       this.taskForm.disable();
 
       this.getTaskById$ = this.userService.getTaskById$(this.id).subscribe((taskDocSnap) => {
-        const task = taskDocSnap.payload.data() as ITask;
+        const task = taskDocSnap.data() as ITask;
         console.log(task);
         if (!task) {
           this.taskForm.reset();

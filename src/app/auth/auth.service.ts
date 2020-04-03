@@ -16,9 +16,9 @@ export class AuthService {
 
   constructor(
     private afs: AngularFirestore,
-    public afAuth: AngularFireAuth,
-    public router: Router,
-    public ngZone: NgZone) {
+    private afAuth: AngularFireAuth,
+    private router: Router,
+    private ngZone: NgZone) {
 
     this.afAuth.authState.subscribe((user) => {
 

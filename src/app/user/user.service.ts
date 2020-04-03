@@ -1,9 +1,6 @@
 import {Injectable} from '@angular/core';
-import {
-  Action,
-  AngularFirestore,
-  DocumentSnapshot
-} from '@angular/fire/firestore';
+import {AngularFirestore} from '@angular/fire/firestore';
+import * as firebase from 'firebase';
 import {Observable} from 'rxjs';
 import {map, tap} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
@@ -37,13 +34,13 @@ export class UserService {
     return this.afs
       .doc<IUser>(`users/${this.authService.userData.uid}`)
       .collection<ITimeOfDay>('timesOfDay', (ref) => ref.orderBy('position'))
-      .auditTrail().pipe(map((docChangeAction) => {
+      .get().pipe(map((querySnapDocData) => {
 
-        console.log(docChangeAction);
+        console.log(querySnapDocData);
         const timesOfDayNames: string[] = [];
 
-        docChangeAction.forEach((docChangeActionDoc) =>
-          timesOfDayNames.push(docChangeActionDoc.payload.doc.data().name)
+        querySnapDocData.forEach((queryDocSnapDocData) =>
+          timesOfDayNames.push(queryDocSnapDocData.data().name)
         );
 
         return timesOfDayNames;
@@ -54,15 +51,15 @@ export class UserService {
   getTaskList$(): Observable<ITasksListItem[]> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
-      .snapshotChanges().pipe(map((docChangeAction) => {
+      .get().pipe(map((querySnapDocData) => {
 
         const tasksItemsReceived: ITasksListItem[] = [];
 
-        console.log(docChangeAction);
+        console.log(querySnapDocData);
 
-        docChangeAction.forEach((docChangeActionDoc) => {
+        querySnapDocData.forEach((queryDocSnapDocData) => {
 
-          const task = docChangeActionDoc.payload.doc.data() as ITask;
+          const task = queryDocSnapDocData.data() as ITask;
           let daysOfTheWeek: any = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
             .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
 
@@ -76,7 +73,7 @@ export class UserService {
             description: task.description,
             timesOfDay: Object.keys(task.timesOfDay),
             daysOfTheWeek,
-            id: docChangeActionDoc.payload.doc.id
+            id: queryDocSnapDocData.id
           };
 
           tasksItemsReceived.push(taskItem);
@@ -91,17 +88,17 @@ export class UserService {
 
     return this.afs.doc(`users/${this.authService.userData.uid}/today/${todayName}`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
-      .snapshotChanges().pipe(
-        map((docChangeActionDocDataArray) => {
+      .get().pipe(
+        map((querySnapDocData) => {
 
           const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
 
-          console.log(docChangeActionDocDataArray);
+          console.log(querySnapDocData);
 
-          docChangeActionDocDataArray.forEach((docChangeActionDocData) => {
+          querySnapDocData.forEach((queryDocSnapDocData) => {
 
-            const task: ITask = docChangeActionDocData.payload.doc.data();
-            const id: string = docChangeActionDocData.payload.doc.id;
+            const task: ITask = queryDocSnapDocData.data() as ITask;
+            const id: string = queryDocSnapDocData.id;
 
             for (const timeOfDay in task.timesOfDay) {
               if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
@@ -124,10 +121,10 @@ export class UserService {
         }));
   }
 
-  getTaskById$(id: string): Observable<Action<DocumentSnapshot<ITask>>> {
+  getTaskById$(id: string): Observable<firebase.firestore.DocumentSnapshot> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
-      .collection<ITask>('task').doc<ITask>(id).snapshotChanges().pipe(tap((actionDocSnap) => {
-        console.log(actionDocSnap);
+      .collection<ITask>('task').doc<ITask>(id).get().pipe(tap((querySnapDocData) => {
+        console.log(querySnapDocData);
       }));
   }
 
