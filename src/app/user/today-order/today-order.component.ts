@@ -3,7 +3,8 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subscription} from 'rxjs';
-import {IUser} from '../../auth/i-user';
+import {AppService} from '../../app-service';
+import {IError, ISuccess} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -31,32 +32,47 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   }
 
   disabled = false;
-  userSubscription: Subscription = new Subscription();
+  timesOfDayOrder$: Subscription;
   isEmpty = true;
+  isConnected$: Subscription;
 
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
-              private fns: AngularFireFunctions) {}
+              private fns: AngularFireFunctions,
+              private appService: AppService) {}
 
   ngOnInit(): void {
 
     if (this.order.length !== 0) {
       this.isEmpty = false;
-      this.todayOrderFirstLoading = false;
     }
 
-    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
-      if (user.timesOfDay) {
-        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
-        this.todayOrderFirstLoading = false;
-        this.isEmpty = this.order.length === 0;
+    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+      if (isConnected) {
+        this.refreshTimesOfDayOrder();
       }
     });
-
   }
 
   ngOnDestroy(): void {
-    this.userSubscription.unsubscribe();
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    this.isConnected$.unsubscribe();
+  }
+
+  refreshTimesOfDayOrder(): void {
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
+      this.order = timesOfDayOrder;
+      this.timesOfDayOrder$.unsubscribe();
+      this.todayOrderFirstLoading = false;
+      this.isEmpty = timesOfDayOrder.length === 0;
+    });
   }
 
   drop(event: CdkDragDrop<string[]>): void {
@@ -69,14 +85,13 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
     this.disabled = true;
 
-    this.fns.httpsCallable('setTodayOrder')(this.order).subscribe(() => {
-      console.log('OK');
-      this.snackBar.open('Order has been updated');
+    this.fns.httpsCallable('setTodayOrder')(this.order).subscribe((success: ISuccess) => {
+      this.snackBar.open(success.details);
       this.disabled = false;
-    }, (error) => {
-      console.log(error);
-      this.snackBar.open('Error on order update');
+    }, (error: IError) => {
+      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.disabled = false;
+      this.refreshTimesOfDayOrder();
     });
 
   }

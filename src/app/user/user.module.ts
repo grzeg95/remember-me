@@ -10,7 +10,6 @@ import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
 import {SharedModule} from '../shared.module';
 import {TaskEditorComponent} from './task-editor/task-editor.component';
-import {SortTimesOfDayPipe} from './tasks-list/sort-times-of-day.pipe';
 import {TasksListComponent} from './tasks-list/tasks-list.component';
 import {TodayOrderComponent} from './today-order/today-order.component';
 import {TodayComponent} from './today/today.component';
@@ -26,8 +25,7 @@ import {UserService} from './user.service';
     TaskEditorComponent,
     TodayComponent,
     UserNavComponent,
-    TodayOrderComponent,
-    SortTimesOfDayPipe
+    TodayOrderComponent
   ],
   imports: [
     RouterModule,

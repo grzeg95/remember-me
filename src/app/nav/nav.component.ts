@@ -9,10 +9,26 @@ import {AuthService} from '../auth/auth.service';
 })
 export class NavComponent {
 
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn;
+  }
+
+  get userPhoto(): string {
+    return this.authService.userData.photoURL;
+  }
+
   @ViewChild('menuToggleCheckbox')
   menuToggleCheckbox: ElementRef;
 
-  constructor(public authService: AuthService) {}
+  constructor(private authService: AuthService) {}
+
+  signOut(): Promise<boolean> {
+    return this.authService.signOut();
+  }
+
+  googleAuth(): void {
+    this.authService.googleAuth();
+  }
 
   @HostListener('document:click', ['$event'])
   documentClick(event: Event): void {

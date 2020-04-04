@@ -1,47 +1,58 @@
 <div class="container">
   <div class="col">
 
-    <div *ngIf="todayItemsFirstLoading" class="row message">
-      <div class="col">
-        <span>Loading...</span>
-      </div>
-    </div>
+    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
 
-    <div *ngIf="isEmpty && !todayItemsFirstLoading" class="row message">
-      <div class="col">
-        <span>There is no one</span>
-      </div>
-      <div class="col">
-        <div class="add-task">
-          <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="timeOfDayRow" *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
-
-      <div class="row">
+    <ng-template #waitForItems>
+      <div class="row message" *ngIf="todayItemsFirstLoading; else onOneExists">
         <div class="col">
-          <span><i [hidden]="!todayItemIsDone(todayItem.timeOfDay)" class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
+          <span>Loading...</span>
         </div>
       </div>
 
-      <div class="row">
-        <div class="col">
-          <div class="form-check" *ngFor="let button of todayItem.tasks; let j = index; trackBy: trackByTodayItem">
-            <input #checkbox class="form-check-input d-none" type="checkbox" [disabled]="false" [checked]="button.done" >
-            <label class="form-check-label btn"
-                   [ngClass]="checkbox.checked ? 'btn-success' : 'border rounded'"
-                   [for]="checkbox"
-                   (click)="setProgress(checkbox, $event, button.id, todayItem.timeOfDay)">
-              {{ button.description }}
-              <mat-progress-bar *ngIf="checkbox.disabled" mode="indeterminate"></mat-progress-bar>
-            </label>
+      <ng-template #onOneExists>
+        <div class="row message">
+          <div class="col">
+            <span>There is no one</span>
+          </div>
+          <div class="col">
+            <div class="add-task">
+              <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new</button>
+            </div>
           </div>
         </div>
+      </ng-template>
+
+    </ng-template>
+
+    <ng-template #showItems>
+
+      <div class="time-of-day-row" *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
+
+        <div class="row">
+          <div class="col">
+            <span><i [hidden]="!todayItemIsDone(todayItem.timeOfDay)" class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <div class="form-check" *ngFor="let button of todayItem.tasks; let j = index; trackBy: trackByTodayItem">
+              <input #checkbox class="form-check-input d-none" type="checkbox" [disabled]="false" [checked]="button.done" >
+              <label class="form-check-label btn"
+                     [ngClass]="checkbox.checked ? 'btn-success' : 'border rounded'"
+                     [for]="checkbox"
+                     (click)="setProgress(checkbox, $event, button.id, todayItem.timeOfDay)">
+                {{ button.description }}
+                <mat-progress-bar *ngIf="checkbox.disabled" mode="indeterminate"></mat-progress-bar>
+              </label>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-    </div>
+    </ng-template>
 
   </div>
 </div>

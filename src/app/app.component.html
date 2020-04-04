@@ -1,2 +1,8 @@
+<div #whileLoginInOverlay [hidden]="!whileLoginIn" class="overlay">
+  <span #whileLoginInOverlaySpan class="while-login-in-overlay-span">Login in</span>
+</div>
+<div #offlineOverlay [hidden]="isConnected" class="overlay">
+  <span #offlineOverlaySpan class="offline-overlay-span">Offline</span>
+</div>
 <app-nav></app-nav>
 <router-outlet></router-outlet>

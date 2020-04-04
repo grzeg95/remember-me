@@ -1,74 +1,110 @@
-import * as firebase from 'firebase-admin';
-import * as functions from 'firebase-functions';
-import {db} from '../index';
+import {app} from '../index';
 
-export const handler = (data: any[], context: functions.https.CallableContext) => {
+import {
+  CallableContext,
+  HttpsError} from 'firebase-functions/lib/providers/https';
 
-  const auth: {
-    uid: string;
-    token: firebase.auth.DecodedIdToken;
-  } | undefined = context.auth;
+import {
+  DocumentSnapshot,
+  DocumentData} from "@google-cloud/firestore";
 
+/**
+ * @function handler
+ * 1 + MAX[20] reads
+ * MAX[20] writes
+ * Read all user data about task and remove it
+ * @param data: string[]
+ * @param context functions.https.CallableContext
+ * @return Promise<any>
+ **/
+export const handler = (data: any, context: CallableContext): Promise<any> => {
+
+  /*
+  * Check if data is correct and user is authenticated
+  * */
   if (
     !data ||
     !Array.isArray(data) ||
     data.some((timeOfDay) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0) ||
     (new Set(data).size !== data.length) ||
-    data.length > 20
+    data.length > 20 ||
+    !context.auth
   ) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Bad Request',
-      'Check function requirements'
+      'Some went wrong 🤫 Try again 🙂'
     );
   }
 
-  return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then((userDocSnap) => {
+  const auth: {
+    uid: string;
+  } = context.auth;
+
+  return app.runTransaction((transaction) =>
+    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'unauthenticated',
           'Register to use this functionality',
-          `User ${auth?.uid} does not exist`
+          `You dont't exist 😱`
         );
       }
 
-      const userData = userDocSnap.data();
-      let userTimesOfDay: {
-        [name: string]: {
-          position: number;
-          counter: number;
-        }
-      } = {};
-      if (userData && userData['timesOfDay']) {
-        userTimesOfDay = userData['timesOfDay'];
-      }
+      /*
+      * Read all data
+      * */
 
-      for (let i = 0; i < data.length; ++i) {
-        if (!userTimesOfDay[data[i]]) {
-          throw new functions.https.HttpsError(
-            'invalid-argument',
-            'Bad Request',
-            'Check function requirements'
-          );
-        }
-        userTimesOfDay[data[i]].position = i;
-      }
-
-      if (Object.keys(userTimesOfDay).length > 20) {
-        throw new functions.https.HttpsError(
-          'invalid-argument',
-          'Max times of day is 20',
-          'Check function requirements'
-        );
-      }
-
-      transaction.update(userDocSnap.ref, {
-        timesOfDay: userTimesOfDay
+      // read all times of day
+      const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
+        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
+        docsRef.forEach((docRef) => {
+          timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
+        });
+        return await Promise.all(timesOfDayDocSnapsPromise);
       });
 
-    }));
+      /*
+      * Proceed all data
+      * */
+
+      if (timesOfDayDocSnaps.length !== data.length) {
+        throw new HttpsError(
+          'invalid-argument',
+          'Bad Request',
+          'Some went wrong 🤫 Try again 🙂'
+        );
+      }
+
+      data.forEach((timeOfDay: string, index) => {
+
+        const timesOfDayDocSnap = timesOfDayDocSnaps.find((timesOfDayDocSnapNext) => timesOfDayDocSnapNext.data()?.name === timeOfDay);
+
+        if (!timesOfDayDocSnap) {
+          throw new HttpsError(
+            'invalid-argument',
+            'Bad Request',
+            'Some went wrong 🤫 Try again 🙂'
+          );
+        }
+
+        transaction.update(timesOfDayDocSnap.ref, {
+          position: index
+        });
+
+      });
+
+    })).then(() => ({
+      details: 'Order has been updated 🙃'
+    })
+  ).catch((error: HttpsError) => {
+    throw new HttpsError(
+      'internal',
+      error.message,
+      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+    );
+  });
 
 };

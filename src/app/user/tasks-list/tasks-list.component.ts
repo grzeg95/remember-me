@@ -1,10 +1,8 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/firestore';
 import {Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {AuthService} from '../../auth/auth.service';
-import {IUser} from '../../auth/i-user';
-import {ITask, ITasksListItem} from '../models';
+import {AppService} from '../../app-service';
+import {ITasksListItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -39,68 +37,77 @@ export class TasksListComponent implements OnInit, OnDestroy {
     this.userService.taskListItemsFirstLoading = value;
   }
 
-  tasksSub: Subscription;
   isEmpty = true;
-  userSubscription: Subscription = new Subscription();
+  timesOfDayOrder$: Subscription;
+  taskList$: Subscription;
+  isConnected$: Subscription;
 
-  constructor(private authService: AuthService,
-              public userService: UserService,
-              private afs: AngularFirestore) {
+  constructor(public userService: UserService,
+              private appService: AppService) {
     if (userService.taskListItems.length > 0) {
       this.isEmpty = false;
     }
   }
 
-  ngOnInit(): void {
+  refreshTimesOfDayOrder(): void {
 
-    this.userSubscription = this.userService.user$.subscribe((user: IUser) => {
-      if (user.timesOfDay) {
-        this.userService.prepareTimesOfDayOrder(user.timesOfDay);
-      }
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
+      this.order = timesOfDayOrder;
+      this.timesOfDayOrder$.unsubscribe();
     });
+  }
 
-    this.tasksSub = this.afs.doc(`users/${this.authService.userData.uid}/`)
-      .collection('task', (ref) => ref.orderBy('description', 'asc'))
-      .snapshotChanges()
-      .pipe(map((changes) => {
+  refreshTaskList(): void {
 
-      const tasksItemsReceived: ITasksListItem[] = [];
+    if (this.taskList$ && !this.taskList$.closed) {
+      this.taskList$.unsubscribe();
+    }
 
-      changes.forEach((change) => {
+    this.taskList$ = this.userService.getTaskList$().pipe(map((tasksItemsReceived) => {
+      return tasksItemsReceived.map((tasksItemReceived) => {
 
-        const task = change.payload.doc.data() as ITask;
-        let daysOfTheWeek: any = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-          .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
-
-        if (daysOfTheWeek.length === 7) {
-          daysOfTheWeek = 'Every day';
+        if (this.order.length === 0) {
+          tasksItemReceived.timesOfDay = Object.keys(tasksItemReceived.timesOfDay).join(', ');
         } else {
-          daysOfTheWeek = daysOfTheWeek.join(', ');
+          tasksItemReceived.timesOfDay = this.order
+            .filter((timeOfDay) => tasksItemReceived.timesOfDay.includes(timeOfDay))
+            .join(', ');
         }
 
-        const taskItem: ITasksListItem = {
-          description: task.description,
-          timesOfDay: Object.keys(task.timesOfDay),
-          daysOfTheWeek,
-          id: change.payload.doc.id
-        };
+        return tasksItemReceived;
 
-        tasksItemsReceived.push(taskItem);
       });
-
-      return tasksItemsReceived;
-
     })).subscribe((tasksItemsReceived) => {
       this.taskListItems = tasksItemsReceived;
       this.isEmpty = tasksItemsReceived.length === 0;
       this.taskListItemsFirstLoading = false;
     });
-
   }
 
-  ngOnDestroy(): void  {
-    this.tasksSub.unsubscribe();
-    this.userSubscription.unsubscribe();
+  ngOnInit(): void {
+    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+      if (isConnected) {
+        console.log(isConnected);
+        this.refreshTimesOfDayOrder();
+        this.refreshTaskList();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    if (this.taskList$ && !this.taskList$.closed) {
+      this.taskList$.unsubscribe();
+    }
+
+    this.isConnected$.unsubscribe();
   }
 
 }

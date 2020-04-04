@@ -2,13 +2,73 @@
 
 body
   background-color: #ffffff
+
   .app
     display: block
+
     .container
       background-color: white
+
     .btn
       &:not(:disabled)
         cursor: pointer
+
       &:focus, &.focus
         outline: 0
         box-shadow: none
+
+.features-clean
+  padding-bottom: 30px
+  background-color: #ffffff
+  color: #313437
+
+  p
+    color: #7d8285
+
+  h2
+    margin-bottom: 40px
+    padding-top: 40px
+    color: inherit
+    font-weight: bold
+
+  .intro
+    max-width: 500px
+    margin: 0 auto 60px
+    font-size: 16px
+
+  .item
+    min-height: 100px
+    margin-bottom: 40px
+    padding-left: 80px
+
+    .name
+      margin-top: 0
+      margin-bottom: 20px
+      color: inherit
+      font-size: 20px
+      font-weight: bold
+
+    .description
+      margin-bottom: 0
+      font-size: 15px
+
+    .icon
+      margin-left: -65px
+      float: left
+      color: #1485ee
+      font-size: 40px
+
+@media (max-width: 767px)
+  .features-clean
+    padding-bottom: 10px
+
+    h2
+      margin-bottom: 25px
+      padding-top: 25px
+      font-size: 24px
+
+    .intro
+      margin-bottom: 40px
+
+    .item
+      min-height: 0

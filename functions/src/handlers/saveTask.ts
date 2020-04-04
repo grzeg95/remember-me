@@ -1,25 +1,58 @@
-import {Transaction} from "@google-cloud/firestore";
-import * as firebase from 'firebase-admin';
-import * as functions from 'firebase-functions';
-import {db} from '../index';
-import {ITask} from '../interfaces';
-import {listEqual} from '../tools';
-import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
-import DocumentReference = FirebaseFirestore.DocumentReference;
+import {app} from '../index';
+
+import {
+  CallableContext,
+  HttpsError} from 'firebase-functions/lib/providers/https';
+
+import {
+  Transaction,
+  DocumentSnapshot,
+  DocumentReference,
+  DocumentData} from "@google-cloud/firestore";
 
 /**
- * @type day: Day
+ * @function listEqual
+ * Check if two list are the same
+ * @param A T[]
+ * @param B T[]
+ * @return boolean
+ **/
+export const listEqual = <T>(A: T[], B: T[]): boolean =>
+  A.length === B.length && A.every(a => B.includes(a)) && B.every(b => A.includes(b));
+
+/**
+ * @interface ITask
+**/
+interface ITask {
+  timesOfDay: {
+    [key: string]: boolean
+  };
+  daysOfTheWeek: {
+    mon: boolean;
+    tue: boolean;
+    wed: boolean;
+    thu: boolean;
+    fri: boolean;
+    sat: boolean;
+    sun: boolean;
+  }
+  description: string;
+}
+
+/**
+ * @type Day
  **/
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /**
+ * @function proceedTask
  * 1 delete or 1 write
  * Prepare today tasks
  * @param transaction Transaction
- * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
+ * @param taskDocSnap DocumentSnapshot
  * @param task: ITask
  * @param day: Day
- * @return Promise<T>
+ * @return Transaction
  **/
 const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, task: ITask, day: Day): Transaction => {
 
@@ -82,233 +115,234 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 };
 
 /**
- * 7 reads, 1 write
- * Save new task for every day
+ * @function proceedTimesOfDay
+ * MAX[20] writes and deletes
+ * Update times of day
  * @param transaction Transaction
- * @param taskDocSnap FirebaseFirestore.DocumentSnapshot
- * @param oldTaskDocSnap FirebaseFirestore.DocumentSnapshot | null
- * @param user: FirebaseFirestore.DocumentReference
- * @param task: ITask
- * @return Promise<Transaction>
+ * @param taskDocSnap DocumentSnapshot
+ * @param user: DocumentReference
+ * @param taskUpdated: ITask
+ * @param timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]
+ * @return Transaction
  **/
-const proceedEveryDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, oldTaskDocSnap: DocumentSnapshot | null, user: DocumentReference, task: ITask): Promise<Transaction> => {
-  // set or update task for user/{userId}/task/{taskId}
-  // set or update task for user/{userId}/today/{day}/task/{taskId}
+const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]): Transaction => {
 
-  const reads: Promise<{docSnap: DocumentSnapshot, day: Day}>[] = [];
+  let created = 0;
+  let updated = 0;
+  let removed = 0;
 
-  (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
-    reads.push(transaction.get(user.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
+  // for each timesOfDay
+  Object.keys(taskUpdated.timesOfDay).forEach((timeOfDay) => {
+
+    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+    let existInTheTaskDocSnap = false;
+
+    if (!!taskDocSnap.data()?.timesOfDay && typeof (taskDocSnap.data()?.timesOfDay)[timeOfDay] === 'boolean') {
+      existInTheTaskDocSnap = true;
+    }
+
+    // if timesOfDay dont exists in the timesOfDayDocSnaps than create new one
+    if (!inTheTimesOfDayDocSnaps) {
+      const newTimeOfDay = user.collection('timesOfDay').doc();
+      transaction.create(newTimeOfDay, {
+        name: timeOfDay,
+        counter: 1,
+        position: 0
+      });
+      created++;
+    } else if (!existInTheTaskDocSnap) { // if timesOfDay exists in the timesOfDayDocSnaps and dont in the taskDocSnap
+      transaction.update(inTheTimesOfDayDocSnaps.ref, {
+        counter: inTheTimesOfDayDocSnaps.data()?.counter + 1
+      });
+      updated++;
+    }
+
   });
 
-  return Promise.all(reads).then((readsReady) => {
-    readsReady.forEach((readReady) =>
-      proceedTask(transaction, readReady.docSnap, task, readReady.day)
+  taskDocSnap.data() && taskDocSnap.data()?.timesOfDay && Object.keys(taskDocSnap.data()?.timesOfDay).forEach((timeOfDay) => {
+
+    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+
+    if (inTheTimesOfDayDocSnaps && !taskUpdated.timesOfDay[timeOfDay]) {
+      const counter = inTheTimesOfDayDocSnaps.data()?.counter;
+      if (counter - 1 === 0) {
+        transaction.delete(inTheTimesOfDayDocSnaps.ref);
+        removed++;
+      } else {
+        transaction.update(inTheTimesOfDayDocSnaps.ref, {
+          counter: counter - 1
+        });
+        updated++;
+      }
+    }
+  });
+
+  if (updated + created - removed > 20) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(updated + created - removed).length} 🤔`
     );
-    oldTaskDocSnap && transaction.delete(oldTaskDocSnap.ref);
-    return transaction.set(taskDocSnap.ref, task);
-  });
+  }
+
+  return transaction;
 
 };
 
 /**
- * 3 reads when create
- * 2 reads when update
+ * @function handler
+ * 10 + MAX[20] reads
+ * 1 delete
+ * 1 update
  * Save new task
  * @param data {
     task: {
       timesOfDay: {
-        [key: string]: any
-      };
+        [key: string]: string
+      },
       daysOfTheWeek: {
-        mon: any;
-        tue: any;
-        wed: any;
-        thu: any;
-        fri: any;
-        sat: any;
-        sun: any;
-      }
-      description: any;
-    }
+        mon: boolean
+        tue: boolean
+        wed: boolean
+        thu: boolean
+        fri: boolean
+        sat: boolean
+        sun: boolean
+      },
+      description: string
+    },
+    taskId: string
   }
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: {
-  task: {
-    timesOfDay: {
-      [key: string]: any
-    };
-    daysOfTheWeek: {
-      mon: any;
-      tue: any;
-      wed: any;
-      thu: any;
-      fri: any;
-      sat: any;
-      sun: any;
-    }
-    description: any;
-  }, taskId: any}, context: functions.https.CallableContext): Promise<any> =>
+export const handler = (data: any, context: CallableContext): Promise<any> =>
 {
+
+  if (
+    !context.auth ||
+
+    // data includes task: object and taskId: string
+    typeof data !== 'object' ||
+    Object.keys(data).length !== 2 ||
+    !listEqual(Object.keys(data), ['task','taskId']) ||
+    typeof data.taskId !== 'string' ||
+    typeof data.task !== 'object' ||
+
+    // task includes description:string[4,40],
+    // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
+    // timesOfDay: {[key: string]: string}
+    Object.keys(data.task).length !== 3 ||
+    !listEqual(Object.keys(data.task), ['description','daysOfTheWeek','timesOfDay']) ||
+    typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
+    Object.keys(data.task.daysOfTheWeek).length !== 7 || // 7 days in week
+    !listEqual(Object.keys(data.task.daysOfTheWeek), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
+    Object.keys(data.task.daysOfTheWeek).some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
+    !Object.keys(data.task.daysOfTheWeek).some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
+
+    // timesOfDay in object based on name: true key/value
+    typeof data.task.timesOfDay !== 'object' ||
+    Object.keys(data.task.timesOfDay).length === 0 || // data.timesOfDayKeys is based on at least one object ...
+    Object.keys(data.task.timesOfDay).some((e) => typeof data.task.timesOfDay[e] !== 'boolean' || !data.task.timesOfDay[e] ) || // that contain true property ...
+    Object.keys(data.task.timesOfDay).some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
+  ) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
+    );
+  }
 
   const auth: {
     uid: string;
-    token: firebase.auth.DecodedIdToken;
-  } | undefined = context.auth;
-
-  const taskKes = Object.keys((data.task as Object));
-  const daysOfTheWeekKeys = Object.keys((data.task.daysOfTheWeek as Object));
-  const timesOfDayKeys = Object.keys((data.task.timesOfDay as Object));
-
-  if (
-    !data.task || !data.taskId || typeof data.taskId !== 'string' ||
-    taskKes.length !== 3 || // task is based on 3 objects ...
-    !listEqual(taskKes, ['description','daysOfTheWeek','timesOfDay']) || // ... description, daysOfTheWeek, timesOfDay
-    !data.task.description || typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
-    daysOfTheWeekKeys.length !== 7 || // task.daysOfTheWeek is based on 7 object ...
-    !listEqual(daysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
-    daysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
-    !daysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
-    timesOfDayKeys.length === 0 || // data.timesOfDayKeys is based on at least one object ...
-    timesOfDayKeys.some((e) => typeof data.task.timesOfDay[e] !== 'boolean') || // that contain boolean property ...
-    !timesOfDayKeys.some((e) => data.task.timesOfDay[e]) || // ... that one is true and ...
-    timesOfDayKeys.some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
-  ) {
-    throw new functions.https.HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Check function requirements'
-    );
-  }
+  } = context.auth;
 
   let created = false;
   let taskId = data.taskId;
 
-  return db.runTransaction((transaction) =>
-    transaction.get(db.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+  return app.runTransaction((transaction) =>
+    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'unauthenticated',
           'Register to use this functionality',
-          `User ${auth?.uid} does not exist`
+          `You dont't exist 😱`
         );
       }
 
-      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnap) => {
-
-        const userDocSnapData = userDocSnap.data();
-        let userTimesOfDay: {
-          [name: string]: {
-            position: number,
-            counter: number
-          }
-        } = {};
-
-        if (userDocSnapData && userDocSnapData['timesOfDay']) {
-          userTimesOfDay = userDocSnapData['timesOfDay'];
-        }
-
-        const taskDocSnapData = taskDocSnap.data();
-        let currentTimesOfDay: {
-          [name: string]: boolean
-        } = {};
-
-        if (taskDocSnapData && taskDocSnapData['timesOfDay']) {
-          currentTimesOfDay = taskDocSnapData['timesOfDay'];
-        }
-
-        const currentTimesOfDayKeys: string[] = Object.keys(currentTimesOfDay);
-
-        const toRemove: string[] = [];
-        currentTimesOfDayKeys.forEach((e) => {
-          if (timesOfDayKeys.indexOf(e) === -1) {
-            toRemove.push(e);
-          }
-        });
-        toRemove.forEach(i => {
-          if (userTimesOfDay[i]) {
-            userTimesOfDay[i].counter--;
-            if (userTimesOfDay[i].counter <= 0) {
-              delete userTimesOfDay[i];
-            }
-          }
-        });
-
-        const toAdd: string[] = [];
-        timesOfDayKeys.forEach((e) => {
-          if (currentTimesOfDayKeys.indexOf(e) === -1) {
-            toAdd.push(e);
-          }
-        });
-
-        toAdd.forEach(i => {
-          if (userTimesOfDay[i]) {
-            userTimesOfDay[i].counter++;
-          } else {
-            userTimesOfDay[i] = {
-              position: 0,
-              counter: 1
-            }
-          }
-        });
-
-        if (Object.keys(userTimesOfDay).length > 20) {
-          throw new functions.https.HttpsError(
-            'invalid-argument',
-            'Bad Request',
-            `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(userTimesOfDay).length}`
-          );
-        }
+      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
         /*
-        * WAIT FOR MESSAGE
+        * Read all data
         * */
 
-        let message;
-
-        if (!taskDocSnap.exists) {
+        // read task or create it
+        let taskDocSnap: DocumentSnapshot<DocumentData>;
+        if (!taskDocSnapTmp.exists) {
           created = true;
-          message = transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => {
-            taskId = newTaskSnap.id;
-            return proceedEveryDay(transaction, newTaskSnap, taskDocSnap, userDocSnap.ref, data.task);
-          });
+          taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then(async (newTaskSnap) => newTaskSnap);
+          taskId = taskDocSnap.id;
         } else {
-          message = proceedEveryDay(transaction, taskDocSnap, null, userDocSnap.ref, data.task);
+          taskDocSnap = taskDocSnapTmp;
         }
 
-        await message;
+        // read all task for user/{userId}/today/{day}/task/{taskId}
+        const todayTaskDocSnapPromise: Promise<{docSnap: DocumentSnapshot, day: Day}>[] = [];
+        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
+          todayTaskDocSnapPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
+        });
+        const todayTaskDocSnaps: {docSnap: DocumentSnapshot, day: Day}[] = await Promise.all(todayTaskDocSnapPromise);
+
+        // read all times of day
+        const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
+          const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
+          docsRef.forEach((docRef) => {
+            timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
+          });
+          return await Promise.all(timesOfDayDocSnapsPromise);
+        });
+
         /*
-        * WAIT FOR MESSAGE DONE
+        * Proceed all data
         * */
 
-        transaction.update(userDocSnap.ref, {
-          timesOfDay: userTimesOfDay
-        });
+        proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, data.task, timesOfDayDocSnaps);
+
+        // proceedEveryDay
+        todayTaskDocSnaps.forEach((readReady) =>
+          proceedTask(transaction, readReady.docSnap, data.task, readReady.day)
+        );
+
+        // update task
+        transaction.set(taskDocSnap.ref, data.task);
+
+        // delete taskDocSnapTmp if created
+        if (created) {
+          transaction.delete(taskDocSnapTmp.ref);
+        }
+
+        return transaction;
 
       });
 
     })
   ).then(() =>
     created ? ({
-      status: 'Created',
       created: true,
-      message: 'Your task has been created',
+      details: 'Your task has been created 😉',
       taskId: taskId
     }) : ({
-      status: 'Updated',
       created: false,
-      message: 'Your task has been updated',
+      details: 'Your task has been updated 🙃',
       taskId: taskId
     })
-  ).catch((e) => {
-      throw new functions.https.HttpsError(
+  ).catch((error: HttpsError) => {
+      throw new HttpsError(
         'internal',
-        e,
-        'Your task has not been touched'
+        error.message,
+        error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
       );
     }
   );

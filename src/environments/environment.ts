@@ -5,13 +5,14 @@
 export const environment = {
   production: false,
   firebase: {
-    apiKey: 'AIzaSyAd1jkuwewCK3iRcDBPep7kh1HBD9L-aqg',
-    authDomain: 'rem.grzeg.pl',
-    databaseURL: 'https://remember-me-3.firebaseio.com',
     projectId: 'remember-me-3',
+    appId: '1:824512670781:web:1deb2cdcdb73bee8',
+    databaseURL: 'https://remember-me-3.firebaseio.com',
     storageBucket: 'remember-me-3.appspot.com',
-    messagingSenderId: '824512670781',
-    appId: '1:824512670781:web:1deb2cdcdb73bee8'
+    locationId: 'europe-west2',
+    apiKey: 'AIzaSyBUnrZ8ADaX8cc7NLoqKe_yruHt0FBTq6c',
+    authDomain: 'rem.grzeg.pl',
+    messagingSenderId: '824512670781'
   },
   functions: {
     port: 5000
