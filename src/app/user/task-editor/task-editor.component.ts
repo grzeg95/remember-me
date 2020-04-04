@@ -65,7 +65,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
-        this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || null);
+        this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
       }
     });
   }
@@ -138,7 +138,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   refreshTaskByParamId(taskId: string): void {
 
-    if (taskId) {
+    if (taskId !== 'null') {
 
       if (this.getTaskById$ && !this.getTaskById$.closed) {
         this.getTaskById$.unsubscribe();
@@ -163,7 +163,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       });
 
     } else {
-      this.initValues = {} as ITask;
+      this.savingInProgress = false;
       this.taskForm.enable();
     }
 
@@ -228,8 +228,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       this.snackBar.open(success.details);
 
     }, (error: IError) => {
-      this.taskForm.enable();
-      this.savingInProgress = false;
       this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
