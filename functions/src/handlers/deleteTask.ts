@@ -1,8 +1,12 @@
 import {app} from '../index';
-import * as firebase from 'firebase-admin';
-import * as functions from 'firebase-functions';
-import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
-import DocumentData = FirebaseFirestore.DocumentData;
+
+import {
+  CallableContext,
+  HttpsError} from 'firebase-functions/lib/providers/https';
+
+import {
+  DocumentSnapshot,
+  DocumentData} from "@google-cloud/firestore";
 
 /**
  * 9 + MAX[20] reads
@@ -12,30 +16,29 @@ import DocumentData = FirebaseFirestore.DocumentData;
  * @param context functions.https.CallableContext
  * @return Promise<T>
 **/
-export const handler = (data: {taskId: any}, context: functions.https.CallableContext): Promise<any> => {
-
-  const auth: {
-    uid: string;
-    token: firebase.auth.DecodedIdToken;
-  } | undefined = context.auth;
+export const handler = (data: any, context: CallableContext): Promise<any> => {
 
   // interrupt if data.taskId is not correct or !auth
-  if (!data.taskId || typeof data.taskId !== 'string') {
-    throw new functions.https.HttpsError(
+  if (!context.auth || !data.taskId || typeof data.taskId !== 'string') {
+    throw new HttpsError(
       'invalid-argument',
       'Bad Request',
       'Some went wrong 🤫 Try again 🙂'
     );
   }
 
+  const auth: {
+    uid: string;
+  } = context.auth;
+
   return app.runTransaction((transaction) =>
 
     // get user from firestore
-    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'unauthenticated',
           'Register to use this functionality',
           `You dont't exist 😱`
@@ -46,7 +49,7 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
 
         // interrupt if user has not this task
         if (!taskDocSnap.exists) {
-          throw new functions.https.HttpsError(
+          throw new HttpsError(
             'invalid-argument',
             'Task does not exist',
             `Some went wrong 🤫 Try again 🙂`
@@ -106,8 +109,8 @@ export const handler = (data: {taskId: any}, context: functions.https.CallableCo
     })
   ).then(() => ({
     details: 'Your task has been deleted 🤭'
-  })).catch((error: functions.https.HttpsError) => {
-    throw new functions.https.HttpsError(
+  })).catch((error: HttpsError) => {
+    throw new HttpsError(
       'internal',
       error.message,
       error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'

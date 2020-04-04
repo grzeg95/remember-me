@@ -1,10 +1,14 @@
 import {app} from '../index';
-import {Transaction} from "@google-cloud/firestore";
-import * as firebase from 'firebase-admin';
-import * as functions from 'firebase-functions';
-import DocumentSnapshot = FirebaseFirestore.DocumentSnapshot;
-import DocumentReference = FirebaseFirestore.DocumentReference;
-import DocumentData = FirebaseFirestore.DocumentData;
+
+import {
+  CallableContext,
+  HttpsError} from 'firebase-functions/lib/providers/https';
+
+import {
+  Transaction,
+  DocumentSnapshot,
+  DocumentReference,
+  DocumentData} from "@google-cloud/firestore";
 
 /**
  * @function listEqual
@@ -174,7 +178,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
   });
 
   if (updated + created - removed > 20) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Bad Request',
       `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(updated + created - removed).length} 🤔`
@@ -194,80 +198,74 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
  * @param data {
     task: {
       timesOfDay: {
-        [key: string]: any
-      };
+        [key: string]: string
+      },
       daysOfTheWeek: {
-        mon: any;
-        tue: any;
-        wed: any;
-        thu: any;
-        fri: any;
-        sat: any;
-        sun: any;
-      }
-      description: any;
-    }
+        mon: boolean
+        tue: boolean
+        wed: boolean
+        thu: boolean
+        fri: boolean
+        sat: boolean
+        sun: boolean
+      },
+      description: string
+    },
+    taskId: string
   }
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: {
-    task: {
-      timesOfDay: {
-        [key: string]: any
-      };
-      daysOfTheWeek: {
-        mon: any;
-        tue: any;
-        wed: any;
-        thu: any;
-        fri: any;
-        sat: any;
-        sun: any;
-      }
-      description: any;
-    }, taskId: any}, context: functions.https.CallableContext): Promise<any> =>
+export const handler = (data: any, context: CallableContext): Promise<any> =>
 {
 
-  const auth: {
-    uid: string;
-    token: firebase.auth.DecodedIdToken;
-  } | undefined = context.auth;
-
-  const taskKes = Object.keys((data.task as Object));
-  const daysOfTheWeekKeys = Object.keys((data.task.daysOfTheWeek as Object));
-  const timesOfDayKeys = Object.keys((data.task.timesOfDay as Object));
-
   if (
-    !data.task || !data.taskId || typeof data.taskId !== 'string' ||
-    taskKes.length !== 3 || // task is based on 3 objects ...
-    !listEqual(taskKes, ['description','daysOfTheWeek','timesOfDay']) || // ... description, daysOfTheWeek, timesOfDay
-    !data.task.description || typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
-    daysOfTheWeekKeys.length !== 7 || // task.daysOfTheWeek is based on 7 object ...
-    !listEqual(daysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
-    daysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
-    !daysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
-    timesOfDayKeys.length === 0 || // data.timesOfDayKeys is based on at least one object ...
-    timesOfDayKeys.some((e) => typeof data.task.timesOfDay[e] !== 'boolean') || // that contain boolean property ...
-    !timesOfDayKeys.some((e) => data.task.timesOfDay[e]) || // ... that one is true and ...
-    timesOfDayKeys.some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
+    !context.auth ||
+
+    // data includes task: object and taskId: string
+    typeof data !== 'object' ||
+    Object.keys(data).length !== 2 ||
+    !listEqual(Object.keys(data), ['task','taskId']) ||
+    typeof data.taskId !== 'string' ||
+    typeof data.task !== 'object' ||
+
+    // task includes description:string[4,40],
+    // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
+    // timesOfDay: {[key: string]: string}
+    Object.keys(data.task).length !== 3 ||
+    !listEqual(Object.keys(data.task), ['description','daysOfTheWeek','timesOfDay']) ||
+    typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
+    Object.keys(data.task.daysOfTheWeek).length !== 7 || // 7 days in week
+    !listEqual(Object.keys(data.task.daysOfTheWeek), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
+    Object.keys(data.task.daysOfTheWeek).some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
+    !Object.keys(data.task.daysOfTheWeek).some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
+
+    // timesOfDay in object based on name: true key/value
+    typeof data.task.timesOfDay !== 'object' ||
+    Object.keys(data.task.timesOfDay).length === 0 || // data.timesOfDayKeys is based on at least one object ...
+    Object.keys(data.task.timesOfDay).some((e) => typeof data.task.timesOfDay[e] !== 'boolean' || !data.task.timesOfDay[e] ) || // that contain true property ...
+    Object.keys(data.task.timesOfDay).some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
   ) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Bad Request',
       'Some went wrong 🤫 Try again 🙂'
     );
   }
 
+  const auth: {
+    uid: string;
+  } = context.auth;
+
   let created = false;
   let taskId = data.taskId;
 
   return app.runTransaction((transaction) =>
-    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'unauthenticated',
           'Register to use this functionality',
           `You dont't exist 😱`
@@ -340,8 +338,8 @@ export const handler = (data: {
       details: 'Your task has been updated 🙃',
       taskId: taskId
     })
-  ).catch((error: functions.https.HttpsError) => {
-      throw new functions.https.HttpsError(
+  ).catch((error: HttpsError) => {
+      throw new HttpsError(
         'internal',
         error.message,
         error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
