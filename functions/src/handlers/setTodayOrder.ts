@@ -6,18 +6,18 @@ import {
 
 import {
   DocumentSnapshot,
-  DocumentData} from "@google-cloud/firestore";
+  DocumentReference} from "@google-cloud/firestore";
 
 /**
  * @function handler
- * 1 + MAX[20] reads
+ * MAX[20] reads
  * MAX[20] writes
  * Read all user data about task and remove it
  * @param data: string[]
  * @param context functions.https.CallableContext
  * @return Promise<any>
  **/
-export const handler = (data: any, context: CallableContext): Promise<any> => {
+export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   /*
   * Check if data is correct and user is authenticated
@@ -28,6 +28,7 @@ export const handler = (data: any, context: CallableContext): Promise<any> => {
     data.some((timeOfDay) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0) ||
     (new Set(data).size !== data.length) ||
     data.length > 20 ||
+    data.length === 0 ||
     !context.auth
   ) {
     throw new HttpsError(
@@ -41,36 +42,32 @@ export const handler = (data: any, context: CallableContext): Promise<any> => {
     uid: string;
   } = context.auth;
 
-  return app.runTransaction((transaction) =>
-    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
-
-      // interrupt if user is not in my firestore
-      if (!userDocSnap.exists) {
-        throw new HttpsError(
-          'unauthenticated',
-          'Register to use this functionality',
-          `You dont't exist 😱`
-        );
-      }
+  return app.runTransaction(async (transaction) => {
 
       /*
       * Read all data
       * */
 
       // read all times of day
-      const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
-        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
-        docsRef.forEach((docRef) => {
-          timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
-        });
-        return await Promise.all(timesOfDayDocSnapsPromise);
+      const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentReference} = await app.collection('users').doc(auth.uid).collection('timesOfDay').listDocuments().then(async (docsRef) => {
+        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot>[] = [];
+
+        docsRef.forEach((docRef) =>
+          timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap))
+        );
+
+        return (await Promise.all(timesOfDayDocSnapsPromise)).reduce((acc, curr) => {
+          const next = JSON.parse(`{"${curr.data()?.name}": null}`);
+          next[curr.data()?.name] = curr.ref;
+          return {...acc, ...next};
+        }, {});
       });
 
       /*
       * Proceed all data
       * */
 
-      if (timesOfDayDocSnaps.length !== data.length) {
+      if (Object.keys(timesOfDayDocSnaps).length !== data.length) {
         throw new HttpsError(
           'invalid-argument',
           'Bad Request',
@@ -78,28 +75,17 @@ export const handler = (data: any, context: CallableContext): Promise<any> => {
         );
       }
 
-      data.forEach((timeOfDay: string, index) => {
-
-        const timesOfDayDocSnap = timesOfDayDocSnaps.find((timesOfDayDocSnapNext) => timesOfDayDocSnapNext.data()?.name === timeOfDay);
-
-        if (!timesOfDayDocSnap) {
-          throw new HttpsError(
-            'invalid-argument',
-            'Bad Request',
-            'Some went wrong 🤫 Try again 🙂'
-          );
-        }
-
-        transaction.update(timesOfDayDocSnap.ref, {
+      data.forEach((timeOfDay: string, index) =>
+        transaction.update(timesOfDayDocSnaps[timeOfDay], {
           position: index
-        });
+        })
+      );
 
-      });
+      return transaction;
 
-    })).then(() => ({
+    }).then(() => ({
       details: 'Order has been updated 🙃'
-    })
-  ).catch((error: HttpsError) => {
+    })).catch((error: HttpsError) => {
     throw new HttpsError(
       'internal',
       error.message,
