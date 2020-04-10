@@ -2,7 +2,6 @@ import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from 
 import {AngularFirestore} from '@angular/fire/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {interval, Subscription} from 'rxjs';
-import {take} from 'rxjs/operators';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
 import {ITodayItem} from '../models';
@@ -26,10 +25,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   get todayItemsFirstLoading(): boolean {
     return this.userService.todayItemsFirstLoading;
-  }
-
-  set todayItemsFirstLoading(value: boolean) {
-    this.userService.todayItemsFirstLoading = value;
   }
 
   get todayItems(): {[timeOfDay: string]: ITodayItem[]} {
@@ -96,32 +91,36 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.timesOfDayOrder$.unsubscribe();
     }
 
-    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
-      this.order = timesOfDayOrder;
-    });
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder) =>
+      this.order = timesOfDayOrder
+    );
   }
 
-  private updateTodayTaskList(): void {
+  getTodayTasksList(): void {
+    this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
+
     if (this.todayTasks$ && !this.todayTasks$.closed) {
       this.todayTasks$.unsubscribe();
     }
 
-    this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
-      this.todayItems = newTodayItems;
-      this.todayItemsFirstLoading = false;
-    });
-  }
-
-  getTodayTasksList(): void {
-    const now = new Date();
-    this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
-    this.updateTodayTaskList();
+    this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) =>
+      this.todayItems = newTodayItems
+    );
   }
 
   changeDay(): void {
     this.getTodayTasksList();
     this.getTimesOfDayOrder();
-    this.changeDayInterval = interval(TodayComponent.toNextDayCalc() * 1000).pipe(take(1)).subscribe(() => this.changeDay());
+
+    const now = new Date();
+    const todayPast: number = now.getSeconds() + (now.getMinutes() * 60) + (now.getHours() * 60 * 60);
+    const toNextDay = 86400 - todayPast * 1000;
+
+    if (this.changeDayInterval && !this.changeDayInterval.closed) {
+      this.changeDayInterval.unsubscribe();
+    }
+
+    this.changeDayInterval = interval(toNextDay).subscribe(() => this.changeDay());
   }
 
   ngAfterViewChecked(): void {
@@ -171,12 +170,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.isConnected$.unsubscribe();
 
     this.destroyed = true;
-  }
-
-  private static toNextDayCalc(): number {
-    const now = new Date();
-    const todayPast: number = now.getSeconds() + (now.getMinutes() * 60) + (now.getHours() * 60 * 60);
-    return 86400 - todayPast;
   }
 
 }
