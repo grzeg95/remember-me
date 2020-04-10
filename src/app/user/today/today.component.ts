@@ -27,6 +27,14 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return this.userService.todayItemsFirstLoading;
   }
 
+  set todayItemsFirstLoading(val: boolean) {
+    this.userService.todayItemsFirstLoading = val;
+  }
+
+  set todayOrderFirstLoading(val: boolean) {
+    this.userService.todayOrderFirstLoading = val;
+  }
+
   get todayItems(): {[timeOfDay: string]: ITodayItem[]} {
     return this.userService.todayItems;
   }
@@ -91,21 +99,24 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.timesOfDayOrder$.unsubscribe();
     }
 
-    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder) =>
-      this.order = timesOfDayOrder
-    );
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder) => {
+      this.order = timesOfDayOrder;
+      this.todayOrderFirstLoading = false;
+    });
   }
 
   getTodayTasksList(): void {
     this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
 
+    console.log(this.todayName);
     if (this.todayTasks$ && !this.todayTasks$.closed) {
       this.todayTasks$.unsubscribe();
     }
 
-    this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) =>
-      this.todayItems = newTodayItems
-    );
+    this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
+      this.todayItems = newTodayItems;
+      this.todayItemsFirstLoading = false;
+    });
   }
 
   changeDay(): void {
@@ -114,7 +125,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     const now = new Date();
     const todayPast: number = now.getSeconds() + (now.getMinutes() * 60) + (now.getHours() * 60 * 60);
-    const toNextDay = 86400 - todayPast * 1000;
+    const toNextDay = (86400 - todayPast) * 1000;
 
     if (this.changeDayInterval && !this.changeDayInterval.closed) {
       this.changeDayInterval.unsubscribe();

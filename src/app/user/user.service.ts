@@ -1,12 +1,11 @@
 import {Injectable} from '@angular/core';
-import {AngularFirestore, QuerySnapshot} from '@angular/fire/firestore';
-import * as firebase from 'firebase';
+import {AngularFirestore} from '@angular/fire/firestore';
+import {firestore} from 'firebase';
 import {Observable} from 'rxjs';
-import {map, tap} from 'rxjs/operators';
+import {map} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
 import {IUser} from '../auth/i-user';
 import {ITask, ITasksListItem, ITimeOfDay, ITodayItem} from './models';
-import DocumentSnapshot = firebase.firestore.DocumentSnapshot;
 
 @Injectable()
 export class UserService {
@@ -35,17 +34,15 @@ export class UserService {
     return this.afs
       .doc<IUser>(`users/${this.authService.userData.uid}`)
       .collection<ITimeOfDay>('timesOfDay', (ref) => ref.orderBy('position', 'asc'))
-      .get().pipe(tap((querySnapDocData) => console.log(querySnapDocData)), map((querySnapDocData) =>
-        querySnapDocData.docs.map((queryDocSnapDocData) =>
-          queryDocSnapDocData.data().name
-        )
+      .get().pipe(map((querySnapDocData) =>
+        querySnapDocData.docs.map((queryDocSnapDocData) => queryDocSnapDocData.data().name)
       ));
   }
 
   getTaskList$(): Observable<ITasksListItem[]> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
-      .get().pipe(tap((querySnapDocData) => console.log(querySnapDocData)), map((querySnapDocData) =>
+      .get().pipe(map((querySnapDocData) =>
           querySnapDocData.docs.map((queryDocSnapDocData) => {
 
             const task = queryDocSnapDocData.data() as ITask;
@@ -68,11 +65,9 @@ export class UserService {
 
     return this.afs.doc(`users/${this.authService.userData.uid}/today/${todayName}`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
-      .get().pipe(map<QuerySnapshot<firebase.firestore.DocumentData>, { [timeOfDay: string]: ITodayItem[] }>((querySnapDocData) => {
+      .get().pipe(map((querySnapDocData) => {
 
           const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
-
-          console.log(querySnapDocData);
 
           querySnapDocData.forEach((queryDocSnapDocData) => {
 
@@ -94,17 +89,15 @@ export class UserService {
 
           });
 
-          this.todayItemsFirstLoading = false;
           return todayTasksByTimeOfDay;
 
         }));
   }
 
-  getTaskById$(id: string): Observable<DocumentSnapshot> {
-    return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
-      .collection<ITask>('task').doc<ITask>(id).get().pipe(tap((querySnapDocData) =>
-        console.log(querySnapDocData)
-      ));
+  getTaskById$(id: string): Observable<ITask> {
+    return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
+      map((taskDocSnap) => taskDocSnap.data() as ITask)
+    );
   }
 
 }

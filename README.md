@@ -7,7 +7,6 @@ Before developing make sure to run:
 - `npm install ./functions`
 - `gcloud auth login`
 - `gcloud config set project remember-me-3`
-- `Set environment host=[FIREBASE_AUTH_TOKEN].[COMPUTER_NAME]`
 
 ##Dev use
 - `npm run start`
