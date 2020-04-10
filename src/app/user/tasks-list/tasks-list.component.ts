@@ -1,6 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Subscription} from 'rxjs';
-import {map} from 'rxjs/operators';
 import {AppService} from '../../app-service';
 import {ITasksListItem} from '../models';
 import {UserService} from '../user.service';
@@ -22,7 +21,12 @@ export class TasksListComponent implements OnInit, OnDestroy {
   }
 
   get taskListItems(): ITasksListItem[] {
-    return this.userService.taskListItems;
+    return this.userService.taskListItems.map((taskListItem) => {
+      taskListItem.timesOfDay = this.order
+        .filter((timeOfDay) => taskListItem.timesOfDay.includes(timeOfDay))
+        .join(', ');
+      return taskListItem;
+    });
   }
 
   set taskListItems(newTaskListItems: ITasksListItem[]) {
@@ -37,61 +41,20 @@ export class TasksListComponent implements OnInit, OnDestroy {
     this.userService.taskListItemsFirstLoading = value;
   }
 
-  isEmpty = true;
+  get isEmpty(): boolean {
+    return this.taskListItems.length === 0 || this.order.length === 0;
+  }
+
   timesOfDayOrder$: Subscription;
   taskList$: Subscription;
   isConnected$: Subscription;
 
-  constructor(public userService: UserService,
-              private appService: AppService) {
-    if (userService.taskListItems.length > 0) {
-      this.isEmpty = false;
-    }
-  }
-
-  refreshTimesOfDayOrder(): void {
-
-    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
-      this.timesOfDayOrder$.unsubscribe();
-    }
-
-    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
-      this.order = timesOfDayOrder;
-      this.timesOfDayOrder$.unsubscribe();
-    });
-  }
-
-  refreshTaskList(): void {
-
-    if (this.taskList$ && !this.taskList$.closed) {
-      this.taskList$.unsubscribe();
-    }
-
-    this.taskList$ = this.userService.getTaskList$().pipe(map((tasksItemsReceived) => {
-      return tasksItemsReceived.map((tasksItemReceived) => {
-
-        if (this.order.length === 0) {
-          tasksItemReceived.timesOfDay = Object.keys(tasksItemReceived.timesOfDay).join(', ');
-        } else {
-          tasksItemReceived.timesOfDay = this.order
-            .filter((timeOfDay) => tasksItemReceived.timesOfDay.includes(timeOfDay))
-            .join(', ');
-        }
-
-        return tasksItemReceived;
-
-      });
-    })).subscribe((tasksItemsReceived) => {
-      this.taskListItems = tasksItemsReceived;
-      this.isEmpty = tasksItemsReceived.length === 0;
-      this.taskListItemsFirstLoading = false;
-    });
-  }
+  constructor(private userService: UserService,
+              private appService: AppService) {}
 
   ngOnInit(): void {
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
-        console.log(isConnected);
         this.refreshTimesOfDayOrder();
         this.refreshTaskList();
       }
@@ -108,6 +71,28 @@ export class TasksListComponent implements OnInit, OnDestroy {
     }
 
     this.isConnected$.unsubscribe();
+  }
+
+  refreshTimesOfDayOrder(): void {
+
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
+    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$()
+      .subscribe((timesOfDayOrder: string[]) => this.order = timesOfDayOrder);
+  }
+
+  refreshTaskList(): void {
+
+    if (this.taskList$ && !this.taskList$.closed) {
+      this.taskList$.unsubscribe();
+    }
+
+    this.taskList$ = this.userService.getTaskList$().subscribe((tasksItemsReceived) => {
+      this.taskListItems = tasksItemsReceived;
+      this.taskListItemsFirstLoading = false;
+    });
   }
 
 }

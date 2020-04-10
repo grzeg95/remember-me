@@ -1,6 +1,5 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
-import {firestore} from 'firebase';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
@@ -72,7 +71,6 @@ export class UserService {
           querySnapDocData.forEach((queryDocSnapDocData) => {
 
             const task: ITask = queryDocSnapDocData.data() as ITask;
-            const id: string = queryDocSnapDocData.id;
 
             for (const timeOfDay in task.timesOfDay) {
               if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
@@ -82,7 +80,7 @@ export class UserService {
                 todayTasksByTimeOfDay[timeOfDay].push({
                   description: task.description,
                   done: task.timesOfDay[timeOfDay],
-                  id
+                  id: queryDocSnapDocData.id
                 });
               }
             }

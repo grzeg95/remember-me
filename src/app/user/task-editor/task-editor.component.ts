@@ -34,9 +34,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,
               private appService: AppService,
-              private userService: UserService) {
-    this.taskForm.enable();
-  }
+              private userService: UserService) {}
 
   deepEqual = deepEqual;
   initValues: ITask;
@@ -63,6 +61,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   isConnected$: Subscription;
 
   ngOnInit(): void {
+    this.taskForm.enable();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
