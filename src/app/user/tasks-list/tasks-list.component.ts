@@ -42,15 +42,18 @@ export class TasksListComponent implements OnInit, OnDestroy {
   }
 
   get isEmpty(): boolean {
-    return this.taskListItems.length === 0 || this.order.length === 0;
+    return this._isEmpty;
   }
 
+  _isEmpty: boolean;
   timesOfDayOrder$: Subscription;
   taskList$: Subscription;
   isConnected$: Subscription;
 
   constructor(private userService: UserService,
-              private appService: AppService) {}
+              private appService: AppService) {
+    this.updateIsEmpty();
+  }
 
   ngOnInit(): void {
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
@@ -73,6 +76,10 @@ export class TasksListComponent implements OnInit, OnDestroy {
     this.isConnected$.unsubscribe();
   }
 
+  updateIsEmpty(): void {
+    this._isEmpty = this.taskListItems.length === 0 || this.order.length === 0;
+  }
+
   refreshTimesOfDayOrder(): void {
 
     if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
@@ -80,7 +87,10 @@ export class TasksListComponent implements OnInit, OnDestroy {
     }
 
     this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$()
-      .subscribe((timesOfDayOrder: string[]) => this.order = timesOfDayOrder);
+      .subscribe((timesOfDayOrder: string[]) => {
+        this.order = timesOfDayOrder;
+        this.updateIsEmpty();
+      });
   }
 
   refreshTaskList(): void {
@@ -92,6 +102,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
     this.taskList$ = this.userService.getTaskList$().subscribe((tasksItemsReceived) => {
       this.taskListItems = tasksItemsReceived;
       this.taskListItemsFirstLoading = false;
+      this.updateIsEmpty();
     });
   }
 

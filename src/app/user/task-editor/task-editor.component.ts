@@ -79,7 +79,10 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   openTimeOfDayDialog(): void {
 
+    // @ts-ignore
     const scrollY = window.scrollY;
+
+    // @ts-ignore
     const scrollX = window.scrollX;
     const html = this.document.documentElement;
 
@@ -107,15 +110,12 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       html.scrollTop = scrollY;
       html.scrollLeft = scrollX;
 
-      console.log('The dialog was closed');
       this.taskForm.get('timesOfDay').markAsDirty();
 
       if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
         this.snackBar.open('Enter new one');
-        console.log('Enter new one');
       } if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
-        console.log('Enter time of day length from 1 to 20');
       } else {
         (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay.trim(), new FormControl(true, Validators.required));
         this.getDeepEqual();
@@ -147,7 +147,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       this.taskForm.disable();
 
       this.getTaskById$ = this.userService.getTaskById$(this.id).subscribe((task) => {
-        console.log(task);
         if (!task) {
           this.taskForm.reset();
           this.resetId();
@@ -198,7 +197,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.savingInProgress = true;
 
     const task = this.taskForm.getRawValue();
-    console.log(task);
 
     // call onCall functions
     // get
@@ -256,7 +254,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
         fri: false,
         sat: false,
         sun: false
-      }
+      },
+      timesOfDay: {}
     });
 
     this.timesOfDay.forEach((day) => {

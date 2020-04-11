@@ -43,10 +43,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.userService.todayItems = newTodayItems;
   }
 
-  get isEmpty(): boolean {
-    return Object.entries(this.todayItems).length === 0 || this.order.length === 0;
-  }
-
   get todayItemsView(): {timeOfDay: string, tasks: ITodayItem[]}[] {
 
     return this.order.filter((timeOfDay) => this.todayItems[timeOfDay]).map((timeOfDay) => ({
@@ -56,13 +52,20 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   }
 
+  get isEmpty(): boolean {
+    return this._isEmpty;
+  }
+
   constructor(private afs: AngularFirestore,
               private cdRef: ChangeDetectorRef,
               private authService: AuthService,
               private userService: UserService,
               private snackBar: MatSnackBar,
-              private appService: AppService) {}
+              private appService: AppService) {
+    this.updateIsEmpty();
+  }
 
+  _isEmpty: boolean;
   todayName = '';
   todayTasks$: Subscription;
   timesOfDayOrder$: Subscription;
@@ -80,6 +83,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.getTimesOfDayOrder();
 
+  }
+
+  updateIsEmpty(): void {
+    this._isEmpty = Object.entries(this.todayItems).length === 0 || this.order.length === 0;
   }
 
   todayItemIsDone(timeOfDay: string): boolean {
@@ -102,13 +109,13 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder) => {
       this.order = timesOfDayOrder;
       this.todayOrderFirstLoading = false;
+      this.updateIsEmpty();
     });
   }
 
   getTodayTasksList(): void {
     this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
 
-    console.log(this.todayName);
     if (this.todayTasks$ && !this.todayTasks$.closed) {
       this.todayTasks$.unsubscribe();
     }
@@ -116,6 +123,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
       this.todayItems = newTodayItems;
       this.todayItemsFirstLoading = false;
+      this.updateIsEmpty();
     });
   }
 
@@ -149,16 +157,13 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     checkbox.disabled = true;
 
     const toMerge = JSON.parse(`{"timesOfDay": {"${timeOfDay}": ${!checkbox.checked}}}`);
-    console.log(toMerge);
 
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.todayName}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
-      console.log('updated');
       checkbox.checked = !checkbox.checked;
       checkbox.disabled = false;
       this.todayItems[timeOfDay].find((task) => task.id === taskId).done = checkbox.checked;
-    }).catch((error) => {
+    }).catch(() => {
       if (!this.destroyed) {
-        console.log(error);
         checkbox.disabled = false;
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
         this.changeDay();

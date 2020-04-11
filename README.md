@@ -5,7 +5,7 @@ firebase based project
 Before developing make sure to run:
 - `npm install`
 - `npm install ./functions`
-- `gcloud auth login`
+- `gcloud auth application-default login`
 - `gcloud config set project remember-me-3`
 
 ##Dev use

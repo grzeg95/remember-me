@@ -1,55 +1,34 @@
 service cloud.firestore {
-  match /databases/{database}/documents {
+	match /databases/{database}/documents/users/{userId} {
 
-    function isStringInTheRangeOf(str, from, to){
-    	return
-      	str is string &&
-        str.size() >= from &&
-        str.size() <= to;
+    function isOwner() {
+      return userId == request.auth.uid
     }
 
-    match /users/{userId}{
+    allow read, update: if isOwner()
+    allow create: if request.auth.uid != null
 
-      function isUserEmailValid(){
-      	return request.resource.data.email == request.auth.token.email
-      }
+    match /today/{day}/task/{taskId} {
+      allow list: if isOwner()
+      // set progress
+      allow update: if isOwner() 
+        && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
+        && request.resource.data.keys().hasOnly(['description', 'timesOfDay'])
+        && request.resource.data.description == resource.data.description
+        && request.resource.data.timesOfDay.keys() == resource.data.timesOfDay.keys()
+        && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
+        && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
+    }
 
-      function isUserDisplayNameValid(){
-      	return isStringInTheRangeOf(request.resource.data.displayName, 1, 100);
-      }
+    match /task/{taskId} {
+      allow get: if isOwner()
+      allow list: if isOwner() && request.query.orderBy.description == 'ASC'
+    }
 
-      function isUserPhotoURLValid(){
-      	return isStringInTheRangeOf(request.resource.data.photoURL, 12, 100);
-      }
-
-    	function isUserProfileValid(){
-        return
-          isUserEmailValid() &&
-          isUserDisplayNameValid() &&
-          isUserPhotoURLValid();
-    	}
-
-      function isOwner(){
-      	return userId == request.auth.uid;
-      }
-
-      function isLogged(){
-      	return request.auth != null;
-      }
-
-    	allow get: if isLogged() && isOwner();
-      allow update: if isLogged() && isOwner() && isUserProfileValid();
-      allow create: if isLogged() && isUserProfileValid();
-
-      match /today/{dayShort}/task/{taskId}{
-      	allow list: if isLogged() && isOwner();
-      }
-
-      match /task/{taskId}{
-        allow get, list: if isLogged() && isOwner();
-      }
-
+    match /timesOfDay/{timesOfDayId} {
+      allow list: if isOwner() && request.query.orderBy.position == 'ASC'
     }
 
   }
+
 }

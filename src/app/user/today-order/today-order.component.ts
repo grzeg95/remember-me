@@ -32,9 +32,10 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   }
 
   get isEmpty(): boolean {
-    return this.order.length === 0;
+    return this._isEmpty;
   }
 
+  _isEmpty: boolean;
   disabled = false;
   timesOfDayOrder$: Subscription;
   isConnected$: Subscription;
@@ -42,7 +43,9 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
               private fns: AngularFireFunctions,
-              private appService: AppService) {}
+              private appService: AppService) {
+    this.updateIsEmpty();
+  }
 
   ngOnInit(): void {
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
@@ -60,6 +63,10 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
     this.isConnected$.unsubscribe();
   }
 
+  updateIsEmpty(): void {
+    this._isEmpty = this.order.length === 0;
+  }
+
   refreshTimesOfDayOrder(): void {
     if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
       this.timesOfDayOrder$.unsubscribe();
@@ -68,6 +75,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
     this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder: string[]) => {
       this.order = timesOfDayOrder;
       this.todayOrderFirstLoading = false;
+      this.updateIsEmpty();
     });
   }
 
