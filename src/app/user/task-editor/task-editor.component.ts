@@ -148,7 +148,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
       this.getTaskById$ = this.userService.getTaskById$(this.id).subscribe((task) => {
         if (!task) {
-          this.taskForm.reset();
           this.resetId();
           this.location.go('/user/task-editor');
         } else {
@@ -189,7 +188,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (deepEqual(this.initValues, this.taskForm.getRawValue())) {
+    if (this.getDeepEqual()) {
       return;
     }
 
@@ -284,6 +283,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   setAll(task: ITask): void {
 
+    this.restartForm();
     this.initValues = task;
     this.taskForm.get('description').setValue(task.description);
     this.taskForm.get('daysOfTheWeek').setValue(task.daysOfTheWeek);

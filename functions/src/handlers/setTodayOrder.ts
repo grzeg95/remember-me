@@ -1,4 +1,4 @@
-import {app} from '../index';
+import {firestore} from 'firebase-admin';
 
 import {
   CallableContext,
@@ -7,6 +7,8 @@ import {
 import {
   DocumentSnapshot,
   DocumentReference} from "@google-cloud/firestore";
+
+const app = firestore();
 
 /**
  * @function handler

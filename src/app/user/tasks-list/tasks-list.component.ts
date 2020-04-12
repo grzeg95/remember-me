@@ -45,7 +45,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
     return this._isEmpty;
   }
 
-  _isEmpty: boolean;
+  private _isEmpty: boolean;
   timesOfDayOrder$: Subscription;
   taskList$: Subscription;
   isConnected$: Subscription;

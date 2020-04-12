@@ -1,4 +1,4 @@
-import {app} from '../index';
+import {firestore} from 'firebase-admin';
 
 import {
   CallableContext,
@@ -7,6 +7,8 @@ import {
 import {
   DocumentSnapshot,
   DocumentData} from "@google-cloud/firestore";
+
+const app = firestore();
 
 /**
  * 9 + MAX[20] reads
