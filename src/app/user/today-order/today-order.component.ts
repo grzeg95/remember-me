@@ -11,7 +11,7 @@ import {UserService} from '../user.service';
   selector: 'app-today-order',
   templateUrl: './today-order.component.html',
   styleUrls: ['./today-order.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class TodayOrderComponent implements OnInit, OnDestroy {
 

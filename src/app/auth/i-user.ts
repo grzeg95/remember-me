@@ -3,10 +3,4 @@ export interface IUser {
   email: string;
   displayName: string;
   photoURL: string;
-  timesOfDay?: {
-    [name: string]: {
-      position: number;
-      counter: number;
-    }
-  };
 }

@@ -13,7 +13,7 @@ export class UserService {
   taskListItemsFirstLoading = true;
   todayOrderFirstLoading = true;
 
-  todayItems: {[timeOfDay: string]: ITodayItem[]} = {};
+  todayItems: { [timeOfDay: string]: ITodayItem[] } = {};
   taskListItems: ITasksListItem[] = [];
   timesOfDayOrder: string[] = [];
 
@@ -27,7 +27,8 @@ export class UserService {
   }
 
   constructor(private afs: AngularFirestore,
-              private authService: AuthService) {}
+              private authService: AuthService) {
+  }
 
   getTimesOfDayOrder$(): Observable<string[]> {
     return this.afs
@@ -42,21 +43,20 @@ export class UserService {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
       .get().pipe(map((querySnapDocData) =>
-          querySnapDocData.docs.map((queryDocSnapDocData) => {
+        querySnapDocData.docs.map((queryDocSnapDocData) => {
 
-            const task = queryDocSnapDocData.data() as ITask;
-            const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-              .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
+          const task = queryDocSnapDocData.data() as ITask;
+          const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
 
-            return {
-              description: task.description,
-              timesOfDay: Object.keys(task.timesOfDay),
-              daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
-              id: queryDocSnapDocData.id
-            } as ITasksListItem;
+          return {
+            description: task.description,
+            timesOfDay: Object.keys(task.timesOfDay),
+            daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
+            id: queryDocSnapDocData.id
+          } as ITasksListItem;
 
-          })
-
+        })
       ));
   }
 
@@ -66,30 +66,30 @@ export class UserService {
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
       .get().pipe(map((querySnapDocData) => {
 
-          const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
+        const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
 
-          querySnapDocData.forEach((queryDocSnapDocData) => {
+        querySnapDocData.forEach((queryDocSnapDocData) => {
 
-            const task: ITask = queryDocSnapDocData.data() as ITask;
+          const task: ITask = queryDocSnapDocData.data() as ITask;
 
-            for (const timeOfDay in task.timesOfDay) {
-              if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
-                if (!todayTasksByTimeOfDay[timeOfDay]) {
-                  todayTasksByTimeOfDay[timeOfDay] = [];
-                }
-                todayTasksByTimeOfDay[timeOfDay].push({
-                  description: task.description,
-                  done: task.timesOfDay[timeOfDay],
-                  id: queryDocSnapDocData.id
-                });
+          for (const timeOfDay in task.timesOfDay) {
+            if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
+              if (!todayTasksByTimeOfDay[timeOfDay]) {
+                todayTasksByTimeOfDay[timeOfDay] = [];
               }
+              todayTasksByTimeOfDay[timeOfDay].push({
+                description: task.description,
+                done: task.timesOfDay[timeOfDay],
+                id: queryDocSnapDocData.id
+              });
             }
+          }
 
-          });
+        });
 
-          return todayTasksByTimeOfDay;
+        return todayTasksByTimeOfDay;
 
-        }));
+      }));
   }
 
   getTaskById$(id: string): Observable<ITask> {

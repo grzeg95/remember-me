@@ -5,7 +5,8 @@
         <mat-form-field class="form-group">
           <mat-label>Description</mat-label>
           <input autocomplete="off" matInput formControlName="description">
-          <mat-error *ngIf="!taskForm.disabled && !taskForm.get('description').valid && (taskForm.get('description').dirty || taskForm.get('description').touched)">
+          <mat-error
+            *ngIf="!taskForm.disabled && !taskForm.get('description').valid && (taskForm.get('description').dirty || taskForm.get('description').touched)">
             Enter description from 4 to 40 characters
           </mat-error>
         </mat-form-field>
@@ -26,7 +27,7 @@
             [attr.id]="'dayOfTheWeek'+dayOfTheWeek"
             [formControlName]="dayOfTheWeek"
             [checked]="taskForm.get('daysOfTheWeek').get(dayOfTheWeek).value == true"
-            >
+          >
           <label
             class="form-check-label btn"
             [ngClass]="inputRef.checked ? 'btn-outline-dark shadow' : 'border rounded'"
@@ -79,13 +80,16 @@
           class="btn btn-secondary border rounded-0 shadow"
           type="button"
           (click)="cancelTask()"
-        >Close</button>
+        >Close
+        </button>
         <button
           class="btn btn-outline-danger border rounded-0"
           type="button"
           [disabled]="taskForm.disabled || idIsNull()"
           (click)="deleteTask()"
-        >Delete<mat-progress-bar *ngIf="deletingInProgress" mode="indeterminate"></mat-progress-bar></button>
+        >Delete
+          <mat-progress-bar *ngIf="deletingInProgress" mode="indeterminate"></mat-progress-bar>
+        </button>
       </div>
     </div>
   </div>

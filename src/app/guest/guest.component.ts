@@ -4,6 +4,7 @@ import {Component} from '@angular/core';
   selector: 'app-guest',
   templateUrl: './guest.component.html',
   styleUrls: ['./guest.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
-export class GuestComponent {}
+export class GuestComponent {
+}

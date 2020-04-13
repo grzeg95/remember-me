@@ -5,7 +5,7 @@ import {AuthService} from '../auth/auth.service';
   selector: 'app-nav',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class NavComponent {
 
@@ -20,7 +20,8 @@ export class NavComponent {
   @ViewChild('menuToggleCheckbox')
   menuToggleCheckbox: ElementRef;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) {
+  }
 
   signOut(): Promise<boolean> {
     return this.authService.signOut();

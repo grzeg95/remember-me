@@ -8,18 +8,25 @@ import {TodayComponent} from './today/today.component';
 import {UserComponent} from './user.component';
 
 const userRoutes: Routes = [
-  { path: '',  canActivate: [AuthGuardUserService], canActivateChild: [AuthGuardUserService], component: UserComponent, children: [
-      { path: 'today', component: TodayComponent},
-      { path: 'tasks-list', component: TasksListComponent },
-      { path: 'task-editor/:id', component: TaskEditorComponent },
-      { path: 'task-editor', component: TaskEditorComponent },
-      { path: 'today-order', component: TodayOrderComponent }
-    ] }
+  {
+    path: '',
+    canActivate: [AuthGuardUserService],
+    canActivateChild: [AuthGuardUserService],
+    component: UserComponent,
+    children: [
+      {path: 'today', component: TodayComponent},
+      {path: 'tasks-list', component: TasksListComponent},
+      {path: 'task-editor/:id', component: TaskEditorComponent},
+      {path: 'task-editor', component: TaskEditorComponent},
+      {path: 'today-order', component: TodayOrderComponent}
+    ]
+  }
 ];
 
 @NgModule({
-  imports: [ RouterModule.forChild(userRoutes) ],
-  exports: [ RouterModule ]
+  imports: [RouterModule.forChild(userRoutes)],
+  exports: [RouterModule]
 })
 
-export class UserRoutingModule {}
+export class UserRoutingModule {
+}

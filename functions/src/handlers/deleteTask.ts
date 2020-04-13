@@ -1,12 +1,6 @@
 import {firestore} from 'firebase-admin';
-
-import {
-  CallableContext,
-  HttpsError} from 'firebase-functions/lib/providers/https';
-
-import {
-  DocumentSnapshot,
-  DocumentData} from "@google-cloud/firestore";
+import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {DocumentData, DocumentSnapshot} from "@google-cloud/firestore";
 
 const app = firestore();
 
@@ -17,7 +11,7 @@ const app = firestore();
  * @param data {taskId: any}
  * @param context functions.https.CallableContext
  * @return Promise<T>
-**/
+ **/
 export const handler = (data: any, context: CallableContext): Promise<any> => {
 
   // interrupt if data.taskId is not correct or !auth

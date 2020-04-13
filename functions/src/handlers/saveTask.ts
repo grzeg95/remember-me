@@ -1,14 +1,6 @@
 import {firestore} from 'firebase-admin';
-
-import {
-  CallableContext,
-  HttpsError} from 'firebase-functions/lib/providers/https';
-
-import {
-  Transaction,
-  DocumentSnapshot,
-  DocumentReference,
-  DocumentData} from "@google-cloud/firestore";
+import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {DocumentData, DocumentReference, DocumentSnapshot, Transaction} from "@google-cloud/firestore";
 
 const app = firestore();
 
@@ -24,7 +16,7 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
 
 /**
  * @interface ITask
-**/
+ **/
 interface ITask {
   timesOfDay: {
     [key: string]: boolean
@@ -72,9 +64,9 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
       description: task.description,
       timesOfDay: timesOfDay
     });
-  } else if(taskDocSnap.exists && !task.daysOfTheWeek[day]) { // delete
+  } else if (taskDocSnap.exists && !task.daysOfTheWeek[day]) { // delete
     return transaction.delete(taskDocSnap.ref);
-  } else if(taskDocSnap.exists && task.daysOfTheWeek[day]) { // update
+  } else if (taskDocSnap.exists && task.daysOfTheWeek[day]) { // update
 
     // add task timesOfDay to newTimesOfDay
     const newTimesOfDay: {
@@ -218,8 +210,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
  * @param context functions.https.CallableContext
  * @return Promise<T>
  **/
-export const handler = (data: any, context: CallableContext): Promise<any> =>
-{
+export const handler = (data: any, context: CallableContext): Promise<any> => {
 
   if (
     !context.auth ||
@@ -227,7 +218,7 @@ export const handler = (data: any, context: CallableContext): Promise<any> =>
     // data includes task: object and taskId: string
     typeof data !== 'object' ||
     Object.keys(data).length !== 2 ||
-    !listEqual(Object.keys(data), ['task','taskId']) ||
+    !listEqual(Object.keys(data), ['task', 'taskId']) ||
     typeof data.taskId !== 'string' ||
     typeof data.task !== 'object' ||
 
@@ -235,7 +226,7 @@ export const handler = (data: any, context: CallableContext): Promise<any> =>
     // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
     // timesOfDay: {[key: string]: string}
     Object.keys(data.task).length !== 3 ||
-    !listEqual(Object.keys(data.task), ['description','daysOfTheWeek','timesOfDay']) ||
+    !listEqual(Object.keys(data.task), ['description', 'daysOfTheWeek', 'timesOfDay']) ||
     typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
     Object.keys(data.task.daysOfTheWeek).length !== 7 || // 7 days in week
     !listEqual(Object.keys(data.task.daysOfTheWeek), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
@@ -292,11 +283,14 @@ export const handler = (data: any, context: CallableContext): Promise<any> =>
         }
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTaskDocSnapPromise: Promise<{docSnap: DocumentSnapshot, day: Day}>[] = [];
+        const todayTaskDocSnapPromise: Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
         (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
-          todayTaskDocSnapPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({ docSnap, day })));
+          todayTaskDocSnapPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`)).then((docSnap) => ({
+            docSnap,
+            day
+          })));
         });
-        const todayTaskDocSnaps: {docSnap: DocumentSnapshot, day: Day}[] = await Promise.all(todayTaskDocSnapPromise);
+        const todayTaskDocSnaps: { docSnap: DocumentSnapshot, day: Day }[] = await Promise.all(todayTaskDocSnapPromise);
 
         // read all times of day
         const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {

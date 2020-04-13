@@ -7,6 +7,7 @@ Before developing make sure to run:
 - `npm install ./functions`
 - `gcloud auth application-default login`
 - `gcloud config set project remember-me-3`
+-  `firebase login --reauth`
 
 ##Dev use
 - `npm run start`

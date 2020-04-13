@@ -31,14 +31,16 @@
 
         <div class="row">
           <div class="col">
-            <span><i [hidden]="!todayItemIsDone(todayItem.timeOfDay)" class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
+            <span><i [hidden]="!todayItemIsDone(todayItem.timeOfDay)"
+                     class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
           </div>
         </div>
 
         <div class="row">
           <div class="col">
             <div class="form-check" *ngFor="let button of todayItem.tasks; let j = index; trackBy: trackByTodayItem">
-              <input #checkbox class="form-check-input d-none" type="checkbox" [disabled]="false" [checked]="button.done" >
+              <input #checkbox class="form-check-input d-none" type="checkbox" [disabled]="false"
+                     [checked]="button.done">
               <label class="form-check-label btn"
                      [ngClass]="checkbox.checked ? 'btn-success' : 'border rounded'"
                      [for]="checkbox"

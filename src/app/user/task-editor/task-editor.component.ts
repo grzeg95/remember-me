@@ -17,7 +17,7 @@ import {TimeOfDayDialogComponent} from './dialog/time-of-day-dialog.component';
   selector: 'app-task-editor',
   templateUrl: './task-editor.component.html',
   styleUrls: ['./task-editor.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class TaskEditorComponent implements OnInit, OnDestroy {
 
@@ -34,7 +34,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
               @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,
               private appService: AppService,
-              private userService: UserService) {}
+              private userService: UserService) {
+  }
 
   deepEqual = deepEqual;
   initValues: ITask;
@@ -114,7 +115,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
       if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
         this.snackBar.open('Enter new one');
-      } if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
+      }
+      if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
       } else {
         (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay.trim(), new FormControl(true, Validators.required));
@@ -127,7 +129,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   }
 
-  resetId(): void  {
+  resetId(): void {
     this.id = 'null';
   }
 
@@ -318,16 +320,16 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     const toValid = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     const rawValue = g.getRawValue();
     const some = toValid.some((checkbox) => rawValue[checkbox]);
-    return some ? null : { required: true };
+    return some ? null : {required: true};
   }
 
   static descriptionValidator(g: FormControl): { required: boolean } {
     return (typeof g.value === 'string') &&
-    (g.value.length > 3) && (g.value.length <= 40) ? null : { required: true };
+    (g.value.length > 3) && (g.value.length <= 40) ? null : {required: true};
   }
 
   static timesOfDayValidator(g: FormGroup): { required: boolean } {
-    return Object.keys(g.value).length > 0 && Object.keys(g.value).length <= 20 ? null : { required: true };
+    return Object.keys(g.value).length > 0 && Object.keys(g.value).length <= 20 ? null : {required: true};
   }
 
 }

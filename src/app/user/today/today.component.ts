@@ -11,7 +11,7 @@ import {UserService} from '../user.service';
   selector: 'app-today',
   templateUrl: './today.component.html',
   styleUrls: ['./today.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
@@ -35,15 +35,15 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.userService.todayOrderFirstLoading = val;
   }
 
-  get todayItems(): {[timeOfDay: string]: ITodayItem[]} {
+  get todayItems(): { [timeOfDay: string]: ITodayItem[] } {
     return this.userService.todayItems;
   }
 
-  set todayItems(newTodayItems: {[timeOfDay: string]: ITodayItem[]}) {
+  set todayItems(newTodayItems: { [timeOfDay: string]: ITodayItem[] }) {
     this.userService.todayItems = newTodayItems;
   }
 
-  get todayItemsView(): {timeOfDay: string, tasks: ITodayItem[]}[] {
+  get todayItemsView(): { timeOfDay: string, tasks: ITodayItem[] }[] {
 
     return this.order.filter((timeOfDay) => this.todayItems[timeOfDay]).map((timeOfDay) => ({
       timeOfDay,
@@ -93,7 +93,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return !this.todayItems[timeOfDay].some((task) => !task.done);
   }
 
-  trackByTodayItems(index: number, item: {timeOfDay: string, tasks: ITodayItem[]}): string {
+  trackByTodayItems(index: number, item: { timeOfDay: string, tasks: ITodayItem[] }): string {
     return index + item.timeOfDay;
   }
 

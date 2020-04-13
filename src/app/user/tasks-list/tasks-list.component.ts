@@ -8,7 +8,7 @@ import {UserService} from '../user.service';
   selector: 'app-tasks-list',
   templateUrl: './tasks-list.component.html',
   styleUrls: ['./tasks-list.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class TasksListComponent implements OnInit, OnDestroy {
 

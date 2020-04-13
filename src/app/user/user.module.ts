@@ -45,4 +45,5 @@ import {UserService} from './user.service';
     UserService
   ]
 })
-export class UserModule {}
+export class UserModule {
+}

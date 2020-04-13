@@ -18,7 +18,7 @@ import {AuthService} from './auth/auth.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class AppComponent implements AfterViewChecked, OnInit {
 
@@ -43,7 +43,8 @@ export class AppComponent implements AfterViewChecked, OnInit {
     this.html = this.document.documentElement;
 
     if (environment.production) {
-      console.log = () => {};
+      console.log = () => {
+      };
     }
 
   }

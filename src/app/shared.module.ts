@@ -13,4 +13,5 @@ import {environment} from '../environments/environment';
     AngularFireFunctionsModule
   ]
 })
-export class SharedModule {}
+export class SharedModule {
+}

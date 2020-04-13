@@ -1,6 +1,6 @@
-import {Component, HostListener, Inject} from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {MatDialogRef} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dialog',
@@ -13,7 +13,8 @@ export class TimeOfDayDialogComponent {
     timeOfDay: new FormControl('', [Validators.required, Validators.maxLength(20)])
   });
 
-  constructor(public dialogRef: MatDialogRef<TimeOfDayDialogComponent>) {}
+  constructor(public dialogRef: MatDialogRef<TimeOfDayDialogComponent>) {
+  }
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {

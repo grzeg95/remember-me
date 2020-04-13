@@ -4,7 +4,7 @@ import {Component} from '@angular/core';
   selector: 'app-nav-second',
   templateUrl: './user-nav.component.html',
   styleUrls: ['./user-nav.component.sass'],
-  host: { class: 'app' }
+  host: {class: 'app'}
 })
 export class UserNavComponent {
 
@@ -31,6 +31,7 @@ export class UserNavComponent {
     }
   ];
 
-  constructor() {}
+  constructor() {
+  }
 
 }
