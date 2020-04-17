@@ -171,8 +171,6 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
     }
   });
 
-  console.log(updated, created, removed);
-
   if (updated + created - removed > 20) {
     throw new HttpsError(
       'invalid-argument',
