@@ -171,6 +171,8 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
     }
   });
 
+  console.log(updated, created, removed);
+
   if (updated + created - removed > 20) {
     throw new HttpsError(
       'invalid-argument',
@@ -316,11 +318,28 @@ export const handler = (data: any, context: CallableContext): Promise<any> => {
         transaction.set(taskDocSnap.ref, data.task);
 
         // delete taskDocSnapTmp if created
-        if (created) {
-          transaction.delete(taskDocSnapTmp.ref);
-        }
-
-        return transaction;
+        // check maximum size of 50 tasks
+        return userDocSnap.ref.collection('task').get().then((querySnapDocData) => {
+          if (querySnapDocData.size > 50) {
+            throw new HttpsError(
+              'invalid-argument',
+              'Bad Request',
+              `You can create up to 50 tasks 😱`
+            );
+          } else if (created) {
+            transaction.delete(taskDocSnapTmp.ref);
+          }
+          return userDocSnap.ref.collection('timesOfDay').get().then((timesOfDayQuerySnapDocData) => {
+            if (timesOfDayQuerySnapDocData.size > 20) {
+              throw new HttpsError(
+                'invalid-argument',
+                'Bad Request',
+                `You can create up to 20 times of days 😱`
+              );
+            }
+            return transaction;
+          });
+        });
 
       });
 

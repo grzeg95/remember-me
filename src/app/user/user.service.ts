@@ -33,15 +33,17 @@ export class UserService {
   getTimesOfDayOrder$(): Observable<string[]> {
     return this.afs
       .doc<IUser>(`users/${this.authService.userData.uid}`)
-      .collection<ITimeOfDay>('timesOfDay', (ref) => ref.orderBy('position', 'asc'))
-      .get().pipe(map((querySnapDocData) =>
-        querySnapDocData.docs.map((queryDocSnapDocData) => queryDocSnapDocData.data().name)
-      ));
+      .collection<ITimeOfDay>('timesOfDay', (ref) =>
+        ref.orderBy('position', 'asc').limit(20)).get().pipe(
+          map((querySnapDocData) =>
+            querySnapDocData.docs.map((queryDocSnapDocData) => queryDocSnapDocData.data().name)
+          )
+      );
   }
 
   getTaskList$(): Observable<ITasksListItem[]> {
     return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
-      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
+      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
       .get().pipe(map((querySnapDocData) =>
         querySnapDocData.docs.map((queryDocSnapDocData) => {
 
