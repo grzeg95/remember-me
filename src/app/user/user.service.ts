@@ -65,7 +65,7 @@ export class UserService {
   getTodayTasks$(todayName: string): Observable<{ [timeOfDay: string]: ITodayItem[] }> {
 
     return this.afs.doc(`users/${this.authService.userData.uid}/today/${todayName}`)
-      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc'))
+      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50 * 20))
       .get().pipe(map((querySnapDocData) => {
 
         const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
