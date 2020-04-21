@@ -12,7 +12,7 @@ const app = firestore();
  * @return boolean
  **/
 export const listEqual = <T>(A: T[], B: T[]): boolean =>
-  A.length === B.length && A.every(a => B.includes(a)) && B.every(b => A.includes(b));
+  A.length === B.length && A.every(a => B.includes(a));
 
 /**
  * @interface ITask
@@ -52,14 +52,15 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 
   if (!taskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
+
     const timesOfDay: {
       [key: string]: boolean;
     } = {};
-    for (const time in task.timesOfDay) {
-      if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
-        timesOfDay[time] = false;
-      }
-    }
+
+    Object.keys(task.timesOfDay)
+      .filter((time) => task.timesOfDay[time])
+      .forEach((time) => timesOfDay[time] = false);
+
     return transaction.set(taskDocSnap.ref, {
       description: task.description,
       timesOfDay: timesOfDay
@@ -74,16 +75,15 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
     } = {};
 
     // set only used timesOfDay to newTimesOfDay
-    for (const time in task.timesOfDay) {
-      if (task.timesOfDay.hasOwnProperty(time) && task.timesOfDay[time]) {
-        newTimesOfDay[time] = false;
-      }
-    }
+    Object.keys(task.timesOfDay)
+      .filter((time) => task.timesOfDay[time])
+      .forEach((time) => newTimesOfDay[time] = false);
 
     // store current timesOfDay to oldTimesOfDay
     let oldTimesOfDay: {
       [key: string]: boolean;
     } = {};
+
     const docData = taskDocSnap.data() as ITask;
     if (docData) {
       oldTimesOfDay = docData.timesOfDay;
@@ -91,11 +91,9 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
 
     // set newTimesOfDay base on oldTimesOfDay
     // maybe there exist selected timesOfDay
-    for (const timeOfDay in newTimesOfDay) {
-      if (oldTimesOfDay[timeOfDay]) {
-        newTimesOfDay[timeOfDay] = oldTimesOfDay[timeOfDay];
-      }
-    }
+    Object.keys(newTimesOfDay)
+      .filter((timeOfDay) => oldTimesOfDay[timeOfDay])
+      .forEach((timeOfDay) => newTimesOfDay[timeOfDay] = oldTimesOfDay[timeOfDay]);
 
     return transaction.update(taskDocSnap.ref, {
       description: task.description,
@@ -119,7 +117,7 @@ const proceedTask = (transaction: Transaction, taskDocSnap: DocumentSnapshot, ta
  * @param timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]
  * @return Transaction
  **/
-const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]): Transaction => {
+const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, taskUpdated: ITask, timesOfDayDocSnaps: DocumentSnapshot[]): Transaction => {
 
   let created = 0;
   let updated = 0;
@@ -207,10 +205,10 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
     },
     taskId: string
   }
- * @param context functions.https.CallableContext
- * @return Promise<T>
+ * @param context CallableContext
+ * @return Promise<{}>
  **/
-export const handler = (data: any, context: CallableContext): Promise<any> => {
+export const handler = (data: any, context: CallableContext): Promise<{}> => {
 
   if (
     !context.auth ||

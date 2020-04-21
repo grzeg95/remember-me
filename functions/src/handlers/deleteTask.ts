@@ -10,9 +10,9 @@ const app = firestore();
  * Read all user data about task and remove it
  * @param data {taskId: any}
  * @param context functions.https.CallableContext
- * @return Promise<T>
+ * @return Promise<{}>
  **/
-export const handler = (data: any, context: CallableContext): Promise<any> => {
+export const handler = (data: any, context: CallableContext): Promise<{}> => {
 
   // interrupt if data.taskId is not correct or !auth
   if (!context.auth || !data.taskId || typeof data.taskId !== 'string') {

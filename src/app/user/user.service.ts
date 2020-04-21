@@ -74,18 +74,16 @@ export class UserService {
 
           const task: ITask = queryDocSnapDocData.data() as ITask;
 
-          for (const timeOfDay in task.timesOfDay) {
-            if (task.timesOfDay.hasOwnProperty(timeOfDay)) {
-              if (!todayTasksByTimeOfDay[timeOfDay]) {
-                todayTasksByTimeOfDay[timeOfDay] = [];
-              }
-              todayTasksByTimeOfDay[timeOfDay].push({
-                description: task.description,
-                done: task.timesOfDay[timeOfDay],
-                id: queryDocSnapDocData.id
-              });
+          Object.keys(task.timesOfDay).forEach((timeOfDay) => {
+            if (!todayTasksByTimeOfDay[timeOfDay]) {
+              todayTasksByTimeOfDay[timeOfDay] = [];
             }
-          }
+            todayTasksByTimeOfDay[timeOfDay].push({
+              description: task.description,
+              done: task.timesOfDay[timeOfDay],
+              id: queryDocSnapDocData.id
+            });
+          });
 
         });
 
