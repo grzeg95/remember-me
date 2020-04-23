@@ -74,7 +74,7 @@ export class UserService {
 
           const task: ITask = queryDocSnapDocData.data() as ITask;
 
-          for (const timeOfDay in task.timesOfDay) {
+          Object.keys(task.timesOfDay).forEach((timeOfDay) => {
             if (!todayTasksByTimeOfDay[timeOfDay]) {
               todayTasksByTimeOfDay[timeOfDay] = [];
             }
@@ -83,7 +83,7 @@ export class UserService {
               done: task.timesOfDay[timeOfDay],
               id: queryDocSnapDocData.id
             });
-          }
+          });
 
         });
 

@@ -259,9 +259,9 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       timesOfDay: {}
     });
 
-    for (const day of this.timesOfDay) {
+    this.timesOfDay.forEach((day) => {
       (this.taskForm.get('timesOfDay') as FormGroup).removeControl(day);
-    }
+    });
 
   }
 
@@ -292,18 +292,18 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
     const currentTimesOfDays = this.timesOfDay;
 
-    for (const timeOfDay in task.timesOfDay) {
+    Object.keys(task.timesOfDay).forEach((timeOfDay) => {
       if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
         this.taskForm.get('timesOfDay').get(timeOfDay).setValue(task.timesOfDay[timeOfDay]);
       } else {
         (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(task.timesOfDay[timeOfDay], Validators.required));
       }
       currentTimesOfDays.splice(currentTimesOfDays.indexOf(timeOfDay), 1);
-    }
+    });
 
-    for (const timeOfDay of currentTimesOfDays) {
+    currentTimesOfDays.forEach((timeOfDay) => {
       (this.taskForm.get('timesOfDay') as FormGroup).removeControl(timeOfDay);
-    }
+    });
 
     this.taskForm.disable();
   }
