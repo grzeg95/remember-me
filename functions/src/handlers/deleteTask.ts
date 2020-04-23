@@ -5,11 +5,6 @@ import {DocumentSnapshot} from "@google-cloud/firestore";
 const app = firestore();
 
 /**
- * @type Day
- **/
-type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-
-/**
  * 9 + MAX[20] reads
  * 8 deletes + (MAX[20] deletes and updates)
  * Read all user data about task and remove it
@@ -63,17 +58,17 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTasksPromise: Promise<DocumentSnapshot>[] = [];
-        for (const day of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]) {
+        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).forEach((day) =>
           todayTasksPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`)))
-        }
+        );
         const todayTasks: DocumentSnapshot[] = await Promise.all(todayTasksPromise);
 
         // read all times of day
         const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
           const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot>[] = [];
-          for (const docRef of docsRef) {
+          docsRef.forEach((docRef) => {
             timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
-          }
+          });
           return await Promise.all(timesOfDayDocSnapsPromise);
         });
 
@@ -82,7 +77,7 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
         * */
 
         // proceed timesOfDayDocSnaps
-        for (const timeOfDay in taskDocSnap.data()?.timesOfDay) {
+        Object.keys(taskDocSnap.data()?.timesOfDay).forEach((timeOfDay) => {
           const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
           if (inTheTimesOfDayDocSnaps) {
             const counter = inTheTimesOfDayDocSnaps.data()?.counter;
@@ -94,15 +89,15 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
               });
             }
           }
-        }
+        });
 
         // remove task
         transaction.delete(taskDocSnap.ref);
 
         // remove todayTasks
-        for (const todayTask of todayTasks) {
-          transaction.delete(todayTask.ref);
-        }
+        todayTasks.forEach((docSnap) =>
+          transaction.delete(docSnap.ref)
+        );
 
         return transaction;
       });
