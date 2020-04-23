@@ -25,7 +25,7 @@
     },
     "directive-class-suffix": true,
     "eofline": true,
-    "forin": true,
+    "forin": false,
     "import-blacklist": [
       true,
       "rxjs/Rx"
