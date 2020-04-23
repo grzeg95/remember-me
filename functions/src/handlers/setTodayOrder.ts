@@ -47,9 +47,9 @@ export const handler = (data: any, context: CallableContext): Promise<{ [key: st
     const timesOfDayDocSnaps: { [timeOfDay: string]: DocumentReference } = await app.collection('users').doc(auth.uid).collection('timesOfDay').listDocuments().then(async (docsRef) => {
       const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot>[] = [];
 
-      docsRef.forEach((docRef) =>
+      for (const docRef of docsRef) {
         timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap))
-      );
+      }
 
       return (await Promise.all(timesOfDayDocSnapsPromise)).reduce((acc, curr) => {
         const next = JSON.parse(`{"${curr.data()?.name}": null}`);
@@ -70,11 +70,11 @@ export const handler = (data: any, context: CallableContext): Promise<{ [key: st
       );
     }
 
-    data.forEach((timeOfDay: string, index) =>
+    for (const [index, timeOfDay] of data.entries()) {
       transaction.update(timesOfDayDocSnaps[timeOfDay], {
         position: index
       })
-    );
+    }
 
     return transaction;
 
