@@ -5,18 +5,18 @@ initializeApp();
 
 export const deleteTask = runWith({
   timeoutSeconds: 10,
-  memory: '128MB',
+  memory: '256MB',
   maxInstances: 2
 }).region('europe-west2').https.onCall(require('./handlers/deleteTask').handler);
 
 export const saveTask = runWith({
   timeoutSeconds: 10,
-  memory: '128MB',
+  memory: '256MB',
   maxInstances: 2
 }).region('europe-west2').https.onCall(require('./handlers/saveTask').handler);
 
 export const setTodayOrder = runWith({
   timeoutSeconds: 10,
-  memory: '128MB',
+  memory: '256MB',
   maxInstances: 2
 }).region('europe-west2').https.onCall(require('./handlers/setTodayOrder').handler);

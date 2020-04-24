@@ -210,33 +210,38 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
  **/
 export const handler = (data: any, context: CallableContext): Promise<{}> => {
 
+  let dataKeys;
+  let dataTaskKeys;
+  let dataTaskDaysOfTheWeekKeys;
+  let dataTaskTimesOfDayKeys;
+
   if (
     !context.auth ||
 
     // data includes task: object and taskId: string
     typeof data !== 'object' ||
-    Object.keys(data).length !== 2 ||
-    !listEqual(Object.keys(data), ['task', 'taskId']) ||
+    (dataKeys = Object.keys(data)).length !== 2 ||
+    !listEqual(dataKeys, ['task', 'taskId']) ||
     typeof data.taskId !== 'string' ||
     typeof data.task !== 'object' ||
 
     // task includes description:string[4,40],
     // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
     // timesOfDay: {[key: string]: string}
-    Object.keys(data.task).length !== 3 ||
-    !listEqual(Object.keys(data.task), ['description', 'daysOfTheWeek', 'timesOfDay']) ||
+    (dataTaskKeys = Object.keys(data.task)).length !== 3 ||
+    !listEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']) ||
     typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
-    Object.keys(data.task.daysOfTheWeek).length !== 7 || // 7 days in week
-    !listEqual(Object.keys(data.task.daysOfTheWeek), ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
-    Object.keys(data.task.daysOfTheWeek).some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
-    !Object.keys(data.task.daysOfTheWeek).some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
+    (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7 || // 7 days in week
+    !listEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
+    dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
+    !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
 
     // timesOfDay in object based on name: true key/value
     typeof data.task.timesOfDay !== 'object' ||
-    Object.keys(data.task.timesOfDay).length === 0 || // data.timesOfDayKeys is based on at least one object ...
-    Object.keys(data.task.timesOfDay).length > 20 || // ... to max 20 ...
-    Object.keys(data.task.timesOfDay).some((e) => typeof data.task.timesOfDay[e] !== 'boolean' || !data.task.timesOfDay[e]) || // that contains true property ...
-    Object.keys(data.task.timesOfDay).some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
+    (dataTaskTimesOfDayKeys = Object.keys(data.task.timesOfDay)).length === 0 || // data.timesOfDayKeys is based on at least one object ...
+    dataTaskTimesOfDayKeys.length > 20 || // ... to max 20 ...
+    dataTaskTimesOfDayKeys.some((e) => typeof data.task.timesOfDay[e] !== 'boolean' || !data.task.timesOfDay[e]) || // that contains true property ...
+    dataTaskTimesOfDayKeys.some((e) => e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
   ) {
     throw new HttpsError(
       'invalid-argument',
@@ -252,8 +257,8 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
   let created = false;
   let taskId = data.taskId;
 
-  return app.runTransaction((transaction) =>
-    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
+  return app.runTransaction((transaction) => {
+    return transaction.get(app.doc(`users/${auth.uid}`)).then(async (userDocSnap) => {
 
       // interrupt if user is not in my firestore
       if (!userDocSnap.exists) {
@@ -336,12 +341,10 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
             return transaction;
           });
         });
-
       });
-
-    })
-  ).then(() =>
-    created ? ({
+    });
+  }).then(() => {
+    return created ? ({
       created: true,
       details: 'Your task has been created 😉',
       taskId: taskId
@@ -349,14 +352,13 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
       created: false,
       details: 'Your task has been updated 🙃',
       taskId: taskId
-    })
-  ).catch((error: HttpsError) => {
-      throw new HttpsError(
-        'internal',
-        error.message,
-        error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
-      );
-    }
-  );
+    });
+  }).catch((error: HttpsError) => {
+    throw new HttpsError(
+      'internal',
+      error.message,
+      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+    );
+  });
 
 };

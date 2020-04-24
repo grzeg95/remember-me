@@ -11,6 +11,16 @@ import {
 const app = firestore();
 
 /**
+ * @function listEqual
+ * Check if two list are the same
+ * @param A T[]
+ * @param B T[]
+ * @return boolean
+ **/
+export const listEqual = <T>(A: T[], B: T[]): boolean =>
+  A.length === B.length && A.every(a => B.includes(a));
+
+/**
  * @function handler
  * MAX[20] reads
  * MAX[20] writes
@@ -25,13 +35,13 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   * Check if data is correct and user is authenticated
   * */
   if (
+    !context.auth ||
     !data ||
     !Array.isArray(data) ||
-    data.some((timeOfDay) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0) ||
-    (new Set(data).size !== data.length) ||
     data.length > 20 ||
     data.length === 0 ||
-    !context.auth
+    (new Set(data).size !== data.length) ||
+    data.some((timeOfDay) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)
   ) {
     throw new HttpsError(
       'invalid-argument',
@@ -69,7 +79,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       * Proceed all data
       * */
 
-      if (Object.keys(timesOfDayDocSnaps).length !== data.length) {
+      const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
+      if (timesOfDayDocSnapsKeys.length !== data.length || !listEqual(timesOfDayDocSnapsKeys, data)) {
         throw new HttpsError(
           'invalid-argument',
           'Bad Request',
