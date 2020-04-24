@@ -23,8 +23,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
   get taskListItems(): ITasksListItem[] {
     return this.userService.taskListItems.map((taskListItem) => {
       taskListItem.timesOfDay = this.order
-        .filter((timeOfDay) => taskListItem.timesOfDay.includes(timeOfDay))
-        .join(', ');
+        .filter((timeOfDay) => taskListItem.timesOfDay.includes(timeOfDay));
       return taskListItem;
     });
   }
