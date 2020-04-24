@@ -1,6 +1,7 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
+import {AngularFirePerformanceModule} from '@angular/fire/performance';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
@@ -41,7 +42,8 @@ import {TimeOfDayDialogComponent} from './user/task-editor/dialog/time-of-day-di
     FormsModule,
     MatButtonModule,
     MatSnackBarModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    AngularFirePerformanceModule
   ],
   bootstrap: [AppComponent]
 })
