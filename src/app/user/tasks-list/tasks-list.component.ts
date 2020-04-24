@@ -41,6 +41,10 @@ export class TasksListComponent implements OnInit, OnDestroy {
     this.userService.taskListItemsFirstLoading = value;
   }
 
+  get todayOrderFirstLoading(): boolean {
+    return this.userService.todayOrderFirstLoading;
+  }
+
   get isEmpty(): boolean {
     return this._isEmpty;
   }

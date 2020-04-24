@@ -35,6 +35,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.userService.todayOrderFirstLoading = val;
   }
 
+  get todayOrderFirstLoading(): boolean {
+    return this.userService.todayOrderFirstLoading;
+  }
+
   get todayItems(): { [timeOfDay: string]: ITodayItem[] } {
     return this.userService.todayItems;
   }

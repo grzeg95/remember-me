@@ -4,7 +4,7 @@
     <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="todayItemsFirstLoading; else onOneExists">
+      <div class="row message" *ngIf="todayItemsFirstLoading || todayOrderFirstLoading; else onOneExists">
         <div class="col">
           <span>Loading...</span>
         </div>
