@@ -53,7 +53,7 @@ export class UserService {
 
           return {
             description: task.description,
-            timesOfDay: Object.keys(task.timesOfDay),
+            timesOfDay: task.timesOfDay,
             daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
             id: queryDocSnapDocData.id
           } as ITasksListItem;

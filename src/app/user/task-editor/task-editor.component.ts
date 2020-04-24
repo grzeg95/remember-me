@@ -58,7 +58,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   savingInProgress = false;
   deletingInProgress = false;
-  getTaskById$: Subscription;
   isConnected$: Subscription;
 
   ngOnInit(): void {
@@ -71,10 +70,6 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.getTaskById$ && !this.getTaskById$.closed) {
-      this.getTaskById$.unsubscribe();
-    }
-
     this.isConnected$.unsubscribe();
   }
 
@@ -139,25 +134,21 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   refreshTaskByParamId(taskId: string): void {
 
+    this.taskForm.disable();
+
     if (taskId !== 'null') {
 
-      if (this.getTaskById$ && !this.getTaskById$.closed) {
-        this.getTaskById$.unsubscribe();
-      }
-
       this.id = taskId;
-      this.taskForm.disable();
 
-      this.getTaskById$ = this.userService.getTaskById$(this.id).subscribe((task) => {
+      this.userService.getTaskById$(this.id).subscribe((task) => {
         if (!task) {
           this.resetId();
           this.location.go('/user/task-editor');
+          this.taskForm.enable();
         } else {
           this.setAll(task);
         }
         this.savingInProgress = false;
-        this.taskForm.enable();
-        this.getTaskById$.unsubscribe();
       });
 
     } else {
@@ -198,6 +189,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.savingInProgress = true;
 
     const task = this.taskForm.getRawValue();
+    task['timesOfDay'] = Object.keys(task['timesOfDay']);
 
     // call onCall functions
     // get
@@ -219,9 +211,9 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       }
 
       this.id = success.taskId;
-      this.setAll(task);
-      this.taskForm.enable();
       this.savingInProgress = false;
+      this.initValues = task;
+      this.taskForm.enable();
       this.snackBar.open(success.details);
 
     }, (error: IError) => {
@@ -236,12 +228,11 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   deepResetForm(): void {
-
-    this.location.go('/user/task-editor');
+    this.taskForm.disable();
     this.resetId();
     this.restartForm();
-    this.taskForm.disable();
-
+    this.location.go('/user/task-editor');
+    this.taskForm.enable();
   }
 
   restartForm(): void {
@@ -259,10 +250,12 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       timesOfDay: {}
     });
 
+    /*
+    * TODO deepResetForm doesn't remove it o_O
+    * */
     this.timesOfDay.forEach((day) => {
       (this.taskForm.get('timesOfDay') as FormGroup).removeControl(day);
     });
-
   }
 
   deleteTask(): void {
@@ -273,12 +266,10 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: ISuccess) => {
       this.snackBar.open(success.details);
       this.deepResetForm();
+      this.deletingInProgress = false;
     }, (error: IError) => {
       this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
-    }, () => {
-      this.taskForm.enable();
-      this.deletingInProgress = false;
     });
 
   }
@@ -286,26 +277,16 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   setAll(task: ITask): void {
 
     this.restartForm();
+    this.taskForm.disable();
     this.initValues = task;
     this.taskForm.get('description').setValue(task.description);
     this.taskForm.get('daysOfTheWeek').setValue(task.daysOfTheWeek);
 
-    const currentTimesOfDays = this.timesOfDay;
-
-    Object.keys(task.timesOfDay).forEach((timeOfDay) => {
-      if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
-        this.taskForm.get('timesOfDay').get(timeOfDay).setValue(task.timesOfDay[timeOfDay]);
-      } else {
-        (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl(task.timesOfDay[timeOfDay], Validators.required));
-      }
-      currentTimesOfDays.splice(currentTimesOfDays.indexOf(timeOfDay), 1);
+    (task.timesOfDay as string[]).forEach((timeOfDay) => {
+      (this.taskForm.get('timesOfDay') as FormGroup).addControl(timeOfDay, new FormControl());
     });
 
-    currentTimesOfDays.forEach((timeOfDay) => {
-      (this.taskForm.get('timesOfDay') as FormGroup).removeControl(timeOfDay);
-    });
-
-    this.taskForm.disable();
+    this.taskForm.enable();
   }
 
   removeTimeOfDay(timeOfDay: string): void {
@@ -313,7 +294,9 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   getDeepEqual(): boolean {
-    return this.deepEqual(this.initValues, this.taskForm.getRawValue());
+    const rawValue = this.taskForm.getRawValue();
+    rawValue['timesOfDay'] = Object.keys(rawValue['timesOfDay']);
+    return this.deepEqual(this.initValues, rawValue);
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {

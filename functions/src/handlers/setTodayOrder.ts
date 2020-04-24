@@ -27,7 +27,7 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
  * Read all user data about task and remove it
  * @param data: string[]
  * @param context functions.https.CallableContext
- * @return Promise<any>
+ * @return Promise<{[key: string]: string}>
  **/
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
@@ -69,7 +69,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         );
 
         return (await Promise.all(timesOfDayDocSnapsPromise)).reduce((acc, curr) => {
-          const next = JSON.parse(`{"${curr.data()?.name}": null}`);
+          const next: any = {};
           next[curr.data()?.name] = curr.ref;
           return {...acc, ...next};
         }, {});

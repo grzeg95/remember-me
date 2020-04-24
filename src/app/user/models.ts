@@ -11,9 +11,7 @@ export interface IDaysOfTheWeek {
 export interface ITask {
   description: string;
   daysOfTheWeek: IDaysOfTheWeek;
-  timesOfDay: {
-    [name: string]: boolean
-  };
+  timesOfDay: string[];
 }
 
 export interface ITodayItem {

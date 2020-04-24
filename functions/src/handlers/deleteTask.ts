@@ -5,14 +5,31 @@ import {DocumentSnapshot} from "@google-cloud/firestore";
 const app = firestore();
 
 /**
+ * @interface ITask
+ **/
+interface ITask {
+  description: string;
+  timesOfDay: string[];
+  daysOfTheWeek: {
+    mon: boolean;
+    tue: boolean;
+    wed: boolean;
+    thu: boolean;
+    fri: boolean;
+    sat: boolean;
+    sun: boolean;
+  }
+}
+
+/**
  * 9 + MAX[20] reads
  * 8 deletes + (MAX[20] deletes and updates)
  * Read all user data about task and remove it
  * @param data {taskId: any}
  * @param context functions.https.CallableContext
- * @return Promise<{}>
+ * @return Promise<{[key: string]: string}>
  **/
-export const handler = (data: any, context: CallableContext): Promise<{}> => {
+export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // interrupt if data.taskId is not correct or !auth
   if (!context.auth || !data.taskId || typeof data.taskId !== 'string') {
@@ -77,7 +94,8 @@ export const handler = (data: any, context: CallableContext): Promise<{}> => {
         * */
 
         // proceed timesOfDayDocSnaps
-        Object.keys(taskDocSnap.data()?.timesOfDay).forEach((timeOfDay) => {
+        const task: ITask = taskDocSnap.data() as ITask;
+        task.timesOfDay.forEach((timeOfDay) => {
           const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
           if (inTheTimesOfDayDocSnaps) {
             const counter = inTheTimesOfDayDocSnaps.data()?.counter;
