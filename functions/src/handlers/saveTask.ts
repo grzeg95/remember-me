@@ -129,14 +129,17 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
   let created = 0;
   let updated = 0;
   let removed = 0;
+  const taskTimesOfDaySet = new Set(task.timesOfDay);
+  const taskDocSnapTimesOfDaySet = new Set(taskDocSnap.data()?.timesOfDay as string[]);
 
-  // for each timesOfDay
-  task.timesOfDay.forEach((timeOfDay) => {
+  // for each taskTimesOfDaySet
+  // create or increment inTheTimesOfDayDocSnaps
+  taskTimesOfDaySet.forEach((timeOfDay) => {
 
     const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
     let existInTheTaskDocSnap = false;
 
-    if (!!taskDocSnap.data()?.timesOfDay && typeof (taskDocSnap.data()?.timesOfDay)[timeOfDay] === 'boolean') {
+    if (taskDocSnapTimesOfDaySet.has(timeOfDay)) {
       existInTheTaskDocSnap = true;
     }
 
@@ -158,12 +161,13 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
 
   });
 
-  const taskUpdatedTimesOfDaySet = new Set(task.timesOfDay);
-  taskDocSnap.data() && taskDocSnap.data()?.timesOfDay && taskDocSnap.data()?.timesOfDay.forEach((timeOfDay: string) => {
+  // for each taskDocSnapTimesOfDaySet
+  // remove or decrement inTheTimesOfDayDocSnaps
+  taskDocSnapTimesOfDaySet.forEach((timeOfDay: string) => {
 
     const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
 
-    if (inTheTimesOfDayDocSnaps && !taskUpdatedTimesOfDaySet.has(timeOfDay)) {
+    if (inTheTimesOfDayDocSnaps && !taskTimesOfDaySet.has(timeOfDay)) {
       const counter = inTheTimesOfDayDocSnaps.data()?.counter;
       if (counter - 1 === 0) {
         transaction.delete(inTheTimesOfDayDocSnaps.ref);
