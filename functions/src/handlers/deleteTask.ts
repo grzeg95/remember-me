@@ -1,6 +1,6 @@
+import {DocumentData} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {DocumentSnapshot} from "@google-cloud/firestore";
 
 const app = firestore();
 
@@ -74,20 +74,18 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         * */
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTasksPromise: Promise<DocumentSnapshot>[] = [];
-        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).forEach((day) =>
-          todayTasksPromise.push(transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`)))
-        );
-        const todayTasks: DocumentSnapshot[] = await Promise.all(todayTasksPromise);
+        const todayTasks = await Promise.all((['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).map((day) =>
+          transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
+        ));
 
         // read all times of day
-        const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
-          const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot>[] = [];
-          docsRef.forEach((docRef) => {
-            timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap));
-          });
-          return await Promise.all(timesOfDayDocSnapsPromise);
-        });
+        const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentData} = (
+          await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) =>
+            await Promise.all(docsRef.map((docRef) =>
+              transaction.get(docRef).then((docSnap) => docSnap)
+            ))
+          )
+        ).reduce((acc, curr) => ({...acc, ...{[curr.data()?.name]: curr}}), {});
 
         /*
         * Proceed all data
@@ -96,13 +94,13 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         // proceed timesOfDayDocSnaps
         const task: ITask = taskDocSnap.data() as ITask;
         task.timesOfDay.forEach((timeOfDay) => {
-          const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
-          if (inTheTimesOfDayDocSnaps) {
-            const counter = inTheTimesOfDayDocSnaps.data()?.counter;
+          const inTheTimesOfDayDocSnap = timesOfDayDocSnaps[timeOfDay];
+          if (inTheTimesOfDayDocSnap) {
+            const counter = inTheTimesOfDayDocSnap.data()?.counter;
             if (counter - 1 === 0) {
-              transaction.delete(inTheTimesOfDayDocSnaps.ref);
+              transaction.delete(inTheTimesOfDayDocSnap.ref);
             } else {
-              transaction.update(inTheTimesOfDayDocSnaps.ref, {
+              transaction.update(inTheTimesOfDayDocSnap.ref, {
                 counter: counter - 1
               });
             }

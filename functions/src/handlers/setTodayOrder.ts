@@ -4,9 +4,7 @@ import {
   CallableContext,
   HttpsError} from 'firebase-functions/lib/providers/https';
 
-import {
-  DocumentSnapshot,
-  DocumentReference} from "@google-cloud/firestore";
+import {DocumentReference} from "@google-cloud/firestore";
 
 const app = firestore();
 
@@ -61,19 +59,15 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       * */
 
       // read all times of day
-      const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentReference} = await app.collection('users').doc(auth.uid).collection('timesOfDay').listDocuments().then(async (docsRef) => {
-        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot>[] = [];
-
-        docsRef.forEach((docRef) =>
-          timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap))
-        );
-
-        return (await Promise.all(timesOfDayDocSnapsPromise)).reduce((acc, curr) => {
-          const next: any = {};
-          next[curr.data()?.name] = curr.ref;
-          return {...acc, ...next};
-        }, {});
-      });
+      const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentReference} = await app
+        .collection('users')
+        .doc(auth.uid)
+        .collection('timesOfDay')
+        .listDocuments()
+        .then(async (docsRef) =>
+          (await Promise.all(docsRef.map((docRef) =>
+            transaction.get(docRef).then((docSnap) => docSnap)
+          ))).reduce((acc, curr) => ({...acc, ...{[curr.data()?.name]: curr.ref}}), {}));
 
       /*
       * Proceed all data

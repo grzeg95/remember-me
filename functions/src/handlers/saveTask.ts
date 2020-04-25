@@ -1,6 +1,6 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {DocumentReference, DocumentSnapshot, Transaction} from "@google-cloud/firestore";
+import {DocumentData, DocumentReference, DocumentSnapshot, Transaction} from '@google-cloud/firestore';
 
 const app = firestore();
 
@@ -124,7 +124,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSn
  * @param timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]
  * @return Transaction
  **/
-const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, task: ITask, timesOfDayDocSnaps: DocumentSnapshot[]): Transaction => {
+const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, task: ITask, timesOfDayDocSnaps: {[timeOfDay: string]: DocumentData}): Transaction => {
 
   let created = 0;
   let updated = 0;
@@ -136,7 +136,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
   // create or increment inTheTimesOfDayDocSnaps
   taskTimesOfDaySet.forEach((timeOfDay) => {
 
-    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps[timeOfDay];
     let existInTheTaskDocSnap = false;
 
     if (taskDocSnapTimesOfDaySet.has(timeOfDay)) {
@@ -165,7 +165,7 @@ const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapsh
   // remove or decrement inTheTimesOfDayDocSnaps
   taskDocSnapTimesOfDaySet.forEach((timeOfDay: string) => {
 
-    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps.find((timeOfDayDocSnap) => timeOfDayDocSnap.data()?.name === timeOfDay);
+    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps[timeOfDay];
 
     if (inTheTimesOfDayDocSnaps && !taskTimesOfDaySet.has(timeOfDay)) {
       const counter = inTheTimesOfDayDocSnaps.data()?.counter;
@@ -295,22 +295,22 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         }
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTaskDocSnapPromise: Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
-        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).forEach((day) => {
-          todayTaskDocSnapPromise
-            .push(transaction
-              .get(userDocSnap.ref.collection('today')
-                .doc(`${day}/task/${taskDocSnap.id}`))
-              .then((docSnap) => ({docSnap, day})));
-        });
-        const todayTaskDocSnaps: { docSnap: DocumentSnapshot, day: Day }[] = await Promise.all(todayTaskDocSnapPromise);
+        // Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
+        const todayTaskDocSnaps = await Promise.all((['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[])
+          .map((day) =>
+            transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+              .then((docSnap) => ({docSnap, day}))
+          )
+        );
 
         // read all times of day
-        const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) => {
-          const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot>[] = [];
-          docsRef.forEach((docRef) => timesOfDayDocSnapsPromise.push(transaction.get(docRef).then((docSnap) => docSnap)));
-          return await Promise.all(timesOfDayDocSnapsPromise);
-        });
+        const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentData} = (
+          await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) =>
+            await Promise.all(docsRef.map((docRef) =>
+              transaction.get(docRef).then((docSnap) => docSnap)
+            ))
+          )
+        ).reduce((acc, curr) => ({...acc, ...{[curr.data()?.name]: curr}}), {});
 
         /*
         * Proceed all data
