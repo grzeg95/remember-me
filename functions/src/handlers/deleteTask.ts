@@ -1,6 +1,6 @@
-import {DocumentData} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {DocumentData} from '@google-cloud/firestore';
 
 const app = firestore();
 

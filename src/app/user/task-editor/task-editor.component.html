@@ -44,21 +44,21 @@
     <small class="form-text text-center text-muted">Click one to remove</small>
 
     <div class="row">
-      <div formGroupName="timesOfDay" class="col text-center">
-        <div *ngFor="let timeOfDay of timesOfDay;" class="form-check">
+      <div formArrayName="timesOfDay" class="col text-center">
+        <div *ngFor="let timeOfDay of timesOfDay; index as i" class="form-check">
           <input
+            [formControl]="timeOfDay"
             type="checkbox"
             class="form-check-input d-none"
             [attr.id]="'timesOfDay'+timeOfDay"
-            [formControlName]="timeOfDay"
             [value]="true"
-            (click)="removeTimeOfDay(timeOfDay)"
+            (click)="removeTimeOfDay(i)"
           >
           <label
             class="form-check-label btn"
             [ngClass]="'btn-outline-dark'"
             [attr.for]="'timesOfDay'+timeOfDay">
-            {{timeOfDay}}</label>
+            {{timeOfDay.value}}</label>
         </div>
         <button [disabled]="taskForm.disabled" class="btn btn-secondary" (click)="openTimeOfDayDialog()">
           <i class="fas fa-plus"></i>

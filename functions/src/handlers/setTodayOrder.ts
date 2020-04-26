@@ -1,9 +1,5 @@
 import {firestore} from 'firebase-admin';
-
-import {
-  CallableContext,
-  HttpsError} from 'firebase-functions/lib/providers/https';
-
+import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {DocumentReference} from "@google-cloud/firestore";
 
 const app = firestore();
@@ -16,7 +12,7 @@ const app = firestore();
  * @return boolean
  **/
 export const listEqual = <T>(A: T[], B: T[]): boolean =>
-  A.length === B.length && A.every(a => B.includes(a));
+  A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
 
 /**
  * @function handler
