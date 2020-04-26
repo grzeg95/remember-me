@@ -31,8 +31,7 @@
 
         <div class="row">
           <div class="col">
-            <span><i [hidden]="!todayItemIsDone(todayItem.timeOfDay)"
-                     class="fas fa-check-circle"></i> {{todayItem.timeOfDay}}</span>
+            <span><fa-icon [hidden]="!todayItemIsDone(todayItem.timeOfDay)" [icon]="faCheckCircle"></fa-icon> {{todayItem.timeOfDay}}</span>
           </div>
         </div>
 
@@ -43,7 +42,6 @@
                      [checked]="button.done">
               <label class="form-check-label btn"
                      [ngClass]="checkbox.checked ? 'btn-success' : 'border rounded'"
-                     [for]="checkbox"
                      (click)="setProgress(checkbox, $event, button.id, todayItem.timeOfDay)">
                 {{ button.description }}
                 <mat-progress-bar *ngIf="checkbox.disabled" mode="indeterminate"></mat-progress-bar>

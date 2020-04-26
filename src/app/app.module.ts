@@ -12,6 +12,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {CoreModule} from './core.module';
@@ -43,7 +44,8 @@ import {TimeOfDayDialogComponent} from './user/task-editor/dialog/time-of-day-di
     MatButtonModule,
     MatSnackBarModule,
     ReactiveFormsModule,
-    AngularFirePerformanceModule
+    AngularFirePerformanceModule,
+    FontAwesomeModule
   ],
   bootstrap: [AppComponent]
 })

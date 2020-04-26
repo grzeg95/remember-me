@@ -1,4 +1,5 @@
 import {Component, ElementRef, HostListener, ViewChild} from '@angular/core';
+import {faListUl, faSignOutAlt, faTasks, faUserCircle} from '@fortawesome/free-solid-svg-icons';
 import {AuthService} from '../auth/auth.service';
 
 @Component({
@@ -8,6 +9,11 @@ import {AuthService} from '../auth/auth.service';
   host: {class: 'app'}
 })
 export class NavComponent {
+
+  faUserCircle = faUserCircle;
+  faTasks = faTasks;
+  faListUl = faListUl;
+  faSignOutAlt = faSignOutAlt;
 
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn;

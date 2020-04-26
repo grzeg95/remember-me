@@ -1,6 +1,7 @@
 import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {interval, Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
@@ -14,6 +15,8 @@ import {UserService} from '../user.service';
   host: {class: 'app'}
 })
 export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
+
+  faCheckCircle = faCheckCircle;
 
   get order(): string[] {
     return this.userService.timesOfDayOrder;

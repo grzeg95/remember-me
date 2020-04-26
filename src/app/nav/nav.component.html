@@ -3,12 +3,12 @@
     <div class="col d-flex">
       <div class="d-flex align-items-center left">
         <span>Remember Me</span>
-        <i class="fas fa-tasks d-block"></i>
+        <fa-icon [icon]="faTasks" class="d-block"></fa-icon>
       </div>
 
       <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
         <button class="btn btn-primary" type="button" (click)="googleAuth()">
-          <i class="fas fa-user-circle"></i>
+          <fa-icon [icon]="faUserCircle"></fa-icon>
           <span>  Log In</span>
         </button>
       </div>
@@ -17,11 +17,11 @@
         <div class="menu-toggle">
           <input type="checkbox" id="menu-toggle-checkbox" #menuToggleCheckbox/>
           <label for="menu-toggle-checkbox">
-            <i class="fas fa-list-ul" id="icon-bars"></i>
+            <fa-icon [icon]="faListUl" id="icon-bars"></fa-icon>
           </label>
           <div class="shadow nav-list">
             <div class="item" (click)="signOut()">
-              <i class="fas fa-sign-out-alt"></i>
+              <fa-icon [icon]="faSignOutAlt"></fa-icon>
               <span class="my-list-item-span"> Log out</span>
             </div>
           </div>

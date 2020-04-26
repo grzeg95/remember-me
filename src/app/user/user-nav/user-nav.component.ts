@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {faAlignLeft, faListUl, faPencilAlt, faSort} from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-nav-second',
@@ -10,22 +11,22 @@ export class UserNavComponent {
 
   routes = [
     {
-      icon: 'fas fa-align-left',
+      icon: faAlignLeft,
       label: 'Today',
       href: '/user/today'
     },
     {
-      icon: 'fas fas fa-list-ul',
+      icon: faListUl,
       label: 'Tasks',
       href: '/user/tasks-list'
     },
     {
-      icon: 'fas fa-pencil-alt',
+      icon: faPencilAlt,
       label: 'Editor',
       href: '/user/task-editor'
     },
     {
-      icon: 'fas fa-sort',
+      icon: faSort,
       label: 'Order',
       href: '/user/today-order'
     }

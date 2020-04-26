@@ -1,4 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
+import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {ITasksListItem} from '../models';
@@ -11,6 +12,8 @@ import {UserService} from '../user.service';
   host: {class: 'app'}
 })
 export class TasksListComponent implements OnInit, OnDestroy {
+
+  faEdit = faEdit;
 
   get order(): string[] {
     return this.userService.timesOfDayOrder;

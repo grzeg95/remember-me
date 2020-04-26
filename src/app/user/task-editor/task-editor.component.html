@@ -61,7 +61,7 @@
             {{timeOfDay.value}}</label>
         </div>
         <button [disabled]="taskForm.disabled" class="btn btn-secondary" (click)="openTimeOfDayDialog()">
-          <i class="fas fa-plus"></i>
+          <fa-icon [icon]="faPlus"></fa-icon>
         </button>
       </div>
     </div>
@@ -73,7 +73,7 @@
           type="submit"
           [disabled]="taskForm.disabled || taskForm.invalid || getDeepEqual()"
           (click)="saveTask()"
-        >{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<i class="fas fa-check-circle"></i>
+        >{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<fa-icon [icon]="faCheckCircle"></fa-icon>
           <mat-progress-bar *ngIf="savingInProgress" mode="indeterminate"></mat-progress-bar>
         </button>
         <button

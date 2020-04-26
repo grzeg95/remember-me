@@ -8,6 +8,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {SharedModule} from '../shared.module';
 import {TaskEditorComponent} from './task-editor/task-editor.component';
 import {TasksListComponent} from './tasks-list/tasks-list.component';
@@ -27,20 +28,21 @@ import {UserService} from './user.service';
     UserNavComponent,
     TodayOrderComponent
   ],
-  imports: [
-    RouterModule,
-    CommonModule,
-    ReactiveFormsModule,
-    SharedModule,
-    UserRoutingModule,
-    MatProgressBarModule,
-    MatTableModule,
-    FormsModule,
-    DragDropModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule
-  ],
+    imports: [
+        RouterModule,
+        CommonModule,
+        ReactiveFormsModule,
+        SharedModule,
+        UserRoutingModule,
+        MatProgressBarModule,
+        MatTableModule,
+        FormsModule,
+        DragDropModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        FontAwesomeModule
+    ],
   providers: [
     UserService
   ]

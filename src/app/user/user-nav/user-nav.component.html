@@ -8,7 +8,7 @@
       [ngClass]="{'text-muted': !routerLinkActiveRef.isActive}"
       class="btn"
       type="button">
-      <i class="{{ route.icon }}"></i>
+      <fa-icon [icon]="route.icon"></fa-icon>
       {{ route.label }}
     </button>
   </div>

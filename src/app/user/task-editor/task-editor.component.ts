@@ -5,6 +5,7 @@ import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
+import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
@@ -23,6 +24,9 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
   host: {class: 'app'}
 })
 export class TaskEditorComponent implements OnInit, OnDestroy {
+
+  faCheckCircle = faCheckCircle;
+  faPlus = faPlus;
 
   get timesOfDay(): AbstractControl[] {
     return (this.taskForm.get('timesOfDay') as FormArray).controls;
