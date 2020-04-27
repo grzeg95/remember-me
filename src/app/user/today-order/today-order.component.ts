@@ -2,6 +2,7 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {IError, ISuccess} from '../models';
@@ -14,6 +15,9 @@ import {UserService} from '../user.service';
   host: {class: 'app'}
 })
 export class TodayOrderComponent implements OnInit, OnDestroy {
+
+  perf = performance();
+  todayOrderComponentTrace = this.perf.trace('TodayOrderComponent');
 
   get order(): string[] {
     return this.userService.timesOfDayOrder;
@@ -48,6 +52,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.todayOrderComponentTrace.start();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.refreshTimesOfDayOrder();
@@ -61,6 +66,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
     }
 
     this.isConnected$.unsubscribe();
+    this.todayOrderComponentTrace.stop();
   }
 
   updateIsEmpty(): void {

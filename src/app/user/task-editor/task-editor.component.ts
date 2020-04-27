@@ -7,6 +7,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
+import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
@@ -24,6 +25,9 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
   host: {class: 'app'}
 })
 export class TaskEditorComponent implements OnInit, OnDestroy {
+
+  perf = performance();
+  taskEditorComponentTrace = this.perf.trace('TaskEditorComponent');
 
   faCheckCircle = faCheckCircle;
   faPlus = faPlus;
@@ -79,6 +83,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   isConnected$: Subscription;
 
   ngOnInit(): void {
+    this.taskEditorComponentTrace.start();
     this.taskForm.enable();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
@@ -89,6 +94,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.isConnected$.unsubscribe();
+    this.taskEditorComponentTrace.stop();
   }
 
   openTimeOfDayDialog(): void {

@@ -1,5 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {ITasksListItem} from '../models';
@@ -12,6 +13,9 @@ import {UserService} from '../user.service';
   host: {class: 'app'}
 })
 export class TasksListComponent implements OnInit, OnDestroy {
+
+  perf = performance();
+  tasksListComponentTrace = this.perf.trace('TasksListComponent');
 
   faEdit = faEdit;
 
@@ -62,6 +66,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.tasksListComponentTrace.start();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.refreshTimesOfDayOrder();
@@ -80,6 +85,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
     }
 
     this.isConnected$.unsubscribe();
+    this.tasksListComponentTrace.stop();
   }
 
   updateIsEmpty(): void {
