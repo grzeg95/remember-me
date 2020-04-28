@@ -1,6 +1,6 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {DocumentData} from '@google-cloud/firestore';
+import DocumentReference = FirebaseFirestore.DocumentReference;
 
 const app = firestore();
 
@@ -10,6 +10,7 @@ const app = firestore();
 interface ITask {
   description: string;
   timesOfDay: string[];
+  timesOfDayRef: DocumentReference[];
   daysOfTheWeek: {
     mon: boolean;
     tue: boolean;
@@ -78,32 +79,26 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
         ));
 
+        const task: ITask = taskDocSnap.data() as ITask;
+
         // read all times of day
-        const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentData} = (
-          await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) =>
-            await Promise.all(docsRef.map((docRef) =>
-              transaction.get(docRef).then((docSnap) => docSnap)
-            ))
-          )
-        ).reduce((acc, curr) => ({...acc, ...{[curr.data()?.name]: curr}}), {});
+        const timesOfDayDocSnaps = await Promise.all(task.timesOfDayRef.map(
+          (docRef) => transaction.get(docRef)
+        ))
 
         /*
         * Proceed all data
         * */
 
         // proceed timesOfDayDocSnaps
-        const task: ITask = taskDocSnap.data() as ITask;
-        task.timesOfDay.forEach((timeOfDay) => {
-          const inTheTimesOfDayDocSnap = timesOfDayDocSnaps[timeOfDay];
-          if (inTheTimesOfDayDocSnap) {
-            const counter = inTheTimesOfDayDocSnap.data()?.counter;
-            if (counter - 1 === 0) {
-              transaction.delete(inTheTimesOfDayDocSnap.ref);
-            } else {
-              transaction.update(inTheTimesOfDayDocSnap.ref, {
-                counter: counter - 1
-              });
-            }
+        timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
+          const counter = timesOfDayDocSnapsDocData.data()?.counter;
+          if (counter - 1 === 0) {
+            transaction.delete(timesOfDayDocSnapsDocData.ref);
+          } else {
+            transaction.update(timesOfDayDocSnapsDocData.ref, {
+              counter: counter - 1
+            });
           }
         });
 
