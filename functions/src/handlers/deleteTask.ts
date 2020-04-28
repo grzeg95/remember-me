@@ -74,12 +74,13 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         * Read all data
         * */
 
+        const task: ITask = taskDocSnap.data() as ITask;
+        const taskDaysOfTheWeekInUse = (Object.keys(task.daysOfTheWeek) as ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun') []).filter((dayOfWeekKey) => task.daysOfTheWeek[dayOfWeekKey]);
+
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTasks = await Promise.all((['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']).map((day) =>
+        const todayTasks = await Promise.all(taskDaysOfTheWeekInUse.map((day) =>
           transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
         ));
-
-        const task: ITask = taskDocSnap.data() as ITask;
 
         // read all times of day
         const timesOfDayDocSnaps = await Promise.all(task.timesOfDayRef.map(
