@@ -258,52 +258,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
         /*
-        * Check if only description was changed
+        * TODO Check if only description was changed
         * */
-
-        const taskDocSnapTmpData = taskDocSnapTmp.data();
-
-        if (
-          taskDocSnapTmp.exists &&
-          taskDocSnapTmpData?.description !== data.task.description &&
-          listEqual(taskDocSnapTmpData?.timesOfDay as string[], data.task.timesOfDay) &&
-          taskDocSnapTmpData?.daysOfTheWeek.mon === data.task.daysOfTheWeek.mon &&
-          taskDocSnapTmpData?.daysOfTheWeek.tue === data.task.daysOfTheWeek.tue &&
-          taskDocSnapTmpData?.daysOfTheWeek.wed === data.task.daysOfTheWeek.wed &&
-          taskDocSnapTmpData?.daysOfTheWeek.thu === data.task.daysOfTheWeek.thu &&
-          taskDocSnapTmpData?.daysOfTheWeek.fri === data.task.daysOfTheWeek.fri &&
-          taskDocSnapTmpData?.daysOfTheWeek.sat === data.task.daysOfTheWeek.sat &&
-          taskDocSnapTmpData?.daysOfTheWeek.sun === data.task.daysOfTheWeek.sun
-        ) {
-
-          /*
-          * Read all data
-          * */
-
-          // read all task for user/{userId}/today/{day}/task/{taskId}
-          // Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
-          const currentTodayTaskDocSnaps = (await Promise.all((Object.keys(data.task.daysOfTheWeek) as Day[])
-            .map((day) =>
-              transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnapTmp.id}`))
-                .then((docSnap) => docSnap)
-            )
-          ));
-
-          /*
-          * Proceed all data
-          * */
-
-          currentTodayTaskDocSnaps.forEach((docSnap) => transaction.update(docSnap.ref, {
-            description: data.task.description
-          }))
-
-          transaction.update(taskDocSnapTmp.ref, {
-            description: data.task.description
-          });
-
-          return transaction;
-        }
-
 
         /*
         * Read all data
