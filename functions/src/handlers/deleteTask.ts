@@ -1,6 +1,5 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import DocumentReference = FirebaseFirestore.DocumentReference;
 
 const app = firestore();
 
@@ -10,7 +9,6 @@ const app = firestore();
 interface ITask {
   description: string;
   timesOfDay: string[];
-  timesOfDayRef: DocumentReference[];
   daysOfTheWeek: {
     mon: boolean;
     tue: boolean;
@@ -75,16 +73,15 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         * */
 
         const task: ITask = taskDocSnap.data() as ITask;
-        const taskDaysOfTheWeekInUse = (Object.keys(task.daysOfTheWeek) as ('mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun') []).filter((dayOfWeekKey) => task.daysOfTheWeek[dayOfWeekKey]);
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTasks = await Promise.all(taskDaysOfTheWeekInUse.map((day) =>
+        const todayTasks = await Promise.all(Object.keys(task.daysOfTheWeek).map((day) =>
           transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
         ));
 
         // read all times of day
-        const timesOfDayDocSnaps = await Promise.all(task.timesOfDayRef.map(
-          (docRef) => transaction.get(docRef)
+        const timesOfDayDocSnaps = await Promise.all(task.timesOfDay.map(
+          (timeOfDay) => transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay))
         ))
 
         /*

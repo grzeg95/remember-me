@@ -1,4 +1,4 @@
-import {DocumentData, DocumentReference, DocumentSnapshot, Transaction} from '@google-cloud/firestore';
+import {DocumentReference, DocumentSnapshot, Transaction} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 
@@ -20,7 +20,6 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
 interface ITask {
   description: string;
   timesOfDay: string[];
-  timesOfDayRef: DocumentReference[];
   daysOfTheWeek: {
     mon: boolean;
     tue: boolean;
@@ -121,81 +120,53 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSn
  * @param transaction Transaction
  * @param taskDocSnap DocumentSnapshot
  * @param user: DocumentReference
- * @param task: ITask
- * @param timesOfDayDocSnaps: DocumentSnapshot<DocumentData>[]
+ * @param taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot}
+ * @param dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot}
  * @return Transaction
  **/
-const proceedTimesOfDay = (transaction: Transaction, taskDocSnap: DocumentSnapshot, user: DocumentReference, task: ITask, timesOfDayDocSnaps: {[timeOfDay: string]: DocumentData}): DocumentReference[] => {
+const proceedTimesOfDay =
+  (transaction: Transaction,
+   taskDocSnap: DocumentSnapshot,
+   user: DocumentReference,
+   taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot},
+   dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot}): { addedTimesOfDay: string[], removedTimesOfDay: string[] } => {
 
-  let created = 0;
-  let updated = 0;
-  let removed = 0;
-  const taskTimesOfDaySet = new Set(task.timesOfDay);
-  const taskDocSnapTimesOfDaySet = new Set(taskDocSnap.data()?.timesOfDay as string[]);
+  const addedTimesOfDay: string[] = [];
+  const removedTimesOfDay: string[] = [];
 
-  const timesOfDayRef: DocumentReference[] = [];
-
-  // for each taskTimesOfDaySet
-  // create or increment inTheTimesOfDayDocSnaps
-  taskTimesOfDaySet.forEach((timeOfDay) => {
-
-    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps[timeOfDay];
-    let existInTheTaskDocSnap = false;
-
-    if (taskDocSnapTimesOfDaySet.has(timeOfDay)) {
-      existInTheTaskDocSnap = true;
-    }
-
-    // if timesOfDay dont exists in the timesOfDayDocSnaps than create new one
-    if (!inTheTimesOfDayDocSnaps) {
-      const newTimeOfDay = user.collection('timesOfDay').doc();
-      transaction.create(newTimeOfDay, {
-        name: timeOfDay,
+  // for each dataTaskDocSnapsTimeOfDay
+  // create or increment
+  for(const timeOfDay in dataTaskDocSnapsTimeOfDay) {
+    if (!dataTaskDocSnapsTimeOfDay[timeOfDay].exists) {
+      transaction.create(dataTaskDocSnapsTimeOfDay[timeOfDay].ref, {
         counter: 1,
         position: 0
       });
-      created++;
-      timesOfDayRef.push(newTimeOfDay);// push created
-    } else if (!existInTheTaskDocSnap) { // if timesOfDay exists in the timesOfDayDocSnaps and dont in the taskDocSnap
-      transaction.update(inTheTimesOfDayDocSnaps.ref, {
-        counter: inTheTimesOfDayDocSnaps.data()?.counter + 1
+      addedTimesOfDay.push(timeOfDay);
+    } else if (!taskDocSnapsTimesOfDay[timeOfDay]) {
+      transaction.update(dataTaskDocSnapsTimeOfDay[timeOfDay].ref, {
+        counter: dataTaskDocSnapsTimeOfDay[timeOfDay].data()?.counter + 1
       });
-      updated++;
-      timesOfDayRef.push(inTheTimesOfDayDocSnaps.ref);// push updated
     }
+  }
 
-  });
-
-  // for each taskDocSnapTimesOfDaySet
-  // remove or decrement inTheTimesOfDayDocSnaps
-  taskDocSnapTimesOfDaySet.forEach((timeOfDay: string) => {
-
-    const inTheTimesOfDayDocSnaps = timesOfDayDocSnaps[timeOfDay];
-
-    if (inTheTimesOfDayDocSnaps && !taskTimesOfDaySet.has(timeOfDay)) {
-      const counter = inTheTimesOfDayDocSnaps.data()?.counter;
+  // for each taskDocSnapsTimesOfDay
+  // remove or decrement
+  for(const timeOfDay in taskDocSnapsTimesOfDay) {
+    if (!dataTaskDocSnapsTimeOfDay[timeOfDay]) {
+      const counter = taskDocSnapsTimesOfDay[timeOfDay].data()?.counter;
       if (counter - 1 === 0) {
-        transaction.delete(inTheTimesOfDayDocSnaps.ref);
+        transaction.delete(taskDocSnapsTimesOfDay[timeOfDay].ref);
+        removedTimesOfDay.push(timeOfDay);
       } else {
-        transaction.update(inTheTimesOfDayDocSnaps.ref, {
+        transaction.update(taskDocSnapsTimesOfDay[timeOfDay].ref, {
           counter: counter - 1
         });
       }
-      removed++;
-    } else if (inTheTimesOfDayDocSnaps && taskTimesOfDaySet.has(timeOfDay)) {
-      timesOfDayRef.push(inTheTimesOfDayDocSnaps.ref);// push current
     }
-  });
-
-  if (updated + created - removed > 20) {
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      `You can own 20 times of day but merge this request with existing ones equals ${Object.keys(updated + created - removed).length} 🤔`
-    );
   }
 
-  return timesOfDayRef;
+  return {addedTimesOfDay, removedTimesOfDay};
 
 };
 
@@ -287,6 +258,54 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
         /*
+        * Check if only description was changed
+        * */
+
+        const taskDocSnapTmpData = taskDocSnapTmp.data();
+
+        if (
+          taskDocSnapTmp.exists &&
+          taskDocSnapTmpData?.description !== data.task.description &&
+          listEqual(taskDocSnapTmpData?.timesOfDay as string[], data.task.timesOfDay) &&
+          taskDocSnapTmpData?.daysOfTheWeek.mon === data.task.daysOfTheWeek.mon &&
+          taskDocSnapTmpData?.daysOfTheWeek.tue === data.task.daysOfTheWeek.tue &&
+          taskDocSnapTmpData?.daysOfTheWeek.wed === data.task.daysOfTheWeek.wed &&
+          taskDocSnapTmpData?.daysOfTheWeek.thu === data.task.daysOfTheWeek.thu &&
+          taskDocSnapTmpData?.daysOfTheWeek.fri === data.task.daysOfTheWeek.fri &&
+          taskDocSnapTmpData?.daysOfTheWeek.sat === data.task.daysOfTheWeek.sat &&
+          taskDocSnapTmpData?.daysOfTheWeek.sun === data.task.daysOfTheWeek.sun
+        ) {
+
+          /*
+          * Read all data
+          * */
+
+          // read all task for user/{userId}/today/{day}/task/{taskId}
+          // Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
+          const currentTodayTaskDocSnaps = (await Promise.all((Object.keys(data.task.daysOfTheWeek) as Day[])
+            .map((day) =>
+              transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnapTmp.id}`))
+                .then((docSnap) => docSnap)
+            )
+          ));
+
+          /*
+          * Proceed all data
+          * */
+
+          currentTodayTaskDocSnaps.forEach((docSnap) => transaction.update(docSnap.ref, {
+            description: data.task.description
+          }))
+
+          transaction.update(taskDocSnapTmp.ref, {
+            description: data.task.description
+          });
+
+          return transaction;
+        }
+
+
+        /*
         * Read all data
         * */
 
@@ -309,20 +328,45 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           )
         );
 
-        // read all times of day
-        const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentData} = (
-          await userDocSnap.ref.collection('timesOfDay').listDocuments().then(async (docsRef) =>
-            await Promise.all(docsRef.map((docRef) =>
-              transaction.get(docRef).then((docSnap) => docSnap)
-            ))
-          )
-        ).reduce((acc, curr) => ({...acc, ...{[curr.data()?.name]: curr}}), {});
+        // read current timesOfDay
+        const currentTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await Promise.all((await userDocSnap.ref.collection('timesOfDay').listDocuments().then((docRefs) => docRefs))
+          .map((docRef) =>
+            transaction.get(docRef).then((docSnap) => docSnap)
+          ))).reduce((acc, docSnap) => ({...acc, ...{[docSnap.id]: docSnap}}), {});
+
+        // read taskDocSnap timeOfDay
+        const taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = {}
+        if (taskDocSnap.data()) {
+          (taskDocSnap.data() as ITask).timesOfDay.forEach((timeOfDay) => {
+            if (currentTimesOfDay[timeOfDay]) {
+              taskDocSnapsTimesOfDay[timeOfDay] = currentTimesOfDay[timeOfDay];
+            }
+          });
+        }
+
+        // read data.task timeOfDay
+        const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await Promise.all(((data.task as ITask).timesOfDay).map((timeOfDay) => {
+          if (currentTimesOfDay[timeOfDay]) {
+            return currentTimesOfDay[timeOfDay];
+          }
+          return transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
+        }))).reduce((acc, docSnap) => ({...acc, ...{[docSnap.id]: docSnap}}), {});
+
 
         /*
         * Proceed all data
         * */
 
-        data.task['timesOfDayRef'] = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, data.task, timesOfDayDocSnaps);
+        const modifiedTimesOfDays = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay);
+        const timesOfDaysToStoreLen = Object.keys(currentTimesOfDay).filter((docSnapId) => !modifiedTimesOfDays.removedTimesOfDay.includes(docSnapId))
+          .concat(modifiedTimesOfDays.addedTimesOfDay).length;
+        if (timesOfDaysToStoreLen > 20) {
+          throw new HttpsError(
+            'invalid-argument',
+            'Bad Request',
+            `You can own 20 times of day but merge this request with existing ones equals ${timesOfDaysToStoreLen} 🤔`
+          );
+        }
 
         // proceedEveryDay
         todayTaskDocSnaps.forEach((todayTaskDocSnap) =>

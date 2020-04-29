@@ -63,7 +63,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         .then(async (docsRef) =>
           (await Promise.all(docsRef.map((docRef) =>
             transaction.get(docRef).then((docSnap) => docSnap)
-          ))).reduce((acc, curr) => ({...acc, ...{[curr.data()?.name]: curr.ref}}), {}));
+          ))).reduce((acc, curr) => ({...acc, ...{[curr.id]: curr.ref}}), {}));
 
       /*
       * Proceed all data

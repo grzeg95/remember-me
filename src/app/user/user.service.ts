@@ -36,7 +36,7 @@ export class UserService {
       .collection<ITimeOfDay>('timesOfDay', (ref) =>
         ref.orderBy('position', 'asc').limit(20)).get().pipe(
           map((querySnapDocData) =>
-            querySnapDocData.docs.map((queryDocSnapDocData) => queryDocSnapDocData.data().name)
+            querySnapDocData.docs.map((queryDocSnapDocData) => queryDocSnapDocData.id)
           )
       );
   }
