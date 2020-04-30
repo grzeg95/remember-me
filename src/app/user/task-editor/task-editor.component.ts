@@ -75,7 +75,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       sat: new FormControl(false),
       sun: new FormControl(false)
     }, TaskEditorComponent.daysOfTheWeekValidator),
-    timesOfDay: new FormArray([], TaskEditorComponent.timesOfDayValidator)
+    timesOfDay: new FormArray([] as AbstractControl[], TaskEditorComponent.timesOfDayValidator)
   });
 
   savingInProgress = false;
@@ -135,11 +135,11 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
         this.snackBar.open('Enter new one');
       }
+
       if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
       } else {
         (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
-        this.getDeepEqual();
       }
 
       this.appService.dialogOpen = false;
@@ -184,45 +184,17 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   saveTask(): void {
 
-    let isInvalid = 0;
-
-    if (!this.taskForm.get('daysOfTheWeek').valid) {
-      this.taskForm.get('daysOfTheWeek').markAsDirty();
-      ++isInvalid;
-    }
-
-    if (!this.taskForm.get('timesOfDay').valid) {
-      this.taskForm.get('timesOfDay').markAsDirty();
-      ++isInvalid;
-    }
-
-    if (!this.taskForm.get('description').valid) {
-      this.taskForm.get('description').markAsDirty();
-      ++isInvalid;
-    }
-
-    if (isInvalid) {
-      return;
-    }
-
-    if (this.getDeepEqual()) {
+    if (this.isDeepEqual()) {
       return;
     }
 
     this.taskForm.disable();
     this.savingInProgress = true;
 
-    const task = this.taskForm.getRawValue();
-
-    // call onCall functions
-    // get
-    // if created, taskId
-    // if created == true then subscribe
-
-    // saveTask
-    // transaction
-    // set, update         => user/{userId}/task/{taskId}
-    // set, update, delete => user/{userId}/today/{[mon, tue, wed, thu, fri, sat, sun]}/task/{taskId}
+    const task = this.taskForm.getRawValue() as ITask;
+    const trimDescription = task.description.trim();
+    task.description = trimDescription;
+    this.taskForm.get('description').setValue(trimDescription);
 
     this.fns.httpsCallable('saveTask')({
       task,
@@ -306,11 +278,12 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     this.taskForm.enable();
   }
 
-  removeTimeOfDay(index: number): void {
+  removeTimeOfDay($event: MouseEvent, index: number): void {
+    $event.preventDefault();
     (this.taskForm.get('timesOfDay') as FormArray).removeAt(index);
   }
 
-  getDeepEqual(): boolean {
+  isDeepEqual(): boolean {
     const rawValue = this.taskForm.getRawValue();
 
     return this.initValues.description === rawValue['description'] &&
@@ -319,13 +292,20 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {
-    const toValid = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     const rawValue = g.getRawValue();
-    const some = toValid.some((checkbox) => rawValue[checkbox]);
+    const some = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].some((checkbox) => rawValue[checkbox]);
     return some ? null : {required: true};
   }
 
   static descriptionValidator(g: FormControl): { required: boolean } {
+
+    const current = g.value as string;
+    const trim = (g.value as string).trimLeft();
+
+    if (current.length !== trim.length) {
+      g.setValue(trim);
+    }
+
     return (typeof g.value === 'string') &&
     (g.value.length > 3) && (g.value.length <= 40) ? null : {required: true};
   }

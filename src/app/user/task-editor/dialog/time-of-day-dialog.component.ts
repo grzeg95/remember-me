@@ -1,5 +1,5 @@
 import {Component, HostListener, OnDestroy, OnInit} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
 import {performance} from 'firebase';
 
@@ -14,7 +14,7 @@ export class TimeOfDayDialogComponent implements OnInit, OnDestroy {
   timeOfDayDialogComponentTrace = this.perf.trace('TimeOfDayDialogComponent');
 
   timeOfDayForm: FormGroup = new FormGroup({
-    timeOfDay: new FormControl('', [Validators.required, Validators.maxLength(20)])
+    timeOfDay: new FormControl('', [TimeOfDayDialogComponent.timeOfDayValidator])
   });
 
   constructor(public dialogRef: MatDialogRef<TimeOfDayDialogComponent>) {
@@ -40,7 +40,20 @@ export class TimeOfDayDialogComponent implements OnInit, OnDestroy {
   }
 
   addTimeOfDay(): void {
-    this.dialogRef.close(this.timeOfDayForm.get('timeOfDay').value);
+    this.dialogRef.close(this.timeOfDayForm.get('timeOfDay').value.trim());
+  }
+
+  static timeOfDayValidator(g: FormControl): { required: boolean } {
+
+    const current = g.value as string;
+    const trim = (g.value as string).trimLeft();
+
+    if (current.length !== trim.length) {
+      g.setValue(trim);
+    }
+
+    return (typeof g.value === 'string') &&
+    (g.value.length > 0) && (g.value.length <= 20) ? null : {required: true};
   }
 
 }

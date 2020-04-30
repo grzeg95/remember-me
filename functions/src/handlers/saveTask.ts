@@ -383,6 +383,11 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
 
       return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
+        let diff: ITaskDiff;
+        const task = data.task as ITask;
+        task.description = task.description.trim();
+        task.timesOfDay = task.timesOfDay.map((timeOfDay) => timeOfDay.trim());
+
         /*
         * Read all data
         * */
@@ -400,7 +405,7 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
           * Check if only description was changed
           * */
 
-          const diff: ITaskDiff = taskDiff((taskDocSnap.data() as ITask), data.task);
+          diff = taskDiff((taskDocSnap.data() as ITask), task);
 
           if (
             diff.description.type === 'changed' &&
@@ -409,13 +414,12 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
             diff.timesOfDay.removed.length === 0) {
 
             // read all task for user/{userId}/today/{day}/task/{taskId}
-            const todayTaskDocSnapsToUpdate = await Promise.all((Object.keys((data.task as ITask).daysOfTheWeek) as Day[])
+            const todayTaskDocSnapsToUpdate = await Promise.all((Object.keys(task.daysOfTheWeek) as Day[])
               .map((day) =>
                 transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
                   .then((docSnap) => docSnap)
               )
             );
-
 
             /*
             * Proceed all data
@@ -424,17 +428,31 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
             todayTaskDocSnapsToUpdate.forEach((todayTask) => {
               if (todayTask.exists) {
                 transaction.update(todayTask.ref, {
-                  description: (data.task as ITask).description
+                  description: task.description
                 })
               }
             });
 
             transaction.update(taskDocSnap.ref, {
-              description: (data.task as ITask).description
+              description: task.description
             });
 
             return transaction;
 
+          }
+
+          /*
+          * Check if nothing changed
+          * */
+
+          if (
+            diff.description.type === 'unchanged' &&
+            !daysOfTheWeekChanged(diff) &&
+            diff.timesOfDay.new.length === 0 &&
+            diff.timesOfDay.removed.length === 0) {
+
+            transaction.update(taskDocSnap.ref, task);
+            return transaction;
           }
 
         }
@@ -462,9 +480,9 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
           }
         });
 
-        // read data.task timeOfDay
+        // read task timeOfDay
         // there can be new timesOfDay that not exists in firebase
-        const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await Promise.all(((data.task as ITask).timesOfDay).map((timeOfDay) => {
+        const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await Promise.all((task.timesOfDay).map((timeOfDay) => {
           if (currentTimesOfDay[timeOfDay]) {
             return currentTimesOfDay[timeOfDay];
           }
@@ -489,11 +507,11 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
 
         // proceedEveryDay
         todayTaskDocSnaps.forEach((todayTaskDocSnap) =>
-          proceedTodayTask(transaction, todayTaskDocSnap.docSnap, data.task, todayTaskDocSnap.day)
+          proceedTodayTask(transaction, todayTaskDocSnap.docSnap, task, todayTaskDocSnap.day)
         );
 
         // update task
-        transaction.set(taskDocSnap.ref, data.task);
+        transaction.set(taskDocSnap.ref, task);
 
         // delete taskDocSnapTmp if created
         if (created) {
