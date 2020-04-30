@@ -280,6 +280,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
 
   removeTimeOfDay($event: MouseEvent, index: number): void {
     $event.preventDefault();
+    (this.taskForm.get('timesOfDay') as FormArray).markAsDirty();
     (this.taskForm.get('timesOfDay') as FormArray).removeAt(index);
   }
 
