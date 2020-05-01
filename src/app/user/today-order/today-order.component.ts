@@ -4,6 +4,7 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
+import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {IError, ISuccess} from '../models';
 import {UserService} from '../user.service';
@@ -18,6 +19,7 @@ export class TodayOrderComponent implements OnInit, OnDestroy {
 
   perf = performance();
   todayOrderComponentTrace = this.perf.trace('TodayOrderComponent');
+  RouterDict = RouterDict;
 
   get order(): string[] {
     return this.userService.timesOfDayOrder;

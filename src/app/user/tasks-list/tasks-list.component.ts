@@ -3,6 +3,7 @@ import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
+import {RouterDict} from '../../app.constants';
 import {ITasksListItem} from '../models';
 import {UserService} from '../user.service';
 
@@ -16,6 +17,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
   perf = performance();
   tasksListComponentTrace = this.perf.trace('TasksListComponent');
+  RouterDict = RouterDict;
 
   faEdit = faEdit;
 

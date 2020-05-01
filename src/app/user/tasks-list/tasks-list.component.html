@@ -17,7 +17,7 @@
           </div>
           <div class="col">
             <div class="add-task">
-              <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new</button>
+              <button class="btn btn-primary shadow" type="button" [routerLink]="'/' + RouterDict['user'] + '/' + RouterDict['task-editor']">Add new</button>
             </div>
           </div>
         </div>
@@ -36,7 +36,7 @@
                 <td>{{ task.daysOfTheWeek }}</td>
                 <td>{{ task.timesOfDay.join(', ') }}</td>
                 <td>
-                  <button class="btn" type="button" [routerLink]="['/user/task-editor/'+ task.id]">
+                  <button class="btn" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task-editor'] + '/' + task.id]">
                     <fa-icon [icon]="faEdit"></fa-icon>
                   </button>
                 </td>
@@ -50,7 +50,7 @@
       <div *ngIf="!isEmpty" class="row">
         <div class="col">
           <div class="add-task">
-            <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new</button>
+            <button class="btn btn-primary shadow" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task-editor']]">Add new</button>
           </div>
         </div>
       </div>
