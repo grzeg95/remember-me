@@ -287,7 +287,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   isDeepEqual(): boolean {
     const rawValue = this.taskForm.getRawValue();
 
-    return this.initValues.description === rawValue['description'] &&
+    return this.initValues.description.length === rawValue['description'].trim().length &&
       deepEqual(this.initValues.daysOfTheWeek, rawValue['daysOfTheWeek']) &&
       listEqual(this.initValues.timesOfDay, rawValue['timesOfDay']);
   }
