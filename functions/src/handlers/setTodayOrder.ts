@@ -5,25 +5,15 @@ import {DocumentReference} from "@google-cloud/firestore";
 const app = firestore();
 
 /**
- * @function equalKeys
- * @param toTest string[]
- * @param required string[]
+ * @function listEqual
+ * Check if two list are the same
+ * @param A T[]
+ * @param B T[]
  * @return boolean
  **/
-const equalKeys = (toTest: string[], required: string[]): boolean => {
+const listEqual = <T>(A: T[], B: T[]): boolean =>
+  A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
 
-  if (toTest.length !== required.length) {
-    return false;
-  }
-
-  for (let i = 0; i < toTest.length; ++i) {
-    if (toTest[i] !== required[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 /**
  * @function handler
@@ -61,45 +51,45 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   return app.runTransaction(async (transaction) => {
 
-      /*
-      * Read all data
-      * */
+    /*
+    * Read all data
+    * */
 
-      // read all times of day
-      const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentReference} = await app
-        .collection('users')
-        .doc(auth.uid)
-        .collection('timesOfDay')
-        .listDocuments()
-        .then(async (docsRef) =>
-          (await Promise.all(docsRef.map((docRef) =>
-            transaction.get(docRef).then((docSnap) => docSnap)
-          ))).reduce((acc, curr) => ({...acc, ...{[curr.id]: curr.ref}}), {}));
+    // read all times of day
+    const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentReference} = await app
+      .collection('users')
+      .doc(auth.uid)
+      .collection('timesOfDay')
+      .listDocuments()
+      .then(async (docsRef) =>
+        (await Promise.all(docsRef.map((docRef) =>
+          transaction.get(docRef).then((docSnap) => docSnap)
+        ))).reduce((acc, curr) => ({...acc, ...{[curr.id]: curr.ref}}), {}));
 
-      /*
-      * Proceed all data
-      * */
+    /*
+    * Proceed all data
+    * */
 
-      const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
-      if (timesOfDayDocSnapsKeys.length !== data.length || !equalKeys(timesOfDayDocSnapsKeys, data)) {
-        throw new HttpsError(
-          'invalid-argument',
-          'Bad Request',
-          'Some went wrong 🤫 Try again 🙂'
-        );
-      }
-
-      data.forEach((timeOfDay: string, index) =>
-        transaction.update(timesOfDayDocSnaps[timeOfDay], {
-          position: index
-        })
+    const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
+    if (timesOfDayDocSnapsKeys.length !== data.length || !listEqual(timesOfDayDocSnapsKeys, data)) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Bad Request',
+        'Some went wrong 🤫 Try again 🙂'
       );
+    }
 
-      return transaction;
+    data.forEach((timeOfDay: string, index) =>
+      transaction.update(timesOfDayDocSnaps[timeOfDay], {
+        position: index
+      })
+    );
 
-    }).then(() => ({
-      details: 'Order has been updated 🙃'
-    })).catch((error: HttpsError) => {
+    return transaction;
+
+  }).then(() => ({
+    details: 'Order has been updated 🙃'
+  })).catch((error: HttpsError) => {
     throw new HttpsError(
       'internal',
       error.message,

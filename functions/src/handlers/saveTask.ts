@@ -89,25 +89,14 @@ interface ITodayTask {
 }
 
 /**
- * @function equalKeys
- * @param toTest string[]
- * @param required string[]
+ * @function listEqual
+ * Check if two list are the same
+ * @param A T[]
+ * @param B T[]
  * @return boolean
  **/
-const equalKeys = (toTest: string[], required: string[]): boolean => {
-
-  if (toTest.length !== required.length) {
-    return false;
-  }
-
-  for (let i = 0; i < toTest.length; ++i) {
-    if (toTest[i] !== required[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
+const listEqual = <T>(A: T[], B: T[]): boolean =>
+  A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
 
 /**
  * @function taskDiff
@@ -344,7 +333,7 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     // data includes task: object and taskId: string
     typeof data !== 'object' ||
     (dataKeys = Object.keys(data)).length !== 2 ||
-    !equalKeys(dataKeys, ['task', 'taskId']) ||
+    !listEqual(dataKeys, ['task', 'taskId']) ||
     typeof data.taskId !== 'string' ||
     typeof data.task !== 'object' ||
 
@@ -352,10 +341,10 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
     // timesOfDay: {[key: string]: string}
     (dataTaskKeys = Object.keys(data.task)).length !== 3 ||
-    !equalKeys(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']) ||
+    !listEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']) ||
     typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
     (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7 || // 7 days in week
-    !equalKeys(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
+    !listEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
     dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
     !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
 
@@ -545,12 +534,11 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
       'taskId': taskId
     })
   ).catch((error: HttpsError) => {
-      throw new HttpsError(
-        'internal',
-        error.message,
-        error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
-      );
-    }
-  );
+    throw new HttpsError(
+      'internal',
+      error.message,
+      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+    );
+  });
 
 };
