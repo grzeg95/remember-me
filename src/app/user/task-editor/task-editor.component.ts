@@ -10,6 +10,7 @@ import deepEqual from 'deep-equal';
 import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
+import {RouterDict} from '../../app.constants';
 import {AuthService} from '../../auth/auth.service';
 import {IError, ISuccess, ITask} from '../models';
 import {UserService} from '../user.service';
@@ -167,7 +168,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       this.userService.getTaskById$(this.id).subscribe((task) => {
         if (!task) {
           this.resetId();
-          this.location.go('/user/task-editor');
+          this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task-editor']);
           this.taskForm.enable();
         } else {
           this.setAll(task);
@@ -202,7 +203,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
     }).subscribe((success: ISuccess) => {
 
       if (success.created) {
-        this.location.go('/user/task-editor/' + success.taskId);
+        this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task-editor'] + '/' + success.taskId);
       }
 
       this.id = success.taskId;
@@ -219,14 +220,14 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   }
 
   cancelTask(): Promise<boolean> {
-    return this.router.navigate(['/user/tasks-list']);
+    return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['tasks-list']]);
   }
 
   deepResetForm(): void {
     this.taskForm.disable();
     this.resetId();
     this.restartForm();
-    this.location.go('/user/task-editor');
+    this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task-editor']);
     this.taskForm.enable();
   }
 

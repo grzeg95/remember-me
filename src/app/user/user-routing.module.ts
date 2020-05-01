@@ -1,5 +1,6 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
+import {RouterDict} from '../app.constants';
 import {AuthGuardUserService} from '../auth/auth.guard.user.service';
 import {TaskEditorComponent} from './task-editor/task-editor.component';
 import {TasksListComponent} from './tasks-list/tasks-list.component';
@@ -14,11 +15,11 @@ const userRoutes: Routes = [
     canActivateChild: [AuthGuardUserService],
     component: UserComponent,
     children: [
-      {path: 'today', component: TodayComponent},
-      {path: 'tasks-list', component: TasksListComponent},
-      {path: 'task-editor/:id', component: TaskEditorComponent},
-      {path: 'task-editor', component: TaskEditorComponent},
-      {path: 'today-order', component: TodayOrderComponent}
+      {path: RouterDict['today'], component: TodayComponent},
+      {path: RouterDict['tasks-list'], component: TasksListComponent},
+      {path: RouterDict['task-editor'] + '/:id', component: TaskEditorComponent},
+      {path: RouterDict['task-editor'], component: TaskEditorComponent},
+      {path: RouterDict['today-order'], component: TodayOrderComponent}
     ]
   }
 ];

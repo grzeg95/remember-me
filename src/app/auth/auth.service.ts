@@ -5,6 +5,7 @@ import {Router} from '@angular/router';
 import * as firebase from 'firebase';
 import {auth, User} from 'firebase/app';
 import {BehaviorSubject} from 'rxjs';
+import {RouterDict} from '../app.constants';
 import {IUser} from './i-user';
 import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 
@@ -34,8 +35,8 @@ export class AuthService {
         localStorage.setItem('user', JSON.stringify(this.userData));
         this.registerUser(this.userData);
 
-        if (!this.router.url.startsWith('/user')) {
-          return this.router.navigate(['/user/today']);
+        if (!this.router.url.startsWith(RouterDict['user'])) {
+          return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
         }
 
       } else {
@@ -70,7 +71,7 @@ export class AuthService {
     this.afAuth.auth.signInWithPopup(provider).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn$.next(false);
-        return this.router.navigate(['/user/tasks-list']);
+        return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['tasks-list']]);
       });
     }).catch((error) => {
       this.whileLoginIn$.next(false);
