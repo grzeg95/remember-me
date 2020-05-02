@@ -35,7 +35,7 @@ export class AuthService {
         localStorage.setItem('user', JSON.stringify(this.userData));
         this.registerUser(this.userData);
 
-        if (!this.router.url.startsWith(RouterDict['user'])) {
+        if (!this.router.url.startsWith('/' + RouterDict['user'])) {
           return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
         }
 

@@ -46,7 +46,7 @@ export class UserService {
   private _timesOfDayOrderFirstLoading = true;
 
   private _today: { [timeOfDay: string]: ITodayItem[] } = {};
-  private _now: Date;
+  private _now: Date = new Date();
   private _lastTodayName = '.';
   private _tasks: ITasksListItem[] = [];
   private _timesOfDayOrder: string[] = [];
@@ -119,7 +119,6 @@ export class UserService {
         return todayTasksByTimeOfDay;
 
       })).subscribe((today) => {
-        console.log(today);
         this._today = today;
         this._todayFirstLoading = false;
       });

@@ -27,6 +27,10 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
     return this.userService.timesOfDayOrderFirstLoading;
   }
 
+  get isEmpty(): boolean {
+    return this.timesOfDayOrder.length === 0;
+  }
+
   disabled = false;
 
   constructor(private userService: UserService,

@@ -39,6 +39,10 @@ export class TasksComponent implements OnInit, OnDestroy {
     return this.userService.timesOfDayOrderFirstLoading;
   }
 
+  get isEmpty(): boolean {
+    return this.tasks.length === 0 || this.timesOfDayOrder.length === 0;
+  }
+
   constructor(private userService: UserService) {}
 
   ngOnInit(): void {

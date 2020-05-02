@@ -7,18 +7,18 @@
       </div>
     </div>
 
-    <div *ngIf="!timesOfDayOrder && !timesOfDayOrderFirstLoading" class="row">
+    <div *ngIf="isEmpty && !timesOfDayOrderFirstLoading" class="row">
       <div class="col">
         <span>There is no one</span>
       </div>
       <div class="col">
         <div class="add-task">
-          <button class="btn btn-primary shadow" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task']]">Add new</button>
+          <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
         </div>
       </div>
     </div>
 
-    <div *ngIf="timesOfDayOrder && !timesOfDayOrderFirstLoading" class="row">
+    <div *ngIf="!isEmpty && !timesOfDayOrderFirstLoading" class="row">
       <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
         <div class="example-box" *ngFor="let item of timesOfDayOrder" cdkDrag>{{ item }}</div>
       </div>
