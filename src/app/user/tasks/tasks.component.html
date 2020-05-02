@@ -1,10 +1,10 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="!timesOfDayOrder || !tasks; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="taskListItemsFirstLoading || todayOrderFirstLoading; else onOneExists">
+      <div class="row message" *ngIf="tasksFirstLoading || timesOfDayOrderFirstLoading; else onOneExists">
         <div class="col">
           <span>Loading...</span>
         </div>
@@ -17,7 +17,7 @@
           </div>
           <div class="col">
             <div class="add-task">
-              <button class="btn btn-primary shadow" type="button" [routerLink]="'/' + RouterDict['user'] + '/' + RouterDict['task-editor']">Add new</button>
+              <button class="btn btn-primary shadow" type="button" [routerLink]="'/' + RouterDict['user'] + '/' + RouterDict['task']">Add new</button>
             </div>
           </div>
         </div>
@@ -31,12 +31,12 @@
           <div class="table-responsive">
             <table class="table table-hover">
               <tbody id="tasksTable">
-              <tr *ngFor="let task of taskListItems">
+              <tr *ngFor="let task of tasks">
                 <td>{{ task.description }}</td>
                 <td>{{ task.daysOfTheWeek }}</td>
                 <td>{{ task.timesOfDay.join(', ') }}</td>
                 <td>
-                  <button class="btn" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task-editor'] + '/' + task.id]">
+                  <button class="btn" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task'] + '/' + task.id]">
                     <fa-icon [icon]="faEdit"></fa-icon>
                   </button>
                 </td>
@@ -47,10 +47,10 @@
         </div>
       </div>
 
-      <div *ngIf="!isEmpty" class="row">
+      <div *ngIf="timesOfDayOrder && tasks" class="row">
         <div class="col">
           <div class="add-task">
-            <button class="btn btn-primary shadow" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task-editor']]">Add new</button>
+            <button class="btn btn-primary shadow" type="button" [routerLink]="['/' + RouterDict['user'] + '/' + RouterDict['task']]">Add new</button>
           </div>
         </div>
       </div>

@@ -2,9 +2,9 @@ import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {RouterDict} from '../app.constants';
 import {AuthGuardUserService} from '../auth/auth.guard.user.service';
-import {TaskEditorComponent} from './task-editor/task-editor.component';
-import {TasksListComponent} from './tasks-list/tasks-list.component';
-import {TodayOrderComponent} from './today-order/today-order.component';
+import {TaskComponent} from './task/task.component';
+import {TasksComponent} from './tasks/tasks.component';
+import {TimesOfDayOrderComponent} from './times-of-day-order/times-of-day-order.component';
 import {TodayComponent} from './today/today.component';
 import {UserComponent} from './user.component';
 
@@ -16,10 +16,10 @@ const userRoutes: Routes = [
     component: UserComponent,
     children: [
       {path: RouterDict['today'], component: TodayComponent},
-      {path: RouterDict['tasks-list'], component: TasksListComponent},
-      {path: RouterDict['task-editor'] + '/:id', component: TaskEditorComponent},
-      {path: RouterDict['task-editor'], component: TaskEditorComponent},
-      {path: RouterDict['today-order'], component: TodayOrderComponent}
+      {path: RouterDict['tasks'], component: TasksComponent},
+      {path: RouterDict['task'] + '/:id', component: TaskComponent},
+      {path: RouterDict['task'], component: TaskComponent},
+      {path: RouterDict['times-of-day-order'], component: TimesOfDayOrderComponent}
     ]
   }
 ];

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
-import {Observable} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
 import {IUser} from '../auth/i-user';
@@ -9,70 +9,99 @@ import {ITask, ITasksListItem, ITimeOfDay, ITodayItem} from './models';
 @Injectable()
 export class UserService {
 
-  todayItemsFirstLoading = true;
-  taskListItemsFirstLoading = true;
-  todayOrderFirstLoading = true;
+  get todayFirstLoading(): boolean {
+    return this._todayFirstLoading;
+  }
 
-  todayItems: { [timeOfDay: string]: ITodayItem[] } = {};
-  taskListItems: ITasksListItem[] = [];
-  timesOfDayOrder: string[] = [];
+  get tasksFirstLoading(): boolean {
+    return this._tasksFirstLoading;
+  }
+
+  get timesOfDayOrderFirstLoading(): boolean {
+    return this._timesOfDayOrderFirstLoading;
+  }
+
+  get today(): { [p: string]: ITodayItem[] } {
+    return this._today;
+  }
+
+  get tasks(): ITasksListItem[] {
+    return this._tasks;
+  }
+
+  get timesOfDayOrder(): string[] {
+    return this._timesOfDayOrder;
+  }
+
+  get todayName(): string {
+    return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][this._now.getDay()];
+  }
+
+  get now(): Date {
+    return this._now;
+  }
+
+  private _todayFirstLoading = true;
+  private _tasksFirstLoading = true;
+  private _timesOfDayOrderFirstLoading = true;
+
+  private _today: { [timeOfDay: string]: ITodayItem[] } = {};
+  private _now: Date;
+  private _lastTodayName = '.';
+  private _tasks: ITasksListItem[] = [];
+  private _timesOfDayOrder: string[] = [];
+
+  private today$: Subscription;
+  private tasks$: Subscription;
+  private timesOfDayOrder$: Subscription;
 
   clearCache(): void {
-    this.todayItems = {};
-    this.taskListItems = [];
-    this.timesOfDayOrder = [];
-    this.todayItemsFirstLoading = true;
-    this.taskListItemsFirstLoading = true;
-    this.todayOrderFirstLoading = true;
+    this._today = {};
+    this._tasks = [];
+    this._timesOfDayOrder = [];
+    this._todayFirstLoading = true;
+    this._tasksFirstLoading = true;
+    this._timesOfDayOrderFirstLoading = true;
+
+    if (this.today$ && !this.today$.closed) {
+      this.today$.unsubscribe();
+    }
+
+    if (this.tasks$ && !this.tasks$.closed) {
+      this.tasks$.unsubscribe();
+    }
+
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      this.timesOfDayOrder$.unsubscribe();
+    }
+
   }
 
   constructor(private afs: AngularFirestore,
               private authService: AuthService) {
   }
 
-  getTimesOfDayOrder$(): Observable<string[]> {
-    return this.afs
-      .doc<IUser>(`users/${this.authService.userData.uid}`)
-      .collection<ITimeOfDay>('timesOfDay', (ref) =>
-        ref.orderBy('position', 'asc').limit(20)).get().pipe(
-          map((querySnapDocData) =>
-            querySnapDocData.docs.map((queryDocSnapDocData) => queryDocSnapDocData.id)
-          )
-      );
-  }
+  runToday(): void {
+    this._now = new Date();
 
-  getTaskList$(): Observable<ITasksListItem[]> {
-    return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
-      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
-      .get().pipe(map((querySnapDocData) =>
-        querySnapDocData.docs.map((queryDocSnapDocData) => {
+    if (this._lastTodayName !== this.todayName && this.today$ && !this.today$.closed) {
+      this.today$.unsubscribe();
+    }
+    this._lastTodayName = this.todayName;
 
-          const task = queryDocSnapDocData.data() as ITask;
-          const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-            .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
+    if (this.today$ && !this.today$.closed) {
+      return;
+    }
 
-          return {
-            description: task.description,
-            timesOfDay: task.timesOfDay,
-            daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
-            id: queryDocSnapDocData.id
-          } as ITasksListItem;
-
-        })
-      ));
-  }
-
-  getTodayTasks$(todayName: string): Observable<{ [timeOfDay: string]: ITodayItem[] }> {
-
-    return this.afs.doc(`users/${this.authService.userData.uid}/today/${todayName}`)
+    this.today$ = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName}`)
       .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50 * 20))
-      .get().pipe(map((querySnapDocData) => {
+      .snapshotChanges().pipe(map((documentChangeActionArr) => {
 
         const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
 
-        querySnapDocData.forEach((queryDocSnapDocData) => {
+        documentChangeActionArr.forEach((documentChangeAction) => {
 
-          const task: ITask = queryDocSnapDocData.data() as ITask;
+          const task: ITask = documentChangeAction.payload.doc.data() as ITask;
 
           Object.keys(task.timesOfDay).forEach((timeOfDay) => {
             if (!todayTasksByTimeOfDay[timeOfDay]) {
@@ -81,7 +110,7 @@ export class UserService {
             todayTasksByTimeOfDay[timeOfDay].push({
               description: task.description,
               done: task.timesOfDay[timeOfDay],
-              id: queryDocSnapDocData.id
+              id: documentChangeAction.payload.doc.id
             });
           });
 
@@ -89,7 +118,57 @@ export class UserService {
 
         return todayTasksByTimeOfDay;
 
-      }));
+      })).subscribe((today) => {
+        console.log(today);
+        this._today = today;
+        this._todayFirstLoading = false;
+      });
+  }
+
+  runTasks(): void {
+    if (this.tasks$ && !this.tasks$.closed) {
+      return;
+    }
+
+    this.tasks$ = this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
+      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
+      .snapshotChanges().pipe(map((documentChangeActionArr) =>
+        documentChangeActionArr.map((documentChangeAction) => {
+
+          const task = documentChangeAction.payload.doc.data() as ITask;
+          const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
+
+          return {
+            description: task.description,
+            timesOfDay: task.timesOfDay,
+            daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
+            id: documentChangeAction.payload.doc.id
+          } as ITasksListItem;
+
+        })
+      )).subscribe((tasks) => {
+        this._tasks = tasks;
+        this._tasksFirstLoading = false;
+      });
+  }
+
+  runTimesOfDayOrder(): void {
+    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+      return;
+    }
+
+    this.timesOfDayOrder$ = this.afs
+      .doc<IUser>(`users/${this.authService.userData.uid}`)
+      .collection<ITimeOfDay>('timesOfDay', (ref) =>
+        ref.orderBy('position', 'asc').limit(20)).snapshotChanges().pipe(
+          map((querySnapDocData) =>
+            querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id)
+          )
+      ).subscribe((timesOfDay) => {
+        this._timesOfDayOrder = timesOfDay;
+        this._timesOfDayOrderFirstLoading = false;
+      });
   }
 
   getTaskById$(id: string): Observable<ITask> {

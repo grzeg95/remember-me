@@ -19,7 +19,7 @@ import {CoreModule} from './core.module';
 import {GuestComponent} from './guest/guest.component';
 import {NavComponent} from './nav/nav.component';
 import {SharedModule} from './shared.module';
-import {TimeOfDayDialogComponent} from './user/task-editor/dialog/time-of-day-dialog.component';
+import {TimeOfDayDialogComponent} from './user/task/dialog/time-of-day-dialog.component';
 
 @NgModule({
   declarations: [

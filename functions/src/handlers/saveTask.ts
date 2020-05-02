@@ -81,13 +81,26 @@ interface ITodayTask {
 }
 
 /**
- * @function listEqual
- * Check if two list are the same
- * @param A T[]
- * @param B T[]
- * @return boolean
- **/
-const listEqual = <T>(A: T[], B: T[]): boolean => A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
+  * @function keysEqual
+  * Check if two keys lists are the same
+  * @param A string[] -> A <==> Array.from(new Set(A))
+  * @param B string[] -> B <==> Array.from(new Set(B))
+  * @return boolean
+  **/
+const keysEqual = (A: string[], B: string[]): boolean => {
+
+  if (A.length !== B.length) {
+    return false;
+  }
+
+  for (const a of A) {
+    if (!B.includes(a)) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 /**
  * @function taskDiff
@@ -161,7 +174,7 @@ const daysOfTheWeekChanged = (diff: ITaskDiff): boolean => {
     diff.daysOfTheWeek.tue.type === 'changed' ||
     diff.daysOfTheWeek.wed.type === 'changed'
   );
-}
+};
 
 /**
  * @function proceedTodayTask
@@ -324,7 +337,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // data includes task: object and taskId: string
     typeof data !== 'object' ||
     (dataKeys = Object.keys(data)).length !== 2 ||
-    !listEqual(dataKeys, ['task', 'taskId']) ||
+    !keysEqual(dataKeys, ['task', 'taskId']) ||
     typeof data.taskId !== 'string' ||
     typeof data.task !== 'object' ||
 
@@ -332,10 +345,10 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
     // timesOfDay: {[key: string]: string}
     (dataTaskKeys = Object.keys(data.task)).length !== 3 ||
-    !listEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']) ||
+    !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']) ||
     typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
     (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7 || // 7 days in week
-    !listEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
+    !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
     dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
     !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
 

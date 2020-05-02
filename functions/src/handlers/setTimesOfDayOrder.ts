@@ -5,15 +5,26 @@ import {DocumentReference} from "@google-cloud/firestore";
 const app = firestore();
 
 /**
- * @function listEqual
- * Check if two list are the same
- * @param A T[]
- * @param B T[]
+ * @function keysEqual
+ * Check if two keys lists are the same
+ * @param A string[] -> A <==> Array.from(new Set(A))
+ * @param B string[] -> B <==> Array.from(new Set(B))
  * @return boolean
  **/
-const listEqual = <T>(A: T[], B: T[]): boolean =>
-  A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
+const keysEqual = (A: string[], B: string[]): boolean => {
 
+  if (A.length !== B.length) {
+    return false;
+  }
+
+  for (const a of A) {
+    if (!B.includes(a)) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 /**
  * @function handler
@@ -78,7 +89,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       * */
 
       const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
-      if (timesOfDayDocSnapsKeys.length !== data.length || !listEqual(timesOfDayDocSnapsKeys, data)) {
+      if (!keysEqual(timesOfDayDocSnapsKeys, data)) {
         throw new HttpsError(
           'invalid-argument',
           'Bad Request',

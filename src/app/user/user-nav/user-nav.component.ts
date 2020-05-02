@@ -19,17 +19,17 @@ export class UserNavComponent {
     {
       icon: faListUl,
       label: 'Tasks',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['tasks-list']
+      href: '/' + RouterDict['user'] + '/' + RouterDict['tasks']
     },
     {
       icon: faPencilAlt,
       label: 'Editor',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['task-editor']
+      href: '/' + RouterDict['user'] + '/' + RouterDict['task']
     },
     {
       icon: faSort,
       label: 'Order',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['today-order']
+      href: '/' + RouterDict['user'] + '/' + RouterDict['times-of-day-order']
     }
   ];
 

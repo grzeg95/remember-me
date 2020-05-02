@@ -1,10 +1,10 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="!today || !timesOfDayOrder; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="todayItemsFirstLoading || todayOrderFirstLoading; else onOneExists">
+      <div class="row message" *ngIf="todayFirstLoading || timesOfDayFirstLoading; else onOneExists">
         <div class="col">
           <span>Loading...</span>
         </div>
@@ -17,7 +17,7 @@
           </div>
           <div class="col">
             <div class="add-task">
-              <button class="btn btn-primary shadow" type="button" [routerLink]="['/user/task-editor']">Add new</button>
+              <button class="btn btn-primary shadow" type="button" [routerLink]="['/'+ RouterDict['user']  +'/' + RouterDict['task']]">Add new</button>
             </div>
           </div>
         </div>

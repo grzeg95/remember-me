@@ -4,6 +4,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {performance} from 'firebase';
 import {interval, Subscription} from 'rxjs';
+import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
 import {ITodayItem} from '../models';
@@ -19,52 +20,39 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   perf = performance();
   todayComponentTrace = this.perf.trace('TodayComponent');
+  RouterDict = RouterDict;
 
   faCheckCircle = faCheckCircle;
 
-  get order(): string[] {
+  get timesOfDayOrder(): string[] {
     return this.userService.timesOfDayOrder;
   }
 
-  set order(newOrder: string[]) {
-    this.userService.timesOfDayOrder = newOrder;
+  get todayFirstLoading(): boolean {
+    return this.userService.todayFirstLoading;
   }
 
-  get todayItemsFirstLoading(): boolean {
-    return this.userService.todayItemsFirstLoading;
+  get timesOfDayFirstLoading(): boolean {
+    return this.userService.timesOfDayOrderFirstLoading;
   }
 
-  set todayItemsFirstLoading(val: boolean) {
-    this.userService.todayItemsFirstLoading = val;
-  }
-
-  set todayOrderFirstLoading(val: boolean) {
-    this.userService.todayOrderFirstLoading = val;
-  }
-
-  get todayOrderFirstLoading(): boolean {
-    return this.userService.todayOrderFirstLoading;
-  }
-
-  get todayItems(): { [timeOfDay: string]: ITodayItem[] } {
-    return this.userService.todayItems;
-  }
-
-  set todayItems(newTodayItems: { [timeOfDay: string]: ITodayItem[] }) {
-    this.userService.todayItems = newTodayItems;
+  get today(): { [timeOfDay: string]: ITodayItem[] } {
+    return this.userService.today;
   }
 
   get todayItemsView(): { timeOfDay: string, tasks: ITodayItem[] }[] {
-
-    return this.order.filter((timeOfDay) => this.todayItems[timeOfDay]).map((timeOfDay) => ({
+    return this.timesOfDayOrder.filter((timeOfDay) => this.today[timeOfDay]).map((timeOfDay) => ({
       timeOfDay,
-      tasks: this.todayItems[timeOfDay]
+      tasks: this.today[timeOfDay]
     }));
-
   }
 
-  get isEmpty(): boolean {
-    return this._isEmpty;
+  get todayName(): string {
+    return this.userService.todayName;
+  }
+
+  get now(): Date {
+    return this.userService.now;
   }
 
   constructor(private afs: AngularFirestore,
@@ -72,14 +60,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private authService: AuthService,
               private userService: UserService,
               private snackBar: MatSnackBar,
-              private appService: AppService) {
-    this.updateIsEmpty();
-  }
+              private appService: AppService) {}
 
-  _isEmpty: boolean;
-  todayName = '';
-  todayTasks$: Subscription;
-  timesOfDayOrder$: Subscription;
   changeDayInterval: Subscription;
   isConnected$: Subscription;
   destroyed = false;
@@ -93,16 +75,12 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
       }
     });
 
-    this.getTimesOfDayOrder();
+    this.userService.runTimesOfDayOrder();
 
-  }
-
-  updateIsEmpty(): void {
-    this._isEmpty = Object.entries(this.todayItems).length === 0 || this.order.length === 0;
   }
 
   todayItemIsDone(timeOfDay: string): boolean {
-    return !this.todayItems[timeOfDay].some((task) => !task.done);
+    return !this.today[timeOfDay].some((task) => !task.done);
   }
 
   trackByTodayItems(index: number, item: { timeOfDay: string, tasks: ITodayItem[] }): string {
@@ -113,38 +91,9 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return index + ('' + item.done) + item.description;
   }
 
-  getTimesOfDayOrder(): void {
-    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
-      this.timesOfDayOrder$.unsubscribe();
-    }
-
-    this.timesOfDayOrder$ = this.userService.getTimesOfDayOrder$().subscribe((timesOfDayOrder) => {
-      this.order = timesOfDayOrder;
-      this.todayOrderFirstLoading = false;
-      this.updateIsEmpty();
-    });
-  }
-
-  getTodayTasksList(): void {
-    this.todayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
-
-    if (this.todayTasks$ && !this.todayTasks$.closed) {
-      this.todayTasks$.unsubscribe();
-    }
-
-    this.todayTasks$ = this.userService.getTodayTasks$(this.todayName).subscribe((newTodayItems) => {
-      this.todayItems = newTodayItems;
-      this.todayItemsFirstLoading = false;
-      this.updateIsEmpty();
-    });
-  }
-
   changeDay(): void {
-    this.getTodayTasksList();
-    this.getTimesOfDayOrder();
-
-    const now = new Date();
-    const todayPast: number = now.getSeconds() + (now.getMinutes() * 60) + (now.getHours() * 60 * 60);
+    this.userService.runToday();
+    const todayPast: number = this.now.getSeconds() + (this.now.getMinutes() * 60) + (this.now.getHours() * 60 * 60);
     const toNextDay = (86400 - todayPast) * 1000;
 
     if (this.changeDayInterval && !this.changeDayInterval.closed) {
@@ -171,9 +120,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     const toMerge = JSON.parse(`{"timesOfDay": {"${timeOfDay}": ${!checkbox.checked}}}`);
 
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.todayName}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
-      checkbox.checked = !checkbox.checked;
       checkbox.disabled = false;
-      this.todayItems[timeOfDay].find((task) => task.id === taskId).done = checkbox.checked;
     }).catch(() => {
       if (!this.destroyed) {
         checkbox.disabled = false;
@@ -186,17 +133,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   ngOnDestroy(): void {
     this.changeDayInterval.unsubscribe();
-
-    if (this.todayTasks$ && !this.todayTasks$.closed) {
-      this.todayTasks$.unsubscribe();
-    }
-
-    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
-      this.timesOfDayOrder$.unsubscribe();
-    }
-
     this.isConnected$.unsubscribe();
-
     this.destroyed = true;
     this.todayComponentTrace.stop();
   }

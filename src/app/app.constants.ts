@@ -1,9 +1,9 @@
-type RouterType = 'user' | 'today' | 'tasks-list' | 'task-editor' | 'today-order';
+type RouterType = 'user' | 'today' | 'tasks' | 'task' | 'times-of-day-order';
 
 export const RouterDict: {[key in RouterType]: string} = {
   'user': 'u',
   'today': 't',
-  'tasks-list': 'l',
-  'task-editor': 'e',
-  'today-order': 'o'
+  'tasks': 'l',
+  'task': 'e',
+  'times-of-day-order': 'o'
 };

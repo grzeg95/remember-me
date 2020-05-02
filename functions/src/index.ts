@@ -15,8 +15,8 @@ export const saveTask = runWith({
   maxInstances: 2
 }).region('europe-west2').https.onCall(require('./handlers/saveTask').handler);
 
-export const setTodayOrder = runWith({
+export const setTimesOfDayOrder = runWith({
   timeoutSeconds: 10,
   memory: '256MB',
   maxInstances: 2
-}).region('europe-west2').https.onCall(require('./handlers/setTodayOrder').handler);
+}).region('europe-west2').https.onCall(require('./handlers/setTimesOfDayOrder').handler);

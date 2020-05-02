@@ -20,12 +20,12 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
   A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
 
 @Component({
-  selector: 'app-task-editor',
-  templateUrl: './task-editor.component.html',
-  styleUrls: ['./task-editor.component.sass'],
+  selector: 'app-task',
+  templateUrl: './task.component.html',
+  styleUrls: ['./task.component.sass'],
   host: {class: 'app'}
 })
-export class TaskEditorComponent implements OnInit, OnDestroy {
+export class TaskComponent implements OnInit, OnDestroy {
 
   perf = performance();
   taskEditorComponentTrace = this.perf.trace('TaskEditorComponent');
@@ -66,7 +66,7 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
   id = 'null';
 
   taskForm: FormGroup = new FormGroup({
-    description: new FormControl('', TaskEditorComponent.descriptionValidator),
+    description: new FormControl('', TaskComponent.descriptionValidator),
     daysOfTheWeek: new FormGroup({
       mon: new FormControl(false),
       tue: new FormControl(false),
@@ -75,8 +75,8 @@ export class TaskEditorComponent implements OnInit, OnDestroy {
       fri: new FormControl(false),
       sat: new FormControl(false),
       sun: new FormControl(false)
-    }, TaskEditorComponent.daysOfTheWeekValidator),
-    timesOfDay: new FormArray([] as AbstractControl[], TaskEditorComponent.timesOfDayValidator)
+    }, TaskComponent.daysOfTheWeekValidator),
+    timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator)
   });
 
   savingInProgress = false;

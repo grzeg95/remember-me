@@ -10,9 +10,9 @@ import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {SharedModule} from '../shared.module';
-import {TaskEditorComponent} from './task-editor/task-editor.component';
-import {TasksListComponent} from './tasks-list/tasks-list.component';
-import {TodayOrderComponent} from './today-order/today-order.component';
+import {TaskComponent} from './task/task.component';
+import {TasksComponent} from './tasks/tasks.component';
+import {TimesOfDayOrderComponent} from './times-of-day-order/times-of-day-order.component';
 import {TodayComponent} from './today/today.component';
 import {UserNavComponent} from './user-nav/user-nav.component';
 import {UserRoutingModule} from './user-routing.module';
@@ -22,27 +22,27 @@ import {UserService} from './user.service';
 @NgModule({
   declarations: [
     UserComponent,
-    TasksListComponent,
-    TaskEditorComponent,
+    TasksComponent,
+    TaskComponent,
     TodayComponent,
     UserNavComponent,
-    TodayOrderComponent
+    TimesOfDayOrderComponent
   ],
-    imports: [
-        RouterModule,
-        CommonModule,
-        ReactiveFormsModule,
-        SharedModule,
-        UserRoutingModule,
-        MatProgressBarModule,
-        MatTableModule,
-        FormsModule,
-        DragDropModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatButtonModule,
-        FontAwesomeModule
-    ],
+  imports: [
+      RouterModule,
+      CommonModule,
+      ReactiveFormsModule,
+      SharedModule,
+      UserRoutingModule,
+      MatProgressBarModule,
+      MatTableModule,
+      FormsModule,
+      DragDropModule,
+      MatFormFieldModule,
+      MatInputModule,
+      MatButtonModule,
+      FontAwesomeModule
+  ],
   providers: [
     UserService
   ]
