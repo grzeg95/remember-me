@@ -36,7 +36,7 @@
                 <td>{{ task.daysOfTheWeek }}</td>
                 <td>{{ task.timesOfDay.join(', ') }}</td>
                 <td>
-                  <button class="btn" type="button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], + task.id]">
+                  <button class="btn" type="button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
                     <fa-icon [icon]="faEdit"></fa-icon>
                   </button>
                 </td>

@@ -168,7 +168,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.userService.getTaskById$(this.id).subscribe((task) => {
         if (!task) {
           this.resetId();
-          this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task-editor']);
+          this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
           this.taskForm.enable();
         } else {
           this.setAll(task);
@@ -203,7 +203,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     }).subscribe((success: ISuccess) => {
 
       if (success.created) {
-        this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task-editor'] + '/' + success.taskId);
+        this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task'] + '/' + success.taskId);
       }
 
       this.id = success.taskId;
@@ -220,14 +220,14 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   cancelTask(): Promise<boolean> {
-    return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['tasks-list']]);
+    return this.router.navigate(['/', RouterDict['user'], '/', RouterDict['tasks']]);
   }
 
   deepResetForm(): void {
     this.taskForm.disable();
     this.resetId();
     this.restartForm();
-    this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task-editor']);
+    this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
     this.taskForm.enable();
   }
 
@@ -276,6 +276,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
     });
 
+    this.deletingInProgress = false;
     this.taskForm.enable();
   }
 
