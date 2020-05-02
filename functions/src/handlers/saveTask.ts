@@ -344,7 +344,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     data.task.timesOfDay.length === 0 ||
     data.task.timesOfDay.length > 20 ||
     new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length ||
-    data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20) // ... timesOfDay length must be between 1 add 20
+    data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')) // ... timesOfDay length must be between 1 add 20 and not contains '/' cause this is id
   ) {
     throw new HttpsError(
       'invalid-argument',

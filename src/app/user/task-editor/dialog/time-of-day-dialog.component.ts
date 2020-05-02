@@ -14,7 +14,10 @@ export class TimeOfDayDialogComponent implements OnInit, OnDestroy {
   timeOfDayDialogComponentTrace = this.perf.trace('TimeOfDayDialogComponent');
 
   timeOfDayForm: FormGroup = new FormGroup({
-    timeOfDay: new FormControl('', [TimeOfDayDialogComponent.timeOfDayValidator])
+    timeOfDay: new FormControl('', [
+      TimeOfDayDialogComponent.timeOfDayValidatorLength,
+      TimeOfDayDialogComponent.timeOfDayValidatorSlash]
+    )
   });
 
   constructor(public dialogRef: MatDialogRef<TimeOfDayDialogComponent>) {
@@ -43,7 +46,7 @@ export class TimeOfDayDialogComponent implements OnInit, OnDestroy {
     this.dialogRef.close(this.timeOfDayForm.get('timeOfDay').value.trim());
   }
 
-  static timeOfDayValidator(g: FormControl): { required: boolean } {
+  static timeOfDayValidatorLength(g: FormControl): { required: boolean } {
 
     const current = g.value as string;
     const trim = (g.value as string).trimLeft();
@@ -54,6 +57,10 @@ export class TimeOfDayDialogComponent implements OnInit, OnDestroy {
 
     return (typeof g.value === 'string') &&
     (g.value.length > 0) && (g.value.length <= 20) ? null : {required: true};
+  }
+
+  static timeOfDayValidatorSlash(g: FormControl): { slash: boolean } {
+    return (typeof g.value === 'string') && !g.value.includes('/') ? null : {slash: true};
   }
 
 }
