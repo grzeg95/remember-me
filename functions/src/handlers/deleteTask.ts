@@ -1,7 +1,13 @@
+import {DocumentSnapshot} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 
 const app = firestore();
+
+/**
+ * @type Day
+ **/
+type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 /**
  * @interface ITask
@@ -9,15 +15,7 @@ const app = firestore();
 interface ITask {
   description: string;
   timesOfDay: string[];
-  daysOfTheWeek: {
-    mon: boolean;
-    tue: boolean;
-    wed: boolean;
-    thu: boolean;
-    fri: boolean;
-    sat: boolean;
-    sun: boolean;
-  }
+  daysOfTheWeek: {[key in Day]: boolean}
 }
 
 /**
@@ -63,7 +61,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         if (!taskDocSnap.exists) {
           throw new HttpsError(
             'invalid-argument',
-            'Task does not exist',
+            `Task does not exist: ${taskDocSnap.ref.path}`,
             `Some went wrong 🤫 Try again 🙂`
           );
         }
@@ -75,48 +73,76 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         const task: ITask = taskDocSnap.data() as ITask;
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTasks = await Promise.all(Object.keys(task.daysOfTheWeek).map((day) =>
-          transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
+        const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
+          (Object.keys(task.daysOfTheWeek) as Day[]).filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]).map((day) =>
+              transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
         ));
 
         // read all times of day
-        const timesOfDayDocSnaps = await Promise.all(task.timesOfDay.map(
+        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot[]> = Promise.all(task.timesOfDay.map(
           (timeOfDay) => transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay))
-        ))
+        ));
 
-        /*
-        * Proceed all data
-        * */
+        return Promise.all([todayTasksPromise, timesOfDayDocSnapsPromise]).then((snapArray) => {
 
-        // proceed timesOfDayDocSnaps
-        timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
-          const counter = timesOfDayDocSnapsDocData.data()?.counter;
-          if (counter - 1 === 0) {
-            transaction.delete(timesOfDayDocSnapsDocData.ref);
-          } else {
-            transaction.update(timesOfDayDocSnapsDocData.ref, {
-              counter: counter - 1
-            });
-          }
+          /*
+          * Proceed all data
+          * */
+
+          // remove task
+          transaction.delete(taskDocSnap.ref);
+
+          const todayTasks = snapArray[0];
+          const timesOfDayDocSnaps = snapArray[1];
+
+          // proceed timesOfDayDocSnaps
+          timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
+            if (!timesOfDayDocSnapsDocData.exists) {
+              throw new HttpsError(
+                'invalid-argument',
+                `Time of day ${timesOfDayDocSnapsDocData.ref.path}  does not exists for task ${taskDocSnap.ref.path}`,
+                'Some went wrong 🤫 Try again 🙂'
+              );
+            }
+
+            const counter = timesOfDayDocSnapsDocData.data()?.counter;
+            if (counter - 1 === 0) {
+              transaction.delete(timesOfDayDocSnapsDocData.ref);
+            } else {
+              transaction.update(timesOfDayDocSnapsDocData.ref, {
+                counter: counter - 1
+              });
+            }
+          });
+
+          // remove todayTasks
+          todayTasks.forEach((todayTaskDocSnap) => {
+            if (!todayTaskDocSnap.exists) {
+              throw new HttpsError(
+                'invalid-argument',
+                `Today task ${todayTaskDocSnap.ref.path} does not exists for task ${taskDocSnap.ref.path}`,
+                'Some went wrong 🤫 Try again 🙂'
+              );
+            }
+
+            transaction.delete(todayTaskDocSnap.ref);
+          });
+
+          return transaction;
+
         });
 
-        // remove task
-        transaction.delete(taskDocSnap.ref);
-
-        // remove todayTasks
-        todayTasks.forEach((docSnap) =>
-          transaction.delete(docSnap.ref)
-        );
-
-        return transaction;
       });
 
     })
   ).then(() => ({
     details: 'Your task has been deleted 🤭'
   })).catch((error: HttpsError) => {
+    if (typeof error.details !== 'string') {
+      console.log(error);
+    }
     throw new HttpsError(
-      'internal',
+      error.code,
       error.message,
       error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
     );

@@ -29,6 +29,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   /*
   * Check if data is correct and user is authenticated
   * */
+
   if (
     !context.auth ||
     !data ||
@@ -49,49 +50,59 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     uid: string;
   } = context.auth;
 
-  return app.runTransaction(async (transaction) => {
+  return app.runTransaction(async (transaction) =>
+    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
-    /*
-    * Read all data
-    * */
+      // interrupt if user is not in my firestore
+      if (!userDocSnap.exists) {
+        throw new HttpsError(
+          'unauthenticated',
+          'Register to use this functionality',
+          `You dont't exist 😱`
+        );
+      }
+      /*
+      * Read all data
+      * */
 
-    // read all times of day
-    const timesOfDayDocSnaps: {[timeOfDay: string]: DocumentReference} = await app
-      .collection('users')
-      .doc(auth.uid)
-      .collection('timesOfDay')
-      .listDocuments()
-      .then(async (docsRef) =>
-        (await Promise.all(docsRef.map((docRef) =>
-          transaction.get(docRef).then((docSnap) => docSnap)
-        ))).reduce((acc, curr) => ({...acc, ...{[curr.id]: curr.ref}}), {}));
+      // read all times of day
+      const timesOfDayDocSnaps: { [timeOfDay: string]: DocumentReference } = await userDocSnap.ref.collection('timesOfDay')
+        .listDocuments()
+        .then(async (docsRef) =>
+          (await Promise.all(docsRef.map((docRef) =>
+            transaction.get(docRef).then((docSnap) => docSnap)
+          ))).reduce((acc, curr) => ({...acc, ...{[curr.id]: curr.ref}}), {}));
 
-    /*
-    * Proceed all data
-    * */
+      /*
+      * Proceed all data
+      * */
 
-    const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
-    if (timesOfDayDocSnapsKeys.length !== data.length || !listEqual(timesOfDayDocSnapsKeys, data)) {
-      throw new HttpsError(
-        'invalid-argument',
-        'Bad Request',
-        'Some went wrong 🤫 Try again 🙂'
+      const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
+      if (timesOfDayDocSnapsKeys.length !== data.length || !listEqual(timesOfDayDocSnapsKeys, data)) {
+        throw new HttpsError(
+          'invalid-argument',
+          'Bad Request',
+          'Some went wrong 🤫 Try again 🙂'
+        );
+      }
+
+      data.forEach((timeOfDay: string, index) =>
+        transaction.update(timesOfDayDocSnaps[timeOfDay], {
+          position: index
+        })
       );
-    }
 
-    data.forEach((timeOfDay: string, index) =>
-      transaction.update(timesOfDayDocSnaps[timeOfDay], {
-        position: index
-      })
-    );
+      return transaction;
 
-    return transaction;
-
-  }).then(() => ({
+    })
+  ).then(() => ({
     details: 'Order has been updated 🙃'
   })).catch((error: HttpsError) => {
+    if (typeof error.details !== 'string') {
+      console.log(error);
+    }
     throw new HttpsError(
-      'internal',
+      error.code,
       error.message,
       error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
     );
