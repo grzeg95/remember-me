@@ -8,8 +8,7 @@ import {UserService} from './user.service';
 })
 export class UserComponent implements OnInit, OnDestroy {
 
-  constructor(private userService: UserService) {
-  }
+  constructor(private userService: UserService) {}
 
   ngOnInit(): void {
     this.userService.clearCache();

@@ -10,6 +10,7 @@ import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {SharedModule} from '../shared.module';
+import {TaskDialogTimeOfDay} from './task/dialog/task-dialog-time-of-day.component';
 import {TaskComponent} from './task/task.component';
 import {TasksComponent} from './tasks/tasks.component';
 import {TimesOfDayOrderComponent} from './times-of-day-order/times-of-day-order.component';
@@ -26,7 +27,8 @@ import {UserService} from './user.service';
     TaskComponent,
     TodayComponent,
     UserNavComponent,
-    TimesOfDayOrderComponent
+    TimesOfDayOrderComponent,
+    TaskDialogTimeOfDay
   ],
   imports: [
       RouterModule,

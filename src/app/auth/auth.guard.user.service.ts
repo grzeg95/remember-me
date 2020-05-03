@@ -14,8 +14,7 @@ import {AuthService} from './auth.service';
 @Injectable()
 export class AuthGuardUserService implements CanActivate, CanActivateChild {
 
-  constructor(private authService: AuthService, private router: Router, private activatedRoute: ActivatedRoute) {
-  }
+  constructor(private authService: AuthService, private router: Router, private activatedRoute: ActivatedRoute) {}
 
   canActivate(route: ActivatedRouteSnapshot,
               state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
@@ -25,7 +24,6 @@ export class AuthGuardUserService implements CanActivate, CanActivateChild {
     }
 
     return true;
-
   }
 
   canActivateChild(route: ActivatedRouteSnapshot,

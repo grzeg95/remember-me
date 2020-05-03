@@ -14,7 +14,7 @@ import {RouterDict} from '../../app.constants';
 import {AuthService} from '../../auth/auth.service';
 import {IError, ISuccess, ITask} from '../models';
 import {UserService} from '../user.service';
-import {TimeOfDayDialogComponent} from './dialog/time-of-day-dialog.component';
+import {TaskDialogTimeOfDay} from './dialog/task-dialog-time-of-day.component';
 
 export const listEqual = <T>(A: T[], B: T[]): boolean =>
   A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
@@ -28,7 +28,7 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
 export class TaskComponent implements OnInit, OnDestroy {
 
   perf = performance();
-  taskEditorComponentTrace = this.perf.trace('TaskEditorComponent');
+  taskEditorComponentTrace = this.perf.trace('TaskComponent');
 
   faCheckCircle = faCheckCircle;
   faPlus = faPlus;
@@ -108,7 +108,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     const html = this.document.documentElement;
 
     // this changes scrollY, scrollX, html
-    const dialogRef = this.dialog.open(TimeOfDayDialogComponent, {
+    const dialogRef = this.dialog.open(TaskDialogTimeOfDay, {
       width: '250px'
     });
 

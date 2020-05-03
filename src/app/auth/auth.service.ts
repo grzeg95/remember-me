@@ -22,7 +22,6 @@ export class AuthService {
     private ngZone: NgZone) {
 
     this.afAuth.authState.subscribe((user) => {
-
       if (user) {
 
         this.userData = {
@@ -43,9 +42,7 @@ export class AuthService {
         localStorage.setItem('user', null);
         return this.router.navigate(['/']);
       }
-
     });
-
   }
 
   get isLoggedIn(): boolean {
@@ -57,7 +54,6 @@ export class AuthService {
     }
 
     return (user !== null && user?.emailVerified !== false);
-
   }
 
   googleAuth(): void {
@@ -77,15 +73,12 @@ export class AuthService {
       this.whileLoginIn$.next(false);
       console.error(error);
     });
-
   }
 
   registerUser(user: IUser): void {
-
     this.afs.doc(`users/${user.uid}`).set(user, {
       merge: true
     }).catch(() => this.signOut());
-
   }
 
   signOut(): Promise<boolean> {

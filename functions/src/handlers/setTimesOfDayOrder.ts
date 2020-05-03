@@ -28,11 +28,9 @@ const keysEqual = (A: string[], B: string[]): boolean => {
 
 /**
  * @function handler
- * MAX[20] reads
- * MAX[20] writes
- * Read all user data about task and remove it
+ * Set times of day order
  * @param data: string[]
- * @param context functions.https.CallableContext
+ * @param context CallableContext
  * @return Promise<{[key: string]: string}>
  **/
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
@@ -72,6 +70,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           `You dont't exist 😱`
         );
       }
+
       /*
       * Read all data
       * */

@@ -4,31 +4,30 @@ import {MatDialogRef} from '@angular/material/dialog';
 import {performance} from 'firebase';
 
 @Component({
-  selector: 'app-dialog',
-  templateUrl: 'time-of-day-dialog.component.html',
-  styleUrls: ['time-of-day-dialog.component.sass'],
+  selector: 'app-task-dialog-time-of-day',
+  templateUrl: 'task-dialog-time-of-day.component.html',
+  styleUrls: ['task-dialog-time-of-day.component.sass'],
 })
-export class TimeOfDayDialogComponent implements OnInit, OnDestroy {
+export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
   perf = performance();
-  timeOfDayDialogComponentTrace = this.perf.trace('TimeOfDayDialogComponent');
+  taskDialogTimeOfDayTrace = this.perf.trace('TaskDialogTimeOfDay');
 
   timeOfDayForm: FormGroup = new FormGroup({
     timeOfDay: new FormControl('', [
-      TimeOfDayDialogComponent.timeOfDayValidatorLength,
-      TimeOfDayDialogComponent.timeOfDayValidatorSlash]
+      TaskDialogTimeOfDay.timeOfDayValidatorLength,
+      TaskDialogTimeOfDay.timeOfDayValidatorSlash]
     )
   });
 
-  constructor(public dialogRef: MatDialogRef<TimeOfDayDialogComponent>) {
-  }
+  constructor(public dialogRef: MatDialogRef<TaskDialogTimeOfDay>) {}
 
   ngOnInit(): void {
-    this.timeOfDayDialogComponentTrace.start();
+    this.taskDialogTimeOfDayTrace.start();
   }
 
   ngOnDestroy(): void {
-    this.timeOfDayDialogComponentTrace.stop();
+    this.taskDialogTimeOfDayTrace.stop();
   }
 
   @HostListener('window:keydown', ['$event'])

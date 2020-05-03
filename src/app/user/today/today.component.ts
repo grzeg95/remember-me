@@ -80,7 +80,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     });
 
     this.userService.runTimesOfDayOrder();
-
   }
 
   todayItemIsDone(timeOfDay: string): boolean {

@@ -19,11 +19,9 @@ interface ITask {
 }
 
 /**
- * 9 + MAX[20] reads
- * 8 deletes + (MAX[20] deletes and updates)
- * Read all user data about task and remove it
+ * Read user data about task and remove it
  * @param data {taskId: any}
- * @param context functions.https.CallableContext
+ * @param context CallableContext
  * @return Promise<{[key: string]: string}>
  **/
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
