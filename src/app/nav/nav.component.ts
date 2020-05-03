@@ -23,11 +23,9 @@ export class NavComponent {
     return this.authService.userData.photoURL;
   }
 
-  @ViewChild('menuToggleCheckbox')
-  menuToggleCheckbox: ElementRef;
+  @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
-  constructor(private authService: AuthService) {
-  }
+  constructor(private authService: AuthService) {}
 
   signOut(): Promise<boolean> {
     return this.authService.signOut();
@@ -39,9 +37,19 @@ export class NavComponent {
 
   @HostListener('document:click', ['$event'])
   documentClick(event: Event): void {
-    if (this.menuToggleCheckbox) {
-      const id = (event.target as HTMLElement).id;
-      if (!['icon-bars', 'menu-toggle-checkbox'].includes(id)) {
+
+    if (this.menuToggleCheckbox && (this.menuToggleCheckbox.nativeElement as HTMLInputElement).checked) {
+      let element: HTMLElement = event.target as HTMLElement;
+      let find = false;
+
+      for (let i = 0; i < 5; ++i) {
+        if (element.classList.contains('menu-toggle')) {
+          find = true;
+        }
+        element = element.parentElement;
+      }
+
+      if (!find) {
         (this.menuToggleCheckbox.nativeElement as HTMLInputElement).checked = false;
       }
     }

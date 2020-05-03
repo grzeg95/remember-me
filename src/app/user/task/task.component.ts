@@ -14,7 +14,8 @@ import {RouterDict} from '../../app.constants';
 import {AuthService} from '../../auth/auth.service';
 import {IError, ISuccess, ITask} from '../models';
 import {UserService} from '../user.service';
-import {TaskDialogTimeOfDay} from './dialog/task-dialog-time-of-day.component';
+import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of-day.component';
 
 export const listEqual = <T>(A: T[], B: T[]): boolean =>
   A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
@@ -46,8 +47,7 @@ export class TaskComponent implements OnInit, OnDestroy {
               @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,
               private appService: AppService,
-              private userService: UserService) {
-  }
+              private userService: UserService) {}
 
   initValues: ITask = {
     daysOfTheWeek: {
@@ -100,36 +100,18 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   openTimeOfDayDialog(): void {
 
-    // @ts-ignore
-    const scrollY = window.scrollY;
-
-    // @ts-ignore
-    const scrollX = window.scrollX;
-    const html = this.document.documentElement;
+    if (this.appService.dialogOpen) {
+      return;
+    }
 
     // this changes scrollY, scrollX, html
-    const dialogRef = this.dialog.open(TaskDialogTimeOfDay, {
-      width: '250px'
-    });
+    const dialogRef = this.dialog.open(TaskDialogTimeOfDay);
 
     dialogRef.afterOpened().subscribe(() => {
       this.appService.dialogOpen = true;
     });
 
-    // apply if dialogRef.open forgot to add
-    if (this.appService.hasScrollbar()) {
-      html.style.top = -scrollY + 'px';
-      html.style.left = -scrollX + 'px';
-      html.classList.add('cdk-global-scrollblock');
-    }
-
     dialogRef.afterClosed().subscribe((timeOfDay) => {
-
-      // apply if dialogRef.open forgot to add
-      html.removeAttribute('style');
-      html.classList.remove('cdk-global-scrollblock');
-      html.scrollTop = scrollY;
-      html.scrollLeft = scrollX;
 
       this.taskForm.get('timesOfDay').markAsDirty();
 
@@ -137,11 +119,11 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.snackBar.open('Enter new one');
       }
 
-      if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
+      if (timeOfDay && timeOfDay.trim().length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
       } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length === 20) {
         this.snackBar.open('Up to 20 times of day per task');
-      } else if (!((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim())) {
+      } else if (timeOfDay && !((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim())) {
         (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
       }
 
@@ -221,10 +203,6 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   }
 
-  cancelTask(): Promise<boolean> {
-    return this.router.navigate(['/', RouterDict['user'], '/', RouterDict['tasks']]);
-  }
-
   deepResetForm(): void {
     this.taskForm.disable();
     this.resetId();
@@ -252,16 +230,35 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   deleteTask(): void {
 
-    this.taskForm.disable();
-    this.deletingInProgress = true;
+    if (this.appService.dialogOpen) {
+      return;
+    }
 
-    this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: ISuccess) => {
-      this.snackBar.open(success.details);
-      this.deepResetForm();
-      this.deletingInProgress = false;
-    }, (error: IError) => {
-      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
-      this.refreshTaskByParamId(this.id);
+    // this changes scrollY, scrollX, html
+    const dialogRef = this.dialog.open(TaskDialogConfirmDeleteComponent);
+
+    dialogRef.afterOpened().subscribe(() => {
+      this.appService.dialogOpen = true;
+    });
+
+    dialogRef.afterClosed().subscribe((isConfirmed) => {
+
+      if (isConfirmed) {
+        this.taskForm.disable();
+        this.deletingInProgress = true;
+
+        this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: ISuccess) => {
+          this.snackBar.open(success.details);
+          this.deepResetForm();
+          this.deletingInProgress = false;
+        }, (error: IError) => {
+          this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
+          this.refreshTaskByParamId(this.id);
+        });
+      }
+
+      this.appService.dialogOpen = false;
+
     });
 
   }

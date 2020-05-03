@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -10,7 +11,8 @@ import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {SharedModule} from '../shared.module';
-import {TaskDialogTimeOfDay} from './task/dialog/task-dialog-time-of-day.component';
+import {TaskDialogConfirmDeleteComponent} from './task/task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import {TaskDialogTimeOfDay} from './task/task-dialog-time-of-day/task-dialog-time-of-day.component';
 import {TaskComponent} from './task/task.component';
 import {TasksComponent} from './tasks/tasks.component';
 import {TimesOfDayOrderComponent} from './times-of-day-order/times-of-day-order.component';
@@ -28,25 +30,31 @@ import {UserService} from './user.service';
     TodayComponent,
     UserNavComponent,
     TimesOfDayOrderComponent,
-    TaskDialogTimeOfDay
+    TaskDialogTimeOfDay,
+    TaskDialogConfirmDeleteComponent
   ],
   imports: [
-      RouterModule,
-      CommonModule,
-      ReactiveFormsModule,
-      SharedModule,
-      UserRoutingModule,
-      MatProgressBarModule,
-      MatTableModule,
-      FormsModule,
-      DragDropModule,
-      MatFormFieldModule,
-      MatInputModule,
-      MatButtonModule,
-      FontAwesomeModule
+    RouterModule,
+    CommonModule,
+    ReactiveFormsModule,
+    SharedModule,
+    UserRoutingModule,
+    MatProgressBarModule,
+    MatTableModule,
+    FormsModule,
+    DragDropModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    FontAwesomeModule,
+    MatDialogModule
   ],
   providers: [
     UserService
+  ],
+  entryComponents: [
+    TaskDialogTimeOfDay,
+    TaskDialogConfirmDeleteComponent
   ]
 })
 export class UserModule {

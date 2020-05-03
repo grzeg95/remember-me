@@ -19,8 +19,8 @@
     </div>
 
     <div *ngIf="!isEmpty && !timesOfDayOrderFirstLoading" class="row">
-      <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
-        <div class="example-box" *ngFor="let item of timesOfDayOrder" cdkDrag>{{ item }}</div>
+      <div cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
+        <div class="times-of-day-box" *ngFor="let item of timesOfDayOrder" cdkDrag>{{ item }}</div>
       </div>
     </div>
 

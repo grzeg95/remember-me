@@ -1,7 +1,8 @@
 // app-nav
 \:host
-  margin: 1rem 0
+  padding: 1rem 0
   background-color: white
+  user-select: none
 
   .container
     position: relative
@@ -57,11 +58,12 @@
               position: absolute
               top: 2.5rem
               right: 0.9375rem
-              border: solid 1px silver
+              border: solid 1px rgba(0, 0, 0, 0.14)
+              border-radius: 3px
               background: rgb(255, 255, 255)
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14)
               cursor: pointer
               z-index: 100
-              user-select: none
 
               .item
                 padding: 0.2rem 0.8rem

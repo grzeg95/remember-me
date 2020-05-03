@@ -15,11 +15,11 @@
 
       <div *ngIf="isLoggedIn" class="d-flex align-items-center right">
         <div class="menu-toggle">
-          <input type="checkbox" id="menu-toggle-checkbox" #menuToggleCheckbox/>
+          <input #menuToggleCheckbox type="checkbox" id="menu-toggle-checkbox"/>
           <label for="menu-toggle-checkbox">
             <fa-icon [icon]="faListUl" id="icon-bars"></fa-icon>
           </label>
-          <div class="shadow nav-list">
+          <div class="nav-list">
             <div class="item" (click)="signOut()">
               <fa-icon [icon]="faSignOutAlt"></fa-icon>
               <span class="my-list-item-span"> Log out</span>
