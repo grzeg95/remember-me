@@ -139,7 +139,9 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       if (!timeOfDay || timeOfDay.trim().length === 0 || timeOfDay.trim().length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
-      } else {
+      } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length === 20) {
+        this.snackBar.open('Up to 20 times of day per task');
+      } else if (!((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim())) {
         (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
       }
 
