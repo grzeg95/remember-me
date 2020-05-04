@@ -71,6 +71,13 @@
           <mat-progress-bar *ngIf="savingInProgress" mode="indeterminate"></mat-progress-bar>
         </button>
         <button
+          *ngIf="!idIsNull()"
+          class="btn btn-secondary border rounded-0 shadow"
+          type="button"
+          [disabled]="taskForm.disabled"
+          (click)="deepResetForm()">New
+        </button>
+        <button
           class="btn btn-outline-danger border rounded-0"
           type="button"
           [disabled]="taskForm.disabled || idIsNull()"

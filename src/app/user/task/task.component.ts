@@ -104,7 +104,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // this changes scrollY, scrollX, html
     const dialogRef = this.dialog.open(TaskDialogTimeOfDay);
 
     dialogRef.afterOpened().subscribe(() => {
@@ -234,7 +233,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // this changes scrollY, scrollX, html
     const dialogRef = this.dialog.open(TaskDialogConfirmDeleteComponent);
 
     dialogRef.afterOpened().subscribe(() => {
