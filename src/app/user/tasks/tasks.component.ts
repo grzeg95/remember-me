@@ -2,7 +2,7 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {performance} from 'firebase';
 import {RouterDict} from '../../app.constants';
-import {ITasksListItem} from '../models';
+import {TasksListItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -23,7 +23,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     return this.userService.timesOfDayOrder;
   }
 
-  get tasks(): ITasksListItem[] {
+  get tasks(): TasksListItem[] {
     return this.userService.tasks.map((taskListItem) => {
       taskListItem.timesOfDay = this.timesOfDayOrder
         .filter((timeOfDay) => taskListItem.timesOfDay.includes(timeOfDay));

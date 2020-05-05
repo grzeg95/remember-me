@@ -93,13 +93,7 @@ const keysEqual = (A: string[], B: string[]): boolean => {
     return false;
   }
 
-  for (const a of A) {
-    if (!B.includes(a)) {
-      return false;
-    }
-  }
-
-  return true;
+  return !A.some((a) => !B.includes(a));
 };
 
 /**
@@ -371,12 +365,11 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   return app.runTransaction((transaction) =>
     transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
-      // interrupt if user is not in my firestore
-      if (!userDocSnap.exists) {
+      if (userDocSnap.data()?.blocked === true) {
         throw new HttpsError(
-          'unauthenticated',
-          'Register to use this functionality',
-          `You dont't exist 😱`
+          'permission-denied',
+          '',
+          ''
         );
       }
 
@@ -400,53 +393,59 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           taskDocSnap = taskDocSnapTmp;
 
           /*
-          * Check if only description was changed
+          * Check if nothing changed or only description was changed
           * */
 
           const diff = taskDiff((taskDocSnap.data() as ITask), task);
 
-          if (diff.description.type === 'changed' && !daysOfTheWeekChanged(diff) && diff.timesOfDay.new.length === 0 && diff.timesOfDay.removed.length === 0) {
-
-            // read all task for user/{userId}/today/{day}/task/{taskId}
-            const todayTaskDocSnapsToUpdate = await Promise.all((Object.keys(task.daysOfTheWeek) as Day[])
-              .map((day) =>
-                transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-                  .then((docSnap) => docSnap)
-              )
-            );
+          if (!daysOfTheWeekChanged(diff) && diff.timesOfDay.new.length === 0 && diff.timesOfDay.removed.length === 0) {
 
             /*
-            * Proceed all data
+            * Check if nothing changed
             * */
+            if (diff.description.type === 'unchanged') {
+              transaction.update(taskDocSnap.ref, task);
+              return transaction;
+            }
 
-            todayTaskDocSnapsToUpdate.forEach((todayTask) => {
-              if (!todayTask.exists) {
-                throw new HttpsError(
-                  'invalid-argument',
-                  `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
-                  'Some went wrong 🤫 Try again 🙂'
-                );
-              }
-              transaction.update(todayTask.ref, {
+            /*
+            * Check if only description was changed
+            * */
+            if (diff.description.type === 'changed') {
+
+              // read all task for user/{userId}/today/{day}/task/{taskId}
+              const todayTaskDocSnapsToUpdate = await Promise.all((Object.keys(task.daysOfTheWeek) as Day[])
+                .map((day) =>
+                  transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+                    .then((docSnap) => docSnap)
+                )
+              );
+
+              /*
+              * Proceed all data
+              * */
+
+              todayTaskDocSnapsToUpdate.forEach((todayTask) => {
+                if (!todayTask.exists) {
+                  throw new HttpsError(
+                    'invalid-argument',
+                    `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
+                    'Some went wrong 🤫 Try again 🙂'
+                  );
+                }
+                transaction.update(todayTask.ref, {
+                  description: task.description
+                });
+              });
+
+              transaction.update(taskDocSnap.ref, {
                 description: task.description
               });
-            });
 
-            transaction.update(taskDocSnap.ref, {
-              description: task.description
-            });
+              return transaction;
 
-            return transaction;
+            }
 
-          }
-
-          /*
-          * Check if nothing changed
-          * */
-
-          if (diff.description.type === 'unchanged' && !daysOfTheWeekChanged(diff) && diff.timesOfDay.new.length === 0 && diff.timesOfDay.removed.length === 0) {
-            transaction.update(taskDocSnap.ref, task);
-            return transaction;
           }
 
         }
@@ -467,12 +466,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         // read task timeOfDay
         // there can be new timesOfDay that not exists in firebase
-        const dataTaskDocSnapsTimeOfDayPromise: Promise<DocumentSnapshot[]> = (Promise.all((task.timesOfDay).map((timeOfDay) => {
-          if (currentTimesOfDay[timeOfDay]) {
-            return currentTimesOfDay[timeOfDay];
-          }
-          return transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
-        })));
+        const dataTaskDocSnapsTimeOfDayPromise: Promise<DocumentSnapshot[]> = (Promise.all((task.timesOfDay).map((timeOfDay) =>
+          currentTimesOfDay[timeOfDay] ? currentTimesOfDay[timeOfDay] : transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
+        )));
 
         // read taskDocSnap timeOfDay
         const taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = {}
@@ -542,10 +538,13 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     if (typeof error.details !== 'string') {
       console.log(error);
     }
+
+    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+
     throw new HttpsError(
       error.code,
       error.message,
-      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+      details
     );
   });
 

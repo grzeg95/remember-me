@@ -12,7 +12,7 @@ import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
 import {AuthService} from '../../auth/auth.service';
-import {IError, ISuccess, ITask} from '../models';
+import {HTTPError, HTTPSuccess, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of-day.component';
@@ -49,7 +49,7 @@ export class TaskComponent implements OnInit, OnDestroy {
               private appService: AppService,
               private userService: UserService) {}
 
-  initValues: ITask = {
+  initValues: Task = {
     daysOfTheWeek: {
       mon: false,
       tue: false,
@@ -149,11 +149,11 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.id = taskId;
 
       this.userService.getTaskById$(this.id).subscribe((task) => {
-        if (!task) {
+        if (typeof task === 'undefined') {
           this.resetId();
           this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
           this.taskForm.enable();
-        } else {
+        } else if (!task) {
           this.setAll(task);
         }
         this.savingInProgress = false;
@@ -175,7 +175,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.taskForm.disable();
     this.savingInProgress = true;
 
-    const task = this.taskForm.getRawValue() as ITask;
+    const task = this.taskForm.getRawValue() as Task;
     const trimDescription = task.description.trim();
     task.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
@@ -183,7 +183,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.fns.httpsCallable('saveTask')({
       task,
       taskId: this.id
-    }).subscribe((success: ISuccess) => {
+    }).subscribe((success: HTTPSuccess) => {
 
       if (success.created) {
         this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task'] + '/' + success.taskId);
@@ -195,8 +195,12 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.taskForm.enable();
       this.snackBar.open(success.details);
 
-    }, (error: IError) => {
-      this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
+    }, (error: HTTPError) => {
+      if (error.code === 'permission-denied') {
+        this.authService.signOut();
+        return;
+      }
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
 
@@ -245,11 +249,15 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.disable();
         this.deletingInProgress = true;
 
-        this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: ISuccess) => {
+        this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: HTTPSuccess) => {
           this.snackBar.open(success.details);
           this.deepResetForm();
           this.deletingInProgress = false;
-        }, (error: IError) => {
+        }, (error: HTTPError) => {
+          if (error.code === 'permission-denied') {
+            this.authService.signOut();
+            return;
+          }
           this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);
         });
@@ -261,7 +269,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   }
 
-  setAll(task: ITask): void {
+  setAll(task: Task): void {
 
     this.restartForm();
     this.taskForm.disable();

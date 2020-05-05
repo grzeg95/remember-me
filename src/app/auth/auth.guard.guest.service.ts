@@ -1,22 +1,36 @@
 import {Injectable} from '@angular/core';
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
+import {
+  ActivatedRoute,
+  ActivatedRouteSnapshot,
+  CanActivate,
+  Router,
+  RouterStateSnapshot
+} from '@angular/router';
+import {User} from 'firebase';
 import {Observable} from 'rxjs';
+import {map, take, tap} from 'rxjs/operators';
 import {RouterDict} from '../app.constants';
 import {AuthService} from './auth.service';
 
 @Injectable()
 export class AuthGuardGuestService implements CanActivate {
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private auth: AuthService,
+              private router: Router) {}
 
   canActivate(route: ActivatedRouteSnapshot,
-              state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
+              state: RouterStateSnapshot): Observable<boolean> {
 
-    if (this.authService.isLoggedIn) {
-      return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
-    }
+    return this.auth.user$.pipe(
+      take(1),
+      map((authState: User | null) => !!!authState),
+      tap((notAuthenticated) => {
+        if (notAuthenticated) {
+          return true;
+        }
+        this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
+      }));
 
-    return true;
   }
 
 }

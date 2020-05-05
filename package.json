@@ -31,6 +31,7 @@
     "@fortawesome/free-regular-svg-icons": "^5.13.0",
     "@fortawesome/free-solid-svg-icons": "^5.13.0",
     "@popperjs/core": "^2.2.2",
+    "angularfire2": "^5.4.2",
     "bootstrap": "^4.4.1",
     "deep-equal": "^1.1.1",
     "firebase": "^7.14.0",

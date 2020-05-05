@@ -44,12 +44,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     // get user from firestore
     transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
-      // interrupt if user is not in my firestore
-      if (!userDocSnap.exists) {
+      if (userDocSnap.data()?.blocked === true) {
         throw new HttpsError(
-          'unauthenticated',
-          'Register to use this functionality',
-          `You dont't exist 😱`
+          'permission-denied',
+          '',
+          ''
         );
       }
 
@@ -93,26 +92,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           const todayTasks = snapArray[0];
           const timesOfDayDocSnaps = snapArray[1];
 
-          // proceed timesOfDayDocSnaps
-          timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
-            if (!timesOfDayDocSnapsDocData.exists) {
-              throw new HttpsError(
-                'invalid-argument',
-                `Time of day ${timesOfDayDocSnapsDocData.ref.path}  does not exists for task ${taskDocSnap.ref.path}`,
-                'Some went wrong 🤫 Try again 🙂'
-              );
-            }
-
-            const counter = timesOfDayDocSnapsDocData.data()?.counter;
-            if (counter - 1 === 0) {
-              transaction.delete(timesOfDayDocSnapsDocData.ref);
-            } else {
-              transaction.update(timesOfDayDocSnapsDocData.ref, {
-                counter: counter - 1
-              });
-            }
-          });
-
           // remove todayTasks
           todayTasks.forEach((todayTaskDocSnap) => {
             if (!todayTaskDocSnap.exists) {
@@ -124,6 +103,18 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
             }
 
             transaction.delete(todayTaskDocSnap.ref);
+          });
+
+          // proceed timesOfDayDocSnaps
+          timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
+            const counter = timesOfDayDocSnapsDocData.data()?.counter;
+            if (counter - 1 === 0) {
+              transaction.delete(timesOfDayDocSnapsDocData.ref);
+            } else {
+              transaction.update(timesOfDayDocSnapsDocData.ref, {
+                counter: counter - 1
+              });
+            }
           });
 
           return transaction;
@@ -139,10 +130,12 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     if (typeof error.details !== 'string') {
       console.log(error);
     }
+    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+
     throw new HttpsError(
       error.code,
       error.message,
-      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+      details
     );
   });
 

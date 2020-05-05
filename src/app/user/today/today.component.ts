@@ -7,7 +7,7 @@ import {interval, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {ITodayItem} from '../models';
+import {HTTPError, TodayItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -36,11 +36,11 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return this.userService.timesOfDayOrderFirstLoading;
   }
 
-  get today(): { [timeOfDay: string]: ITodayItem[] } {
+  get today(): { [timeOfDay: string]: TodayItem[] } {
     return this.userService.today;
   }
 
-  get todayItemsView(): { timeOfDay: string, tasks: ITodayItem[] }[] {
+  get todayItemsView(): { timeOfDay: string, tasks: TodayItem[] }[] {
     return this.timesOfDayOrder.filter((timeOfDay) => this.today[timeOfDay]).map((timeOfDay) => ({
       timeOfDay,
       tasks: this.today[timeOfDay]
@@ -86,11 +86,11 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return !this.today[timeOfDay].some((task) => !task.done);
   }
 
-  trackByTodayItems(index: number, item: { timeOfDay: string, tasks: ITodayItem[] }): string {
+  trackByTodayItems(index: number, item: { timeOfDay: string, tasks: TodayItem[] }): string {
     return index + item.timeOfDay;
   }
 
-  trackByTodayItem(index: number, item: ITodayItem): string {
+  trackByTodayItem(index: number, item: TodayItem): string {
     return index + ('' + item.done) + item.description;
   }
 
@@ -124,7 +124,11 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.todayName}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
       checkbox.disabled = false;
-    }).catch(() => {
+    }).catch((error: HTTPError) => {
+      if (error.code === 'permission-denied') {
+        this.authService.signOut();
+        return;
+      }
       if (!this.destroyed) {
         checkbox.disabled = false;
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');

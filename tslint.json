@@ -149,6 +149,7 @@
       "check-operator",
       "check-separator",
       "check-type"
-    ]
+    ],
+    "interface-name": false
   }
 }

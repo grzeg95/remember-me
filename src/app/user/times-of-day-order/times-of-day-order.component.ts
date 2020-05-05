@@ -4,7 +4,8 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {performance} from 'firebase';
 import {RouterDict} from 'src/app/app.constants';
-import {IError, ISuccess} from '../models';
+import {AuthService} from '../../auth/auth.service';
+import {HTTPError, HTTPSuccess} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -35,7 +36,8 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
-              private fns: AngularFireFunctions) {}
+              private fns: AngularFireFunctions,
+              private authService: AuthService) {}
 
   ngOnInit(): void {
     this.todayOrderComponentTrace.start();
@@ -56,10 +58,14 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
     this.disabled = true;
 
-    this.fns.httpsCallable('setTimesOfDayOrder')(this.timesOfDayOrder).subscribe((success: ISuccess) => {
+    this.fns.httpsCallable('setTimesOfDayOrder')(this.timesOfDayOrder).subscribe((success: HTTPSuccess) => {
       this.snackBar.open(success.details);
       this.disabled = false;
-    }, (error: IError) => {
+    }, (error: HTTPError) => {
+      if (error.code === 'permission-denied') {
+        this.authService.signOut();
+        return;
+      }
       this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.disabled = false;
     });

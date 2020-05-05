@@ -1,10 +1,10 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
-import {Observable, Subscription} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {Observable, of, Subscription} from 'rxjs';
+import {catchError, map} from 'rxjs/operators';
 import {AuthService} from '../auth/auth.service';
-import {IUser} from '../auth/i-user';
-import {ITask, ITasksListItem, ITimeOfDay, ITodayItem} from './models';
+import {HTTPError, Task, TasksListItem, TimeOfDay, TodayItem} from './models';
+import User = firebase.User;
 
 @Injectable()
 export class UserService {
@@ -21,11 +21,11 @@ export class UserService {
     return this._timesOfDayOrderFirstLoading;
   }
 
-  get today(): { [p: string]: ITodayItem[] } {
+  get today(): { [p: string]: TodayItem[] } {
     return this._today;
   }
 
-  get tasks(): ITasksListItem[] {
+  get tasks(): TasksListItem[] {
     return this._tasks;
   }
 
@@ -45,10 +45,10 @@ export class UserService {
   private _tasksFirstLoading = true;
   private _timesOfDayOrderFirstLoading = true;
 
-  private _today: { [timeOfDay: string]: ITodayItem[] } = {};
+  private _today: { [timeOfDay: string]: TodayItem[] } = {};
   private _now: Date = new Date();
   private _lastTodayName = '.';
-  private _tasks: ITasksListItem[] = [];
+  private _tasks: TasksListItem[] = [];
   private _timesOfDayOrder: string[] = [];
 
   private today$: Subscription;
@@ -78,8 +78,7 @@ export class UserService {
   }
 
   constructor(private afs: AngularFirestore,
-              private authService: AuthService) {
-  }
+              private authService: AuthService) {}
 
   runToday(): void {
     this._now = new Date();
@@ -94,33 +93,44 @@ export class UserService {
     }
 
     this.today$ = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName}`)
-      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50 * 20))
-      .snapshotChanges().pipe(map((documentChangeActionArr) => {
+      .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50 * 20))
+      .snapshotChanges().pipe(
+        map((documentChangeActionArr) => {
 
-        const todayTasksByTimeOfDay: { [timeOfDay: string]: ITodayItem[] } = {};
+          const todayTasksByTimeOfDay: { [timeOfDay: string]: TodayItem[] } = {};
 
-        documentChangeActionArr.forEach((documentChangeAction) => {
+          documentChangeActionArr.forEach((documentChangeAction) => {
 
-          const task: ITask = documentChangeAction.payload.doc.data() as ITask;
+            const task: Task = documentChangeAction.payload.doc.data() as Task;
 
-          Object.keys(task.timesOfDay).forEach((timeOfDay) => {
-            if (!todayTasksByTimeOfDay[timeOfDay]) {
-              todayTasksByTimeOfDay[timeOfDay] = [];
-            }
-            todayTasksByTimeOfDay[timeOfDay].push({
-              description: task.description,
-              done: task.timesOfDay[timeOfDay],
-              id: documentChangeAction.payload.doc.id
+            Object.keys(task.timesOfDay).forEach((timeOfDay) => {
+              if (!todayTasksByTimeOfDay[timeOfDay]) {
+                todayTasksByTimeOfDay[timeOfDay] = [];
+              }
+              todayTasksByTimeOfDay[timeOfDay].push({
+                description: task.description,
+                done: task.timesOfDay[timeOfDay],
+                id: documentChangeAction.payload.doc.id
+              });
             });
+
           });
 
-        });
+          return todayTasksByTimeOfDay;
 
-        return todayTasksByTimeOfDay;
-
-      })).subscribe((today) => {
-        this._today = today;
-        this._todayFirstLoading = false;
+        }),
+        catchError((error: HTTPError) => {
+          if (error.code === 'permission-denied') {
+            this.authService.signOut();
+            return of(null);
+          }
+          throw error;
+        })
+      ).subscribe((today) => {
+        if (today) {
+          this._today = today;
+          this._todayFirstLoading = false;
+        }
       });
   }
 
@@ -129,26 +139,36 @@ export class UserService {
       return;
     }
 
-    this.tasks$ = this.afs.doc<IUser>(`users/${this.authService.userData.uid}/`)
-      .collection<ITask>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
-      .snapshotChanges().pipe(map((documentChangeActionArr) =>
-        documentChangeActionArr.map((documentChangeAction) => {
+    this.tasks$ = this.afs.doc<User>(`users/${this.authService.userData.uid}/`)
+      .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
+      .snapshotChanges().pipe(
+        map((documentChangeActionArr) =>
+          documentChangeActionArr.map((documentChangeAction) => {
 
-          const task = documentChangeAction.payload.doc.data() as ITask;
-          const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-            .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
+            const task = documentChangeAction.payload.doc.data() as Task;
+            const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+              .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
 
-          return {
-            description: task.description,
-            timesOfDay: task.timesOfDay,
-            daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
-            id: documentChangeAction.payload.doc.id
-          } as ITasksListItem;
-
+            return {
+              description: task.description,
+              timesOfDay: task.timesOfDay,
+              daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
+              id: documentChangeAction.payload.doc.id
+            } as TasksListItem;
+          })
+        ),
+        catchError((error: HTTPError) => {
+          if (error.code === 'permission-denied') {
+            this.authService.signOut();
+            return of(null);
+          }
+          throw error;
         })
-      )).subscribe((tasks) => {
-        this._tasks = tasks;
-        this._tasksFirstLoading = false;
+      ).subscribe((tasks) => {
+        if (tasks) {
+          this._tasks = tasks;
+          this._tasksFirstLoading = false;
+        }
       });
   }
 
@@ -158,21 +178,35 @@ export class UserService {
     }
 
     this.timesOfDayOrder$ = this.afs
-      .doc<IUser>(`users/${this.authService.userData.uid}`)
-      .collection<ITimeOfDay>('timesOfDay', (ref) =>
-        ref.orderBy('position', 'asc').limit(20)).snapshotChanges().pipe(
-          map((querySnapDocData) =>
-            querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id)
-          )
+      .doc<User>(`users/${this.authService.userData.uid}`)
+      .collection<TimeOfDay>('timesOfDay', (ref) => ref.orderBy('position', 'asc').limit(20))
+      .snapshotChanges().pipe(
+        map((querySnapDocData) => querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id)),
+        catchError((error: HTTPError) => {
+          if (error.code === 'permission-denied') {
+            this.authService.signOut();
+            return of(null);
+          }
+          throw error;
+        })
       ).subscribe((timesOfDay) => {
-        this._timesOfDayOrder = timesOfDay;
-        this._timesOfDayOrderFirstLoading = false;
+        if (timesOfDay) {
+          this._timesOfDayOrder = timesOfDay;
+          this._timesOfDayOrderFirstLoading = false;
+        }
       });
   }
 
-  getTaskById$(id: string): Observable<ITask> {
-    return this.afs.doc<IUser>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
-      map((taskDocSnap) => taskDocSnap.data() as ITask)
+  getTaskById$(id: string): Observable<Task> {
+    return this.afs.doc<User>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
+      map((taskDocSnap) => taskDocSnap.data() as Task),
+      catchError((error: HTTPError) => {
+        if (error.code === 'permission-denied') {
+          this.authService.signOut();
+          return of(null);
+        }
+        throw error;
+      })
     );
   }
 

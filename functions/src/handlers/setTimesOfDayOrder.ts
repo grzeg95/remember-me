@@ -17,13 +17,7 @@ const keysEqual = (A: string[], B: string[]): boolean => {
     return false;
   }
 
-  for (const a of A) {
-    if (!B.includes(a)) {
-      return false;
-    }
-  }
-
-  return true;
+  return !A.some((a) => !B.includes(a));
 };
 
 /**
@@ -62,12 +56,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   return app.runTransaction(async (transaction) =>
     transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
 
-      // interrupt if user is not in my firestore
-      if (!userDocSnap.exists) {
+      if (userDocSnap.data()?.blocked === true) {
         throw new HttpsError(
-          'unauthenticated',
-          'Register to use this functionality',
-          `You dont't exist 😱`
+          'permission-denied',
+          '',
+          ''
         );
       }
 
@@ -111,10 +104,12 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     if (typeof error.details !== 'string') {
       console.log(error);
     }
+    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+
     throw new HttpsError(
       error.code,
       error.message,
-      error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂'
+      details
     );
   });
 

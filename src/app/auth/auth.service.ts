@@ -1,59 +1,66 @@
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
-import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import * as firebase from 'firebase';
 import {auth, User} from 'firebase/app';
-import {BehaviorSubject} from 'rxjs';
-import {RouterDict} from '../app.constants';
-import {IUser} from './i-user';
+import {BehaviorSubject, Observable} from 'rxjs';
+import {UserData} from './user-data.model';
 import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 
 @Injectable()
 export class AuthService {
 
-  userData: IUser;
+  userData: UserData;
+  user$: Observable<User>;
   whileLoginIn$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  firstLoginChecking = true;
 
   constructor(
-    private afs: AngularFirestore,
-    private afAuth: AngularFireAuth,
-    private router: Router,
-    private ngZone: NgZone) {
+    public afAuth: AngularFireAuth,
+    public router: Router,
+    public ngZone: NgZone
+  ) {
 
-    this.afAuth.authState.subscribe((user) => {
+    this.user$ = this.afAuth.authState;
+
+    this.user$.subscribe((user) => {
+
       if (user) {
 
         this.userData = {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
-          photoURL: user.photoURL
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified
         };
 
-        localStorage.setItem('user', JSON.stringify(this.userData));
-        this.registerUser(this.userData);
-
-        if (!this.router.url.startsWith('/' + RouterDict['user'])) {
-          return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
-        }
-
       } else {
-        localStorage.setItem('user', null);
-        return this.router.navigate(['/']);
+        this.userData = null;
+        this.router.navigate(['/']);
       }
+
+      this.firstLoginChecking = false;
+
     });
+
   }
 
-  get isLoggedIn(): boolean {
+  get isLoggedIn(): boolean | null {
 
-    const user = JSON.parse(localStorage.getItem('user'));
+    const a = !this.firstLoginChecking;
+    const b = (this.userData && this.userData.emailVerified !== false);
 
-    if (user) {
-      this.userData = user;
+    if (!a && typeof b === 'undefined') {
+      return null;
     }
 
-    return (user !== null && user?.emailVerified !== false);
+    if (a && typeof b === 'object') {
+      return false;
+    }
+
+    return a && b;
+
   }
 
   googleAuth(): void {
@@ -67,24 +74,18 @@ export class AuthService {
     this.afAuth.auth.signInWithPopup(provider).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn$.next(false);
-        return this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['tasks-list']]);
+        return this.router.navigate(['/u/t']);
       });
     }).catch((error) => {
-      this.whileLoginIn$.next(false);
       console.error(error);
+      this.whileLoginIn$.next(false);
     });
-  }
 
-  registerUser(user: IUser): void {
-    this.afs.doc(`users/${user.uid}`).set(user, {
-      merge: true
-    }).catch(() => this.signOut());
   }
 
   signOut(): Promise<boolean> {
     return this.afAuth.auth.signOut().then(() => {
-      this.userData = {} as User;
-      localStorage.setItem('user', null);
+      this.userData = null;
       return this.router.navigate(['/']);
     });
   }
