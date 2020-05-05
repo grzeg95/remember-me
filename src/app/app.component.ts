@@ -43,7 +43,10 @@ export class AppComponent implements AfterViewChecked, OnInit {
     this.html = this.document.documentElement;
 
     if (environment.production) {
-      console = undefined;
+      console.log = () => {};
+      console.error = () => {};
+      console.warn = () => {};
+      console.info = () => {};
     }
 
   }
