@@ -153,7 +153,7 @@ export class TaskComponent implements OnInit, OnDestroy {
           this.resetId();
           this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
           this.taskForm.enable();
-        } else if (!task) {
+        } else if (task) {
           this.setAll(task);
         }
         this.savingInProgress = false;
