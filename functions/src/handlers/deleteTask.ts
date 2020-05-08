@@ -28,6 +28,19 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   // interrupt if data.taskId is not correct or !auth
   if (!context.auth || !data.taskId || typeof data.taskId !== 'string') {
+
+    const error = {
+      "!context.auth": !context.auth,
+      "!data.taskId": !data.taskId,
+      "typeof data.taskId !== 'string'": typeof data.taskId !== 'string'
+    };
+
+    console.error(JSON.stringify({
+      'function': 'deleteTask',
+      data: data,
+      error
+    }));
+
     throw new HttpsError(
       'invalid-argument',
       'Bad Request',
@@ -127,11 +140,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   ).then(() => ({
     details: 'Your task has been deleted 🤭'
   })).catch((error: HttpsError) => {
-    if (typeof error.details !== 'string') {
-      console.log(error);
-    }
     const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-
     throw new HttpsError(
       error.code,
       error.message,

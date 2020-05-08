@@ -348,6 +348,34 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length ||
     data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')) // ... timesOfDay length must be between 1 add 20 and not contains '/' cause this is id
   ) {
+
+    const error = {
+      "!context.auth": !context.auth,
+      "typeof data !== 'object'": typeof data !== 'object',
+      "(dataKeys = Object.keys(data)).length !== 2": (dataKeys = Object.keys(data)).length !== 2,
+      "!keysEqual(dataKeys, ['task', 'taskId'])": !keysEqual(dataKeys, ['task', 'taskId']),
+      "typeof data.taskId !== 'string'": typeof data.taskId !== 'string',
+      "typeof data.task !== 'object'": typeof data.task !== 'object',
+      "(dataTaskKeys = Object.keys(data.task)).length !== 3": (dataTaskKeys = Object.keys(data.task)).length !== 3,
+      "!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay'])": !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']),
+      "typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40": typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40,
+      "(dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7": (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7,
+      "!keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])": !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+      "dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean')": dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'),
+      "!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day])": !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]),
+      "!Array.isArray(data.task.timesOfDay)": !Array.isArray(data.task.timesOfDay),
+      "data.task.timesOfDay.length === 0": data.task.timesOfDay.length === 0,
+      "data.task.timesOfDay.length > 20": data.task.timesOfDay.length > 20,
+      "new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length": new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length,
+      "data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/'))": data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/'))
+    };
+
+    console.error(JSON.stringify({
+      'function': 'saveTask',
+      data: data,
+      error
+    }));
+
     throw new HttpsError(
       'invalid-argument',
       'Bad Request',
@@ -535,12 +563,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       'taskId': taskId
     })
   ).catch((error: HttpsError) => {
-    if (typeof error.details !== 'string') {
-      console.log(error);
-    }
-
     const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-
     throw new HttpsError(
       error.code,
       error.message,

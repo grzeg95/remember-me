@@ -40,8 +40,25 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     data.length > 20 ||
     data.length === 0 ||
     (new Set(data).size !== data.length) ||
-    data.some((timeOfDay) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)
+    data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)
   ) {
+
+    const error = {
+      "!context.auth": !context.auth,
+      "!data": !data,
+      "!Array.isArray(data)": !Array.isArray(data),
+      "data.length > 20": data.length > 20,
+      "data.length === 0": data.length === 0,
+      "(new Set(data).size !== data.length)": (new Set(data).size !== data.length),
+      "data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)": data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)
+    };
+
+    console.error(JSON.stringify({
+      'function': 'setTimesOfDayOrder',
+      data: data,
+      error
+    }));
+
     throw new HttpsError(
       'invalid-argument',
       'Bad Request',
@@ -101,11 +118,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   ).then(() => ({
     details: 'Order has been updated 🙃'
   })).catch((error: HttpsError) => {
-    if (typeof error.details !== 'string') {
-      console.log(error);
-    }
     const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-
     throw new HttpsError(
       error.code,
       error.message,
