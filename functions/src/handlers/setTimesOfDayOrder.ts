@@ -5,6 +5,18 @@ import {DocumentReference} from "@google-cloud/firestore";
 const app = firestore();
 
 /**
+ * @function buildRequirement
+ * @param failed boolean
+ * @param ref? any
+ * @return {failed: boolean, ref?: any}
+ **/
+const buildRequirement = (failed: boolean, ref?: any): {failed: boolean, ref?: any} => {
+  return {
+    failed, ref
+  };
+};
+
+/**
  * @function keysEqual
  * Check if two keys lists are the same
  * @param A string[] -> A <==> Array.from(new Set(A))
@@ -33,45 +45,48 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   * Check if data is correct and user is authenticated
   * */
 
-  if (
-    !context.auth ||
-    !data ||
-    !Array.isArray(data) ||
-    data.length > 20 ||
-    data.length === 0 ||
-    (new Set(data).size !== data.length) ||
-    data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)
-  ) {
+  const requirements: {[key: string]: {failed: boolean, ref?: any}} = {
+    "!context.auth":
+      buildRequirement(!context.auth),
 
-    const error = {
-      "!context.auth": !context.auth,
-      "!data": !data,
-      "!Array.isArray(data)": !Array.isArray(data),
-      "data.length > 20": data.length > 20,
-      "data.length === 0": data.length === 0,
-      "(new Set(data).size !== data.length)": (new Set(data).size !== data.length),
-      "data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)": data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)
-    };
+    "!data":
+      buildRequirement(!data, data),
 
-    console.error(JSON.stringify({
-      'function': 'setTimesOfDayOrder',
-      data: data,
-      error
-    }));
+    "!Array.isArray(data)":
+      buildRequirement(!Array.isArray(data), data),
 
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
+    "data.length > 20":
+      buildRequirement(data.length > 20, data),
+
+    "data.length === 0":
+      buildRequirement(data.length === 0, data),
+
+    "(new Set(data).size !== data.length)":
+      buildRequirement((new Set(data).size !== data.length), data),
+
+    "data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)":
+      buildRequirement(data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0), data)
+
+  };
+
+  for (const requirementKey in requirements) {
+    if (requirements[requirementKey].failed) {
+      console.error({
+        [requirementKey]: JSON.stringify(requirements[requirementKey].ref)
+      });
+
+      throw new HttpsError(
+        'invalid-argument',
+        'Bad Request',
+        'Some went wrong 🤫 Try again 🙂'
+      );
+    }
   }
 
-  const auth: {
-    uid: string;
-  } = context.auth;
+  const auth: { uid: string } | undefined = context.auth;
 
   return app.runTransaction(async (transaction) =>
-    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       if (userDocSnap.data()?.blocked === true) {
         throw new HttpsError(
@@ -106,7 +121,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         );
       }
 
-      data.forEach((timeOfDay: string, index) =>
+      (data as string[]).forEach((timeOfDay: string, index) =>
         transaction.update(timesOfDayDocSnaps[timeOfDay], {
           position: index
         })
