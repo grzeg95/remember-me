@@ -81,6 +81,18 @@ interface ITodayTask {
 }
 
 /**
+ * @function buildRequirement
+ * @param failed boolean
+ * @param ref? any
+ * @return {failed: boolean, ref?: any}
+ **/
+const buildRequirement = (failed: boolean, ref?: any) => {
+  return {
+    failed, ref
+  };
+};
+
+/**
   * @function keysEqual
   * Check if two keys lists are the same
   * @param A string[] -> A <==> Array.from(new Set(A))
@@ -320,78 +332,82 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   let dataTaskKeys;
   let dataTaskDaysOfTheWeekKeys;
 
-  if (
-    !context.auth ||
+  const requirements: {[key: string]: {failed: boolean, ref?: any}} = {
+    "!context.auth":
+      buildRequirement(!context.auth),
+    "typeof data !== 'object'":
+      buildRequirement(typeof data !== 'object', data),
 
-    // data includes task: object and taskId: string
-    typeof data !== 'object' ||
-    (dataKeys = Object.keys(data)).length !== 2 ||
-    !keysEqual(dataKeys, ['task', 'taskId']) ||
-    typeof data.taskId !== 'string' ||
-    typeof data.task !== 'object' ||
+    "(dataKeys = Object.keys(data)).length !== 2":
+      buildRequirement((dataKeys = Object.keys(data)).length !== 2, dataKeys),
 
-    // task includes description:string[4,40],
-    // daysOfTheWeek:{ all mon,tue,wed,thu,fri,sat,sun that are booleans},
-    // timesOfDay: {[key: string]: string}
-    (dataTaskKeys = Object.keys(data.task)).length !== 3 ||
-    !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']) ||
-    typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40 || // description length must be between 4 add 40
-    (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7 || // 7 days in week
-    !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) || // mon, tue, wed, thu, fri, sat, sun ...
-    dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean') || // ... task.daysOfTheWeek must contains booleans properties and ...
-    !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]) || // ... some true
+    "!keysEqual(dataKeys, ['task', 'taskId'])":
+      buildRequirement(!keysEqual(dataKeys, ['task', 'taskId']), dataKeys),
 
-    // timesOfDay in object based on string array 20 len with values 1 to 20 len
-    !Array.isArray(data.task.timesOfDay) ||
-    data.task.timesOfDay.length === 0 ||
-    data.task.timesOfDay.length > 20 ||
-    new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length ||
-    data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')) // ... timesOfDay length must be between 1 add 20 and not contains '/' cause this is id
-  ) {
+    "typeof data.taskId !== 'string'":
+      buildRequirement(typeof data.taskId !== 'string', data.taskId),
 
-    const error = {
-      "!context.auth": !context.auth,
-      "typeof data !== 'object'": typeof data !== 'object',
-      "(dataKeys = Object.keys(data)).length !== 2": (dataKeys = Object.keys(data)).length !== 2,
-      "!keysEqual(dataKeys, ['task', 'taskId'])": !keysEqual(dataKeys, ['task', 'taskId']),
-      "typeof data.taskId !== 'string'": typeof data.taskId !== 'string',
-      "typeof data.task !== 'object'": typeof data.task !== 'object',
-      "(dataTaskKeys = Object.keys(data.task)).length !== 3": (dataTaskKeys = Object.keys(data.task)).length !== 3,
-      "!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay'])": !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']),
-      "typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40": typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40,
-      "(dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7": (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7,
-      "!keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])": !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
-      "dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean')": dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'),
-      "!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day])": !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]),
-      "!Array.isArray(data.task.timesOfDay)": !Array.isArray(data.task.timesOfDay),
-      "data.task.timesOfDay.length === 0": data.task.timesOfDay.length === 0,
-      "data.task.timesOfDay.length > 20": data.task.timesOfDay.length > 20,
-      "new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length": new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length,
-      "data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/'))": data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/'))
-    };
+    "typeof data.task !== 'object'":
+      buildRequirement(typeof data.task !== 'object', data.task),
 
-    console.error(JSON.stringify({
-      'function': 'saveTask',
-      data: data,
-      error
-    }));
+    "(dataTaskKeys = Object.keys(data.task)).length !== 3":
+      buildRequirement((dataTaskKeys = Object.keys(data.task)).length !== 3, dataTaskKeys),
 
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
+    "!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay'])":
+      buildRequirement(!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']), dataTaskKeys),
+
+    "typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40":
+      buildRequirement(typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40, data.task.description),
+
+    "(dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7":
+      buildRequirement((dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7, dataTaskDaysOfTheWeekKeys),
+
+    "!keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])":
+      buildRequirement(!keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']), dataTaskDaysOfTheWeekKeys),
+
+    "dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean')":
+      buildRequirement(dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'), dataTaskDaysOfTheWeekKeys),
+
+    "!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day])":
+      buildRequirement(!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]), dataTaskDaysOfTheWeekKeys),
+
+    "!Array.isArray(data.task.timesOfDay)":
+      buildRequirement(!Array.isArray(data.task.timesOfDay), data.task.timesOfDay),
+
+    "data.task.timesOfDay.length === 0":
+      buildRequirement(data.task.timesOfDay.length === 0, data.task.timesOfDay),
+
+    "data.task.timesOfDay.length > 20":
+      buildRequirement(data.task.timesOfDay.length > 20, data.task.timesOfDay),
+
+    "new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length":
+      buildRequirement(new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length, data.task.timesOfDay),
+
+    "data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/'))":
+      buildRequirement(data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')), data.task.timesOfDay)
+  };
+
+  for (const requirementKey in requirements) {
+    if (requirements[requirementKey].failed) {
+      console.error({
+        [requirementKey]: JSON.stringify(requirements[requirementKey].ref)
+      });
+
+      throw new HttpsError(
+        'invalid-argument',
+        'Bad Request',
+        'Some went wrong 🤫 Try again 🙂'
+      );
+    }
   }
 
-  const auth: {
-    uid: string;
-  } = context.auth;
+  const auth: { uid: string } | undefined = context.auth;
 
   let created = false;
   let taskId: string = data.taskId;
 
   return app.runTransaction((transaction) =>
-    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       if (userDocSnap.data()?.blocked === true) {
         throw new HttpsError(

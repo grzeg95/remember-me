@@ -5,6 +5,18 @@ import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/http
 const app = firestore();
 
 /**
+ * @function buildRequirement
+ * @param failed boolean
+ * @param ref? any
+ * @return {failed: boolean, ref?: any}
+ **/
+const buildRequirement = (failed: boolean, ref?: any) => {
+  return {
+    failed, ref
+  };
+};
+
+/**
  * @type Day
  **/
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
@@ -27,35 +39,38 @@ interface ITask {
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // interrupt if data.taskId is not correct or !auth
-  if (!context.auth || !data.taskId || typeof data.taskId !== 'string') {
 
-    const error = {
-      "!context.auth": !context.auth,
-      "!data.taskId": !data.taskId,
-      "typeof data.taskId !== 'string'": typeof data.taskId !== 'string'
-    };
+  const requirements: {[key: string]: {failed: boolean, ref?: any}} = {
+    "!context.auth":
+      buildRequirement(!context.auth),
 
-    console.error(JSON.stringify({
-      'function': 'deleteTask',
-      data: data,
-      error
-    }));
+    "!data.taskId":
+      buildRequirement(!data.taskId, data.taskId),
 
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
+    "typeof data.taskId !== 'string'":
+      buildRequirement(typeof data.taskId !== 'string', data.taskId)
+  };
+
+  for (const requirementKey in requirements) {
+    if (requirements[requirementKey].failed) {
+      console.error({
+        [requirementKey]: JSON.stringify(requirements[requirementKey].ref)
+      });
+
+      throw new HttpsError(
+        'invalid-argument',
+        'Bad Request',
+        'Some went wrong 🤫 Try again 🙂'
+      );
+    }
   }
 
-  const auth: {
-    uid: string;
-  } = context.auth;
+  const auth: { uid: string } | undefined = context.auth;
 
   return app.runTransaction((transaction) =>
 
     // get user from firestore
-    transaction.get(app.collection('users').doc(auth.uid)).then(async (userDocSnap) => {
+    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       if (userDocSnap.data()?.blocked === true) {
         throw new HttpsError(

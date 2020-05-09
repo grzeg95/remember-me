@@ -308,14 +308,13 @@ export class TaskComponent implements OnInit, OnDestroy {
   static descriptionValidator(g: FormControl): { required: boolean } {
 
     const current = g.value as string;
-    const trim = (g.value as string).trimLeft();
+    const trimLeft = (g.value as string).trimLeft();
 
-    if (current.length !== trim.length) {
-      g.setValue(trim);
+    if (current.length !== trimLeft.length) {
+      g.setValue(trimLeft);
     }
 
-    return (typeof g.value === 'string') &&
-    (g.value.length > 3) && (g.value.length <= 40) ? null : {required: true};
+    return (typeof g.value === 'string') && (g.value.trim().length > 3) && (g.value.trim().length <= 40) ? null : {required: true};
   }
 
   static timesOfDayValidator(g: FormArray): { required: boolean } {
