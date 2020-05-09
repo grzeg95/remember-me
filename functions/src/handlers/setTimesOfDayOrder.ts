@@ -5,15 +5,27 @@ import {DocumentReference} from "@google-cloud/firestore";
 const app = firestore();
 
 /**
- * @function buildRequirement
+ * @function testRequirement
+ * @param requirementKey string
  * @param failed boolean
  * @param ref? any
- * @return {failed: boolean, ref?: any}
+ * @return void
  **/
-const buildRequirement = (failed: boolean, ref?: any): {failed: boolean, ref?: any} => {
-  return {
-    failed, ref
-  };
+const testRequirement = (requirementKey: string, failed: boolean, ref?: any): void => {
+
+  if (failed) {
+    console.error({
+      [requirementKey]: {
+        ref
+      }
+    });
+
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
+    );
+  }
 };
 
 /**
@@ -45,43 +57,40 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   * Check if data is correct and user is authenticated
   * */
 
-  const requirements: {[key: string]: {failed: boolean, ref?: any}} = {
-    "!context.auth":
-      buildRequirement(!context.auth),
+  testRequirement(
+    "not logged in",
+    !context.auth
+  );
 
-    "!data":
-      buildRequirement(!data, data),
+  testRequirement(
+    "data does not exists",
+    !data,
+    data
+  );
 
-    "!Array.isArray(data)":
-      buildRequirement(!Array.isArray(data), data),
+  testRequirement(
+    "data is not an array",
+    !Array.isArray(data),
+    data
+  );
 
-    "data.length > 20":
-      buildRequirement(data.length > 20, data),
+  testRequirement(
+    "data.length is not in [1, 20]",
+    data.length > 20 || data.length === 0,
+    data
+  );
 
-    "data.length === 0":
-      buildRequirement(data.length === 0, data),
+  testRequirement(
+    "data contains duplicates",
+    (new Set(data).size !== data.length),
+    data
+  );
 
-    "(new Set(data).size !== data.length)":
-      buildRequirement((new Set(data).size !== data.length), data),
-
-    "data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0)":
-      buildRequirement(data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.length > 20 || timeOfDay.length === 0), data)
-
-  };
-
-  for (const requirementKey in requirements) {
-    if (requirements[requirementKey].failed) {
-      console.error({
-        [requirementKey]: JSON.stringify(requirements[requirementKey].ref)
-      });
-
-      throw new HttpsError(
-        'invalid-argument',
-        'Bad Request',
-        'Some went wrong 🤫 Try again 🙂'
-      );
-    }
-  }
+  testRequirement(
+    "data contains not string, trim is not in [1, 20] or contains /",
+    data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.trim().length > 20 || timeOfDay.trim().length === 0),
+    data
+  );
 
   const auth: { uid: string } | undefined = context.auth;
 

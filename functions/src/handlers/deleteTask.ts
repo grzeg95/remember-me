@@ -5,15 +5,27 @@ import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/http
 const app = firestore();
 
 /**
- * @function buildRequirement
+ * @function testRequirement
+ * @param requirementKey string
  * @param failed boolean
  * @param ref? any
- * @return {failed: boolean, ref?: any}
+ * @return void
  **/
-const buildRequirement = (failed: boolean, ref?: any) => {
-  return {
-    failed, ref
-  };
+const testRequirement = (requirementKey: string, failed: boolean, ref?: any): void => {
+
+  if (failed) {
+    console.error({
+      [requirementKey]: {
+        ref
+      }
+    });
+
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
+    );
+  }
 };
 
 /**
@@ -40,30 +52,22 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   // interrupt if data.taskId is not correct or !auth
 
-  const requirements: {[key: string]: {failed: boolean, ref?: any}} = {
-    "!context.auth":
-      buildRequirement(!context.auth),
+  testRequirement(
+    "not logged in",
+    !context.auth
+  );
 
-    "!data.taskId":
-      buildRequirement(!data.taskId, data.taskId),
+  testRequirement(
+    "data has not taskId",
+    !data.taskId,
+    data.taskId
+  );
 
-    "typeof data.taskId !== 'string'":
-      buildRequirement(typeof data.taskId !== 'string', data.taskId)
-  };
-
-  for (const requirementKey in requirements) {
-    if (requirements[requirementKey].failed) {
-      console.error({
-        [requirementKey]: JSON.stringify(requirements[requirementKey].ref)
-      });
-
-      throw new HttpsError(
-        'invalid-argument',
-        'Bad Request',
-        'Some went wrong 🤫 Try again 🙂'
-      );
-    }
-  }
+  testRequirement(
+    "data.taskId is not string",
+    typeof data.taskId !== 'string',
+    data.taskId
+  );
 
   const auth: { uid: string } | undefined = context.auth;
 

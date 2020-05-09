@@ -81,15 +81,27 @@ interface ITodayTask {
 }
 
 /**
- * @function buildRequirement
+ * @function testRequirement
+ * @param requirementKey string
  * @param failed boolean
  * @param ref? any
- * @return {failed: boolean, ref?: any}
+ * @return void
  **/
-const buildRequirement = (failed: boolean, ref?: any) => {
-  return {
-    failed, ref
-  };
+const testRequirement = (requirementKey: string, failed: boolean, ref?: any): void => {
+
+  if (failed) {
+    console.error({
+      [requirementKey]: {
+        ref
+      }
+    });
+
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
+    );
+  }
 };
 
 /**
@@ -332,74 +344,111 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   let dataTaskKeys;
   let dataTaskDaysOfTheWeekKeys;
 
-  const requirements: {[key: string]: {failed: boolean, ref?: any}} = {
-    "!context.auth":
-      buildRequirement(!context.auth),
-    "typeof data !== 'object'":
-      buildRequirement(typeof data !== 'object', data),
+  testRequirement(
+    "not logged in",
+    !context.auth
+  );
 
-    "(dataKeys = Object.keys(data)).length !== 2":
-      buildRequirement((dataKeys = Object.keys(data)).length !== 2, dataKeys),
+  testRequirement(
+    "data is not an object",
+    typeof data !== 'object', data
+  );
 
-    "!keysEqual(dataKeys, ['task', 'taskId'])":
-      buildRequirement(!keysEqual(dataKeys, ['task', 'taskId']), dataKeys),
+  testRequirement(
+    "data has not 2 keys",
+    (dataKeys = Object.keys(data)).length !== 2,
+    dataKeys
+  );
 
-    "typeof data.taskId !== 'string'":
-      buildRequirement(typeof data.taskId !== 'string', data.taskId),
+  testRequirement(
+    "data has not 'task' and 'taskId'",
+    !keysEqual(dataKeys, ['task', 'taskId']),
+    dataKeys
+  );
 
-    "typeof data.task !== 'object'":
-      buildRequirement(typeof data.task !== 'object', data.task),
+  testRequirement(
+    "data.taskId is not string",
+    typeof data.taskId !== 'string',
+    data.taskId
+  );
 
-    "(dataTaskKeys = Object.keys(data.task)).length !== 3":
-      buildRequirement((dataTaskKeys = Object.keys(data.task)).length !== 3, dataTaskKeys),
+  testRequirement(
+    "data task is not an object",
+    typeof data.task !== 'object',
+    data.task
+  );
 
-    "!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay'])":
-      buildRequirement(!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']), dataTaskKeys),
+  testRequirement(
+    "data.task has not 3 keys",
+    (dataTaskKeys = Object.keys(data.task)).length !== 3,
+    dataTaskKeys
+  );
 
-    "typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40":
-      buildRequirement(typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40, data.task.description),
+  testRequirement(
+    "data.task has not 'description', 'daysOfTheWeek', 'timesOfDay'",
+    !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']),
+    dataTaskKeys
+  );
 
-    "(dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7":
-      buildRequirement((dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7, dataTaskDaysOfTheWeekKeys),
+  testRequirement(
+    "data.task.description iss not a string [4, 40]",
+    typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40,
+    data.task.description
+  );
 
-    "!keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])":
-      buildRequirement(!keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']), dataTaskDaysOfTheWeekKeys),
+  testRequirement(
+    "data.task.daysOfTheWeek has not 5 keys",
+    (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7,
+    dataTaskDaysOfTheWeekKeys
+  );
 
-    "dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean')":
-      buildRequirement(dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'), dataTaskDaysOfTheWeekKeys),
+  testRequirement(
+    "data.task.daysOfTheWeek has not 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'",
+    !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+    dataTaskDaysOfTheWeekKeys
+  );
 
-    "!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day])":
-      buildRequirement(!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]), dataTaskDaysOfTheWeekKeys),
+  testRequirement(
+    "data.task.daysOfTheWeek has not boolean value",
+    dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'),
+    dataTaskDaysOfTheWeekKeys
+  );
 
-    "!Array.isArray(data.task.timesOfDay)":
-      buildRequirement(!Array.isArray(data.task.timesOfDay), data.task.timesOfDay),
+  testRequirement(
+    "data.task.daysOfTheWeek has not boolean true value",
+    !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]),
+    dataTaskDaysOfTheWeekKeys
+  );
 
-    "data.task.timesOfDay.length === 0":
-      buildRequirement(data.task.timesOfDay.length === 0, data.task.timesOfDay),
+  testRequirement(
+    "data.task.timesOfDay is not an array",
+    !Array.isArray(data.task.timesOfDay),
+    data.task.timesOfDay
+  );
 
-    "data.task.timesOfDay.length > 20":
-      buildRequirement(data.task.timesOfDay.length > 20, data.task.timesOfDay),
+  testRequirement(
+    "data.task.timesOfDay.length is 0",
+    data.task.timesOfDay.length === 0,
+    data.task.timesOfDay
+  );
 
-    "new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length":
-      buildRequirement(new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length, data.task.timesOfDay),
+  testRequirement(
+    "data.task.timesOfDay.length has over 20 values",
+    data.task.timesOfDay.length > 20,
+    data.task.timesOfDay
+  );
 
-    "data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/'))":
-      buildRequirement(data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')), data.task.timesOfDay)
-  };
+  testRequirement(
+    "data.task.timesOfDay contains duplicates",
+    new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length,
+    data.task.timesOfDay
+  );
 
-  for (const requirementKey in requirements) {
-    if (requirements[requirementKey].failed) {
-      console.error({
-        [requirementKey]: JSON.stringify(requirements[requirementKey].ref)
-      });
-
-      throw new HttpsError(
-        'invalid-argument',
-        'Bad Request',
-        'Some went wrong 🤫 Try again 🙂'
-      );
-    }
-  }
+  testRequirement(
+    "data.task.timesOfDay contains not string, trim is not in [1, 20] or contains /",
+    data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')),
+    data.task.timesOfDay
+  );
 
   const auth: { uid: string } | undefined = context.auth;
 
