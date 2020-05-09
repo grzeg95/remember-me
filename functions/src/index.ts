@@ -7,16 +7,16 @@ export const deleteTask = runWith({
   timeoutSeconds: 10,
   memory: '256MB',
   maxInstances: 2
-}).region('europe-west2').https.onCall(require('./handlers/deleteTask').handler);
+}).region('europe-west2').https.onCall(require('./handlers/delete-task').handler);
 
 export const saveTask = runWith({
   timeoutSeconds: 10,
   memory: '256MB',
   maxInstances: 2
-}).region('europe-west2').https.onCall(require('./handlers/saveTask').handler);
+}).region('europe-west2').https.onCall(require('./handlers/save-task').handler);
 
 export const setTimesOfDayOrder = runWith({
   timeoutSeconds: 10,
   memory: '256MB',
   maxInstances: 2
-}).region('europe-west2').https.onCall(require('./handlers/setTimesOfDayOrder').handler);
+}).region('europe-west2').https.onCall(require('./handlers/set-times-of-day-order').handler);

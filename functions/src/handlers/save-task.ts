@@ -1,22 +1,11 @@
 import {DocumentReference, DocumentSnapshot, Transaction} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {keysEqual} from '../helpers/keys-equal';
+import {Day, ITask} from '../helpers/models';
+import {testRequirement} from '../helpers/test-requirement';
 
 const app = firestore();
-
-/**
- * @type Day
- **/
-type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-
-/**
- * @interface ITask
- **/
-interface ITask {
-  description: string;
-  timesOfDay: string[];
-  daysOfTheWeek: {[key in Day]: boolean}
-}
 
 /**
  * @interface ITaskDiff
@@ -79,46 +68,6 @@ interface ITodayTask {
     [key: string]: boolean
   };
 }
-
-/**
- * @function testRequirement
- * @param requirementKey string
- * @param failed boolean
- * @param ref? any
- * @return void
- **/
-const testRequirement = (requirementKey: string, failed: boolean, ref?: any): void => {
-
-  if (failed) {
-    console.error({
-      [requirementKey]: {
-        ref
-      }
-    });
-
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
-  }
-};
-
-/**
-  * @function keysEqual
-  * Check if two keys lists are the same
-  * @param A string[] -> A <==> Array.from(new Set(A))
-  * @param B string[] -> B <==> Array.from(new Set(B))
-  * @return boolean
-  **/
-const keysEqual = (A: string[], B: string[]): boolean => {
-
-  if (A.length !== B.length) {
-    return false;
-  }
-
-  return !A.some((a) => !B.includes(a));
-};
 
 /**
  * @function taskDiff
@@ -459,6 +408,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       if (userDocSnap.data()?.blocked === true) {
+        console.error({
+          'info': 'user is blocked'
+        });
         throw new HttpsError(
           'permission-denied',
           '',
@@ -520,6 +472,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
               todayTaskDocSnapsToUpdate.forEach((todayTask) => {
                 if (!todayTask.exists) {
+                  console.error({
+                    'info': 'task is not related today task'
+                  });
                   throw new HttpsError(
                     'invalid-argument',
                     `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
@@ -569,6 +524,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           if (currentTimesOfDay[timeOfDay]) {
             taskDocSnapsTimesOfDay[timeOfDay] = currentTimesOfDay[timeOfDay];
           } else {
+            console.error({
+              'info': 'task not contains time of day'
+            });
             throw new HttpsError(
               'invalid-argument',
               `Known task ${taskDocSnap.ref.path} not contains time of day ${timeOfDay}`,

@@ -1,46 +1,10 @@
 import {DocumentSnapshot} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {Day, ITask} from '../helpers/models';
+import {testRequirement} from '../helpers/test-requirement';
 
 const app = firestore();
-
-/**
- * @function testRequirement
- * @param requirementKey string
- * @param failed boolean
- * @param ref? any
- * @return void
- **/
-const testRequirement = (requirementKey: string, failed: boolean, ref?: any): void => {
-
-  if (failed) {
-    console.error({
-      [requirementKey]: {
-        ref
-      }
-    });
-
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
-  }
-};
-
-/**
- * @type Day
- **/
-type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-
-/**
- * @interface ITask
- **/
-interface ITask {
-  description: string;
-  timesOfDay: string[];
-  daysOfTheWeek: {[key in Day]: boolean}
-}
 
 /**
  * Read user data about task and remove it
@@ -77,6 +41,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       if (userDocSnap.data()?.blocked === true) {
+        console.error({
+          'info': 'user is blocked'
+        });
         throw new HttpsError(
           'permission-denied',
           '',
@@ -88,6 +55,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         // interrupt if user has not this task
         if (!taskDocSnap.exists) {
+          console.error({
+            'info': 'user tried to remove foreign task'
+          });
           throw new HttpsError(
             'invalid-argument',
             `Task does not exist: ${taskDocSnap.ref.path}`,
@@ -127,6 +97,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           // remove todayTasks
           todayTasks.forEach((todayTaskDocSnap) => {
             if (!todayTaskDocSnap.exists) {
+              console.error({
+                'info': 'user tried to remove today task for wrong task'
+              });
               throw new HttpsError(
                 'invalid-argument',
                 `Today task ${todayTaskDocSnap.ref.path} does not exists for task ${taskDocSnap.ref.path}`,

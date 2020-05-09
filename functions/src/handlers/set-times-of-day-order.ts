@@ -1,48 +1,10 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {DocumentReference} from "@google-cloud/firestore";
+import {keysEqual} from '../helpers/keys-equal';
+import {testRequirement} from '../helpers/test-requirement';
 
 const app = firestore();
-
-/**
- * @function testRequirement
- * @param requirementKey string
- * @param failed boolean
- * @param ref? any
- * @return void
- **/
-const testRequirement = (requirementKey: string, failed: boolean, ref?: any): void => {
-
-  if (failed) {
-    console.error({
-      [requirementKey]: {
-        ref
-      }
-    });
-
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
-  }
-};
-
-/**
- * @function keysEqual
- * Check if two keys lists are the same
- * @param A string[] -> A <==> Array.from(new Set(A))
- * @param B string[] -> B <==> Array.from(new Set(B))
- * @return boolean
- **/
-const keysEqual = (A: string[], B: string[]): boolean => {
-
-  if (A.length !== B.length) {
-    return false;
-  }
-
-  return !A.some((a) => !B.includes(a));
-};
 
 /**
  * @function handler
@@ -98,6 +60,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
       if (userDocSnap.data()?.blocked === true) {
+        console.error({
+          'info': 'user is blocked'
+        });
         throw new HttpsError(
           'permission-denied',
           '',
@@ -123,6 +88,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
       const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
       if (!keysEqual(timesOfDayDocSnapsKeys, data)) {
+        console.error({
+          'info': 'user tried to update different times of day than has'
+        });
         throw new HttpsError(
           'invalid-argument',
           'Bad Request',
