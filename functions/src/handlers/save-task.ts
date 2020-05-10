@@ -459,10 +459,12 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
             if (diff.description.type === 'changed') {
 
               // read all task for user/{userId}/today/{day}/task/{taskId}
-              const todayTaskDocSnapsToUpdate = await Promise.all((Object.keys(task.daysOfTheWeek) as Day[])
-                .map((day) =>
-                  transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-                    .then((docSnap) => docSnap)
+              const todayTaskDocSnapsToUpdate = await Promise.all(
+                (Object.keys(task.daysOfTheWeek) as Day[])
+                  .filter((timeOfDay) => task.daysOfTheWeek[timeOfDay])
+                  .map((day) =>
+                    transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+                      .then((docSnap) => docSnap)
                 )
               );
 
