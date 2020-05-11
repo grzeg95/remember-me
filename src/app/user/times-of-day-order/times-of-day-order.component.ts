@@ -62,10 +62,6 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       this.snackBar.open(success.details);
       this.disabled = false;
     }, (error: HTTPError) => {
-      if (error.code === 'permission-denied') {
-        this.authService.signOut();
-        return;
-      }
       this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
       this.disabled = false;
     });

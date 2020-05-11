@@ -196,10 +196,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.snackBar.open(success.details);
 
     }, (error: HTTPError) => {
-      if (error.code === 'permission-denied') {
-        this.authService.signOut();
-        return;
-      }
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
@@ -254,10 +250,6 @@ export class TaskComponent implements OnInit, OnDestroy {
           this.deepResetForm();
           this.deletingInProgress = false;
         }, (error: HTTPError) => {
-          if (error.code === 'permission-denied') {
-            this.authService.signOut();
-            return;
-          }
           this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);
         });

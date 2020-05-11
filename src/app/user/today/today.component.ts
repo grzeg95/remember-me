@@ -125,10 +125,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.todayName}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
       checkbox.disabled = false;
     }).catch((error: HTTPError) => {
-      if (error.code === 'permission-denied') {
-        this.authService.signOut();
-        return;
-      }
       if (!this.destroyed) {
         checkbox.disabled = false;
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
