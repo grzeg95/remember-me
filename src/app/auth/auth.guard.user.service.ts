@@ -10,7 +10,7 @@ import {
 import {User} from 'firebase';
 import {Observable} from 'rxjs';
 import {map, take, tap} from 'rxjs/operators';
-import { AuthService } from './auth.service';
+import {AuthService} from './auth.service';
 
 @Injectable()
 export class AuthGuardUserService implements CanActivate, CanActivateChild {

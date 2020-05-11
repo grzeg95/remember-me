@@ -7,7 +7,7 @@ import {interval, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {HTTPError, TodayItem} from '../models';
+import {TodayItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -124,7 +124,7 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.todayName}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
       checkbox.disabled = false;
-    }).catch((error: HTTPError) => {
+    }).catch(() => {
       if (!this.destroyed) {
         checkbox.disabled = false;
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');

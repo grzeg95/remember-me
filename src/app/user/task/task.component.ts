@@ -1,17 +1,16 @@
-import {DOCUMENT, Location} from '@angular/common';
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {Location} from '@angular/common';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
 import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
-import {AuthService} from '../../auth/auth.service';
 import {HTTPError, HTTPSuccess, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
@@ -38,13 +37,10 @@ export class TaskComponent implements OnInit, OnDestroy {
     return (this.taskForm.get('timesOfDay') as FormArray).controls;
   }
 
-  constructor(private authService: AuthService,
-              private router: Router,
-              private activeRoute: ActivatedRoute,
+  constructor(private activeRoute: ActivatedRoute,
               private location: Location,
               private fns: AngularFireFunctions,
               public dialog: MatDialog,
-              @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,
               private appService: AppService,
               private userService: UserService) {}
@@ -195,7 +191,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.taskForm.enable();
       this.snackBar.open(success.details);
 
-    }, (error: HTTPError) => {
+    }, () => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
