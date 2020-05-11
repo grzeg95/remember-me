@@ -45,7 +45,7 @@ export class AuthService {
     });
 
     interval(1000 * 60 * 10).subscribe(() => {
-      if (this.userData) {
+      if (this.afAuth.auth.currentUser) {
         this.afAuth.auth.currentUser.reload();
       }
     });
