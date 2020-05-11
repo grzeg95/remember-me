@@ -3,7 +3,7 @@ import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
 import * as firebase from 'firebase';
 import {auth, User} from 'firebase/app';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {BehaviorSubject, interval, Observable} from 'rxjs';
 import {UserData} from './user-data.model';
 import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 
@@ -42,6 +42,12 @@ export class AuthService {
 
       this.firstLoginChecking = false;
 
+    });
+
+    interval(1000 * 60 * 10).subscribe(() => {
+      if (this.userData) {
+        this.afAuth.auth.currentUser.reload();
+      }
     });
 
   }
