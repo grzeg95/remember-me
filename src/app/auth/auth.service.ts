@@ -1,11 +1,10 @@
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
-import * as firebase from 'firebase';
 import {auth, User} from 'firebase/app';
 import {BehaviorSubject, interval, Observable} from 'rxjs';
 import {UserData} from './user-data.model';
-import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
+import GoogleAuthProvider = auth.GoogleAuthProvider;
 
 @Injectable()
 export class AuthService {
@@ -16,9 +15,9 @@ export class AuthService {
   firstLoginChecking = true;
 
   constructor(
-    public afAuth: AngularFireAuth,
-    public router: Router,
-    public ngZone: NgZone
+    private afAuth: AngularFireAuth,
+    private router: Router,
+    private ngZone: NgZone
   ) {
 
     this.user$ = this.afAuth.authState;
@@ -77,7 +76,7 @@ export class AuthService {
 
     this.whileLoginIn$.next(true);
 
-    this.afAuth.auth.signInWithPopup(provider).then(() => {
+    this.afAuth.auth.signInWithRedirect(provider).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn$.next(false);
         return this.router.navigate(['/u/t']);

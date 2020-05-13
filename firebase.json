@@ -11,19 +11,18 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "dist",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "headers": [{
-      "source" : "**",
-      "headers" : [{
-        "key" : "Cache-Control",
-        "value" : "max-age=86400"
-      }]
-    }]
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   },
   "emulators": {
     "functions": {
@@ -35,5 +34,8 @@
     "hosting": {
       "port": "5001"
     }
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
