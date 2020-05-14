@@ -15,13 +15,12 @@ export const environment = {
     messagingSenderId: '824512670781'
   },
   auth: {
-    clientId: 'L8DU5fB8AHMCUGNtSuQLGCuRx8Lwfv6A',
+    clientId: 'jKLVgJyx0VjIJcS7FKugtIkmBvNJ5Zys',
     clientDomain: 'grzeg.eu.auth0.com',
-    audience: 'http://localhost:1337/',
-    redirect: 'http://localhost:4200/callback',
+    audience: 'http://localhost:4200/',
+    redirect: 'http://localhost:4200/auth0',
     scope: 'openid profile email'
   },
-  apiRoot: 'http://localhost:1337/',
   functions: {
     port: 5000
   }

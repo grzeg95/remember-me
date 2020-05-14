@@ -20,9 +20,3 @@ export const setTimesOfDayOrder = runWith({
   memory: '256MB',
   maxInstances: 2
 }).region('europe-west2').https.onCall(require('./handlers/set-times-of-day-order').handler);
-
-export const auth0Login = runWith({
-  timeoutSeconds: 10,
-  memory: '256MB',
-  maxInstances: 2
-}).region('europe-west2').https.onCall(require('./handlers/auth0-login').handler);

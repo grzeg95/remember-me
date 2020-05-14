@@ -17,6 +17,8 @@ export class AuthGuardGuestService implements CanActivate {
 
   canActivate(): Observable<boolean> {
 
+    console.log('AuthGuardGuestService::canActivate');
+
     return this.auth.user$.pipe(
       take(1),
       map((authState: User | null) => !!!authState),

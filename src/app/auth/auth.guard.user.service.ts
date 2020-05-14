@@ -19,6 +19,8 @@ export class AuthGuardUserService implements CanActivate, CanActivateChild {
 
   canActivate(): Observable<boolean>  {
 
+    console.log('AuthGuardUserService::canActivate');
+
     return this.authService.user$.pipe(
       take(1),
       map((authState: User | null) => !!authState),
@@ -30,6 +32,9 @@ export class AuthGuardUserService implements CanActivate, CanActivateChild {
   }
 
   canActivateChild(): Observable<boolean> {
+
+    console.log('AuthGuardUserService::canActivateChild');
+
     return this.canActivate();
   }
 

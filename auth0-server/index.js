@@ -1,12 +1,21 @@
-const admin = require('firebase-admin');
+const admin = require("firebase-admin");
 const bodyParser = require('body-parser');
-export const handler = require('express')();
 
-// Automatically allow cross-origin requests
-handler.use(require('cors')({ origin: true }));
+admin.initializeApp({
+  credential: admin.credential.cert(require('./remember-me-3-firebase-adminsdk-dz5m4-315ff0d147.json')),
+  databaseURL: "https://remember-me-3.firebaseio.com"
+});
 
-handler.use(bodyParser.json());
-handler.use(bodyParser.urlencoded({ extended: false }));
+const port = 1337;
+const app = require('express')();
+
+app.use(require('cors')());
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+
+app.listen(port, () => {
+  console.log(`Server Running on port: ${port}`);
+});
 
 // Auth0 authentication middleware
 const jwtCheck = require('express-jwt')({
@@ -16,22 +25,22 @@ const jwtCheck = require('express-jwt')({
     jwksRequestsPerMinute: 5,
     jwksUri: `https://grzeg.eu.auth0.com/.well-known/jwks.json`
   }),
-  audience: 'https://europe-west2-remember-me-3.cloudfunctions.net/auth0Login',
+  audience: 'http://localhost:4200/',
   issuer: `https://grzeg.eu.auth0.com/`,
-  algorithms: ['RS256']
+  algorithm: 'RS256'
 });
 
 // GET object containing Firebase custom token
-handler.get('/auth', jwtCheck, (req: any, res: any) => {
+app.get('/', jwtCheck, (req, res) => {
   // Create UID from authenticated Auth0 user
   const uid = req.user.sub;
   // Mint token using Firebase Admin SDK
   admin.auth().createCustomToken(uid)
-    .then((customToken: string) =>
+    .then(customToken =>
       // Response must be an object or Firebase errors
       res.json({firebaseToken: customToken})
     )
-    .catch((err: any) =>
+    .catch(err =>
       res.status(500).send({
         message: 'Something went wrong acquiring a Firebase token.',
         error: err
