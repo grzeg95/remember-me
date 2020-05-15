@@ -18,7 +18,7 @@ export class AuthCallbackComponent implements OnInit {
     const routerQueryKeys = (this.router.parseUrl(this.router.url).fragment || '').split('&').map((part) => part.split('=')[0]);
 
     if (listEqual(requireQueryKeys, routerQueryKeys)) {
-      this.auth.handleAuth0LoginCallback();
+      this.auth.auth0HandleLoginCallback();
     } else {
       this.router.navigate(['/']);
     }

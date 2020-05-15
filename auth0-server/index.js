@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const bodyParser = require('body-parser');
+const https = require('https');
 
 admin.initializeApp({
   credential: admin.credential.cert(require('./remember-me-3-firebase-adminsdk-dz5m4-315ff0d147.json')),
@@ -10,14 +11,11 @@ const port = 1337;
 const app = require('express')();
 
 app.use(require('cors')());
-app.use(bodyParser.json()); // for parsing application/json
-app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.listen(port, () => {
-  console.log(`Server Running on port: ${port}`);
-});
+app.listen(port, _ => {});
 
-// Auth0 authentication middleware
 const jwtCheck = require('express-jwt')({
   secret: require('jwks-rsa').expressJwtSecret({
     cache: true,
@@ -32,18 +30,44 @@ const jwtCheck = require('express-jwt')({
 
 // GET object containing Firebase custom token
 app.get('/', jwtCheck, (req, res) => {
-  // Create UID from authenticated Auth0 user
-  const uid = req.user.sub;
-  // Mint token using Firebase Admin SDK
-  admin.auth().createCustomToken(uid)
-    .then(customToken =>
-      // Response must be an object or Firebase errors
-      res.json({firebaseToken: customToken})
-    )
-    .catch(err =>
-      res.status(500).send({
-        message: 'Something went wrong acquiring a Firebase token.',
-        error: err
-      })
-    );
+
+  https.get('https://grzeg.eu.auth0.com/userinfo', {
+    headers: {
+      'Authorization': req.get('Authorization')
+    }
+  }, (userInfoIncomingMessage) => {
+    let userJSON = '';
+
+    userInfoIncomingMessage.on('data', chunk => userJSON += chunk);
+    userInfoIncomingMessage.on('end', _ => {
+
+      const user = JSON.parse(userJSON);
+      const uid = req.user.sub;
+
+      // Mint token using Firebase Admin SDK
+      admin.auth().createCustomToken(uid)
+        .then(customToken => {
+          admin.auth().updateUser(uid, {
+            email: user.email,
+            emailVerified: user.email_verified,
+            displayName: user.nickname,
+            photoURL: user.picture,
+          }).then(() => {
+            res.json({firebaseToken: customToken});
+          });
+        })
+        .catch(err =>
+          res.status(500).send({
+            message: 'Something went wrong acquiring a Firebase token.',
+            error: err
+          })
+        );
+
+    });
+
+  });
+
 });
+
+
+exports.auth0 = app;

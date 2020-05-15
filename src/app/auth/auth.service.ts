@@ -2,7 +2,6 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
-import GoogleAuthProvider = auth.GoogleAuthProvider;
 import * as auth0 from 'auth0-js';
 import {auth, User} from 'firebase/app';
 import {BehaviorSubject, interval, Observable} from 'rxjs';
@@ -12,7 +11,6 @@ import {UserData} from './user-data.model';
 @Injectable()
 export class AuthService {
 
-  // Create Auth0 web auth instance
   auth0 = new auth0.WebAuth({
     clientID: environment.auth.clientId,
     domain: environment.auth.clientDomain,
@@ -38,32 +36,17 @@ export class AuthService {
 
     this.user$.subscribe((user: User) => {
 
-      if (this.router.url !== '/auth0') {
-        if (user) {
-          if (user.uid.startsWith('auth0|')) {
-            // TODO get user from auth0
-            // user.getIdToken().then((token) => this.auth0.client.userInfo(token, (err, profile) => {}));
-            this.userData = {
-              uid: user.uid,
-              email: user.email,
-              displayName: null,
-              photoURL: null,
-              emailVerified: true
-            };
-          } else {
-            this.userData = {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              emailVerified: user.emailVerified
-            };
-          }
-
-        } else {
-          this.userData = null;
-          this.router.navigate(['/']);
-        }
+      if (user) {
+        this.userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified
+        };
+      } else {
+        this.userData = null;
+        this.router.navigate(['/']);
       }
 
       this.firstLoginChecking = false;
@@ -95,15 +78,18 @@ export class AuthService {
 
   }
 
-  googleAuth(): void {
-    this.authLogin(new auth.GoogleAuthProvider());
+  auth(): void {
+    if (!environment.production) {
+      this.auth0Auth();
+    } else {
+      this.googleAuth();
+    }
   }
 
-  authLogin(provider: GoogleAuthProvider): void {
-
+  googleAuth(): void {
     this.whileLoginIn$.next(true);
 
-    this.afAuth.auth.signInWithRedirect(provider).then(() => {
+    this.afAuth.auth.signInWithRedirect(new auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn$.next(false);
         return this.router.navigate(['/u/t']);
@@ -115,20 +101,12 @@ export class AuthService {
 
   }
 
-  signOut(): Promise<boolean> {
-    return this.afAuth.auth.signOut().then(() => {
-      this.userData = null;
-      return this.router.navigate(['/']);
-    });
-  }
-
-  auth0Login(redirect?: string): void {
-    const _redirect = redirect ? redirect : this.router.url;
-    localStorage.setItem('auth_redirect', _redirect);
+  auth0Auth(): void {
+    localStorage.setItem('auth_redirect', this.router.url);
     this.auth0.authorize();
   }
 
-  handleAuth0LoginCallback(): void {
+  auth0HandleLoginCallback(): void {
 
     this.auth0.parseHash((err, authResult) => {
 
@@ -136,7 +114,7 @@ export class AuthService {
         window.location.hash = '';
         this.whileLoginIn$.next(true);
 
-        this.http.get(`http://localhost:1337/`, {
+        this.http.get(`https://europe-west2-remember-me-3.cloudfunctions.net/auth0`, {
           headers: new HttpHeaders().set('Authorization', `Bearer ${authResult.accessToken}`)
         }).subscribe((res: {firebaseToken: string}) => {
           this.afAuth.auth.signInWithCustomToken(res.firebaseToken).then(() => {
@@ -154,6 +132,13 @@ export class AuthService {
         this.router.navigate(['/']);
         console.error(`Error authenticating: ${err.error}`);
       }
+    });
+  }
+
+  signOut(): Promise<boolean> {
+    return this.afAuth.auth.signOut().then(() => {
+      this.userData = null;
+      return this.router.navigate(['/']);
     });
   }
 

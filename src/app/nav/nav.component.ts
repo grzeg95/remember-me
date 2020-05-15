@@ -37,12 +37,8 @@ export class NavComponent {
     return this.authService.signOut();
   }
 
-  googleAuth(): void {
-    this.authService.googleAuth();
-  }
-
-  auth0Login(): void {
-    this.authService.auth0Login();
+  auth(): void {
+    this.authService.auth();
   }
 
   @HostListener('document:click', ['$event'])

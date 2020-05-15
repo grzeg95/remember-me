@@ -16,9 +16,6 @@ export class AuthGuardGuestService implements CanActivate {
               private router: Router) {}
 
   canActivate(): Observable<boolean> {
-
-    console.log('AuthGuardGuestService::canActivate');
-
     return this.auth.user$.pipe(
       take(1),
       map((authState: User | null) => !!!authState),
@@ -28,7 +25,6 @@ export class AuthGuardGuestService implements CanActivate {
         }
         this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
       }));
-
   }
 
 }
