@@ -35,8 +35,10 @@
                   <td>{{ task.description }}</td>
                   <td>{{ task.daysOfTheWeek }}</td>
                   <td>{{ task.timesOfDay.join(', ') }}</td>
-                  <td class="pseudo-button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
-                    <fa-icon [icon]="faEdit"></fa-icon>
+                  <td>
+                    <div class="pseudo-button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
+                      <fa-icon [icon]="faEdit"></fa-icon>
+                    </div>
                   </td>
                 </tr>
               </tbody>
