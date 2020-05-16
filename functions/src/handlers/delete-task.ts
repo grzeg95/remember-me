@@ -40,17 +40,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     // get user from firestore
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
-      if (userDocSnap.data()?.blocked === true) {
-        console.error({
-          'info': 'user is blocked'
-        });
-        throw new HttpsError(
-          'permission-denied',
-          '',
-          ''
-        );
-      }
-
       return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then(async (taskDocSnap) => {
 
         // interrupt if user has not this task

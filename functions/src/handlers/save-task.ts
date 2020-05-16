@@ -407,17 +407,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   return app.runTransaction((transaction) =>
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
 
-      if (userDocSnap.data()?.blocked === true) {
-        console.error({
-          'info': 'user is blocked'
-        });
-        throw new HttpsError(
-          'permission-denied',
-          '',
-          ''
-        );
-      }
-
       return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
         const task = data.task as ITask;

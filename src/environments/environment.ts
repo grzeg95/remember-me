@@ -14,6 +14,13 @@ export const environment = {
     authDomain: 'rem.grzeg.pl',
     messagingSenderId: '824512670781'
   },
+  auth: {
+    clientId: 'jKLVgJyx0VjIJcS7FKugtIkmBvNJ5Zys',
+    clientDomain: 'grzeg.eu.auth0.com',
+    audience: 'http://localhost:4200/',
+    redirect: 'http://localhost:4200/auth0',
+    scope: 'openid profile email'
+  },
   functions: {
     port: 5000
   }

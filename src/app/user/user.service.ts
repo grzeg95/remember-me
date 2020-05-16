@@ -1,9 +1,10 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
-import {Observable, of, Subscription} from 'rxjs';
-import {catchError, map} from 'rxjs/operators';
+import {Observable, Subscription} from 'rxjs';
+import {map} from 'rxjs/operators';
+import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
-import {HTTPError, Task, TasksListItem, TimeOfDay, TodayItem} from './models';
+import {Task, TasksListItem, TimeOfDay, TodayItem} from './models';
 import User = firebase.User;
 
 @Injectable()
@@ -78,7 +79,16 @@ export class UserService {
   }
 
   constructor(private afs: AngularFirestore,
-              private authService: AuthService) {}
+              private authService: AuthService,
+              private appService: AppService) {
+    this.appService.isConnected$.subscribe((isConnected) => {
+      if (!isConnected) {
+        this._tasksFirstLoading = true;
+        this._todayFirstLoading = true;
+        this._timesOfDayOrderFirstLoading = true;
+      }
+    });
+  }
 
   runToday(): void {
     this._now = new Date();
@@ -118,13 +128,6 @@ export class UserService {
 
           return todayTasksByTimeOfDay;
 
-        }),
-        catchError((error: HTTPError) => {
-          if (error.code === 'permission-denied') {
-            this.authService.signOut();
-            return of(null);
-          }
-          throw error;
         })
       ).subscribe((today) => {
         if (today) {
@@ -156,14 +159,7 @@ export class UserService {
               id: documentChangeAction.payload.doc.id
             } as TasksListItem;
           })
-        ),
-        catchError((error: HTTPError) => {
-          if (error.code === 'permission-denied') {
-            this.authService.signOut();
-            return of(null);
-          }
-          throw error;
-        })
+        )
       ).subscribe((tasks) => {
         if (tasks) {
           this._tasks = tasks;
@@ -181,14 +177,7 @@ export class UserService {
       .doc<User>(`users/${this.authService.userData.uid}`)
       .collection<TimeOfDay>('timesOfDay', (ref) => ref.orderBy('position', 'asc').limit(20))
       .snapshotChanges().pipe(
-        map((querySnapDocData) => querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id)),
-        catchError((error: HTTPError) => {
-          if (error.code === 'permission-denied') {
-            this.authService.signOut();
-            return of(null);
-          }
-          throw error;
-        })
+        map((querySnapDocData) => querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id))
       ).subscribe((timesOfDay) => {
         if (timesOfDay) {
           this._timesOfDayOrder = timesOfDay;
@@ -199,14 +188,7 @@ export class UserService {
 
   getTaskById$(id: string): Observable<Task> {
     return this.afs.doc<User>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
-      map((taskDocSnap) => taskDocSnap.data() as Task),
-      catchError((error: HTTPError) => {
-        if (error.code === 'permission-denied') {
-          this.authService.signOut();
-          return of(null);
-        }
-        throw error;
-      })
+      map((taskDocSnap) => taskDocSnap.data() as Task)
     );
   }
 

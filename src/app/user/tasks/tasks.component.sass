@@ -8,13 +8,23 @@
       .row
         .table
           td
-            padding: 0.75rem 0.75rem 0.75rem 0.25rem
-            border-top: 1px solid #dee2e6
+            padding: 0.75rem 0.375rem
+            border-top: 1px solid #e0e0e0
+            color: rgba(0, 0, 0, 0.87)
             vertical-align: middle
 
+            &:first-child
+              padding-left: 1rem
+
             &:last-child
-              padding: 0.25rem
-              text-align: right
+              width: 1rem
+              padding-right: 1rem
+
+            .btn
+              padding: 0
 
         .add-task
           text-align: right
+
+.pseudo-button
+  cursor: pointer

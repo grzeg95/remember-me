@@ -9,10 +9,11 @@ body
     .container
       background-color: white
 
-    .btn
-      &:not(:disabled)
-        cursor: pointer
+    .btn[disabled], input[disabled], .disabled
+      cursor: default
+      pointer-events: none
 
+    .btn
       &:focus, &.focus
         outline: 0
         box-shadow: none

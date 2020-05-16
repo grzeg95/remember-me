@@ -1,16 +1,14 @@
 import { Injectable } from '@angular/core';
 import {
   ActivatedRoute,
-  ActivatedRouteSnapshot,
   CanActivate,
   CanActivateChild,
-  Router,
-  RouterStateSnapshot
+  Router
 } from '@angular/router';
 import {User} from 'firebase';
 import {Observable} from 'rxjs';
 import {map, take, tap} from 'rxjs/operators';
-import { AuthService } from './auth.service';
+import {AuthService} from './auth.service';
 
 @Injectable()
 export class AuthGuardUserService implements CanActivate, CanActivateChild {
@@ -19,9 +17,7 @@ export class AuthGuardUserService implements CanActivate, CanActivateChild {
               private router: Router,
               private activatedRoute: ActivatedRoute) {}
 
-  canActivate(route: ActivatedRouteSnapshot,
-              state: RouterStateSnapshot): Observable<boolean>  {
-
+  canActivate(): Observable<boolean>  {
     return this.authService.user$.pipe(
       take(1),
       map((authState: User | null) => !!authState),
@@ -32,9 +28,8 @@ export class AuthGuardUserService implements CanActivate, CanActivateChild {
       }));
   }
 
-  canActivateChild(route: ActivatedRouteSnapshot,
-                   state: RouterStateSnapshot): Observable<boolean> {
-    return this.canActivate(route, state);
+  canActivateChild(): Observable<boolean> {
+    return this.canActivate();
   }
 
 }

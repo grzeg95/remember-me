@@ -1,6 +1,7 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {performance} from 'firebase';
+import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
 import {TasksListItem} from '../models';
 import {UserService} from '../user.service';
@@ -43,7 +44,8 @@ export class TasksComponent implements OnInit, OnDestroy {
     return this.tasks.length === 0 || this.timesOfDayOrder.length === 0;
   }
 
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService,
+              private appService: AppService) {}
 
   ngOnInit(): void {
     this.tasksListComponentTrace.start();
@@ -53,6 +55,10 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.tasksListComponentTrace.stop();
+  }
+
+  get isConnected(): boolean {
+    return this.appService.isConnected$.getValue();
   }
 
 }

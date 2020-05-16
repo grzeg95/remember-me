@@ -1,17 +1,16 @@
-import {DOCUMENT, Location} from '@angular/common';
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {Location} from '@angular/common';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
 import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
-import {AuthService} from '../../auth/auth.service';
 import {HTTPError, HTTPSuccess, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
@@ -38,13 +37,10 @@ export class TaskComponent implements OnInit, OnDestroy {
     return (this.taskForm.get('timesOfDay') as FormArray).controls;
   }
 
-  constructor(private authService: AuthService,
-              private router: Router,
-              private activeRoute: ActivatedRoute,
+  constructor(private activeRoute: ActivatedRoute,
               private location: Location,
               private fns: AngularFireFunctions,
               public dialog: MatDialog,
-              @Inject(DOCUMENT) private document: Document,
               private snackBar: MatSnackBar,
               private appService: AppService,
               private userService: UserService) {}
@@ -83,12 +79,18 @@ export class TaskComponent implements OnInit, OnDestroy {
   deletingInProgress = false;
   isConnected$: Subscription;
 
+  get isConnected(): boolean {
+    return this.appService.isConnected$.getValue();
+  }
+
   ngOnInit(): void {
     this.taskEditorComponentTrace.start();
     this.taskForm.enable();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
+      } else {
+        this.taskForm.disable();
       }
     });
   }
@@ -100,15 +102,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   openTimeOfDayDialog(): void {
 
-    if (this.appService.dialogOpen) {
-      return;
-    }
-
     const dialogRef = this.dialog.open(TaskDialogTimeOfDay);
-
-    dialogRef.afterOpened().subscribe(() => {
-      this.appService.dialogOpen = true;
-    });
 
     dialogRef.afterClosed().subscribe((timeOfDay) => {
 
@@ -125,8 +119,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       } else if (timeOfDay && !((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim())) {
         (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
       }
-
-      this.appService.dialogOpen = false;
 
     });
 
@@ -195,11 +187,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.taskForm.enable();
       this.snackBar.open(success.details);
 
-    }, (error: HTTPError) => {
-      if (error.code === 'permission-denied') {
-        this.authService.signOut();
-        return;
-      }
+    }, () => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
@@ -233,15 +221,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   deleteTask(): void {
 
-    if (this.appService.dialogOpen) {
-      return;
-    }
-
     const dialogRef = this.dialog.open(TaskDialogConfirmDeleteComponent);
-
-    dialogRef.afterOpened().subscribe(() => {
-      this.appService.dialogOpen = true;
-    });
 
     dialogRef.afterClosed().subscribe((isConfirmed) => {
 
@@ -254,16 +234,10 @@ export class TaskComponent implements OnInit, OnDestroy {
           this.deepResetForm();
           this.deletingInProgress = false;
         }, (error: HTTPError) => {
-          if (error.code === 'permission-denied') {
-            this.authService.signOut();
-            return;
-          }
           this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);
         });
       }
-
-      this.appService.dialogOpen = false;
 
     });
 
