@@ -1,10 +1,10 @@
 $btn-success-bg-color: #12ab49
-$btn-success-border-color: #0e6b30
+$btn-success-border-color: $btn-success-bg-color
 
 // app-today
 \:host
   .container
-    margin: 0.5rem auto 1rem
+    margin-top: 0.5rem
     padding: 1rem
 
     .col
@@ -13,23 +13,12 @@ $btn-success-border-color: #0e6b30
           text-align: right
 
     .time-of-day-row
-      margin-bottom: 1rem
+      padding-bottom: 1rem
 
       &:first-child
         margin-top: 0
 
-        .row
-
-          &:first-child
-            .col
-              margin-top: 1rem
-
       .row
-
-        &:first-child
-          .col
-            margin-top: 2rem
-
         .col
           margin-top: 1rem
 
@@ -65,13 +54,10 @@ $btn-success-border-color: #0e6b30
               &.btn
                 margin: 0.15rem
 
-                &.border
-                  border: 1px solid #bdbdbd !important // sass-lint:disable-line no-important
-
                 &-success
                   border-color: $btn-success-border-color
                   background-color: $btn-success-bg-color
 
         span
-          font-size: 1.5rem
-          font-weight: 400
+          font-size: 1.4rem
+          font-weight: 500
