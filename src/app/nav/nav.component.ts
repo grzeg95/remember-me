@@ -1,5 +1,6 @@
 import {Component, ElementRef, HostListener, ViewChild} from '@angular/core';
 import {faListUl, faSignOutAlt, faTasks, faUser, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 
 @Component({
@@ -9,6 +10,10 @@ import {AuthService} from '../auth/auth.service';
   host: {class: 'app'}
 })
 export class NavComponent {
+
+  get isConnected(): boolean {
+    return this.appService.isConnected$.getValue();
+  }
 
   faUserCircle = faUserCircle;
   faTasks = faTasks;
@@ -31,7 +36,8 @@ export class NavComponent {
 
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService,
+              private appService: AppService) {}
 
   signOut(): Promise<boolean> {
     return this.authService.signOut();

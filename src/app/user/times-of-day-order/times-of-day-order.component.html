@@ -1,28 +1,41 @@
 <div class="container">
   <div class="col" [ngClass]="{'disabled': disabled}">
 
-    <div *ngIf="timesOfDayOrderFirstLoading" class="row">
-      <div class="col">
-        <span>Loading...</span>
-      </div>
-    </div>
+    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
 
-    <div *ngIf="isEmpty && !timesOfDayOrderFirstLoading" class="row">
-      <div class="col">
-        <span>There is no one</span>
-      </div>
-      <div class="col">
-        <div class="add-task">
-          <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
+    <ng-template #waitForItems>
+      <div *ngIf="timesOfDayOrderFirstLoading && isConnected; else onOneExists" class="row message">
+        <div class="col">
+          <span>Loading...</span>
         </div>
       </div>
-    </div>
 
-    <div *ngIf="!isEmpty && !timesOfDayOrderFirstLoading" class="row">
-      <div cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
-        <div class="times-of-day-box" *ngFor="let item of timesOfDayOrder" cdkDrag>{{ item }}</div>
+      <ng-template #onOneExists>
+        <div class="row message" *ngIf="isConnected">
+          <div class="col">
+            <span>There is no one</span>
+          </div>
+          <div class="col">
+            <div class="add-task">
+              <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
+            </div>
+          </div>
+        </div>
+        <div class="row message" *ngIf="!isConnected">
+          <div class="col">
+            <span>You are offline. Waiting for connection...</span>
+          </div>
+        </div>
+      </ng-template>
+    </ng-template>
+
+    <ng-template #showItems>
+      <div class="row">
+        <div [cdkDropListDisabled]="!isConnected" cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
+          <div [class.disabled]="!isConnected" class="times-of-day-box" *ngFor="let item of timesOfDayOrder" cdkDrag>{{ item }}</div>
+        </div>
       </div>
-    </div>
+    </ng-template>
 
   </div>
 </div>

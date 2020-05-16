@@ -135,10 +135,16 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.changeDayInterval.unsubscribe();
+    if (this.changeDayInterval && !this.changeDayInterval.closed) {
+      this.changeDayInterval.unsubscribe();
+    }
     this.isConnected$.unsubscribe();
     this.destroyed = true;
     this.todayComponentTrace.stop();
+  }
+
+  get isConnected(): boolean {
+    return this.appService.isConnected$.getValue();
   }
 
 }

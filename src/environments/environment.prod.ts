@@ -10,6 +10,13 @@ export const environment = {
     authDomain: 'rem.grzeg.pl',
     messagingSenderId: '824512670781'
   },
+  auth: {
+    clientId: null,
+    clientDomain: null,
+    audience: null,
+    redirect: null,
+    scope: null
+  },
   functions: {
     port: null
   }

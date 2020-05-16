@@ -79,12 +79,18 @@ export class TaskComponent implements OnInit, OnDestroy {
   deletingInProgress = false;
   isConnected$: Subscription;
 
+  get isConnected(): boolean {
+    return this.appService.isConnected$.getValue();
+  }
+
   ngOnInit(): void {
     this.taskEditorComponentTrace.start();
     this.taskForm.enable();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
+      } else {
+        this.taskForm.disable();
       }
     });
   }
@@ -96,15 +102,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   openTimeOfDayDialog(): void {
 
-    if (this.appService.dialogOpen) {
-      return;
-    }
-
     const dialogRef = this.dialog.open(TaskDialogTimeOfDay);
-
-    dialogRef.afterOpened().subscribe(() => {
-      this.appService.dialogOpen = true;
-    });
 
     dialogRef.afterClosed().subscribe((timeOfDay) => {
 
@@ -121,8 +119,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       } else if (timeOfDay && !((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim())) {
         (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
       }
-
-      this.appService.dialogOpen = false;
 
     });
 
@@ -225,15 +221,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   deleteTask(): void {
 
-    if (this.appService.dialogOpen) {
-      return;
-    }
-
     const dialogRef = this.dialog.open(TaskDialogConfirmDeleteComponent);
-
-    dialogRef.afterOpened().subscribe(() => {
-      this.appService.dialogOpen = true;
-    });
 
     dialogRef.afterClosed().subscribe((isConfirmed) => {
 
@@ -250,8 +238,6 @@ export class TaskComponent implements OnInit, OnDestroy {
           this.refreshTaskByParamId(this.id);
         });
       }
-
-      this.appService.dialogOpen = false;
 
     });
 

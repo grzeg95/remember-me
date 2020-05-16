@@ -2,6 +2,7 @@ import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
+import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 import {Task, TasksListItem, TimeOfDay, TodayItem} from './models';
 import User = firebase.User;
@@ -78,7 +79,16 @@ export class UserService {
   }
 
   constructor(private afs: AngularFirestore,
-              private authService: AuthService) {}
+              private authService: AuthService,
+              private appService: AppService) {
+    this.appService.isConnected$.subscribe((isConnected) => {
+      if (!isConnected) {
+        this._tasksFirstLoading = true;
+        this._todayFirstLoading = true;
+        this._timesOfDayOrderFirstLoading = true;
+      }
+    });
+  }
 
   runToday(): void {
     this._now = new Date();

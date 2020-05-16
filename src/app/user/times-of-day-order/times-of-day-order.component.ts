@@ -4,6 +4,7 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {performance} from 'firebase';
 import {RouterDict} from 'src/app/app.constants';
+import {AppService} from '../../app-service';
 import {HTTPError, HTTPSuccess} from '../models';
 import {UserService} from '../user.service';
 
@@ -33,9 +34,14 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
   disabled = false;
 
+  get isConnected(): boolean {
+    return this.appService.isConnected$.getValue();
+  }
+
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
-              private fns: AngularFireFunctions) {}
+              private fns: AngularFireFunctions,
+              private appService: AppService) {}
 
   ngOnInit(): void {
     this.todayOrderComponentTrace.start();

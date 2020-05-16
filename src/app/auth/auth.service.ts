@@ -4,25 +4,17 @@ import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
 import * as auth0 from 'auth0-js';
 import {auth, User} from 'firebase/app';
-import {BehaviorSubject, interval, Observable} from 'rxjs';
+import {interval, Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {UserData} from './user-data.model';
 
 @Injectable()
 export class AuthService {
 
-  auth0 = new auth0.WebAuth({
-    clientID: environment.auth.clientId,
-    domain: environment.auth.clientDomain,
-    responseType: 'token',
-    redirectUri: environment.auth.redirect,
-    audience: environment.auth.audience,
-    scope: environment.auth.scope
-  });
-
+  auth0: any;
   userData: UserData;
   user$: Observable<User>;
-  whileLoginIn$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  whileLoginIn = false;
   firstLoginChecking = true;
 
   constructor(
@@ -31,6 +23,17 @@ export class AuthService {
     private ngZone: NgZone,
     private http: HttpClient
   ) {
+
+    if (!environment.production) {
+      this.auth0 = new auth0.WebAuth({
+        clientID: environment.auth.clientId,
+        domain: environment.auth.clientDomain,
+        responseType: 'token',
+        redirectUri: environment.auth.redirect,
+        audience: environment.auth.audience,
+        scope: environment.auth.scope
+      });
+    }
 
     this.user$ = this.afAuth.authState;
 
@@ -87,16 +90,16 @@ export class AuthService {
   }
 
   googleAuth(): void {
-    this.whileLoginIn$.next(true);
+    this.whileLoginIn = true;
 
     this.afAuth.auth.signInWithRedirect(new auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
-        this.whileLoginIn$.next(false);
-        return this.router.navigate(['/u/t']);
+        this.whileLoginIn = false;
+        this.router.navigate(['/u/t']);
       });
     }).catch((error) => {
       console.error(error);
-      this.whileLoginIn$.next(false);
+      this.whileLoginIn = false;
     });
 
   }
@@ -107,28 +110,27 @@ export class AuthService {
   }
 
   auth0HandleLoginCallback(): void {
+    this.whileLoginIn = true;
 
     this.auth0.parseHash((err, authResult) => {
-
       if (authResult && authResult.accessToken) {
-        window.location.hash = '';
-        this.whileLoginIn$.next(true);
 
         this.http.get(`https://europe-west2-remember-me-3.cloudfunctions.net/auth0`, {
           headers: new HttpHeaders().set('Authorization', `Bearer ${authResult.accessToken}`)
         }).subscribe((res: {firebaseToken: string}) => {
           this.afAuth.auth.signInWithCustomToken(res.firebaseToken).then(() => {
             return this.ngZone.run(() => {
-              this.whileLoginIn$.next(false);
+              this.whileLoginIn = false;
               return this.router.navigate(['/u/t']);
             });
           }).catch((error) => {
             console.error(error);
-            this.whileLoginIn$.next(false);
+            this.whileLoginIn = false;
           });
         });
 
       } else if (err) {
+        this.whileLoginIn = false;
         this.router.navigate(['/']);
         console.error(`Error authenticating: ${err.error}`);
       }

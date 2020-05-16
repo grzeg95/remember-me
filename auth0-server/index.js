@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const https = require('https');
 
 admin.initializeApp({
-  credential: admin.credential.cert(require('./remember-me-3-firebase-adminsdk-dz5m4-315ff0d147.json')),
+  credential: admin.credential.cert(require('./remember-me-3-firebase-adminsdk.json')),
   databaseURL: "https://remember-me-3.firebaseio.com"
 });
 
