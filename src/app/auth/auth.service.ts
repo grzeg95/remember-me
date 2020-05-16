@@ -1,32 +1,45 @@
+import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
-import * as firebase from 'firebase';
+import * as auth0 from 'auth0-js';
 import {auth, User} from 'firebase/app';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {interval, Observable} from 'rxjs';
+import {environment} from '../../environments/environment';
 import {UserData} from './user-data.model';
-import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
 
 @Injectable()
 export class AuthService {
 
+  auth0: any;
   userData: UserData;
   user$: Observable<User>;
-  whileLoginIn$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  whileLoginIn = false;
   firstLoginChecking = true;
 
   constructor(
-    public afAuth: AngularFireAuth,
-    public router: Router,
-    public ngZone: NgZone
+    private afAuth: AngularFireAuth,
+    private router: Router,
+    private ngZone: NgZone,
+    private http: HttpClient
   ) {
+
+    if (!environment.production) {
+      this.auth0 = new auth0.WebAuth({
+        clientID: environment.auth.clientId,
+        domain: environment.auth.clientDomain,
+        responseType: 'token',
+        redirectUri: environment.auth.redirect,
+        audience: environment.auth.audience,
+        scope: environment.auth.scope
+      });
+    }
 
     this.user$ = this.afAuth.authState;
 
-    this.user$.subscribe((user) => {
+    this.user$.subscribe((user: User) => {
 
       if (user) {
-
         this.userData = {
           uid: user.uid,
           email: user.email,
@@ -34,7 +47,6 @@ export class AuthService {
           photoURL: user.photoURL,
           emailVerified: user.emailVerified
         };
-
       } else {
         this.userData = null;
         this.router.navigate(['/']);
@@ -42,6 +54,12 @@ export class AuthService {
 
       this.firstLoginChecking = false;
 
+    });
+
+    interval(1000 * 60 * 10).subscribe(() => {
+      if (this.afAuth.auth.currentUser) {
+        this.afAuth.auth.currentUser.reload();
+      }
     });
 
   }
@@ -63,24 +81,60 @@ export class AuthService {
 
   }
 
-  googleAuth(): void {
-    this.authLogin(new auth.GoogleAuthProvider());
+  auth(): void {
+    if (!environment.production) {
+      this.auth0Auth();
+    } else {
+      this.googleAuth();
+    }
   }
 
-  authLogin(provider: GoogleAuthProvider): void {
+  googleAuth(): void {
+    this.whileLoginIn = true;
 
-    this.whileLoginIn$.next(true);
-
-    this.afAuth.auth.signInWithPopup(provider).then(() => {
+    this.afAuth.auth.signInWithRedirect(new auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
-        this.whileLoginIn$.next(false);
-        return this.router.navigate(['/u/t']);
+        this.whileLoginIn = false;
+        this.router.navigate(['/u/t']);
       });
     }).catch((error) => {
       console.error(error);
-      this.whileLoginIn$.next(false);
+      this.whileLoginIn = false;
     });
 
+  }
+
+  auth0Auth(): void {
+    localStorage.setItem('auth_redirect', this.router.url);
+    this.auth0.authorize();
+  }
+
+  auth0HandleLoginCallback(): void {
+    this.whileLoginIn = true;
+
+    this.auth0.parseHash((err, authResult) => {
+      if (authResult && authResult.accessToken) {
+
+        this.http.get(`https://europe-west2-remember-me-3.cloudfunctions.net/auth0`, {
+          headers: new HttpHeaders().set('Authorization', `Bearer ${authResult.accessToken}`)
+        }).subscribe((res: {firebaseToken: string}) => {
+          this.afAuth.auth.signInWithCustomToken(res.firebaseToken).then(() => {
+            return this.ngZone.run(() => {
+              this.whileLoginIn = false;
+              return this.router.navigate(['/u/t']);
+            });
+          }).catch((error) => {
+            console.error(error);
+            this.whileLoginIn = false;
+          });
+        });
+
+      } else if (err) {
+        this.whileLoginIn = false;
+        this.router.navigate(['/']);
+        console.error(`Error authenticating: ${err.error}`);
+      }
+    });
   }
 
   signOut(): Promise<boolean> {

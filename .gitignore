@@ -61,12 +61,13 @@ node_modules/
 
 **/.idea/
 
-dist
-
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
+/auth0-server/node_modules
+/auth0-server/remember-me-3-firebase-adminsdk.json
+
 # compiled output
-/dist
+/public
 /tmp
 /out-tsc
 # Only exists if Bazel was run

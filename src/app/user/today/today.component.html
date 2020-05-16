@@ -4,14 +4,14 @@
     <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="todayFirstLoading || timesOfDayFirstLoading; else onOneExists">
+      <div class="row message" *ngIf="(todayFirstLoading || timesOfDayFirstLoading) && isConnected; else onOneExists">
         <div class="col">
           <span>Loading...</span>
         </div>
       </div>
 
       <ng-template #onOneExists>
-        <div class="row message">
+        <div class="row message" *ngIf="isConnected">
           <div class="col">
             <span>There is no one</span>
           </div>
@@ -21,8 +21,12 @@
             </div>
           </div>
         </div>
+        <div class="row message" *ngIf="!isConnected">
+          <div class="col">
+            <span>You are offline. Waiting for connection...</span>
+          </div>
+        </div>
       </ng-template>
-
     </ng-template>
 
     <ng-template #showItems>
@@ -35,7 +39,7 @@
           </div>
         </div>
 
-        <div class="row">
+        <div class="row tasks">
           <div class="col">
             <div class="form-check" *ngFor="let button of todayItem.tasks; let j = index; trackBy: trackByTodayItem">
               <input #checkbox class="form-check-input d-none" type="checkbox" [disabled]="false"

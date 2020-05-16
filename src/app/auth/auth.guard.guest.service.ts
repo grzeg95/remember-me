@@ -1,10 +1,7 @@
 import {Injectable} from '@angular/core';
 import {
-  ActivatedRoute,
-  ActivatedRouteSnapshot,
   CanActivate,
-  Router,
-  RouterStateSnapshot
+  Router
 } from '@angular/router';
 import {User} from 'firebase';
 import {Observable} from 'rxjs';
@@ -18,9 +15,7 @@ export class AuthGuardGuestService implements CanActivate {
   constructor(private auth: AuthService,
               private router: Router) {}
 
-  canActivate(route: ActivatedRouteSnapshot,
-              state: RouterStateSnapshot): Observable<boolean> {
-
+  canActivate(): Observable<boolean> {
     return this.auth.user$.pipe(
       take(1),
       map((authState: User | null) => !!!authState),
@@ -30,7 +25,6 @@ export class AuthGuardGuestService implements CanActivate {
         }
         this.router.navigate(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
       }));
-
   }
 
 }

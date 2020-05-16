@@ -1,7 +1,7 @@
 @import '../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css'
 
 body
-  background-color: #ffffff
+  color: #212121
 
   .app
     display: block
@@ -9,10 +9,11 @@ body
     .container
       background-color: white
 
-    .btn
-      &:not(:disabled)
-        cursor: pointer
+    .btn[disabled], input[disabled], .disabled
+      cursor: default
+      pointer-events: none
 
+    .btn
       &:focus, &.focus
         outline: 0
         box-shadow: none
@@ -58,6 +59,9 @@ body
       float: left
       color: #1485ee
       font-size: 40px
+
+.text-dark
+  color: #212121 !important // sass-lint:disable-line no-important
 
 @media (max-width: 767px)
   .features-clean
