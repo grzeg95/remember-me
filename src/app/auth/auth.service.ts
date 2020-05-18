@@ -47,7 +47,7 @@ export class AuthService {
           photoURL: user.photoURL,
           emailVerified: user.emailVerified
         };
-      } else {
+      } else if (!this.whileLoginIn) {
         this.userData = null;
         this.router.navigate(['/']);
       }
@@ -65,6 +65,10 @@ export class AuthService {
   }
 
   get isLoggedIn(): boolean | null {
+
+    if (this.whileLoginIn) {
+      return null;
+    }
 
     const a = !this.firstLoginChecking;
     const b = (this.userData && this.userData.emailVerified !== false);
@@ -115,7 +119,7 @@ export class AuthService {
     this.auth0.parseHash((err, authResult) => {
       if (authResult && authResult.accessToken) {
 
-        this.http.get(`https://europe-west2-remember-me-3.cloudfunctions.net/auth0`, {
+        this.http.get('https://europe-west2-remember-me-3.cloudfunctions.net/auth0', {
           headers: new HttpHeaders().set('Authorization', `Bearer ${authResult.accessToken}`)
         }).subscribe((res: {firebaseToken: string}) => {
           this.afAuth.auth.signInWithCustomToken(res.firebaseToken).then(() => {
@@ -123,16 +127,15 @@ export class AuthService {
               this.whileLoginIn = false;
               return this.router.navigate(['/u/t']);
             });
-          }).catch((error) => {
-            console.error(error);
+          }).catch(() => {
             this.whileLoginIn = false;
+            this.router.navigate(['/']);
           });
         });
 
       } else if (err) {
         this.whileLoginIn = false;
         this.router.navigate(['/']);
-        console.error(`Error authenticating: ${err.error}`);
       }
     });
   }

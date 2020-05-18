@@ -43,7 +43,7 @@
     "mixin-deep": "^2.0.1",
     "ng-connection-service": "^1.0.4",
     "ngx-cookie-service": "^3.0.4",
-    "node-sass": "^4.13.1",
+    "node-sass": "^4.14.1",
     "popper.js": "^1.16.1",
     "rxjs": "^6.5.5",
     "sass-lint": "^1.13.1",

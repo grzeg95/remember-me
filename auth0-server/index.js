@@ -1,73 +1,78 @@
-const admin = require("firebase-admin");
+const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
 const https = require('https');
+const cors = require('cors');
+const expressJwt = require('express-jwt');
+const express = require('express');
+const jwksRsa = require('jwks-rsa');
 
 admin.initializeApp({
   credential: admin.credential.cert(require('./remember-me-3-firebase-adminsdk.json')),
   databaseURL: "https://remember-me-3.firebaseio.com"
 });
 
-const port = 1337;
-const app = require('express')();
+const app = express();
+const auth = admin.auth();
 
-app.use(require('cors')());
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.listen(port, _ => {});
-
-const jwtCheck = require('express-jwt')({
-  secret: require('jwks-rsa').expressJwtSecret({
+const jwtCheck = expressJwt({
+  secret: jwksRsa.expressJwtSecret({
     cache: true,
     rateLimit: true,
     jwksRequestsPerMinute: 5,
-    jwksUri: `https://grzeg.eu.auth0.com/.well-known/jwks.json`
+    jwksUri: 'https://grzeg.eu.auth0.com/.well-known/jwks.json'
   }),
   audience: 'http://localhost:4200/',
-  issuer: `https://grzeg.eu.auth0.com/`,
+  issuer: 'https://grzeg.eu.auth0.com/',
   algorithm: 'RS256'
 });
 
-// GET object containing Firebase custom token
 app.get('/', jwtCheck, (req, res) => {
 
-  https.get('https://grzeg.eu.auth0.com/userinfo', {
-    headers: {
-      'Authorization': req.get('Authorization')
-    }
-  }, (userInfoIncomingMessage) => {
-    let userJSON = '';
+  https.get('https://grzeg.eu.auth0.com/userinfo',
+    {
+      headers: {
+        'Authorization': req.get('Authorization')
+      }
+    },(userInfoIncomingMessage) => {
 
-    userInfoIncomingMessage.on('data', chunk => userJSON += chunk);
-    userInfoIncomingMessage.on('end', _ => {
+    let auth0UserJSON = '';
+    userInfoIncomingMessage.on('data', chunk => auth0UserJSON += chunk);
+    userInfoIncomingMessage.on('end', () => {
 
-      const user = JSON.parse(userJSON);
+      const auth0User = JSON.parse(auth0UserJSON);
+      const user = {
+        email: auth0User.email,
+        emailVerified: auth0User.email_verified,
+        displayName: auth0User.nickname,
+        photoURL: auth0User.picture
+      };
       const uid = req.user.sub;
 
-      // Mint token using Firebase Admin SDK
-      admin.auth().createCustomToken(uid)
-        .then(customToken => {
-          admin.auth().updateUser(uid, {
-            email: user.email,
-            emailVerified: user.email_verified,
-            displayName: user.nickname,
-            photoURL: user.picture,
-          }).then(() => {
-            res.json({firebaseToken: customToken});
-          });
-        })
-        .catch(err =>
+      auth.createCustomToken(uid).then(firebaseToken => {
+        auth.updateUser(uid, user).then(() => {
+          res.json({firebaseToken});
+        }).catch(() =>
+          auth.createUser({...user, uid}).then(() => {
+            res.json({firebaseToken});
+          }).catch(err =>
+            res.status(500).send({
+              message: 'Something went wrong creating a Firebase account.',
+              error: err
+            })
+          )
+        ).catch(err => {
           res.status(500).send({
             message: 'Something went wrong acquiring a Firebase token.',
             error: err
           })
-        );
-
+        })
+      });
     });
-
   });
-
 });
 
-
-exports.auth0 = app;
+app.listen(1337, _ => {});
