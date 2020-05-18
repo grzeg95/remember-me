@@ -1,4 +1,5 @@
 <app-nav></app-nav>
+<mat-spinner *ngIf="isLoggedIn === null" [strokeWidth]="5"></mat-spinner>
 <router-outlet></router-outlet>
 
 <div [class.active]="!isConnected" class="offline">

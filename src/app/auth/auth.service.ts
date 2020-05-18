@@ -66,22 +66,17 @@ export class AuthService {
 
   get isLoggedIn(): boolean | null {
 
-    if (this.whileLoginIn) {
+    const emailVerified = (this.userData && this.userData.emailVerified !== false);
+
+    if (typeof emailVerified === 'undefined') {
       return null;
     }
 
-    const a = !this.firstLoginChecking;
-    const b = (this.userData && this.userData.emailVerified !== false);
-
-    if (!a && typeof b === 'undefined') {
-      return null;
-    }
-
-    if (a && typeof b === 'object') {
+    if (!this.firstLoginChecking && typeof emailVerified === 'object') {
       return false;
     }
 
-    return a && b;
+    return !this.firstLoginChecking && emailVerified;
 
   }
 
