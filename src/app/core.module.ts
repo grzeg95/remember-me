@@ -17,7 +17,8 @@ import {AuthService} from './auth/auth.service';
     AngularFireFunctions,
     {provide: FUNCTIONS_REGION, useValue: 'europe-west2'},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
-    CookieService
+    CookieService,
+    {provide: Window, useValue: window}
   ]
 })
 export class CoreModule {

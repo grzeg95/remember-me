@@ -6,7 +6,8 @@ Before developing make sure to run:
 - `npm install`
 - `npm install ./functions`
 - `gcloud auth application-default login`
-- `gcloud config set project remember-me-3`
+- `production: gcloud config set project remember-me-3`
+- `dev: gcloud config set project remember-me-dev`
 -  `firebase login --reauth`
 
 ##Dev use
@@ -15,6 +16,7 @@ Before developing make sure to run:
 
 ##Deploy hosting
 - `npm run deploy:hosting`
+
 
 ##Deploy functions
 - `npm run deploy:functions`

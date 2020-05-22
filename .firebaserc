@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "remember-me-3"
+    "default": "remember-me-3",
+    "dev": "remember-me-dev"
   }
 }

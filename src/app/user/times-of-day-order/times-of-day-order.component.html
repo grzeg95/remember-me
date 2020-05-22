@@ -32,7 +32,13 @@
     <ng-template #showItems>
       <div class="row">
         <div [cdkDropListDisabled]="!isConnected" cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
-          <div [class.disabled]="!isConnected" class="times-of-day-box" *ngFor="let item of timesOfDayOrder" cdkDrag>{{ item }}</div>
+          <div
+            cdkDrag
+            class="times-of-day-box"
+            [class.disabled]="!isConnected"
+            *ngFor="let item of timesOfDayOrder; let i = index">
+            <div class="times-of-day-item">{{ item }}</div>
+          </div>
         </div>
       </div>
     </ng-template>

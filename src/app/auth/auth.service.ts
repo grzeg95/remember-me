@@ -1,10 +1,11 @@
 import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {Injectable, NgZone} from '@angular/core';
+import {Inject, Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
 import * as auth0 from 'auth0-js';
 import {auth, User} from 'firebase/app';
 import {interval, Observable} from 'rxjs';
+import {catchError} from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 import {UserData} from './user-data.model';
 
@@ -21,17 +22,18 @@ export class AuthService {
     private afAuth: AngularFireAuth,
     private router: Router,
     private ngZone: NgZone,
-    private http: HttpClient
+    private http: HttpClient,
+    @Inject(Window) private window: Window
   ) {
 
     if (!environment.production) {
       this.auth0 = new auth0.WebAuth({
-        clientID: environment.auth.clientId,
-        domain: environment.auth.clientDomain,
+        clientID: environment.auth0.clientId,
+        domain: environment.auth0.clientDomain,
         responseType: 'token',
-        redirectUri: environment.auth.redirect,
-        audience: environment.auth.audience,
-        scope: environment.auth.scope
+        redirectUri: environment.auth0.redirect.replace('{{origin}}', this.window.location.origin),
+        audience: environment.auth0.audience,
+        scope: environment.auth0.scope
       });
     }
 
@@ -104,7 +106,6 @@ export class AuthService {
   }
 
   auth0Auth(): void {
-    localStorage.setItem('auth_redirect', this.router.url);
     this.auth0.authorize();
   }
 
@@ -114,9 +115,13 @@ export class AuthService {
     this.auth0.parseHash((err, authResult) => {
       if (authResult && authResult.accessToken) {
 
-        this.http.get('https://europe-west2-remember-me-3.cloudfunctions.net/auth0', {
+        this.http.get(environment.functions.auth0, {
           headers: new HttpHeaders().set('Authorization', `Bearer ${authResult.accessToken}`)
-        }).subscribe((res: {firebaseToken: string}) => {
+        }).pipe(catchError((error) => {
+          this.whileLoginIn = false;
+          this.router.navigate(['/']);
+          throw error;
+        })).subscribe((res: {firebaseToken: string}) => {
           this.afAuth.auth.signInWithCustomToken(res.firebaseToken).then(() => {
             return this.ngZone.run(() => {
               this.whileLoginIn = false;
@@ -131,6 +136,8 @@ export class AuthService {
       } else if (err) {
         this.whileLoginIn = false;
         this.router.navigate(['/']);
+      } else {
+        this.whileLoginIn = false;
       }
     });
   }

@@ -18,6 +18,7 @@ export const environment = {
     scope: null
   },
   functions: {
-    port: null
+    port: null,
+    auth0: null
   }
 };
