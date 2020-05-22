@@ -19,6 +19,6 @@ export const environment = {
   functions: {
     dev: false,
     port: null,
-    auth0: null
+    auth0: 'https://europe-west2-remember-me-dev.cloudfunctions.net/auth0'
   }
 };
