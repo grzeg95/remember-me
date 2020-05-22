@@ -10,6 +10,14 @@ import User = firebase.User;
 @Injectable()
 export class UserService {
 
+  set setTimesOfDayOrder$(setTimesOfDayOrder$: Subscription) {
+    this._setTimesOfDayOrder$ = setTimesOfDayOrder$;
+  }
+
+  get setTimesOfDayOrder$(): Subscription {
+    return this._setTimesOfDayOrder$;
+  }
+
   get todayFirstLoading(): boolean {
     return this._todayFirstLoading;
   }
@@ -41,6 +49,8 @@ export class UserService {
   get now(): Date {
     return this._now;
   }
+
+  private _setTimesOfDayOrder$: Subscription;
 
   private _todayFirstLoading = true;
   private _tasksFirstLoading = true;
@@ -76,6 +86,10 @@ export class UserService {
       this.timesOfDayOrder$.unsubscribe();
     }
 
+    if (this._setTimesOfDayOrder$ && !this._setTimesOfDayOrder$.closed) {
+      this._setTimesOfDayOrder$.unsubscribe();
+    }
+
   }
 
   constructor(private afs: AngularFirestore,
@@ -86,6 +100,9 @@ export class UserService {
         this._tasksFirstLoading = true;
         this._todayFirstLoading = true;
         this._timesOfDayOrderFirstLoading = true;
+        if (this._setTimesOfDayOrder$ && !this._setTimesOfDayOrder$.closed) {
+          this._setTimesOfDayOrder$.unsubscribe();
+        }
       }
     });
   }

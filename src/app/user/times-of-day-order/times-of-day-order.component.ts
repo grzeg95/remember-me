@@ -4,6 +4,7 @@ import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {performance} from 'firebase';
+import {Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {HTTPError, HTTPSuccess} from '../models';
@@ -17,10 +18,17 @@ import {UserService} from '../user.service';
 })
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
+  set setTimesOfDayOrder$(setTimesOfDayOrder$: Subscription) {
+    this.userService.setTimesOfDayOrder$ = setTimesOfDayOrder$;
+  }
+
+  get setTimesOfDayOrder$(): Subscription {
+    return this.userService.setTimesOfDayOrder$;
+  }
+
   faGripLines = faGripLines;
   perf = performance();
   todayOrderComponentTrace = this.perf.trace('TimesOfDayOrderComponent');
-  disabled = false;
   RouterDict = RouterDict;
 
   get timesOfDayOrder(): string[] {
@@ -61,14 +69,10 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
     moveItemInArray(this.timesOfDayOrder, event.previousIndex, event.currentIndex);
 
-    this.disabled = true;
-
-    this.fns.httpsCallable('setTimesOfDayOrder')(this.timesOfDayOrder).subscribe((success: HTTPSuccess) => {
+    this.setTimesOfDayOrder$ = this.fns.httpsCallable('setTimesOfDayOrder')(this.timesOfDayOrder).subscribe((success: HTTPSuccess) => {
       this.snackBar.open(success.details);
-      this.disabled = false;
     }, (error: HTTPError) => {
       this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
-      this.disabled = false;
     });
 
   }
