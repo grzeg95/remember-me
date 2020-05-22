@@ -17,8 +17,8 @@ export const environment = {
     scope: 'openid profile email'
   },
   functions: {
-    dev: true,
-    port: 5000,
-    auth0: 'https://europe-west2-remember-me-dev.cloudfunctions.net/auth0'
+    dev: false,
+    port: null,
+    auth0: null
   }
 };

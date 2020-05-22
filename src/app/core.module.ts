@@ -24,7 +24,7 @@ import {AuthService} from './auth/auth.service';
 export class CoreModule {
 
   constructor(private fns: AngularFireFunctions) {
-    if (!environment.production) {
+    if (!environment.production && environment.functions.dev) {
       this.fns.functions.useFunctionsEmulator('http://localhost:' + environment.functions.port);
     }
   }
