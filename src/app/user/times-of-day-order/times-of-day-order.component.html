@@ -1,6 +1,12 @@
 <div class="container">
   <div class="col" [ngClass]="{'disabled': disabled}">
 
+    <div class="row title">
+      <div class="col">
+        <h3>Change times of day order</h3>
+      </div>
+    </div>
+
     <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
@@ -38,6 +44,7 @@
             [class.disabled]="!isConnected"
             *ngFor="let item of timesOfDayOrder; let i = index">
             <div class="times-of-day-item">{{ item }}</div>
+            <fa-icon [icon]="faGripLines"></fa-icon>
           </div>
         </div>
       </div>

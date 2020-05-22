@@ -2,6 +2,7 @@ import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {performance} from 'firebase';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
@@ -15,6 +16,8 @@ import {UserService} from '../user.service';
   host: {class: 'app'}
 })
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
+
+  faGripLines = faGripLines;
 
   perf = performance();
   todayOrderComponentTrace = this.perf.trace('TimesOfDayOrderComponent');

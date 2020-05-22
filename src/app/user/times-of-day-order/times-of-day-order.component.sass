@@ -6,6 +6,8 @@
 
     .col
       .row
+        &.title
+          margin-bottom: 1rem
         .add-task
           text-align: right
 
@@ -27,8 +29,16 @@
   border-radius: 4px
   background: white
   font-size: 1rem
-  box-shadow: 2px 2px 6px -4px #e0e0e0
+  box-shadow: 2px 2px 9px -4px #e0e0e0
   cursor: move
+  justify-content: space-between
+
+  &:hover
+    fa-icon
+      color: black
+
+  fa-icon
+    color: #9e9e9e
 
 .times-of-day-index
   font-weight: bold
@@ -39,6 +49,8 @@
 .cdk-drag-preview
   border-radius: 4px
   box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12)
+  fa-icon
+    color: black
 
 .cdk-drag-placeholder
   opacity: 0

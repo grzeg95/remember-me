@@ -7,8 +7,7 @@ export const environment = {
     storageBucket: 'remember-me-dev.appspot.com',
     locationId: 'europe-west2',
     apiKey: 'AIzaSyAJDxhsiwiggRaJ6NI0rNqyXEW_L_qBdxw',
-    authDomain: 'dev.rem.grzeg.pl',
-    messagingSenderId: '385373027433'
+    authDomain: null
   },
   auth0: {
     clientId: '3n8fodkz8xZOEB1C3d7gI130YROBtFaE',
