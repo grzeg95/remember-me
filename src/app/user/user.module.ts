@@ -7,6 +7,7 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTableModule} from '@angular/material/table';
 import {RouterModule} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -33,22 +34,23 @@ import {UserService} from './user.service';
     TaskDialogTimeOfDay,
     TaskDialogConfirmDeleteComponent
   ],
-  imports: [
-    RouterModule,
-    CommonModule,
-    ReactiveFormsModule,
-    SharedModule,
-    UserRoutingModule,
-    MatProgressBarModule,
-    MatTableModule,
-    FormsModule,
-    DragDropModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    FontAwesomeModule,
-    MatDialogModule
-  ],
+    imports: [
+        RouterModule,
+        CommonModule,
+        ReactiveFormsModule,
+        SharedModule,
+        UserRoutingModule,
+        MatProgressBarModule,
+        MatTableModule,
+        FormsModule,
+        DragDropModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        FontAwesomeModule,
+        MatDialogModule,
+        MatProgressSpinnerModule
+    ],
   providers: [
     UserService
   ],

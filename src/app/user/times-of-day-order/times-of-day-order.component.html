@@ -1,11 +1,13 @@
 <div class="container">
-  <div class="col" [ngClass]="{'disabled': disabled}">
-
+  <div class="col">
     <div class="row title">
       <div class="col">
         <h3>Change times of day order</h3>
       </div>
     </div>
+  </div>
+
+  <div class="col" [ngClass]="{'disabled': disabled}">
 
     <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
 
@@ -52,3 +54,5 @@
 
   </div>
 </div>
+
+<mat-spinner *ngIf="disabled" [diameter]="50" [strokeWidth]="5"></mat-spinner>

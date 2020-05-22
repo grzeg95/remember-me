@@ -18,9 +18,9 @@ import {UserService} from '../user.service';
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
   faGripLines = faGripLines;
-
   perf = performance();
   todayOrderComponentTrace = this.perf.trace('TimesOfDayOrderComponent');
+  disabled = false;
   RouterDict = RouterDict;
 
   get timesOfDayOrder(): string[] {
@@ -34,8 +34,6 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
   get isEmpty(): boolean {
     return this.timesOfDayOrder.length === 0;
   }
-
-  disabled = false;
 
   get isConnected(): boolean {
     return this.appService.isConnected$.getValue();

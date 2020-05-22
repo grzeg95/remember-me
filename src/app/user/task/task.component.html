@@ -63,6 +63,7 @@
       </div>
     </div>
     <hr>
+    <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
     <div class="row">
       <div class="col text-center">
         <button
@@ -70,7 +71,6 @@
           type="submit"
           [disabled]="taskForm.disabled || taskForm.invalid || !isConnected || isDeepEqual()"
           (click)="saveTask()">{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<fa-icon [icon]="faCheckCircle"></fa-icon>
-          <mat-progress-bar *ngIf="savingInProgress" mode="indeterminate"></mat-progress-bar>
         </button>
         <button
           *ngIf="!idIsNull()"
@@ -85,7 +85,6 @@
           type="button"
           [disabled]="taskForm.disabled || !isConnected"
           (click)="deleteTask()">Delete
-          <mat-progress-bar *ngIf="deletingInProgress" mode="indeterminate"></mat-progress-bar>
         </button>
       </div>
     </div>
