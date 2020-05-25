@@ -15,7 +15,6 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
-import {AuthCallbackComponent} from './auth/auth-callback.component';
 import {CoreModule} from './core.module';
 import {GuestComponent} from './guest/guest.component';
 import {NavComponent} from './nav/nav.component';
@@ -25,8 +24,7 @@ import {SharedModule} from './shared.module';
   declarations: [
     AppComponent,
     NavComponent,
-    GuestComponent,
-    AuthCallbackComponent
+    GuestComponent
   ],
   imports: [
     BrowserModule,

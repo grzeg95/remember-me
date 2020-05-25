@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
+import {FirestoreSettingsToken} from '@angular/fire/firestore';
 import {AngularFireFunctions, FUNCTIONS_REGION} from '@angular/fire/functions';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
-import {CookieService} from 'ngx-cookie-service';
 import {environment} from '../environments/environment';
 import {AppService} from './app-service';
 import {AuthGuardGuestService} from './auth/auth.guard.guest.service';
@@ -17,15 +17,21 @@ import {AuthService} from './auth/auth.service';
     AngularFireFunctions,
     {provide: FUNCTIONS_REGION, useValue: 'europe-west2'},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
-    CookieService,
-    {provide: Window, useValue: window}
+    {provide: Window, useValue: window},
+    {
+      provide: FirestoreSettingsToken,
+      useValue: !environment.production && environment.firestore.dev ? {
+        host: environment.firestore.host,
+        ssl: false
+      } : undefined
+    }
   ]
 })
 export class CoreModule {
 
   constructor(private fns: AngularFireFunctions) {
     if (!environment.production && environment.functions.dev) {
-      this.fns.functions.useFunctionsEmulator('http://localhost:' + environment.functions.port);
+      this.fns.functions.useFunctionsEmulator(environment.functions.host);
     }
   }
 

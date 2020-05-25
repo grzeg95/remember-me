@@ -1,18 +1,13 @@
-import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {Inject, Injectable, NgZone} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {Router} from '@angular/router';
-import * as auth0 from 'auth0-js';
 import {auth, User} from 'firebase/app';
 import {interval, Observable} from 'rxjs';
-import {catchError} from 'rxjs/operators';
-import {environment} from '../../environments/environment';
 import {UserData} from './user-data.model';
 
 @Injectable()
 export class AuthService {
 
-  auth0: any;
   userData: UserData;
   user$: Observable<User>;
   whileLoginIn = false;
@@ -21,21 +16,8 @@ export class AuthService {
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
-    private ngZone: NgZone,
-    private http: HttpClient,
-    @Inject(Window) private window: Window
+    private ngZone: NgZone
   ) {
-
-    if (!environment.production) {
-      this.auth0 = new auth0.WebAuth({
-        clientID: environment.auth0.clientId,
-        domain: environment.auth0.clientDomain,
-        responseType: 'token',
-        redirectUri: environment.auth0.redirect.replace('{{origin}}', this.window.location.origin),
-        audience: environment.auth0.audience,
-        scope: environment.auth0.scope
-      });
-    }
 
     this.user$ = this.afAuth.authState;
 
@@ -83,11 +65,7 @@ export class AuthService {
   }
 
   auth(): void {
-    if (!environment.production) {
-      this.auth0Auth();
-    } else {
-      this.googleAuth();
-    }
+    this.googleAuth();
   }
 
   googleAuth(): void {
@@ -103,43 +81,6 @@ export class AuthService {
       this.whileLoginIn = false;
     });
 
-  }
-
-  auth0Auth(): void {
-    this.auth0.authorize();
-  }
-
-  auth0HandleLoginCallback(): void {
-    this.whileLoginIn = true;
-
-    this.auth0.parseHash((err, authResult) => {
-      if (authResult && authResult.accessToken) {
-
-        this.http.get(environment.functions.auth0, {
-          headers: new HttpHeaders().set('Authorization', `Bearer ${authResult.accessToken}`)
-        }).pipe(catchError((error) => {
-          this.whileLoginIn = false;
-          this.router.navigate(['/']);
-          throw error;
-        })).subscribe((res: {firebaseToken: string}) => {
-          this.afAuth.auth.signInWithCustomToken(res.firebaseToken).then(() => {
-            return this.ngZone.run(() => {
-              this.whileLoginIn = false;
-              return this.router.navigate(['/u/t']);
-            });
-          }).catch(() => {
-            this.whileLoginIn = false;
-            this.router.navigate(['/']);
-          });
-        });
-
-      } else if (err) {
-        this.whileLoginIn = false;
-        this.router.navigate(['/']);
-      } else {
-        this.whileLoginIn = false;
-      }
-    });
   }
 
   signOut(): Promise<boolean> {

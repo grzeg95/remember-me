@@ -1,3 +1,5 @@
+rules_version = '2';
+
 service cloud.firestore {
 	match /databases/{database}/documents/users/{userId} {
 
@@ -5,28 +7,32 @@ service cloud.firestore {
       return userId == request.auth.uid
     }
 
-    allow read, update: if isOwner()
-    allow create: if request.auth.uid != null
-
     match /today/{day}/task/{taskId} {
+      allow get: if isOwner()
       allow list: if isOwner()
+        && request.query.orderBy.description == 'ASC'
+      	&& request.query.limit == 50 * 20
+
       // set progress
-      allow update: if isOwner() 
+      allow update: if isOwner()
         && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
-        && request.resource.data.keys().hasOnly(['description', 'timesOfDay'])
-        && request.resource.data.description == resource.data.description
-        && request.resource.data.timesOfDay.keys() == resource.data.timesOfDay.keys()
+        && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
         && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
     }
 
     match /task/{taskId} {
-      allow get: if isOwner()
-      allow list: if isOwner() && request.query.orderBy.description == 'ASC'
+    	allow get: if isOwner()
+      allow list: if
+      	isOwner()
+      	&& request.query.orderBy.description == 'ASC'
+      	&& request.query.limit == 50
     }
 
     match /timesOfDay/{timesOfDayId} {
-      allow list: if isOwner() && request.query.orderBy.position == 'ASC'
+      allow list: if isOwner()
+      	&& request.query.orderBy.position == 'ASC'
+      	&& request.query.limit == 20
     }
 
   }
