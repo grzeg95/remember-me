@@ -3,23 +3,23 @@ import {UserRecord} from 'firebase-functions/lib/providers/auth';
 
 const app = firestore();
 
-export const handler = (user: UserRecord) => {
+export const handler = async (user: UserRecord) => {
 
-  return app.collection('developers').where('email', '==', user.email).limit(1).get().then((querySnapDocData) => {
-    if (querySnapDocData.size === 0) {
-      return auth().deleteUser(user.uid).then(() => {
-        return {
-          message: `Permission denied for ${user.email}. Call admin.`
-        };
-      }).catch(() => {
-        return {
-          message: `This should fork fine. Call admin.`
-        }
-      });
-    }
-    return {
-      message: `Welcome ${user.email}`
-    };
+  const { email, uid } = user;
+
+  const userIsDeveloper = await app
+    .collection('developers')
+    .where('email', '==', email)
+    .limit(1)
+    .get()
+    .then((querySnapDocData) => querySnapDocData.size === 1);
+
+  if (userIsDeveloper) {
+    return null;
+  }
+
+  return auth().updateUser(uid, {
+    disabled: true
   });
 
 };

@@ -15,10 +15,10 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@google-cloud/firestore": "^3.7.4",
+    "@google-cloud/firestore": "^3.8.0",
     "firebase-admin": "^8.12.1",
-    "firebase-functions": "^3.6.0",
-    "firebase-tools": "^7.15.1"
+    "firebase-functions": "^3.6.1",
+    "firebase-tools": "^8.4.0"
   },
   "devDependencies": {
     "firebase-functions-test": "^0.1.6",
