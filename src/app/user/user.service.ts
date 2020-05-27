@@ -46,6 +46,10 @@ export class UserService {
     return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][this._now.getDay()];
   }
 
+  get todayFullName(): string {
+    return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][this._now.getDay()];
+  }
+
   get now(): Date {
     return this._now;
   }

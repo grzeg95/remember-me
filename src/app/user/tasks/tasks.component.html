@@ -13,11 +13,11 @@
       <ng-template #onOneExists>
         <div class="row message" *ngIf="isConnected">
           <div class="col">
-            <span>There is no one</span>
+            <span>Add some tasks to this empty list</span>
           </div>
           <div class="col">
             <div class="add-task">
-              <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
+              <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new task</button>
             </div>
           </div>
         </div>

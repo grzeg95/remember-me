@@ -55,6 +55,10 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     return this.userService.now;
   }
 
+  get todayFullName(): string {
+    return this.userService.todayFullName;
+  }
+
   get isEmpty(): boolean {
     return Object.keys(this.today).length === 0 || this.timesOfDayOrder.length === 0;
   }
