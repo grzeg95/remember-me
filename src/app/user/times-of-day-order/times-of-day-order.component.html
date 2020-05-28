@@ -32,6 +32,9 @@
 
     <ng-template #showItems>
       <div class="row">
+        <span class="times-of-day-row-content title">Change times of day order</span>
+      </div>
+      <div class="row">
         <div [cdkDropListDisabled]="!isConnected" cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
           <div
             cdkDrag
