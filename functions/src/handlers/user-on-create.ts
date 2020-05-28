@@ -7,19 +7,29 @@ export const handler = async (user: UserRecord) => {
 
   const { email, uid } = user;
 
-  const userIsDeveloper = await app
-    .collection('developers')
-    .where('email', '==', email)
-    .limit(1)
-    .get()
-    .then((querySnapDocData) => querySnapDocData.size === 1);
+  return app.runTransaction(async (transaction) => {
 
-  if (userIsDeveloper) {
-    return null;
-  }
+    const userDocSnapDocDataPromise = transaction.get(app.collection('users').doc(uid)).then((docSnapDocData) => docSnapDocData);
 
-  return auth().updateUser(uid, {
-    disabled: true
+    const userIsDevDocSnapDocData = await app.collection('developers')
+      .where('email', '==', email)
+      .limit(1)
+      .get()
+      .then((querySnapDocData) => querySnapDocData);
+
+    if (userIsDevDocSnapDocData.size === 0) {
+
+      const authDisabledUserPromise = auth().updateUser(uid, {
+        disabled: true
+      });
+
+      const updateUserPromise = transaction.update((await userDocSnapDocDataPromise).ref, 'disabled', true);
+
+      return Promise.all([authDisabledUserPromise, updateUserPromise]).then((res) => res[1]);
+    }
+
+    return transaction.update((await userDocSnapDocDataPromise).ref, 'disabled', false);
+
   });
 
 };

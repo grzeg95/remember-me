@@ -1,8 +1,9 @@
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
+import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import {auth, User} from 'firebase/app';
-import {interval, Observable} from 'rxjs';
+import {interval, Observable, Subscription} from 'rxjs';
 import {UserData} from './user-data.model';
 
 @Injectable()
@@ -10,13 +11,15 @@ export class AuthService {
 
   userData: UserData;
   user$: Observable<User>;
+  userDoc$: Subscription;
   whileLoginIn = false;
   firstLoginChecking = true;
 
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private afs: AngularFirestore
   ) {
 
     this.user$ = this.afAuth.authState;
@@ -24,6 +27,19 @@ export class AuthService {
     this.user$.subscribe((user: User) => {
 
       if (user) {
+
+        if (this.userDoc$ && !this.userDoc$.closed) {
+          this.userDoc$.unsubscribe();
+        }
+
+        this.userDoc$ = this.afs.doc(`users/${user.uid}`).snapshotChanges().subscribe((data) => {
+          const userData = data.payload.data();
+          if (userData && userData['disabled']) {
+            this.userDoc$.unsubscribe();
+            this.signOut();
+          }
+        });
+
         this.userData = {
           uid: user.uid,
           email: user.email,
