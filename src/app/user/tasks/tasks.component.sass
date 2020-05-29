@@ -1,8 +1,7 @@
 // app-tasks
 \:host
   .container
-    margin: 0.5rem auto 1rem
-    padding: 1rem
+    margin: 1.8rem auto 0
 
     .col
       .row
@@ -12,6 +11,9 @@
             border-top: 1px solid #e0e0e0
             color: rgba(0, 0, 0, 0.87)
             vertical-align: middle
+
+            &:focus
+              outline: none
 
             &:first-child
               padding-left: 1rem
@@ -28,3 +30,6 @@
 
 .pseudo-button
   cursor: pointer
+
+  &:focus
+    outline: none
