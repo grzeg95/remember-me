@@ -23,12 +23,16 @@ export const handler = async (user: UserRecord) => {
         disabled: true
       });
 
-      const updateUserPromise = transaction.update((await userDocSnapDocDataPromise).ref, 'disabled', true);
+      const updateUserPromise = transaction.create((await userDocSnapDocDataPromise).ref, {
+        'disabled': true
+      });
 
       return Promise.all([authDisabledUserPromise, updateUserPromise]).then((res) => res[1]);
     }
 
-    return transaction.update((await userDocSnapDocDataPromise).ref, 'disabled', false);
+    return transaction.create((await userDocSnapDocDataPromise).ref, {
+      'disabled': false
+    });
 
   });
 

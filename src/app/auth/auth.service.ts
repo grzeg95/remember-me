@@ -3,7 +3,9 @@ import {AngularFireAuth} from '@angular/fire/auth';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import {auth, User} from 'firebase/app';
-import {interval, Observable, Subscription} from 'rxjs';
+import {interval, Observable, of, Subscription} from 'rxjs';
+import {catchError} from 'rxjs/operators';
+import {HTTPError} from '../user/models';
 import {UserData} from './user-data.model';
 
 @Injectable()
@@ -32,13 +34,15 @@ export class AuthService {
           this.userDoc$.unsubscribe();
         }
 
-        this.userDoc$ = this.afs.doc(`users/${user.uid}`).snapshotChanges().subscribe((data) => {
-          const userData = data.payload.data();
-          if (userData && userData['disabled']) {
-            this.userDoc$.unsubscribe();
-            this.signOut();
-          }
-        });
+        this.userDoc$ = this.afs.doc(`users/${user.uid}`).snapshotChanges().pipe(
+          catchError((error: HTTPError) => {
+            if (error.code === 'permission-denied') {
+              this.signOut();
+              return of(null);
+            }
+            throw error;
+          })
+        ).subscribe();
 
         this.userData = {
           uid: user.uid,
@@ -100,6 +104,7 @@ export class AuthService {
   }
 
   signOut(): Promise<boolean> {
+    this.userDoc$.unsubscribe();
     return this.afAuth.auth.signOut().then(() => {
       this.userData = null;
       return this.router.navigate(['/']);
