@@ -42,7 +42,7 @@
             [class.disabled]="!isConnected"
             *ngFor="let item of timesOfDayOrder; let i = index">
             <div class="times-of-day-item">{{ item }}</div>
-            <fa-icon [icon]="faGripLines"></fa-icon>
+            <fa-icon class="times-of-day-item-icon" [icon]="faGripLines"></fa-icon>
           </div>
         </div>
       </div>
