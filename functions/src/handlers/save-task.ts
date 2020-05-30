@@ -294,107 +294,107 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   let dataTaskDaysOfTheWeekKeys;
 
   testRequirement(
-    "not logged in",
+    `not logged in`,
     !context.auth
   );
 
   testRequirement(
-    "data is not an object",
+    `data is not an object`,
     typeof data !== 'object', data
   );
 
   testRequirement(
-    "data has not 2 keys",
+    `data has not 2 keys`,
     (dataKeys = Object.keys(data)).length !== 2,
     dataKeys
   );
 
   testRequirement(
-    "data has not 'task' and 'taskId'",
+    `data has not 'task' and 'taskId'`,
     !keysEqual(dataKeys, ['task', 'taskId']),
     dataKeys
   );
 
   testRequirement(
-    "data.taskId is not string",
+    `data.taskId is not string`,
     typeof data.taskId !== 'string',
     data.taskId
   );
 
   testRequirement(
-    "data task is not an object",
+    `data task is not an object`,
     typeof data.task !== 'object',
     data.task
   );
 
   testRequirement(
-    "data.task has not 3 keys",
+    `data.task has not 3 keys`,
     (dataTaskKeys = Object.keys(data.task)).length !== 3,
     dataTaskKeys
   );
 
   testRequirement(
-    "data.task has not 'description', 'daysOfTheWeek', 'timesOfDay'",
+    `data.task has not 'description', 'daysOfTheWeek', 'timesOfDay`,
     !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']),
     dataTaskKeys
   );
 
   testRequirement(
-    "data.task.description iss not a string [4, 40]",
+    `data.task.description iss not a string [4, 40]`,
     typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40,
     data.task.description
   );
 
   testRequirement(
-    "data.task.daysOfTheWeek has not 5 keys",
+    `data.task.daysOfTheWeek has not 5 keys`,
     (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7,
     dataTaskDaysOfTheWeekKeys
   );
 
   testRequirement(
-    "data.task.daysOfTheWeek has not 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'",
+    `data.task.daysOfTheWeek has not 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'`,
     !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
     dataTaskDaysOfTheWeekKeys
   );
 
   testRequirement(
-    "data.task.daysOfTheWeek has not boolean value",
+    `data.task.daysOfTheWeek has not boolean value`,
     dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'),
     dataTaskDaysOfTheWeekKeys
   );
 
   testRequirement(
-    "data.task.daysOfTheWeek has not boolean true value",
+    `data.task.daysOfTheWeek has not boolean true value`,
     !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]),
     dataTaskDaysOfTheWeekKeys
   );
 
   testRequirement(
-    "data.task.timesOfDay is not an array",
+    `data.task.timesOfDay is not an array`,
     !Array.isArray(data.task.timesOfDay),
     data.task.timesOfDay
   );
 
   testRequirement(
-    "data.task.timesOfDay.length is 0",
+    `data.task.timesOfDay.length is 0`,
     data.task.timesOfDay.length === 0,
     data.task.timesOfDay
   );
 
   testRequirement(
-    "data.task.timesOfDay.length has over 20 values",
+    `data.task.timesOfDay.length has over 20 values`,
     data.task.timesOfDay.length > 20,
     data.task.timesOfDay
   );
 
   testRequirement(
-    "data.task.timesOfDay contains duplicates",
+    `data.task.timesOfDay contains duplicates`,
     new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length,
     data.task.timesOfDay
   );
 
   testRequirement(
-    "data.task.timesOfDay contains not string, trim is not in [1, 20] or contains /",
+    `data.task.timesOfDay contains not string, trim is not in [1, 20] or contains /`,
     data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')),
     data.task.timesOfDay
   );
@@ -406,6 +406,20 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
   return app.runTransaction((transaction) =>
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+
+      const userData = userDocSnap.data();
+      const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
+
+      if (isDisabled) {
+        console.error({
+          'info': `user ${auth?.uid} tried to use disabled account`
+        });
+        throw new HttpsError(
+          'permission-denied',
+          'This account is disabled',
+          'Contact administrator to resolve this problem'
+        );
+      }
 
       return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 

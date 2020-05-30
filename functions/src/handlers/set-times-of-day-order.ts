@@ -20,36 +20,36 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   * */
 
   testRequirement(
-    "not logged in",
+    `not logged in`,
     !context.auth
   );
 
   testRequirement(
-    "data does not exists",
+    `data does not exists`,
     !data,
     data
   );
 
   testRequirement(
-    "data is not an array",
+    `data is not an array`,
     !Array.isArray(data),
     data
   );
 
   testRequirement(
-    "data.length is not in [1, 20]",
+    `data.length is not in [1, 20]`,
     data.length > 20 || data.length === 0,
     data
   );
 
   testRequirement(
-    "data contains duplicates",
+    `data contains duplicates`,
     (new Set(data).size !== data.length),
     data
   );
 
   testRequirement(
-    "data contains not string, trim is not in [1, 20] or contains /",
+    `data contains not string, trim is not in [1, 20] or contains /`,
     data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.trim().length > 20 || timeOfDay.trim().length === 0),
     data
   );
@@ -58,6 +58,20 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   return app.runTransaction(async (transaction) =>
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+
+      const userData = userDocSnap.data();
+      const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
+
+      if (isDisabled) {
+        console.error({
+          'info': `user ${auth?.uid} tried to use disabled account`
+        });
+        throw new HttpsError(
+          'permission-denied',
+          'This account is disabled',
+          'Contact administrator to resolve this problem'
+        );
+      }
 
       /*
       * Read all data

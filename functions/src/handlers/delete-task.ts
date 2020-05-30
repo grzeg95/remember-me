@@ -17,18 +17,18 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   // interrupt if data.taskId is not correct or !auth
 
   testRequirement(
-    "not logged in",
+    `not logged in`,
     !context.auth
   );
 
   testRequirement(
-    "data has not taskId",
+    `data has not taskId`,
     !data.taskId,
     data.taskId
   );
 
   testRequirement(
-    "data.taskId is not string",
+    `data.taskId is not string`,
     typeof data.taskId !== 'string',
     data.taskId
   );
@@ -39,6 +39,20 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
     // get user from firestore
     transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+
+      const userData = userDocSnap.data();
+      const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
+
+      if (isDisabled) {
+        console.error({
+          'info': `user ${auth?.uid} tried to use disabled account`
+        });
+        throw new HttpsError(
+          'permission-denied',
+          'This account is disabled',
+          'Contact administrator to resolve this problem'
+        );
+      }
 
       return transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then(async (taskDocSnap) => {
 
