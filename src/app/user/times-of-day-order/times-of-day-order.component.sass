@@ -1,11 +1,10 @@
 // app-times-of-day-order
 \:host
-  max-width: 540px !important // sass-lint:disable-line no-important
+  max-width: 33.75rem !important // sass-lint:disable-line no-important
   margin: auto
 
   .container
-    margin-top: 0.5rem
-    padding: 1rem
+    margin: 1.8rem auto
 
     .col
       .row
@@ -18,10 +17,6 @@
 .disabled
   opacity: 0.4
   pointer-events: none
-
-.times-of-day-row-content, .times-of-day-list
-  width: 100%
-  overflow: hidden
 
 .times-of-day-box
   display: flex
@@ -79,3 +74,12 @@
   color: #424242
   font-size: 0.8125rem
   font-weight: 500
+
+.times-of-day-row-content, .times-of-day-list
+  width: 100%
+  margin: auto
+  overflow: hidden
+
+@media (max-width: 37.75rem)
+  .times-of-day-row-content, .times-of-day-list
+    width: calc(100% - 5rem)

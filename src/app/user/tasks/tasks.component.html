@@ -31,39 +31,35 @@
 
     <ng-template #showItems>
       <div class="row list">
-        <div class="col">
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th scope="col">Description</th>
-                  <th scope="col">Days</th>
-                  <th scope="col">Times of day</th>
-                  <th scope="col"></th>
-                </tr>
-              </thead>
-              <tbody id="tasksTable">
-                <tr *ngFor="let task of tasks">
-                  <td>{{ task.description }}</td>
-                  <td>{{ task.daysOfTheWeek }}</td>
-                  <td>{{ task.timesOfDay.join(', ') }}</td>
-                  <td>
-                    <div class="pseudo-button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
-                      <fa-icon [icon]="faEdit"></fa-icon>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col">Days</th>
+                <th scope="col">Times of day</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody id="tasksTable">
+              <tr *ngFor="let task of tasks">
+                <td>{{ task.description }}</td>
+                <td>{{ task.daysOfTheWeek }}</td>
+                <td>{{ task.timesOfDay.join(', ') }}</td>
+                <td>
+                  <div class="pseudo-button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
+                    <fa-icon [icon]="faEdit"></fa-icon>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <div *ngIf="!isEmpty" class="row">
-        <div class="col">
-          <div class="add-task">
-            <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
-          </div>
+        <div class="add-task-button">
+          <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
         </div>
       </div>
     </ng-template>
