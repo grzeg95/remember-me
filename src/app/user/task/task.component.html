@@ -2,9 +2,9 @@
   <div class="col" [formGroup]="taskForm">
     <div class="row">
       <div class="col">
-        <mat-form-field class="form-group">
+        <mat-form-field class="form-group" floatLabel="always">
           <mat-label>Task description</mat-label>
-          <input autocomplete="off" matInput formControlName="description">
+          <input autocomplete="off" matInput formControlName="description" [placeholder]="'Your task description'">
           <mat-error
             *ngIf="!taskForm.disabled && !taskForm.get('description').valid && (taskForm.get('description').dirty || taskForm.get('description').touched)">
             Enter description from 4 to 40 characters
@@ -15,9 +15,9 @@
     <small
       class="form-text text-center text-muted"
       [ngClass]="!taskForm.disabled && !taskForm.get('daysOfTheWeek').valid && taskForm.get('daysOfTheWeek').dirty ? 'error' : ''"
-    >Click and select at least one day</small>
+    >Click some days</small>
     <div class="row">
-      <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center">
+      <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
 
         <div *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];" class="form-check">
           <label
@@ -39,11 +39,10 @@
     </div>
     <small
       class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty ? 'error' : ''">Add own times of day up to 20 for all tasks</small>
-    <small class="form-text text-center text-muted">Click one to remove</small>
-
+      [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty ? 'error' : ''">Add some time of day</small>
+    <small class="form-text text-center text-muted">To remove click one</small>
     <div class="row">
-      <div formArrayName="timesOfDay" class="col text-center">
+      <div formArrayName="timesOfDay" class="col text-center times-of-day">
         <div *ngFor="let timeOfDay of timesOfDay; let i = index" class="form-check">
           <label
             class="form-check-label btn"
@@ -65,7 +64,7 @@
     <hr>
     <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
     <div class="row">
-      <div class="col text-center">
+      <div class="col text-center actions">
         <button
           class="btn btn-primary border-primary shadow"
           type="submit"
