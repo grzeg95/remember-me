@@ -1,4 +1,4 @@
-import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostListener, Input, OnDestroy, OnInit, ViewEncapsulation} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
 import {performance} from 'firebase';
@@ -10,6 +10,7 @@ import {UserService} from '../../user.service';
   selector: 'app-task-dialog-time-of-day',
   templateUrl: 'task-dialog-time-of-day.component.html',
   styleUrls: ['task-dialog-time-of-day.component.sass'],
+  encapsulation: ViewEncapsulation.None
 })
 export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 

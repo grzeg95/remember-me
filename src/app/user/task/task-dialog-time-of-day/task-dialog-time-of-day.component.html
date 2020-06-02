@@ -8,7 +8,7 @@
       matInput
       formControlName="timeOfDay"
       [matAutocomplete]="auto">
-    <mat-autocomplete #auto="matAutocomplete">
+    <mat-autocomplete class="task-dialog-times-of-day-autocomplete" #auto="matAutocomplete">
       <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
         {{option}}
       </mat-option>
