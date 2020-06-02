@@ -1,10 +1,7 @@
-import {Component, HostListener, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, HostListener, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
 import {performance} from 'firebase';
-import {Observable} from 'rxjs';
-import {map, startWith} from 'rxjs/operators';
-import {UserService} from '../../user.service';
 
 @Component({
   selector: 'app-task-dialog-time-of-day',
@@ -12,14 +9,6 @@ import {UserService} from '../../user.service';
   styleUrls: ['task-dialog-time-of-day.component.sass'],
 })
 export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
-
-  get timesOfDayOrder(): string[] {
-    return this.userService.timesOfDayOrder
-      .filter((timeOfDay) => !this.taskTimesOfDay.includes(timeOfDay));
-  }
-
-  @Input()
-  taskTimesOfDay: string[] = [];
 
   perf = performance();
   taskDialogTimeOfDayTrace = this.perf.trace('TaskDialogTimeOfDay');
@@ -31,27 +20,10 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
     )
   });
 
-  filteredOptions: Observable<string[]>;
-
-  constructor(
-    public dialogRef: MatDialogRef<TaskDialogTimeOfDay>,
-    private userService: UserService) {}
+  constructor(public dialogRef: MatDialogRef<TaskDialogTimeOfDay>) {}
 
   ngOnInit(): void {
     this.taskDialogTimeOfDayTrace.start();
-
-    this.filteredOptions = this.timeOfDayForm.get('timeOfDay').valueChanges
-      .pipe(
-        startWith(''),
-        map((value) => this._filter(value))
-      );
-
-  }
-
-  private _filter(value: string): string[] {
-    const filterValue = value.toLowerCase();
-
-    return this.timesOfDayOrder.filter((option) => option.toLowerCase().includes(filterValue));
   }
 
   ngOnDestroy(): void {

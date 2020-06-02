@@ -84,7 +84,6 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.userService.runTimesOfDayOrder();
     this.taskEditorComponentTrace.start();
     this.taskForm.enable();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
@@ -103,10 +102,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   openTimeOfDayDialog(): void {
 
-    const dialogRef = this.dialog.open(TaskDialogTimeOfDay, {
-      autoFocus: false
-    });
-    dialogRef.componentInstance.taskTimesOfDay = this.taskForm.get('timesOfDay').value;
+    const dialogRef = this.dialog.open(TaskDialogTimeOfDay);
 
     dialogRef.afterClosed().subscribe((timeOfDay) => {
 
