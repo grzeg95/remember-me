@@ -23,7 +23,7 @@
           <label
             class="form-check-label btn"
             [class.disabled]="!isConnected"
-            [ngClass]="[inputRef.checked ? 'btn-outline-dark shadow' : 'border rounded']"
+            [ngClass]="[inputRef.checked ? 'btn-outline-dark' : 'border']"
             [attr.for]="'dayOfTheWeek'+dayOfTheWeek">{{dayOfTheWeek | titlecase}}
             <input
               #inputRef
