@@ -1,0 +1,15 @@
+{
+  "name": "firestore-rules-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --exit"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@firebase/testing": "^0.20.5",
+    "mocha": "^8.0.1"
+  }
+}

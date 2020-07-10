@@ -6,15 +6,22 @@ service cloud.firestore {
     function isOwner() {
       return userId == request.auth.uid
     }
+    
+    function isDisabled() {
+    	let user = get(/databases/$(database)/documents/users/$(userId));
+    	return 'disabled' in user.data ? user.data.disabled : false
+    }
+    
+    allow get: if isOwner() && !isDisabled()
 
     match /today/{day}/task/{taskId} {
-      allow get: if isOwner()
-      allow list: if isOwner()
+      allow get: if isOwner() && !isDisabled()
+      allow list: if isOwner() && !isDisabled()
         && request.query.orderBy.description == 'ASC'
       	&& request.query.limit == 50 * 20
 
       // set progress
-      allow update: if isOwner()
+      allow update: if isOwner() && !isDisabled()
         && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
         && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
@@ -22,15 +29,15 @@ service cloud.firestore {
     }
 
     match /task/{taskId} {
-    	allow get: if isOwner()
+    	allow get: if isOwner() && !isDisabled()
       allow list: if
-      	isOwner()
+      	isOwner() && !isDisabled()
       	&& request.query.orderBy.description == 'ASC'
       	&& request.query.limit == 50
     }
 
     match /timesOfDay/{timesOfDayId} {
-      allow list: if isOwner()
+      allow list: if isOwner() && !isDisabled()
       	&& request.query.orderBy.position == 'ASC'
       	&& request.query.limit == 20
     }
