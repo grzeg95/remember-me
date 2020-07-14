@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core';
+import {SETTINGS} from '@angular/fire/firestore';
 import {AngularFireFunctions, FUNCTIONS_REGION} from '@angular/fire/functions';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {environment} from '../environments/environment';
@@ -16,7 +17,11 @@ import {AuthService} from './auth/auth.service';
     AngularFireFunctions,
     {provide: FUNCTIONS_REGION, useValue: 'europe-west2'},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
-    {provide: Window, useValue: window}
+    {provide: Window, useValue: window},
+    {provide: SETTINGS, useValue: !environment.production && environment.functions.dev ? {
+        host: 'localhost:8080',
+          ssl: false
+      } : undefined}
   ]
 })
 export class CoreModule {
