@@ -1,147 +1,53 @@
-import {DocumentReference, DocumentSnapshot, Transaction} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {keysEqual} from '../helpers/keys-equal';
-import {Day, ITask} from '../helpers/models';
+import {Day, Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
+import Transaction = firestore.Transaction;
+import DocumentSnapshot = firestore.DocumentSnapshot;
+import DocumentReference = firestore.DocumentReference;
 
 const app = firestore();
+const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
 
 /**
- * @interface ITaskDiff
+ * @interface TaskDiff
  **/
-interface ITaskDiff {
-  description: {
-    type: 'unchanged' | 'changed',
-    old: string,
-    new: string
-  },
-  timesOfDay: {
-    new: string[],
-    removed: string[]
-  },
-  daysOfTheWeek: {
-    mon: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    },
-    tue: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    },
-    wed: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    },
-    thu: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    },
-    fri: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    },
-    sat: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    },
-    sun: {
-      type: 'unchanged' | 'changed',
-      old: boolean,
-      new: boolean
-    }
-  }
+interface TaskDiff {
+  description: boolean,
+  timesOfDay: boolean,
+  daysOfTheWeek: boolean
 }
 
 /**
- * @interface ITodayTask
+ * @interface TimesOfDay
  **/
-interface ITodayTask {
+interface TimesOfDay {
+  [key: string]: boolean
+}
+
+/**
+ * @interface TodayTask
+ **/
+interface TodayTask {
   description: string;
-  timesOfDay: {
-    [key: string]: boolean
-  };
+  timesOfDay: TimesOfDay
 }
 
 /**
- * @function taskDiff
- * @param A ITask
- * @param B ITask
+ * @function getTaskChange
+ * @param a ITask
+ * @param b ITask
  * @return ITaskDiff
  **/
-const taskDiff = (A: ITask, B: ITask): ITaskDiff => {
+const getTaskChange = (a: Task, b: Task): TaskDiff => {
   return {
-    description: {
-      type: A.description === B.description ? 'unchanged' : 'changed',
-      old: A.description,
-      new: B.description
-    },
-    timesOfDay: {
-      new: B.timesOfDay.filter((timeOfDay) => !A.timesOfDay.includes(timeOfDay)),
-      removed: A.timesOfDay.filter((timeOfDay) => !B.timesOfDay.includes(timeOfDay))
-    },
-    daysOfTheWeek: {
-      mon: {
-        type: A.daysOfTheWeek.mon === B.daysOfTheWeek.mon ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.mon,
-        new: B.daysOfTheWeek.mon
-      },
-      tue: {
-        type: A.daysOfTheWeek.tue === B.daysOfTheWeek.tue ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.tue,
-        new: B.daysOfTheWeek.tue
-      },
-      wed: {
-        type: A.daysOfTheWeek.wed === B.daysOfTheWeek.wed ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.wed,
-        new: B.daysOfTheWeek.wed
-      },
-      thu: {
-        type: A.daysOfTheWeek.thu === B.daysOfTheWeek.thu ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.thu,
-        new: B.daysOfTheWeek.thu
-      },
-      fri: {
-        type: A.daysOfTheWeek.fri === B.daysOfTheWeek.fri ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.fri,
-        new: B.daysOfTheWeek.fri
-      },
-      sat: {
-        type: A.daysOfTheWeek.sat === B.daysOfTheWeek.sat ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.sat,
-        new: B.daysOfTheWeek.sat
-      },
-      sun: {
-        type: A.daysOfTheWeek.sun === B.daysOfTheWeek.sun ? 'unchanged' : 'changed',
-        old: A.daysOfTheWeek.sun,
-        new: B.daysOfTheWeek.sun
-      }
-    }
+    description: a.description !== b.description,
+    timesOfDay: a.timesOfDay.some((aElement) => !b.timesOfDay.includes(aElement))
+      || b.timesOfDay.some((bElement) => !a.timesOfDay.includes(bElement)),
+    daysOfTheWeek: days.some((day) => a.daysOfTheWeek[day] !== b.daysOfTheWeek[day])
   };
 }
-
-/**
- * @function daysOfTheWeekChanged
- * @param diff ITaskDiff
- * @return boolean
- **/
-const daysOfTheWeekChanged = (diff: ITaskDiff): boolean => {
-  return (
-    diff.daysOfTheWeek.fri.type === 'changed' ||
-    diff.daysOfTheWeek.mon.type === 'changed' ||
-    diff.daysOfTheWeek.sat.type === 'changed' ||
-    diff.daysOfTheWeek.sun.type === 'changed' ||
-    diff.daysOfTheWeek.thu.type === 'changed' ||
-    diff.daysOfTheWeek.tue.type === 'changed' ||
-    diff.daysOfTheWeek.wed.type === 'changed'
-  );
-};
 
 /**
  * @function proceedTodayTask
@@ -152,13 +58,11 @@ const daysOfTheWeekChanged = (diff: ITaskDiff): boolean => {
  * @param day: Day
  * @return void
  **/
-const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSnapshot, task: ITask, day: Day): void => {
+const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSnapshot, task: Task, day: Day): void => {
 
   if (!todayTaskDocSnap.exists && task.daysOfTheWeek[day]) { // set
     // add task timesOfDay
-    const timesOfDay: {
-      [key: string]: boolean;
-    } = {};
+    const timesOfDay: TimesOfDay = {};
 
     task.timesOfDay.forEach((timeOfDay) => timesOfDay[timeOfDay.trim()] = false);
 
@@ -171,9 +75,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSn
   } else if (todayTaskDocSnap.exists && task.daysOfTheWeek[day]) { // update
 
     // add task timesOfDay to newTimesOfDay
-    const newTimesOfDay: {
-      [key: string]: boolean;
-    } = {};
+    const newTimesOfDay: TimesOfDay = {};
 
     // select inserted task timesOfDay to newTimesOfDay
     const taskTimesOdDaySet = new Set(task.timesOfDay);
@@ -183,10 +85,9 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSn
 
     // select current stored task timesOfDay to oldTimesOfDay
     // there can be selected true value
-    let oldTimesOfDay: {
-      [key: string]: boolean;
-    } = {};
-    const docData = todayTaskDocSnap.data() as ITodayTask;
+    let oldTimesOfDay: TimesOfDay = {};
+
+    const docData = todayTaskDocSnap.data() as TodayTask;
     if (docData) {
       oldTimesOfDay = docData.timesOfDay;
     }
@@ -423,7 +324,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
       return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
 
-        const task = data.task as ITask;
+        const task = data.task as Task;
         task.description = task.description.trim();
         task.timesOfDay = task.timesOfDay.map((timeOfDay) => timeOfDay.trim());
 
@@ -443,61 +344,57 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           /*
           * Check if nothing changed or only description was changed
           * */
+          const taskChange = getTaskChange((taskDocSnap.data() as Task), task);
 
-          const diff = taskDiff((taskDocSnap.data() as ITask), task);
-
-          if (!daysOfTheWeekChanged(diff) && diff.timesOfDay.new.length === 0 && diff.timesOfDay.removed.length === 0) {
+          if (!taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
             /*
             * Check if nothing changed
             * */
-            if (diff.description.type === 'unchanged') {
+            if (!taskChange.description) {
               transaction.update(taskDocSnap.ref, task);
               return transaction;
             }
 
             /*
-            * Check if only description was changed
+            * Only description was changed
             * */
-            if (diff.description.type === 'changed') {
 
-              // read all task for user/{userId}/today/{day}/task/{taskId}
-              const todayTaskDocSnapsToUpdate = await Promise.all(
-                (Object.keys(task.daysOfTheWeek) as Day[])
-                  .filter((timeOfDay) => task.daysOfTheWeek[timeOfDay])
-                  .map((day) =>
-                    transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-                      .then((docSnap) => docSnap)
-                )
-              );
+            // read all task for user/{userId}/today/{day}/task/{taskId}
+            const todayTaskDocSnapsToUpdate = await Promise.all(
+              (Object.keys(task.daysOfTheWeek) as Day[])
+                .filter((timeOfDay) => task.daysOfTheWeek[timeOfDay])
+                .map((day) =>
+                  transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+                    .then((docSnap) => docSnap)
+              )
+            );
 
-              /*
-              * Proceed all data
-              * */
+            /*
+            * Proceed all data
+            * */
 
-              todayTaskDocSnapsToUpdate.forEach((todayTask) => {
-                if (!todayTask.exists) {
-                  console.error({
-                    'info': 'task is not related today task'
-                  });
-                  throw new HttpsError(
-                    'invalid-argument',
-                    `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
-                    'Some went wrong 🤫 Try again 🙂'
-                  );
-                }
-                transaction.update(todayTask.ref, {
-                  description: task.description
+            todayTaskDocSnapsToUpdate.forEach((todayTask) => {
+              if (!todayTask.exists) {
+                console.error({
+                  'info': 'task is not related today task'
                 });
-              });
-
-              transaction.update(taskDocSnap.ref, {
+                throw new HttpsError(
+                  'invalid-argument',
+                  `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
+                  'Some went wrong 🤫 Try again 🙂'
+                );
+              }
+              transaction.update(todayTask.ref, {
                 description: task.description
               });
+            });
 
-              return transaction;
+            transaction.update(taskDocSnap.ref, {
+              description: task.description
+            });
 
-            }
+            return transaction;
 
           }
 
@@ -505,10 +402,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
         // Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
-        const todayTaskDocSnapsPromise = Promise.all((['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[])
-          .map((day) =>
-            transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-              .then((docSnap) => ({docSnap, day})))
+        const todayTaskDocSnapsPromise = Promise.all(days.map((day) =>
+          transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+            .then((docSnap) => ({docSnap, day})))
         );
 
         // read current timesOfDay
@@ -525,7 +421,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         // read taskDocSnap timeOfDay
         const taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = {}
-        taskDocSnap.data() && (taskDocSnap.data() as ITask).timesOfDay.forEach((timeOfDay) => {
+        taskDocSnap.data() && (taskDocSnap.data() as Task).timesOfDay.forEach((timeOfDay) => {
           if (currentTimesOfDay[timeOfDay]) {
             taskDocSnapsTimesOfDay[timeOfDay] = currentTimesOfDay[timeOfDay];
           } else {

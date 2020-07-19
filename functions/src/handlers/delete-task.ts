@@ -1,8 +1,8 @@
-import {DocumentSnapshot} from '@google-cloud/firestore';
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {Day, ITask} from '../helpers/models';
+import {Day, Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
+import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
 
@@ -72,7 +72,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         * Read all data
         * */
 
-        const task: ITask = taskDocSnap.data() as ITask;
+        const task: Task = taskDocSnap.data() as Task;
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(

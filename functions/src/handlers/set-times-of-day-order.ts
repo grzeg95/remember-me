@@ -1,8 +1,8 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {DocumentReference} from "@google-cloud/firestore";
 import {keysEqual} from '../helpers/keys-equal';
 import {testRequirement} from '../helpers/test-requirement';
+import DocumentReference = firestore.DocumentReference;
 
 const app = firestore();
 
