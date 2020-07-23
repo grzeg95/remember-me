@@ -53,41 +53,40 @@ const getTaskChange = (a: Task, b: Task): TaskDiff => {
  * @function proceedTodayTask
  * Prepare today tasks
  * @param transaction Transaction
- * @param todayTaskDocSnap DocumentSnapshot
+ * @param todayTaskDocSnapDayPack {docSnap: DocumentSnapshot, day: Day}
  * @param task: ITask
- * @param day: Day
  * @return void
  **/
-const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSnapshot, task: Task, day: Day): void => {
+const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {docSnap: DocumentSnapshot, day: Day}, task: Task): void => {
 
-  if (!todayTaskDocSnap.exists && task.daysOfTheWeek[day]) { // set
+  if (!todayTaskDocSnapDayPack.docSnap.exists && task.daysOfTheWeek[todayTaskDocSnapDayPack.day]) { // set
     // add task timesOfDay
     const timesOfDay: TimesOfDay = {};
 
-    task.timesOfDay.forEach((timeOfDay) => timesOfDay[timeOfDay.trim()] = false);
+    task.timesOfDay.forEach((timeOfDay) => timesOfDay[timeOfDay] = false);
 
-    transaction.set(todayTaskDocSnap.ref, {
+    transaction.set(todayTaskDocSnapDayPack.docSnap.ref, {
       description: task.description,
       timesOfDay: timesOfDay
     });
-  } else if (todayTaskDocSnap.exists && !task.daysOfTheWeek[day]) { // delete
-    transaction.delete(todayTaskDocSnap.ref);
-  } else if (todayTaskDocSnap.exists && task.daysOfTheWeek[day]) { // update
+  } else if (todayTaskDocSnapDayPack.docSnap.exists && !task.daysOfTheWeek[todayTaskDocSnapDayPack.day]) { // delete
+    transaction.delete(todayTaskDocSnapDayPack.docSnap.ref);
+  } else if (todayTaskDocSnapDayPack.docSnap.exists && task.daysOfTheWeek[todayTaskDocSnapDayPack.day]) { // update
 
     // add task timesOfDay to newTimesOfDay
     const newTimesOfDay: TimesOfDay = {};
 
     // select inserted task timesOfDay to newTimesOfDay
-    const taskTimesOdDaySet = new Set(task.timesOfDay);
+    const taskTimesOdDaySet = task.timesOfDay;
     taskTimesOdDaySet.forEach((timeOfDay) => {
-      newTimesOfDay[timeOfDay.trim()] = false;
+      newTimesOfDay[timeOfDay] = false;
     });
 
     // select current stored task timesOfDay to oldTimesOfDay
     // there can be selected true value
     let oldTimesOfDay: TimesOfDay = {};
 
-    const docData = todayTaskDocSnap.data() as TodayTask;
+    const docData = todayTaskDocSnapDayPack.docSnap.data() as TodayTask;
     if (docData) {
       oldTimesOfDay = docData.timesOfDay;
     }
@@ -99,13 +98,13 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnap: DocumentSn
       }
     });
 
-    transaction.update(todayTaskDocSnap.ref, {
+    transaction.update(todayTaskDocSnapDayPack.docSnap.ref, {
       description: task.description,
       timesOfDay: newTimesOfDay
     });
 
   } else { // do nothing
-    transaction.delete(todayTaskDocSnap.ref);
+    transaction.delete(todayTaskDocSnapDayPack.docSnap.ref);
   }
 
 };
@@ -190,115 +189,75 @@ const proceedTimesOfDay =
  **/
 export const handler = async (data: any, context: CallableContext): Promise<{ created: boolean; details: string; taskId: string }> => {
 
-  let dataKeys;
-  let dataTaskKeys;
-  let dataTaskDaysOfTheWeekKeys;
+  const dataKeys = Object.keys(data);
+  const dataTaskKeys = Object.keys(data.task);
+  const dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek);
 
-  testRequirement(
-    `not logged in`,
-    !context.auth
-  );
+  // not logged in
+  testRequirement(!context.auth);
 
-  testRequirement(
-    `data is not an object`,
-    typeof data !== 'object', data
-  );
+  // data is not an object
+  testRequirement(typeof data !== 'object');
 
-  testRequirement(
-    `data has not 2 keys`,
-    (dataKeys = Object.keys(data)).length !== 2,
-    dataKeys
-  );
+  // data has not 2 keys
+  testRequirement(dataKeys.length !== 2);
 
-  testRequirement(
-    `data has not 'task' and 'taskId'`,
-    !keysEqual(dataKeys, ['task', 'taskId']),
-    dataKeys
-  );
+  // data has not 'task' and 'taskId'
+  testRequirement(!keysEqual(dataKeys, ['task', 'taskId']));
 
-  testRequirement(
-    `data.taskId is not string`,
-    typeof data.taskId !== 'string',
-    data.taskId
-  );
+  // data.taskId is not string
+  testRequirement(typeof data.taskId !== 'string');
 
-  testRequirement(
-    `data task is not an object`,
-    typeof data.task !== 'object',
-    data.task
-  );
+  // data task is not an object
+  testRequirement(typeof data.task !== 'object');
 
-  testRequirement(
-    `data.task has not 3 keys`,
-    (dataTaskKeys = Object.keys(data.task)).length !== 3,
-    dataTaskKeys
-  );
+  // data.task has not 3 keys
+  testRequirement(dataTaskKeys.length !== 3);
 
-  testRequirement(
-    `data.task has not 'description', 'daysOfTheWeek', 'timesOfDay`,
-    !keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']),
-    dataTaskKeys
-  );
+  // data.task has not ['description', 'daysOfTheWeek', 'timesOfDay']
+  testRequirement(!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']));
 
-  testRequirement(
-    `data.task.description iss not a string [4, 40]`,
-    typeof data.task.description !== 'string' || data.task.description.length <= 3 || data.task.description.length > 40,
-    data.task.description
-  );
+  // data.task.description is not a string
+  testRequirement(typeof data.task.description !== 'string');
 
-  testRequirement(
-    `data.task.daysOfTheWeek has not 5 keys`,
-    (dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek)).length !== 7,
-    dataTaskDaysOfTheWeekKeys
-  );
+  data.task.description = data.task.description.trim();
 
-  testRequirement(
-    `data.task.daysOfTheWeek has not 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'`,
-    !keysEqual(dataTaskDaysOfTheWeekKeys, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
-    dataTaskDaysOfTheWeekKeys
-  );
+  // data.task.description is not a string in [4, 40]
+  testRequirement(data.task.description.length < 4 || data.task.description.length > 40);
 
-  testRequirement(
-    `data.task.daysOfTheWeek has not boolean value`,
-    dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'),
-    dataTaskDaysOfTheWeekKeys
-  );
+  // data.task.daysOfTheWeek has not ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+  testRequirement(!keysEqual(dataTaskDaysOfTheWeekKeys, days));
 
-  testRequirement(
-    `data.task.daysOfTheWeek has not boolean true value`,
-    !dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]),
-    dataTaskDaysOfTheWeekKeys
-  );
+  // data.task.daysOfTheWeek has not boolean value
+  testRequirement(dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'));
 
-  testRequirement(
-    `data.task.timesOfDay is not an array`,
-    !Array.isArray(data.task.timesOfDay),
-    data.task.timesOfDay
-  );
+  // data.task.daysOfTheWeek has not boolean true value
+  testRequirement(!dataTaskDaysOfTheWeekKeys.some((e) => data.task.daysOfTheWeek[e as Day]));
 
-  testRequirement(
-    `data.task.timesOfDay.length is 0`,
-    data.task.timesOfDay.length === 0,
-    data.task.timesOfDay
-  );
+  // data.task.timesOfDay is not an array
+  testRequirement(!Array.isArray(data.task.timesOfDay));
 
-  testRequirement(
-    `data.task.timesOfDay.length has over 20 values`,
-    data.task.timesOfDay.length > 20,
-    data.task.timesOfDay
-  );
+  // data.task.timesOfDay.length is not in [1, 20]
+  testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 20);
 
-  testRequirement(
-    `data.task.timesOfDay contains duplicates`,
-    new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length,
-    data.task.timesOfDay
-  );
+  // data.task.timesOfDay contains duplicates
+  testRequirement(new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length);
 
-  testRequirement(
-    `data.task.timesOfDay contains not string, trim is not in [1, 20] or contains /`,
-    data.task.timesOfDay.some((e: any) => typeof e !== 'string' || e.trim().length < 1 || e.trim().length > 20 || e.trim().includes('/')),
-    data.task.timesOfDay
-  );
+  data.task.timesOfDay = data.task.timesOfDay.map((timeOfDay: any) => {
+
+    // data.task.timesOfDay contains other than string
+    testRequirement(typeof timeOfDay !== 'string');
+
+    const timeOfDayTrim = (timeOfDay as string).trim();
+
+    // data.task.timesOfDay contains string that trim is not in [1, 20]
+    testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
+
+    // data.task.timesOfDay contains string that trim contains /
+    testRequirement(timeOfDayTrim.includes('/'));
+
+    return timeOfDayTrim;
+  });
 
   const auth: { uid: string } | undefined = context.auth;
 
@@ -401,8 +360,8 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         }
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        // Promise<{ docSnap: DocumentSnapshot, day: Day }>[] = [];
-        const todayTaskDocSnapsPromise = Promise.all(days.map((day) =>
+        // Promise<{ docSnap: DocumentSnapshot, day: Day }[]> = [];
+        const todayTaskDocSnapsDayPackPromise = Promise.all(days.map((day) =>
           transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
             .then((docSnap) => ({docSnap, day})))
         );
@@ -411,11 +370,14 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         const currentTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = (
           await Promise.all((await userDocSnap.ref.collection('timesOfDay').listDocuments().then((docRefs) => docRefs))
             .map((docRef) => transaction.get(docRef).then((docSnap) => docSnap)))
-        ).reduce((acc, docSnap) => ({...acc, ...{[docSnap.id]: docSnap}}), {});
+        ).reduce((acc, curr) => {
+          Object.assign(acc, {[curr.id]: curr});
+          return acc;
+        }, {});
 
         // read task timeOfDay
         // there can be new timesOfDay that not exists in firebase
-        const dataTaskDocSnapsTimeOfDayPromise: Promise<DocumentSnapshot[]> = (Promise.all((task.timesOfDay).map((timeOfDay) =>
+        const dataTaskDocSnapsTimeOfDayPromise = (Promise.all((task.timesOfDay).map((timeOfDay) =>
           currentTimesOfDay[timeOfDay] ? currentTimesOfDay[timeOfDay] : transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
         )));
 
@@ -436,42 +398,37 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           }
         });
 
-        return Promise.all([todayTaskDocSnapsPromise, dataTaskDocSnapsTimeOfDayPromise]).then((snapArray) => {
+        const todayTaskDocSnapsDayPack = await todayTaskDocSnapsDayPackPromise;
+        const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await dataTaskDocSnapsTimeOfDayPromise).reduce((acc, curr) => {
+          Object.assign(acc, {[curr.id]: curr});
+          return acc;
+        }, {});
 
-          /*
-          * Proceed all data
-          * */
-
-          const todayTaskDocSnaps: { docSnap: DocumentSnapshot, day: Day }[] = snapArray[0];
-          const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = snapArray[1].reduce((acc, docSnap) => ({...acc, ...{[docSnap.id]: docSnap}}), {});
-
-          const modifiedTimesOfDays = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay);
-          const timesOfDaysToStoreLen = Object.keys(currentTimesOfDay).filter((docSnapId) => !modifiedTimesOfDays.removedTimesOfDay.includes(docSnapId))
-            .concat(modifiedTimesOfDays.addedTimesOfDay).length;
-          if (timesOfDaysToStoreLen > 20) {
-            throw new HttpsError(
-              'invalid-argument',
-              'Bad Request',
-              `You can own 20 times of day but merge has ${timesOfDaysToStoreLen} 🤔`
-            );
-          }
-
-          // proceedEveryDay
-          todayTaskDocSnaps.forEach((todayTaskDocSnap) =>
-            proceedTodayTask(transaction, todayTaskDocSnap.docSnap, task, todayTaskDocSnap.day)
+        const modifiedTimesOfDays = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay);
+        const timesOfDaysToStoreLen = Object.keys(currentTimesOfDay).filter((docSnapId) => !modifiedTimesOfDays.removedTimesOfDay.includes(docSnapId))
+          .concat(modifiedTimesOfDays.addedTimesOfDay).length;
+        if (timesOfDaysToStoreLen > 20) {
+          throw new HttpsError(
+            'invalid-argument',
+            'Bad Request',
+            `You can own 20 times of day but merge has ${timesOfDaysToStoreLen} 🤔`
           );
+        }
 
-          // update task
-          transaction.set(taskDocSnap.ref, task);
+        // proceedEveryDay
+        todayTaskDocSnapsDayPack.forEach((todayTaskDocSnapDayPack) =>
+          proceedTodayTask(transaction, todayTaskDocSnapDayPack, task)
+        );
 
-          // delete taskDocSnapTmp if created
-          if (created) {
-            transaction.delete(taskDocSnapTmp.ref);
-          }
+        // update task
+        transaction.set(taskDocSnap.ref, task);
 
-          return transaction;
+        // delete taskDocSnapTmp if created
+        if (created) {
+          transaction.delete(taskDocSnapTmp.ref);
+        }
 
-        });
+        return transaction;
 
       });
 

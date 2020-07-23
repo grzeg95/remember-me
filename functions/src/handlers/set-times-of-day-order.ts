@@ -9,50 +9,39 @@ const app = firestore();
 /**
  * @function handler
  * Set times of day order
- * @param data: string[]
+ * @param timesOfDays: string[]
  * @param context CallableContext
  * @return Promise<{[key: string]: string}>
  **/
-export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (timesOfDays: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
-  /*
-  * Check if data is correct and user is authenticated
-  * */
+  // not logged in
+  testRequirement(!context.auth);
 
-  testRequirement(
-    `not logged in`,
-    !context.auth
-  );
+  // timesOfDays is not an array
+  testRequirement(!Array.isArray(timesOfDays));
 
-  testRequirement(
-    `data does not exists`,
-    !data,
-    data
-  );
+  // timesOfDays.length is not in [1, 20]
+  testRequirement(timesOfDays.length > 20 || timesOfDays.length === 0);
 
-  testRequirement(
-    `data is not an array`,
-    !Array.isArray(data),
-    data
-  );
+  // timesOfDays contains duplicates
+  testRequirement(new Set(timesOfDays).size !== timesOfDays.length);
 
-  testRequirement(
-    `data.length is not in [1, 20]`,
-    data.length > 20 || data.length === 0,
-    data
-  );
+  const timesOfDaysTrim: string[] = timesOfDays.map((timeOfDay: any) => {
 
-  testRequirement(
-    `data contains duplicates`,
-    (new Set(data).size !== data.length),
-    data
-  );
+    // data.task.timesOfDay contains other than string
+    testRequirement(typeof timeOfDay !== 'string');
 
-  testRequirement(
-    `data contains not string, trim is not in [1, 20] or contains /`,
-    data.some((timeOfDay: any) => typeof timeOfDay !== 'string' || timeOfDay.trim().length > 20 || timeOfDay.trim().length === 0),
-    data
-  );
+    const timeOfDayTrim = (timeOfDay as string).trim();
+
+    // data.task.timesOfDay contains string that trim is not in [1, 20]
+    testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
+
+    // data.task.timesOfDay contains string that trim contains /
+    testRequirement(timeOfDayTrim.includes('/'));
+
+    return timeOfDayTrim;
+  });
 
   const auth: { uid: string } | undefined = context.auth;
 
@@ -83,14 +72,17 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         .then(async (docsRef) =>
           (await Promise.all(docsRef.map((docRef) =>
             transaction.get(docRef).then((docSnap) => docSnap)
-          ))).reduce((acc, curr) => ({...acc, ...{[curr.id]: curr.ref}}), {}));
+          ))).reduce((acc, curr) => {
+            Object.assign(acc, {[curr.id]: curr.ref});
+            return acc;
+          }, {}));
 
       /*
       * Proceed all data
       * */
 
       const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
-      if (!keysEqual(timesOfDayDocSnapsKeys, data)) {
+      if (!keysEqual(timesOfDayDocSnapsKeys, timesOfDaysTrim)) {
         console.error({
           'info': 'user tried to update different times of day than has'
         });
@@ -101,7 +93,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         );
       }
 
-      (data as string[]).forEach((timeOfDay: string, index) =>
+      timesOfDaysTrim.forEach((timeOfDay: string, index) =>
         transaction.update(timesOfDayDocSnaps[timeOfDay], {
           position: index
         })

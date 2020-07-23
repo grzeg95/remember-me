@@ -1,9 +1,8 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
-import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
@@ -16,7 +15,7 @@ import {UserService} from '../user.service';
   styleUrls: ['./times-of-day-order.component.sass'],
   host: {class: 'app'}
 })
-export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
+export class TimesOfDayOrderComponent implements OnInit {
 
   set setTimesOfDayOrder$(setTimesOfDayOrder$: Subscription) {
     this.userService.setTimesOfDayOrder$ = setTimesOfDayOrder$;
@@ -27,8 +26,6 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
   }
 
   faGripLines = faGripLines;
-  perf = performance();
-  todayOrderComponentTrace = this.perf.trace('TimesOfDayOrderComponent');
   RouterDict = RouterDict;
 
   get timesOfDayOrder(): string[] {
@@ -53,12 +50,7 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
               private appService: AppService) {}
 
   ngOnInit(): void {
-    this.todayOrderComponentTrace.start();
     this.userService.runTimesOfDayOrder();
-  }
-
-  ngOnDestroy(): void {
-    this.todayOrderComponentTrace.stop();
   }
 
   drop(event: CdkDragDrop<string[]>): void {

@@ -2,7 +2,6 @@ import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from 
 import {AngularFirestore} from '@angular/fire/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
-import {performance} from 'firebase';
 import {interval, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
@@ -18,10 +17,7 @@ import {UserService} from '../user.service';
 })
 export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
-  perf = performance();
-  todayComponentTrace = this.perf.trace('TodayComponent');
   RouterDict = RouterDict;
-
   faCheckCircle = faCheckCircle;
 
   get timesOfDayOrder(): string[] {
@@ -75,8 +71,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
   destroyed = false;
 
   ngOnInit(): void {
-
-    this.todayComponentTrace.start();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.changeDay();
@@ -144,7 +138,6 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
     this.isConnected$.unsubscribe();
     this.destroyed = true;
-    this.todayComponentTrace.stop();
   }
 
   get isConnected(): boolean {

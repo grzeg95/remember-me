@@ -14,24 +14,14 @@ const app = firestore();
  **/
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
-  // interrupt if data.taskId is not correct or !auth
+  // not logged in
+  testRequirement(!context.auth);
 
-  testRequirement(
-    `not logged in`,
-    !context.auth
-  );
+  // data has not taskId
+  testRequirement(!data.taskId);
 
-  testRequirement(
-    `data has not taskId`,
-    !data.taskId,
-    data.taskId
-  );
-
-  testRequirement(
-    `data.taskId is not string`,
-    typeof data.taskId !== 'string',
-    data.taskId
-  );
+  // data.taskId is not string
+  testRequirement(typeof data.taskId !== 'string');
 
   const auth: { uid: string } | undefined = context.auth;
 

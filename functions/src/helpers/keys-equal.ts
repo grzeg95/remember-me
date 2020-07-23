@@ -11,5 +11,5 @@ export const keysEqual = (A: string[], B: string[]): boolean => {
     return false;
   }
 
-  return !A.some((a) => !B.includes(a));
+  return !A.some((a) => !B.includes(a)) || !B.some((b) => !A.includes(b));
 };

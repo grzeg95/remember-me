@@ -14,10 +14,7 @@ export const handler = async (user: UserRecord) => {
     ).then((docSnapDocData) => docSnapDocData);
 
     const userIsDeveloper = (await (await app.collection('developers')
-      .where('email', '==', email)
-      .limit(1)
-      .get()
-      .then((querySnap) => querySnap)
+      .where('email', '==', email).limit(1).get().then((querySnap) => querySnap)
     ).docs.map((doc) => transaction.get(doc.ref))).length === 1;
 
     if (!userIsDeveloper) {

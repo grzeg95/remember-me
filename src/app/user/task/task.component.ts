@@ -7,7 +7,6 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
-import {performance} from 'firebase';
 import {Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
@@ -26,9 +25,6 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
   host: {class: 'app'}
 })
 export class TaskComponent implements OnInit, OnDestroy {
-
-  perf = performance();
-  taskEditorComponentTrace = this.perf.trace('TaskComponent');
 
   faCheckCircle = faCheckCircle;
   faPlus = faPlus;
@@ -85,7 +81,6 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.userService.runTimesOfDayOrder();
-    this.taskEditorComponentTrace.start();
     this.taskForm.enable();
     this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
@@ -98,7 +93,6 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.isConnected$.unsubscribe();
-    this.taskEditorComponentTrace.stop();
   }
 
   openTimeOfDayDialog(): void {
