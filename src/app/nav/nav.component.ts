@@ -1,5 +1,6 @@
 import {Component, ElementRef, HostListener, ViewChild} from '@angular/core';
 import {faListUl, faSignOutAlt, faTasks, faUser, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 
@@ -11,15 +12,9 @@ import {AuthService} from '../auth/auth.service';
 })
 export class NavComponent {
 
-  get isConnected(): boolean {
-    return this.appService.isConnected$.getValue();
+  get isConnected$(): Observable<boolean> {
+    return this.appService.isConnected$;
   }
-
-  faUserCircle = faUserCircle;
-  faTasks = faTasks;
-  faListUl = faListUl;
-  faSignOutAlt = faSignOutAlt;
-  faUser = faUser;
 
   get isLoggedIn(): boolean | null {
     return this.authService.isLoggedIn;
@@ -34,17 +29,23 @@ export class NavComponent {
     return null;
   }
 
+  faUserCircle = faUserCircle;
+  faTasks = faTasks;
+  faListUl = faListUl;
+  faSignOutAlt = faSignOutAlt;
+  faUser = faUser;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(private authService: AuthService,
-              private appService: AppService) {}
-
-  signOut(): Promise<boolean> {
-    return this.authService.signOut();
+              private appService: AppService) {
   }
 
   auth(): void {
     this.authService.auth();
+  }
+
+  signOut(): Promise<boolean> {
+    return this.authService.signOut();
   }
 
   @HostListener('document:click', ['$event'])

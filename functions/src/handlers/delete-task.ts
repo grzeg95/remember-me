@@ -34,9 +34,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
 
       if (isDisabled) {
-        console.error({
-          'info': `user ${auth?.uid} tried to use disabled account`
-        });
         throw new HttpsError(
           'permission-denied',
           'This account is disabled',
@@ -48,9 +45,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         // interrupt if user has not this task
         if (!taskDocSnap.exists) {
-          console.error({
-            'info': 'user tried to remove foreign task'
-          });
           throw new HttpsError(
             'invalid-argument',
             `Task does not exist: ${taskDocSnap.ref.path}`,
@@ -90,9 +84,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           // remove todayTasks
           todayTasks.forEach((todayTaskDocSnap) => {
             if (!todayTaskDocSnap.exists) {
-              console.error({
-                'info': 'user tried to remove today task for wrong task'
-              });
               throw new HttpsError(
                 'invalid-argument',
                 `Today task ${todayTaskDocSnap.ref.path} does not exists for task ${taskDocSnap.ref.path}`,

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
-import {Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
@@ -10,88 +10,90 @@ import User = firebase.User;
 @Injectable()
 export class UserService {
 
-  set setTimesOfDayOrder$(setTimesOfDayOrder$: Subscription) {
-    this._setTimesOfDayOrder$ = setTimesOfDayOrder$;
+  set setTimesOfDayOrderSub(setTimesOfDayOrderSub: Subscription) {
+    this._setTimesOfDayOrderSub = setTimesOfDayOrderSub;
   }
 
-  get setTimesOfDayOrder$(): Subscription {
-    return this._setTimesOfDayOrder$;
+  get setTimesOfDayOrderSub(): Subscription {
+    return this._setTimesOfDayOrderSub;
   }
 
-  get todayFirstLoading(): boolean {
-    return this._todayFirstLoading;
+  get todayFirstLoading$(): Observable<boolean> {
+    return this.todayFirstLoading.asObservable();
   }
 
-  get tasksFirstLoading(): boolean {
-    return this._tasksFirstLoading;
+  get tasksFirstLoading$(): Observable<boolean> {
+    return this.tasksFirstLoading.asObservable();
   }
 
-  get timesOfDayOrderFirstLoading(): boolean {
-    return this._timesOfDayOrderFirstLoading;
+  get timesOfDayOrderFirstLoading$(): Observable<boolean> {
+    return this.timesOfDayOrderFirstLoading.asObservable();
   }
 
-  get today(): { [p: string]: TodayItem[] } {
-    return this._today;
+  get today$(): Observable<{ [p: string]: TodayItem[] }> {
+    return this.today.asObservable();
   }
 
-  get tasks(): TasksListItem[] {
-    return this._tasks;
+  get tasks$(): Observable<TasksListItem[]> {
+    return this.tasks.asObservable();
   }
 
-  get timesOfDayOrder(): string[] {
-    return this._timesOfDayOrder;
+  get timesOfDayOrder$(): Observable<string[]> {
+    return this.timesOfDayOrder.asObservable();
   }
 
-  get todayName(): string {
-    return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][this._now.getDay()];
+  get todayName$(): Observable<string> {
+    return this.todayName.asObservable();
   }
 
-  get todayFullName(): string {
-    return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][this._now.getDay()];
+  get todayFullName$(): Observable<string> {
+    return this.todayFullName.asObservable();
   }
 
-  get now(): Date {
-    return this._now;
+  get now$(): Observable<Date> {
+    return this.now.asObservable();
   }
 
-  private _setTimesOfDayOrder$: Subscription;
-
-  private _todayFirstLoading = true;
-  private _tasksFirstLoading = true;
-  private _timesOfDayOrderFirstLoading = true;
-
-  private _today: { [timeOfDay: string]: TodayItem[] } = {};
-  private _now: Date = new Date();
+  private _setTimesOfDayOrderSub: Subscription;
   private _lastTodayName = '.';
-  private _tasks: TasksListItem[] = [];
-  private _timesOfDayOrder: string[] = [];
 
-  private today$: Subscription;
-  private tasks$: Subscription;
-  private timesOfDayOrder$: Subscription;
+  todayFirstLoading = new BehaviorSubject<boolean>(true);
+  tasksFirstLoading = new BehaviorSubject<boolean>(true);
+  timesOfDayOrderFirstLoading = new BehaviorSubject<boolean>(true);
+
+  today = new BehaviorSubject<{[p: string]: TodayItem[]}>({});
+  now = new BehaviorSubject<Date>(new Date());
+  tasks = new BehaviorSubject<TasksListItem[]> ([]);
+  timesOfDayOrder = new BehaviorSubject<string[]>([]);
+  todayName = new BehaviorSubject<string>('');
+  todayFullName = new BehaviorSubject<string>('');
+
+  private todaySub: Subscription;
+  private tasksSub: Subscription;
+  private timesOfDayOrderSub: Subscription;
 
   clearCache(): void {
-    this._today = {};
-    this._tasks = [];
-    this._timesOfDayOrder = [];
-    this._todayFirstLoading = true;
-    this._tasksFirstLoading = true;
-    this._timesOfDayOrderFirstLoading = true;
+    this.today.next({});
+    this.tasks.next([]);
+    this.timesOfDayOrder.next([]);
+    this.todayFirstLoading.next(true);
+    this.tasksFirstLoading.next(true);
+    this.timesOfDayOrderFirstLoading.next(true);
 
-    if (this.today$ && !this.today$.closed) {
-      this.today$.unsubscribe();
+    if (this.todaySub && !this.todaySub.closed) {
+      this.todaySub.unsubscribe();
     }
 
-    if (this.tasks$ && !this.tasks$.closed) {
-      this.tasks$.unsubscribe();
+    if (this.tasksSub && !this.tasksSub.closed) {
+      this.tasksSub.unsubscribe();
     }
 
-    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
-      this.timesOfDayOrder$.unsubscribe();
+    if (this.timesOfDayOrderSub && !this.timesOfDayOrderSub.closed) {
+      this.timesOfDayOrderSub.unsubscribe();
     }
 
-    if (this._setTimesOfDayOrder$ && !this._setTimesOfDayOrder$.closed) {
-      this._setTimesOfDayOrder$.unsubscribe();
+    if (this.setTimesOfDayOrderSub && !this.setTimesOfDayOrderSub.closed) {
+      this.setTimesOfDayOrderSub.unsubscribe();
     }
 
   }
@@ -101,29 +103,34 @@ export class UserService {
               private appService: AppService) {
     this.appService.isConnected$.subscribe((isConnected) => {
       if (!isConnected) {
-        this._tasksFirstLoading = true;
-        this._todayFirstLoading = true;
-        this._timesOfDayOrderFirstLoading = true;
-        if (this._setTimesOfDayOrder$ && !this._setTimesOfDayOrder$.closed) {
-          this._setTimesOfDayOrder$.unsubscribe();
+        this.tasksFirstLoading.next(true);
+        this.todayFirstLoading.next(true);
+        this.timesOfDayOrderFirstLoading.next(true);
+        if (this._setTimesOfDayOrderSub && !this._setTimesOfDayOrderSub.closed) {
+          this._setTimesOfDayOrderSub.unsubscribe();
         }
       }
+    });
+
+    this.now$.subscribe((now) => {
+      this.todayFullName.next(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]);
+      this.todayName.next(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]);
     });
   }
 
   runToday(): void {
-    this._now = new Date();
+    this.now.next(new Date());
 
-    if (this._lastTodayName !== this.todayName && this.today$ && !this.today$.closed) {
-      this.today$.unsubscribe();
+    if (this._lastTodayName !== this.todayName.getValue() && this.todaySub && !this.todaySub.closed) {
+      this.todaySub.unsubscribe();
     }
-    this._lastTodayName = this.todayName;
+    this._lastTodayName = this.todayName.getValue();
 
-    if (this.today$ && !this.today$.closed) {
+    if (this.todaySub && !this.todaySub.closed) {
       return;
     }
 
-    this.today$ = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName}`)
+    this.todaySub = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName.getValue()}`)
       .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50 * 20))
       .snapshotChanges().pipe(
         map((documentChangeActionArr) => {
@@ -152,18 +159,18 @@ export class UserService {
         })
       ).subscribe((today) => {
         if (today) {
-          this._today = today;
-          this._todayFirstLoading = false;
+          this.today.next(today);
+          this.todayFirstLoading.next(false);
         }
       });
   }
 
   runTasks(): void {
-    if (this.tasks$ && !this.tasks$.closed) {
+    if (this.tasksSub && !this.tasksSub.closed) {
       return;
     }
 
-    this.tasks$ = this.afs.doc<User>(`users/${this.authService.userData.uid}/`)
+    this.tasksSub = this.afs.doc<User>(`users/${this.authService.userData.uid}/`)
       .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
       .snapshotChanges().pipe(
         map((documentChangeActionArr) =>
@@ -183,26 +190,26 @@ export class UserService {
         )
       ).subscribe((tasks) => {
         if (tasks) {
-          this._tasks = tasks;
-          this._tasksFirstLoading = false;
+          this.tasks.next(tasks);
+          this.tasksFirstLoading.next(false);
         }
       });
   }
 
   runTimesOfDayOrder(): void {
-    if (this.timesOfDayOrder$ && !this.timesOfDayOrder$.closed) {
+    if (this.timesOfDayOrderSub && !this.timesOfDayOrderSub.closed) {
       return;
     }
 
-    this.timesOfDayOrder$ = this.afs
+    this.timesOfDayOrderSub = this.afs
       .doc<User>(`users/${this.authService.userData.uid}`)
       .collection<TimeOfDay>('timesOfDay', (ref) => ref.orderBy('position', 'asc').limit(20))
       .snapshotChanges().pipe(
         map((querySnapDocData) => querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id))
       ).subscribe((timesOfDay) => {
         if (timesOfDay) {
-          this._timesOfDayOrder = timesOfDay;
-          this._timesOfDayOrderFirstLoading = false;
+          this.timesOfDayOrder.next(timesOfDay);
+          this.timesOfDayOrderFirstLoading.next(false);
         }
       });
   }

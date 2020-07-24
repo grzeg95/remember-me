@@ -1,11 +1,11 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {keysEqual} from '../helpers/keys-equal';
 import {Day, Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentReference = firestore.DocumentReference;
+import '../../../global.prototype';
 
 const app = firestore();
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
@@ -41,10 +41,11 @@ interface TodayTask {
  * @return ITaskDiff
  **/
 const getTaskChange = (a: Task, b: Task): TaskDiff => {
+  const aTimesOfDay = a.timesOfDay.toSet();
+  const bTimesOfDay = b.timesOfDay.toSet();
   return {
     description: a.description !== b.description,
-    timesOfDay: a.timesOfDay.some((aElement) => !b.timesOfDay.includes(aElement))
-      || b.timesOfDay.some((bElement) => !a.timesOfDay.includes(bElement)),
+    timesOfDay: !aTimesOfDay.hasOnly(bTimesOfDay),
     daysOfTheWeek: days.some((day) => a.daysOfTheWeek[day] !== b.daysOfTheWeek[day])
   };
 }
@@ -117,17 +118,17 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
  * @param user: DocumentReference
  * @param taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot}
  * @param dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot}
- * @return { addedTimesOfDay: string[], removedTimesOfDay: string[] }
+ * @return { addedTimesOfDay: Set<string>, removedTimesOfDay: Set<string> }
  **/
 const proceedTimesOfDay =
   (transaction: Transaction,
    taskDocSnap: DocumentSnapshot,
    user: DocumentReference,
    taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot},
-   dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot}): { addedTimesOfDay: string[], removedTimesOfDay: string[] } => {
+   dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot}): { addedTimesOfDay: Set<string>, removedTimesOfDay: Set<string> } => {
 
-  const addedTimesOfDay: string[] = [];
-  const removedTimesOfDay: string[] = [];
+  const addedTimesOfDay = new Set<string>();
+  const removedTimesOfDay = new Set<string>();
 
   // for each dataTaskDocSnapsTimeOfDay
   // create or increment
@@ -137,7 +138,7 @@ const proceedTimesOfDay =
         counter: 1,
         position: 0
       });
-      addedTimesOfDay.push(timeOfDay);
+      addedTimesOfDay.add(timeOfDay);
     } else if (!taskDocSnapsTimesOfDay[timeOfDay]) {
       transaction.update(dataTaskDocSnapsTimeOfDay[timeOfDay].ref, {
         counter: dataTaskDocSnapsTimeOfDay[timeOfDay].data()?.counter + 1
@@ -152,7 +153,7 @@ const proceedTimesOfDay =
       const counter = taskDocSnapsTimesOfDay[timeOfDay].data()?.counter;
       if (counter - 1 === 0) {
         transaction.delete(taskDocSnapsTimesOfDay[timeOfDay].ref);
-        removedTimesOfDay.push(timeOfDay);
+        removedTimesOfDay.add(timeOfDay);
       } else {
         transaction.update(taskDocSnapsTimesOfDay[timeOfDay].ref, {
           counter: counter - 1
@@ -203,7 +204,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   testRequirement(dataKeys.length !== 2);
 
   // data has not 'task' and 'taskId'
-  testRequirement(!keysEqual(dataKeys, ['task', 'taskId']));
+  testRequirement(!dataKeys.toSet().hasOnly(['task', 'taskId'].toSet()));
 
   // data.taskId is not string
   testRequirement(typeof data.taskId !== 'string');
@@ -215,7 +216,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   testRequirement(dataTaskKeys.length !== 3);
 
   // data.task has not ['description', 'daysOfTheWeek', 'timesOfDay']
-  testRequirement(!keysEqual(dataTaskKeys, ['description', 'daysOfTheWeek', 'timesOfDay']));
+  testRequirement(!dataTaskKeys.toSet().hasAny(['description', 'daysOfTheWeek', 'timesOfDay'].toSet()));
 
   // data.task.description is not a string
   testRequirement(typeof data.task.description !== 'string');
@@ -226,7 +227,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   testRequirement(data.task.description.length < 4 || data.task.description.length > 40);
 
   // data.task.daysOfTheWeek has not ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-  testRequirement(!keysEqual(dataTaskDaysOfTheWeekKeys, days));
+  testRequirement(!dataTaskDaysOfTheWeekKeys.toSet().hasAny(days.toSet()));
 
   // data.task.daysOfTheWeek has not boolean value
   testRequirement(dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'));
@@ -241,7 +242,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 20);
 
   // data.task.timesOfDay contains duplicates
-  testRequirement(new Set(data.task.timesOfDay).size !== data.task.timesOfDay.length);
+  testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
 
   data.task.timesOfDay = data.task.timesOfDay.map((timeOfDay: any) => {
 
@@ -271,9 +272,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
 
       if (isDisabled) {
-        console.error({
-          'info': `user ${auth?.uid} tried to use disabled account`
-        });
         throw new HttpsError(
           'permission-denied',
           'This account is disabled',
@@ -335,9 +333,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
             todayTaskDocSnapsToUpdate.forEach((todayTask) => {
               if (!todayTask.exists) {
-                console.error({
-                  'info': 'task is not related today task'
-                });
                 throw new HttpsError(
                   'invalid-argument',
                   `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
@@ -387,9 +382,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           if (currentTimesOfDay[timeOfDay]) {
             taskDocSnapsTimesOfDay[timeOfDay] = currentTimesOfDay[timeOfDay];
           } else {
-            console.error({
-              'info': 'task not contains time of day'
-            });
             throw new HttpsError(
               'invalid-argument',
               `Known task ${taskDocSnap.ref.path} not contains time of day ${timeOfDay}`,
@@ -405,8 +397,8 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         }, {});
 
         const modifiedTimesOfDays = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay);
-        const timesOfDaysToStoreLen = Object.keys(currentTimesOfDay).filter((docSnapId) => !modifiedTimesOfDays.removedTimesOfDay.includes(docSnapId))
-          .concat(modifiedTimesOfDays.addedTimesOfDay).length;
+
+        const timesOfDaysToStoreLen = Object.keys(currentTimesOfDay).toSet().difference(modifiedTimesOfDays.removedTimesOfDay).union(modifiedTimesOfDays.addedTimesOfDay).size;
         if (timesOfDaysToStoreLen > 20) {
           throw new HttpsError(
             'invalid-argument',

@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {Observable} from 'rxjs';
 
 import {environment} from '../environments/environment';
 import {AppService} from './app-service';
@@ -16,8 +17,8 @@ export class AppComponent {
     return this.authService.isLoggedIn;
   }
 
-  get isConnected(): boolean {
-    return this.appService.isConnected$.getValue();
+  get isConnected$(): Observable<boolean> {
+    return this.appService.isConnected$;
   }
 
   constructor(private appService: AppService,

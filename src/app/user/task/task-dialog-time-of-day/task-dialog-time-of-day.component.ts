@@ -1,8 +1,9 @@
-import {Component, HostListener, Input, OnInit, ViewEncapsulation} from '@angular/core';
+import {Component, HostListener, Input, OnDestroy, OnInit, ViewEncapsulation} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
-import {Observable} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
+import '../../../../../global.prototype';
 import {UserService} from '../../user.service';
 
 @Component({
@@ -11,24 +12,25 @@ import {UserService} from '../../user.service';
   styleUrls: ['task-dialog-time-of-day.component.sass'],
   encapsulation: ViewEncapsulation.None
 })
-export class TaskDialogTimeOfDay implements OnInit {
-
-  get timesOfDayOrder(): string[] {
-    return this.userService.timesOfDayOrder
-      .filter((timeOfDay) => !this.taskTimesOfDay.includes(timeOfDay));
-  }
+export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
   @Input()
   taskTimesOfDay: string[] = [];
-
   timeOfDayForm: FormGroup = new FormGroup({
     timeOfDay: new FormControl('', [
       TaskDialogTimeOfDay.timeOfDayValidatorLength,
       TaskDialogTimeOfDay.timeOfDayValidatorSlash]
     )
   });
-
   filteredOptions: Observable<string[]>;
+  timesOfDayOrderSub: Subscription;
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent): void {
+    if (event.code === 'Enter' && this.timeOfDayForm.get('timeOfDay').valid) {
+      this.addTimeOfDay();
+    }
+  }
 
   constructor(
     public dialogRef: MatDialogRef<TaskDialogTimeOfDay>,
@@ -41,19 +43,30 @@ export class TaskDialogTimeOfDay implements OnInit {
         map((value) => this._filter(value))
       );
 
+    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrderNext) => {
+      const timesOfDayOrderSet = timesOfDayOrderNext.toSet().difference(this.taskTimesOfDay.toSet());
+      const timesOfDayOrder = [];
+
+      for (const x of timesOfDayOrderNext) {
+        if (timesOfDayOrderSet.has(x)) {
+          timesOfDayOrder.push(x);
+          timesOfDayOrderSet.delete(x);
+        }
+      }
+
+      this.taskTimesOfDay = timesOfDayOrder;
+    });
+
+  }
+
+  ngOnDestroy(): void {
+    this.timesOfDayOrderSub.unsubscribe();
   }
 
   private _filter(value: string): string[] {
     const filterValue = value.toLowerCase();
 
-    return this.timesOfDayOrder.filter((option) => option.toLowerCase().includes(filterValue));
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  handleKeyDown(event: KeyboardEvent): void {
-    if (event.code === 'Enter' && this.timeOfDayForm.get('timeOfDay').valid) {
-      this.addTimeOfDay();
-    }
+    return this.taskTimesOfDay.filter((option) => option.toLowerCase().includes(filterValue));
   }
 
   onNoClick(): void {

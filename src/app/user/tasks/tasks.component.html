@@ -1,17 +1,17 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="tasksView.length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="(tasksFirstLoading || timesOfDayOrderFirstLoading) && isConnected; else onOneExists">
+      <div class="row message" *ngIf="((tasksFirstLoading$ | async) || (timesOfDayOrderFirstLoading$ | async)) && (isConnected$ | async); else onOneExists">
         <div class="col">
           <span>Loading...</span>
         </div>
       </div>
 
       <ng-template #onOneExists>
-        <div class="row message" *ngIf="isConnected">
+        <div class="row message" *ngIf="isConnected$ | async">
           <div class="col">
             <span>Add some tasks to this empty list</span>
           </div>
@@ -21,7 +21,7 @@
             </div>
           </div>
         </div>
-        <div class="row message" *ngIf="!isConnected">
+        <div class="row message" *ngIf="!(isConnected$ | async)">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
           </div>
@@ -42,7 +42,7 @@
               </tr>
             </thead>
             <tbody id="tasksTable">
-              <tr *ngFor="let task of tasks">
+              <tr *ngFor="let task of tasksView">
                 <td>{{ task.description }}</td>
                 <td>{{ task.daysOfTheWeek }}</td>
                 <td>{{ task.timesOfDay.join(', ') }}</td>
@@ -57,7 +57,7 @@
         </div>
       </div>
 
-      <div *ngIf="!isEmpty" class="row">
+      <div *ngIf="tasksView.length !== 0" class="row">
         <div class="add-task-button">
           <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
         </div>

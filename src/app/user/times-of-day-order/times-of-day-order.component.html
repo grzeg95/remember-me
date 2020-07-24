@@ -1,18 +1,18 @@
 <div class="container">
 
-  <div class="col" [ngClass]="{'disabled': setTimesOfDayOrder$ && !setTimesOfDayOrder$.closed}">
+  <div class="col" [ngClass]="{'disabled': setTimesOfDayOrderSub && !setTimesOfDayOrderSub.closed}">
 
-    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="(timesOfDayOrder$ | async).length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div *ngIf="timesOfDayOrderFirstLoading && isConnected; else onOneExists" class="row message">
+      <div *ngIf="(timesOfDayOrderFirstLoading$ | async) && (isConnected$ | async); else onOneExists" class="row message">
         <div class="col">
           <span>Loading...</span>
         </div>
       </div>
 
       <ng-template #onOneExists>
-        <div class="row message" *ngIf="isConnected">
+        <div class="row message" *ngIf="isConnected$ | async">
           <div class="col">
             <span>Add some tasks and change times of day order</span>
           </div>
@@ -22,7 +22,7 @@
             </div>
           </div>
         </div>
-        <div class="row message" *ngIf="!isConnected">
+        <div class="row message" *ngIf="!(isConnected$ | async)">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
           </div>
@@ -35,12 +35,12 @@
         <span class="times-of-day-row-content title">Change times of day order</span>
       </div>
       <div class="row">
-        <div [cdkDropListDisabled]="!isConnected" cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
+        <div [cdkDropListDisabled]="!(isConnected$ | async)" cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
           <div
             cdkDrag
             class="times-of-day-box"
-            [class.disabled]="!isConnected"
-            *ngFor="let item of timesOfDayOrder; let i = index">
+            [class.disabled]="!(isConnected$ | async)"
+            *ngFor="let item of (timesOfDayOrder$ | async); let i = index">
             <div class="times-of-day-item">{{ item }}</div>
             <fa-icon class="times-of-day-item-icon" [icon]="faGripLines"></fa-icon>
           </div>
@@ -51,4 +51,4 @@
   </div>
 </div>
 
-<mat-spinner *ngIf="setTimesOfDayOrder$ && !setTimesOfDayOrder$.closed" [diameter]="50" [strokeWidth]="5"></mat-spinner>
+<mat-spinner *ngIf="setTimesOfDayOrderSub && !setTimesOfDayOrderSub.closed" [diameter]="50" [strokeWidth]="5"></mat-spinner>

@@ -1,19 +1,19 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="isEmpty; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="todayItemsView.length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="(todayFirstLoading || timesOfDayFirstLoading) && isConnected; else onOneExists">
+      <div class="row message" *ngIf="((todayFirstLoading$ | async) || (timesOfDayFirstLoading$ | async)) && (isConnected$ | async); else onOneExists">
         <div class="col">
           <span>Loading...</span>
         </div>
       </div>
 
       <ng-template #onOneExists>
-        <div class="row message" *ngIf="isConnected">
+        <div class="row message" *ngIf="isConnected$ | async">
           <div class="col">
-            <span>Add some tasks for {{todayFullName}}</span>
+            <span>Add some tasks for {{todayFullName$ | async}}</span>
           </div>
           <div class="col">
             <div class="add-task">
@@ -21,7 +21,7 @@
             </div>
           </div>
         </div>
-        <div class="row message" *ngIf="!isConnected">
+        <div class="row message" *ngIf="!(isConnected$ | async)">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
           </div>

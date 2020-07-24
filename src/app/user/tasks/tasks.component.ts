@@ -1,5 +1,7 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import {Observable, Subscription} from 'rxjs';
+import '../../../../global.prototype';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
 import {TasksListItem} from '../models';
@@ -11,34 +13,29 @@ import {UserService} from '../user.service';
   styleUrls: ['./tasks.component.sass'],
   host: {class: 'app'}
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent implements OnInit, OnDestroy {
+
+  get timesOfDayOrderFirstLoading$(): Observable<boolean> {
+    return this.userService.timesOfDayOrderFirstLoading$;
+  }
+
+  get tasksFirstLoading$(): Observable<boolean> {
+    return this.userService.tasksFirstLoading$;
+  }
+
+  get timesOfDayOrder$(): Observable<string[]> {
+    return this.userService.timesOfDayOrder$;
+  }
+
+  get isConnected$(): Observable<boolean> {
+    return this.appService.isConnected$;
+  }
 
   RouterDict = RouterDict;
   faEdit = faEdit;
-
-  get timesOfDayOrder(): string[] {
-    return this.userService.timesOfDayOrder;
-  }
-
-  get tasks(): TasksListItem[] {
-    return this.userService.tasks.map((taskListItem) => {
-      taskListItem.timesOfDay = this.timesOfDayOrder
-        .filter((timeOfDay) => taskListItem.timesOfDay.includes(timeOfDay));
-      return taskListItem;
-    });
-  }
-
-  get tasksFirstLoading(): boolean {
-    return this.userService.tasksFirstLoading;
-  }
-
-  get timesOfDayOrderFirstLoading(): boolean {
-    return this.userService.timesOfDayOrderFirstLoading;
-  }
-
-  get isEmpty(): boolean {
-    return this.tasks.length === 0 || this.timesOfDayOrder.length === 0;
-  }
+  tasksView: TasksListItem[] = [];
+  tasksSub: Subscription;
+  timesOfDayOrderSub: Subscription;
 
   constructor(private userService: UserService,
               private appService: AppService) {}
@@ -46,10 +43,37 @@ export class TasksComponent implements OnInit {
   ngOnInit(): void {
     this.userService.runTimesOfDayOrder();
     this.userService.runTasks();
+
+    this.tasksSub = this.userService.tasks$.subscribe((tasks) => {
+      this.updateTasksViews(tasks, this.userService.timesOfDayOrder.getValue());
+    });
+
+    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder) => {
+      this.updateTasksViews(this.userService.tasks.getValue(), timesOfDayOrder);
+    });
   }
 
-  get isConnected(): boolean {
-    return this.appService.isConnected$.getValue();
+  ngOnDestroy(): void {
+    this.tasksSub.unsubscribe();
+    this.timesOfDayOrderSub.unsubscribe();
+  }
+
+  updateTasksViews(tasks: TasksListItem[], timesOfDayOrder: string[]): void {
+    this.tasksView = tasks.map((taskListItem) => {
+
+      const timesOfDayOrderSet = timesOfDayOrder.toSet().intersection((taskListItem.timesOfDay as string[]).toSet());
+      const timesOfDayOrderTmp = [];
+
+      for (const x of timesOfDayOrder) {
+        if (timesOfDayOrderSet.has(x)) {
+          timesOfDayOrderTmp.push(x);
+          timesOfDayOrderSet.delete(x);
+        }
+      }
+
+      taskListItem.timesOfDay = timesOfDayOrderTmp;
+      return taskListItem;
+    });
   }
 
 }

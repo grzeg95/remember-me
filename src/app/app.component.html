@@ -2,7 +2,7 @@
 <mat-spinner *ngIf="isLoggedIn === null" [strokeWidth]="5"></mat-spinner>
 <router-outlet></router-outlet>
 
-<div [class.active]="!isConnected" class="offline">
+<div [class.active]="!(isConnected$ | async)" class="offline">
   <div class="text">rem.grzeg.pl is currently offline</div>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="1.325rem" height="1.325rem">
     <path d="M0 0h24v24H0z" fill="none"/>

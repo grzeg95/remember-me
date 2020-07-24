@@ -3,7 +3,7 @@ import {Component, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
-import {Subscription} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {HTTPError, HTTPSuccess} from '../models';
@@ -17,32 +17,28 @@ import {UserService} from '../user.service';
 })
 export class TimesOfDayOrderComponent implements OnInit {
 
-  set setTimesOfDayOrder$(setTimesOfDayOrder$: Subscription) {
-    this.userService.setTimesOfDayOrder$ = setTimesOfDayOrder$;
+  set setTimesOfDayOrderSub(setTimesOfDayOrderSub: Subscription) {
+    this.userService.setTimesOfDayOrderSub = setTimesOfDayOrderSub;
   }
 
-  get setTimesOfDayOrder$(): Subscription {
-    return this.userService.setTimesOfDayOrder$;
+  get setTimesOfDayOrderSub(): Subscription {
+    return this.userService.setTimesOfDayOrderSub;
+  }
+
+  get timesOfDayOrder$(): Observable<string[]> {
+    return this.userService.timesOfDayOrder$;
+  }
+
+  get timesOfDayOrderFirstLoading$(): Observable<boolean> {
+    return this.userService.timesOfDayOrderFirstLoading$;
+  }
+
+  get isConnected$(): Observable<boolean> {
+    return this.appService.isConnected$;
   }
 
   faGripLines = faGripLines;
   RouterDict = RouterDict;
-
-  get timesOfDayOrder(): string[] {
-    return this.userService.timesOfDayOrder;
-  }
-
-  get timesOfDayOrderFirstLoading(): boolean {
-    return this.userService.timesOfDayOrderFirstLoading;
-  }
-
-  get isEmpty(): boolean {
-    return this.timesOfDayOrder.length === 0;
-  }
-
-  get isConnected(): boolean {
-    return this.appService.isConnected$.getValue();
-  }
 
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
@@ -59,9 +55,11 @@ export class TimesOfDayOrderComponent implements OnInit {
       return;
     }
 
-    moveItemInArray(this.timesOfDayOrder, event.previousIndex, event.currentIndex);
+    const timesOfDayOrder = [...this.userService.timesOfDayOrder.getValue()];
+    moveItemInArray(timesOfDayOrder, event.previousIndex, event.currentIndex);
+    this.userService.timesOfDayOrder.next(timesOfDayOrder);
 
-    this.setTimesOfDayOrder$ = this.fns.httpsCallable('setTimesOfDayOrder')(this.timesOfDayOrder).subscribe((success: HTTPSuccess) => {
+    this.setTimesOfDayOrderSub = this.fns.httpsCallable('setTimesOfDayOrder')(timesOfDayOrder).subscribe((success: HTTPSuccess) => {
       this.snackBar.open(success.details);
     }, (error: HTTPError) => {
       this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');

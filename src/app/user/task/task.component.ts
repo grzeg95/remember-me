@@ -7,16 +7,13 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
-import {Subscription} from 'rxjs';
+import {Observable, Subscription} from 'rxjs';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
 import {HTTPError, HTTPSuccess, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of-day.component';
-
-export const listEqual = <T>(A: T[], B: T[]): boolean =>
-  A.length === B.length && A.every((a) => B.includes(a)) && B.every((b) => A.includes(b));
 
 @Component({
   selector: 'app-task',
@@ -26,21 +23,16 @@ export const listEqual = <T>(A: T[], B: T[]): boolean =>
 })
 export class TaskComponent implements OnInit, OnDestroy {
 
-  faCheckCircle = faCheckCircle;
-  faPlus = faPlus;
-
   get timesOfDay(): AbstractControl[] {
     return (this.taskForm.get('timesOfDay') as FormArray).controls;
   }
 
-  constructor(private activeRoute: ActivatedRoute,
-              private location: Location,
-              private fns: AngularFireFunctions,
-              public dialog: MatDialog,
-              private snackBar: MatSnackBar,
-              private appService: AppService,
-              private userService: UserService) {}
+  get isConnected$(): Observable<boolean> {
+    return this.appService.isConnected$;
+  }
 
+  faCheckCircle = faCheckCircle;
+  faPlus = faPlus;
   initValues: Task = {
     daysOfTheWeek: {
       mon: false,
@@ -54,9 +46,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     description: '',
     timesOfDay: []
   };
-
   id = 'null';
-
   taskForm: FormGroup = new FormGroup({
     description: new FormControl('', TaskComponent.descriptionValidator),
     daysOfTheWeek: new FormGroup({
@@ -70,19 +60,22 @@ export class TaskComponent implements OnInit, OnDestroy {
     }, TaskComponent.daysOfTheWeekValidator),
     timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator)
   });
-
   savingInProgress = false;
   deletingInProgress = false;
-  isConnected$: Subscription;
+  isConnectedSub: Subscription;
 
-  get isConnected(): boolean {
-    return this.appService.isConnected$.getValue();
-  }
+  constructor(private activeRoute: ActivatedRoute,
+              private location: Location,
+              private fns: AngularFireFunctions,
+              public dialog: MatDialog,
+              private snackBar: MatSnackBar,
+              private appService: AppService,
+              private userService: UserService) {}
 
   ngOnInit(): void {
     this.userService.runTimesOfDayOrder();
     this.taskForm.enable();
-    this.isConnected$ = this.appService.isConnected$.subscribe((isConnected) => {
+    this.isConnectedSub = this.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
         this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
       } else {
@@ -92,7 +85,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.isConnected$.unsubscribe();
+    this.isConnectedSub.unsubscribe();
   }
 
   openTimeOfDayDialog(): void {
@@ -268,7 +261,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     return this.initValues.description.length === rawValue['description'].trim().length &&
       deepEqual(this.initValues.daysOfTheWeek, rawValue['daysOfTheWeek']) &&
-      listEqual(this.initValues.timesOfDay, rawValue['timesOfDay']);
+      this.initValues.timesOfDay.toSet().hasOnly(rawValue['timesOfDay'].toSet());
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {

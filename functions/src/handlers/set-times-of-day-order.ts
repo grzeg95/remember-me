@@ -1,8 +1,8 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {keysEqual} from '../helpers/keys-equal';
 import {testRequirement} from '../helpers/test-requirement';
 import DocumentReference = firestore.DocumentReference;
+import '../../../global.prototype';
 
 const app = firestore();
 
@@ -52,9 +52,6 @@ export const handler = (timesOfDays: any, context: CallableContext): Promise<{[k
       const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
 
       if (isDisabled) {
-        console.error({
-          'info': `user ${auth?.uid} tried to use disabled account`
-        });
         throw new HttpsError(
           'permission-denied',
           'This account is disabled',
@@ -67,12 +64,12 @@ export const handler = (timesOfDays: any, context: CallableContext): Promise<{[k
       * */
 
       // read all times of day
-      const timesOfDayDocSnaps: { [timeOfDay: string]: DocumentReference } = await userDocSnap.ref.collection('timesOfDay')
+      const timesOfDayDocSnaps = await userDocSnap.ref.collection('timesOfDay')
         .listDocuments()
         .then(async (docsRef) =>
           (await Promise.all(docsRef.map((docRef) =>
             transaction.get(docRef).then((docSnap) => docSnap)
-          ))).reduce((acc, curr) => {
+          ))).reduce<{ [timeOfDay: string]: DocumentReference }>((acc, curr) => {
             Object.assign(acc, {[curr.id]: curr.ref});
             return acc;
           }, {}));
@@ -81,11 +78,8 @@ export const handler = (timesOfDays: any, context: CallableContext): Promise<{[k
       * Proceed all data
       * */
 
-      const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps);
-      if (!keysEqual(timesOfDayDocSnapsKeys, timesOfDaysTrim)) {
-        console.error({
-          'info': 'user tried to update different times of day than has'
-        });
+      const timesOfDayDocSnapsKeys = Object.keys(timesOfDayDocSnaps).toSet();
+      if (!timesOfDayDocSnapsKeys.hasOnly(timesOfDaysTrim.toSet())) {
         throw new HttpsError(
           'invalid-argument',
           'Bad Request',
