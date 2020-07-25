@@ -58,6 +58,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         const task: Task = taskDocSnap.data() as Task;
 
+        // read current currentTimesOfDaySize
+        let currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
+
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
           (Object.keys(task.daysOfTheWeek) as Day[]).filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]).map((day) =>
@@ -69,46 +72,45 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           (timeOfDay) => transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay))
         ));
 
-        return Promise.all([todayTasksPromise, timesOfDayDocSnapsPromise]).then((snapArray) => {
+        const todayTasks = await todayTasksPromise;
+        const timesOfDayDocSnaps = await timesOfDayDocSnapsPromise;
 
-          /*
-          * Proceed all data
-          * */
+        /*
+        * Proceed all data
+        * */
 
-          // remove task
-          transaction.delete(taskDocSnap.ref);
+        // remove task
+        transaction.delete(taskDocSnap.ref);
 
-          const todayTasks = snapArray[0];
-          const timesOfDayDocSnaps = snapArray[1];
+        // remove todayTasks
+        todayTasks.forEach((todayTaskDocSnap) =>
+          transaction.delete(todayTaskDocSnap.ref));
 
-          // remove todayTasks
-          todayTasks.forEach((todayTaskDocSnap) => {
-            if (!todayTaskDocSnap.exists) {
-              throw new HttpsError(
-                'invalid-argument',
-                `Today task ${todayTaskDocSnap.ref.path} does not exists for task ${taskDocSnap.ref.path}`,
-                'Some went wrong 🤫 Try again 🙂'
-              );
-            }
-
-            transaction.delete(todayTaskDocSnap.ref);
-          });
-
-          // proceed timesOfDayDocSnaps
-          timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
-            const counter = timesOfDayDocSnapsDocData.data()?.counter;
-            if (counter - 1 === 0) {
-              transaction.delete(timesOfDayDocSnapsDocData.ref);
-            } else {
-              transaction.update(timesOfDayDocSnapsDocData.ref, {
-                counter: counter - 1
-              });
-            }
-          });
-
-          return transaction;
-
+        // proceed timesOfDayDocSnaps
+        timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
+          const counter = timesOfDayDocSnapsDocData.data()?.counter;
+          if (counter - 1 === 0) {
+            transaction.delete(timesOfDayDocSnapsDocData.ref);
+            currentTimesOfDaySize--;
+          } else {
+            transaction.update(timesOfDayDocSnapsDocData.ref, {
+              counter: counter - 1
+            });
+          }
         });
+
+        // update user
+        if (userDocSnap.exists) {
+          transaction.update(userDocSnap.ref, {
+            timesOfDaySize: currentTimesOfDaySize
+          });
+        } else {
+          transaction.create(userDocSnap.ref, {
+            timesOfDaySize: currentTimesOfDaySize
+          });
+        }
+
+        return transaction;
 
       });
 

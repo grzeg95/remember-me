@@ -15,7 +15,7 @@ service cloud.firestore {
     }
 
     function isDisabled() {
-    	let user = get(/databases/$(database)/documents/users/$(userId));
+    	let user = get(/databases/$(database)/documents/users/request.auth.uid);
     	return user == null ? false : 'disabled' in user.data ? user.data.disabled : false
     }
 

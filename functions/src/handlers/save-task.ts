@@ -319,11 +319,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
             // read all task for user/{userId}/today/{day}/task/{taskId}
             const todayTaskDocSnapsToUpdate = await Promise.all(
-              (Object.keys(task.daysOfTheWeek) as Day[])
-                .filter((timeOfDay) => task.daysOfTheWeek[timeOfDay])
-                .map((day) =>
-                  transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-                    .then((docSnap) => docSnap)
+              (Object.keys(task.daysOfTheWeek) as Day[]).map((day) =>
+                transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+                  .then((docSnap) => docSnap)
               )
             );
 
@@ -361,34 +359,37 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
             .then((docSnap) => ({docSnap, day})))
         );
 
-        // read current timesOfDay
-        const currentTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = (
-          await Promise.all((await userDocSnap.ref.collection('timesOfDay').listDocuments().then((docRefs) => docRefs))
-            .map((docRef) => transaction.get(docRef).then((docSnap) => docSnap)))
-        ).reduce((acc, curr) => {
-          Object.assign(acc, {[curr.id]: curr});
-          return acc;
-        }, {});
+        // read current currentTimesOfDaySize
+        const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
 
         // read task timeOfDay
         // there can be new timesOfDay that not exists in firebase
         const dataTaskDocSnapsTimeOfDayPromise = (Promise.all((task.timesOfDay).map((timeOfDay) =>
-          currentTimesOfDay[timeOfDay] ? currentTimesOfDay[timeOfDay] : transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
+          transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
         )));
 
+
+        let taskDocSnapsTimesOfDay;
+        const taskDocSnapData = (taskDocSnap.data() as Task);
+
         // read taskDocSnap timeOfDay
-        const taskDocSnapsTimesOfDay: {[timeOfDay: string]: DocumentSnapshot} = {}
-        taskDocSnap.data() && (taskDocSnap.data() as Task).timesOfDay.forEach((timeOfDay) => {
-          if (currentTimesOfDay[timeOfDay]) {
-            taskDocSnapsTimesOfDay[timeOfDay] = currentTimesOfDay[timeOfDay];
-          } else {
-            throw new HttpsError(
-              'invalid-argument',
-              `Known task ${taskDocSnap.ref.path} not contains time of day ${timeOfDay}`,
-              'Some went wrong 🤫 Try again 🙂'
-            );
-          }
-        });
+        if (taskDocSnapData && taskDocSnapData.timesOfDay) {
+          taskDocSnapsTimesOfDay = (await Promise.all((taskDocSnap.data() as Task).timesOfDay.map((timeOfDay) =>
+            transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
+          ))).reduce((acc, curr) => {
+            if (!curr.exists) {
+              throw new HttpsError(
+                'invalid-argument',
+                `Known task ${taskDocSnap.ref.path} not contains time of day ${curr.id}`,
+                'Some went wrong 🤫 Try again 🙂'
+              );
+            }
+            Object.assign(acc, {[curr.id]: curr});
+            return acc;
+          }, {});
+        } else {
+          taskDocSnapsTimesOfDay = {};
+        }
 
         const todayTaskDocSnapsDayPack = await todayTaskDocSnapsDayPackPromise;
         const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await dataTaskDocSnapsTimeOfDayPromise).reduce((acc, curr) => {
@@ -398,7 +399,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         const modifiedTimesOfDays = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay);
 
-        const timesOfDaysToStoreLen = Object.keys(currentTimesOfDay).toSet().difference(modifiedTimesOfDays.removedTimesOfDay).union(modifiedTimesOfDays.addedTimesOfDay).size;
+        const timesOfDaysToStoreLen = currentTimesOfDaySize - modifiedTimesOfDays.removedTimesOfDay.size + modifiedTimesOfDays.addedTimesOfDay.size;
         if (timesOfDaysToStoreLen > 20) {
           throw new HttpsError(
             'invalid-argument',
@@ -418,6 +419,17 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         // delete taskDocSnapTmp if created
         if (created) {
           transaction.delete(taskDocSnapTmp.ref);
+        }
+
+        // update user
+        if (userDocSnap.exists) {
+          transaction.update(userDocSnap.ref, {
+            timesOfDaySize: timesOfDaysToStoreLen
+          });
+        } else {
+          transaction.create(userDocSnap.ref, {
+            timesOfDaySize: timesOfDaysToStoreLen
+          });
         }
 
         return transaction;
