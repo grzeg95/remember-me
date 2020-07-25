@@ -285,6 +285,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         task.description = task.description.trim();
         task.timesOfDay = task.timesOfDay.map((timeOfDay) => timeOfDay.trim());
 
+        // read current currentTaskSize
+        let taskLength = userDocSnap.data()?.taskLength || 0;
+
         /*
         * Read all data
         * */
@@ -295,6 +298,17 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           created = true;
           taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then(async (newTaskSnap) => newTaskSnap);
           taskId = taskDocSnap.id;
+
+          if (taskLength + 1 > 20) {
+            throw new HttpsError(
+              'invalid-argument',
+              'Bad Request',
+              `You can own 20 tasks but merge has ${taskLength + 1} 🤔`
+            );
+          }
+
+          taskLength++;
+
         } else {
           taskDocSnap = taskDocSnapTmp;
 
@@ -360,14 +374,13 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         );
 
         // read current currentTimesOfDaySize
-        const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
+        let timesOfDayLength = userDocSnap.data()?.timesOfDayLength || 0;
 
         // read task timeOfDay
         // there can be new timesOfDay that not exists in firebase
         const dataTaskDocSnapsTimeOfDayPromise = (Promise.all((task.timesOfDay).map((timeOfDay) =>
           transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay)).then((docSnap) => docSnap)
         )));
-
 
         let taskDocSnapsTimesOfDay;
         const taskDocSnapData = (taskDocSnap.data() as Task);
@@ -399,12 +412,12 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         const modifiedTimesOfDays = proceedTimesOfDay(transaction, taskDocSnap, userDocSnap.ref, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay);
 
-        const timesOfDaysToStoreLen = currentTimesOfDaySize - modifiedTimesOfDays.removedTimesOfDay.size + modifiedTimesOfDays.addedTimesOfDay.size;
-        if (timesOfDaysToStoreLen > 20) {
+        timesOfDayLength = timesOfDayLength - modifiedTimesOfDays.removedTimesOfDay.size + modifiedTimesOfDays.addedTimesOfDay.size;
+        if (timesOfDayLength > 20) {
           throw new HttpsError(
             'invalid-argument',
             'Bad Request',
-            `You can own 20 times of day but merge has ${timesOfDaysToStoreLen} 🤔`
+            `You can own 20 times of day but merge has ${timesOfDayLength} 🤔`
           );
         }
 
@@ -422,15 +435,10 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         }
 
         // update user
-        if (userDocSnap.exists) {
-          transaction.update(userDocSnap.ref, {
-            timesOfDaySize: timesOfDaysToStoreLen
-          });
-        } else {
-          transaction.create(userDocSnap.ref, {
-            timesOfDaySize: timesOfDaysToStoreLen
-          });
-        }
+        transaction.update(userDocSnap.ref, {
+          timesOfDayLength,
+          taskLength
+        });
 
         return transaction;
 

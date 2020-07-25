@@ -1,11 +1,5 @@
 rules_version = '2';
 
-// Overload firestore-provided function at global scope.
-function get(path) {
-  // You'll have to wait for the ternary operator to be released in the emulators
-  return exists(path) ? firestore.get(path) : null;
-}
-
 service cloud.firestore {
 
 	match /databases/{database}/documents/users/{userId} {
@@ -15,7 +9,7 @@ service cloud.firestore {
     }
 
     function isDisabled() {
-    	let user = get(/databases/$(database)/documents/users/request.auth.uid);
+    	let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
     	return user == null ? false : 'disabled' in user.data ? user.data.disabled : false
     }
 

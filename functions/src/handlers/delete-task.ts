@@ -58,8 +58,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         const task: Task = taskDocSnap.data() as Task;
 
-        // read current currentTimesOfDaySize
-        let currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
+        // read current tasksLength
+        const taskLength = userDocSnap.data()?.taskLength || 0;
+
+        // read current timesOfDayLength
+        let timesOfDayLength = userDocSnap.data()?.timesOfDayLength || 0;
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
@@ -91,7 +94,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           const counter = timesOfDayDocSnapsDocData.data()?.counter;
           if (counter - 1 === 0) {
             transaction.delete(timesOfDayDocSnapsDocData.ref);
-            currentTimesOfDaySize--;
+            timesOfDayLength--;
           } else {
             transaction.update(timesOfDayDocSnapsDocData.ref, {
               counter: counter - 1
@@ -100,15 +103,10 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         });
 
         // update user
-        if (userDocSnap.exists) {
-          transaction.update(userDocSnap.ref, {
-            timesOfDaySize: currentTimesOfDaySize
-          });
-        } else {
-          transaction.create(userDocSnap.ref, {
-            timesOfDaySize: currentTimesOfDaySize
-          });
-        }
+        transaction.update(userDocSnap.ref, {
+          timesOfDayLength,
+          taskLength: taskLength - 1 < 0 ? 0 : taskLength - 1
+        });
 
         return transaction;
 
