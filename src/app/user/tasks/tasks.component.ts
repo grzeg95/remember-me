@@ -59,15 +59,17 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   updateTasksViews(tasks: TasksListItem[], timesOfDayOrder: string[]): void {
+
+    const timesOfDayOrderSet = timesOfDayOrder.toSet();
     this.tasksView = tasks.map((taskListItem) => {
 
-      const timesOfDayOrderSet = timesOfDayOrder.toSet().intersection((taskListItem.timesOfDay as string[]).toSet());
+      const timesOfDayOrderSetIntersectionTaskListItemTimesOfDay = timesOfDayOrderSet.intersection((taskListItem.timesOfDay as string[]).toSet());
       const timesOfDayOrderTmp = [];
 
       for (const x of timesOfDayOrder) {
-        if (timesOfDayOrderSet.has(x)) {
+        if (timesOfDayOrderSetIntersectionTaskListItemTimesOfDay.has(x)) {
           timesOfDayOrderTmp.push(x);
-          timesOfDayOrderSet.delete(x);
+          timesOfDayOrderSetIntersectionTaskListItemTimesOfDay.delete(x);
         }
       }
 

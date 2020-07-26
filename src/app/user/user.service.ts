@@ -42,10 +42,6 @@ export class UserService {
     return this.timesOfDayOrder.asObservable();
   }
 
-  get todayName$(): Observable<string> {
-    return this.todayName.asObservable();
-  }
-
   get todayFullName$(): Observable<string> {
     return this.todayFullName.asObservable();
   }
@@ -204,9 +200,9 @@ export class UserService {
     this.timesOfDayOrderSub = this.afs
       .doc<User>(`users/${this.authService.userData.uid}`)
       .collection<TimeOfDay>('timesOfDay', (ref) => ref.orderBy('position', 'asc').limit(20))
-      .snapshotChanges().pipe(
-        map((querySnapDocData) => querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id))
-      ).subscribe((timesOfDay) => {
+      .snapshotChanges()
+      .pipe(map((querySnapDocData) => querySnapDocData.map((queryDocSnapDocData) => queryDocSnapDocData.payload.doc.id)))
+      .subscribe((timesOfDay) => {
         if (timesOfDay) {
           this.timesOfDayOrder.next(timesOfDay);
           this.timesOfDayOrderFirstLoading.next(false);
@@ -216,8 +212,7 @@ export class UserService {
 
   getTaskById$(id: string): Observable<Task> {
     return this.afs.doc<User>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
-      map((taskDocSnap) => taskDocSnap.data() as Task)
-    );
+      map((taskDocSnap) => taskDocSnap.data() as Task));
   }
 
 }
