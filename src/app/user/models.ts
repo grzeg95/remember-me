@@ -23,9 +23,20 @@ export interface TasksListItem {
   id: string;
 }
 
-export interface TimeOfDay {
+export interface TimeOfDayFirestore {
+  prev?: string;
+  next?: string;
   counter: number;
-  position: number;
+}
+
+export interface TimeOfDay {
+  id: string;
+  index: number;
+  data: {
+    prev?: string;
+    next?: string;
+    counter: number;
+  };
 }
 
 export interface HTTPSuccess {

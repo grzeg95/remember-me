@@ -44,13 +44,13 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
       );
 
     this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrderNext) => {
-      const timesOfDayOrderSet = timesOfDayOrderNext.toSet().difference(this.taskTimesOfDay.toSet());
+      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(this.taskTimesOfDay.toSet());
       const timesOfDayOrder = [];
 
       for (const x of timesOfDayOrderNext) {
-        if (timesOfDayOrderSet.has(x)) {
-          timesOfDayOrder.push(x);
-          timesOfDayOrderSet.delete(x);
+        if (timesOfDayOrderSet.has(x.id)) {
+          timesOfDayOrder.push(x.id);
+          timesOfDayOrderSet.delete(x.id);
         }
       }
 

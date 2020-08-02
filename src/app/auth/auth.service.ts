@@ -3,7 +3,7 @@ import {AngularFireAuth} from '@angular/fire/auth';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import {auth, User} from 'firebase/app';
-import {interval, Observable, of, Subscription} from 'rxjs';
+import {interval, Observable, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
 import {UserData} from './user-data.model';
@@ -30,16 +30,19 @@ export class AuthService {
 
       if (user) {
 
+        console.log(user.uid);
+
         if (this.userDoc$ && !this.userDoc$.closed) {
           this.userDoc$.unsubscribe();
         }
 
         this.userDoc$ = this.afs.doc(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
-            if (error.code === 'permission-denied') {
-              this.signOut();
-              return of(null);
-            }
+            //console.log(error);
+            //if (error.code === 'permission-denied') {
+            //  this.signOut();
+            //  return of(null);
+            //}
             throw error;
           })
         ).subscribe();

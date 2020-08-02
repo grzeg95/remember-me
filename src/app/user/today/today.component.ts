@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
@@ -6,7 +6,7 @@ import {interval, Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {TodayItem} from '../models';
+import {TimeOfDay, TodayItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -15,9 +15,9 @@ import {UserService} from '../user.service';
   styleUrls: ['./today.component.sass'],
   host: {class: 'app'}
 })
-export class TodayComponent implements OnInit, OnDestroy {
+export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
-  get timesOfDayOrder$(): Observable<string[]> {
+  get timesOfDayOrder$(): Observable<TimeOfDay[]> {
     return this.userService.timesOfDayOrder$;
   }
 
@@ -52,9 +52,10 @@ export class TodayComponent implements OnInit, OnDestroy {
   timesOfDayOrderSub: Subscription;
   destroyed = false;
   isConnectedSub: Subscription;
-  todayItemsView: { timeOfDay: string, tasks: TodayItem[] }[] = [];
+  todayItemsView: { timeOfDay: TimeOfDay, tasks: TodayItem[] }[] = [];
 
   constructor(private afs: AngularFirestore,
+              private cdRef: ChangeDetectorRef,
               private authService: AuthService,
               private userService: UserService,
               private snackBar: MatSnackBar,
@@ -70,19 +71,21 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     this.userService.runTimesOfDayOrder();
 
-    this.todaySub = this.userService.today$.subscribe((today) =>
-      this.updateTodayItemsView(today, this.userService.timesOfDayOrder.getValue()));
+    this.todaySub = this.userService.today$.subscribe((today) => {
+      this.todayItemsView = this.userService.timesOfDayOrder.getValue().filter((timeOfDay) => today[timeOfDay.id]).map((timeOfDay) => ({
+        timeOfDay,
+        tasks: today[timeOfDay.id]
+      }));
+    });
 
-    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder) =>
-      this.updateTodayItemsView(this.userService.today.getValue(), timesOfDayOrder));
+    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((order) => {
+      const today = this.userService.today.getValue();
+      this.todayItemsView = order.filter((timeOfDay) => today[timeOfDay.id]).map((timeOfDay) => ({
+        timeOfDay,
+        tasks: today[timeOfDay.id]
+      }));
+    });
 
-  }
-
-  updateTodayItemsView(today: {[p: string]: TodayItem[]}, timesOfDayOrder: string[]): void {
-    this.todayItemsView = timesOfDayOrder.filter((timeOfDay) => today[timeOfDay]).map((timeOfDay) => ({
-      timeOfDay,
-      tasks: today[timeOfDay]
-    }));
   }
 
   ngOnDestroy(): void {
@@ -95,12 +98,12 @@ export class TodayComponent implements OnInit, OnDestroy {
     this.destroyed = true;
   }
 
-  todayItemIsDone(timeOfDay: string): boolean {
-    return !this.userService.today.getValue()[timeOfDay].some((task) => !task.done);
+  todayItemIsDone(timeOfDay: TimeOfDay): boolean {
+    return !this.userService.today.getValue()[timeOfDay.id].some((task) => !task.done);
   }
 
-  trackByTodayItems(index: number, item: { timeOfDay: string, tasks: TodayItem[] }): string {
-    return index + item.timeOfDay;
+  trackByTodayItems(index: number, item: { timeOfDay: TimeOfDay, tasks: TodayItem[] }): string {
+    return index + item.timeOfDay.id;
   }
 
   trackByTodayItem(index: number, item: TodayItem): string {
@@ -120,6 +123,10 @@ export class TodayComponent implements OnInit, OnDestroy {
     this.changeDayIntervalSub = interval(toNextDay).subscribe(() => this.changeDay());
   }
 
+  ngAfterViewChecked(): void {
+    this.cdRef.detectChanges();
+  }
+
   setProgress(checkbox: HTMLInputElement, event: Event, taskId: string, timeOfDay: string): void {
 
     event.preventDefault();
@@ -130,11 +137,7 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     checkbox.disabled = true;
 
-    const toMerge = {
-      timesOfDay: {
-        [timeOfDay]: !checkbox.checked
-      }
-    };
+    const toMerge = JSON.parse(`{"timesOfDay": {"${timeOfDay}": ${!checkbox.checked}}}`);
 
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.userService.todayName.getValue()}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
       checkbox.disabled = false;

@@ -4,7 +4,7 @@ import {Observable, Subscription} from 'rxjs';
 import '../../../../global.prototype';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
-import {TasksListItem} from '../models';
+import {TasksListItem, TimeOfDay} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -23,7 +23,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     return this.userService.tasksFirstLoading$;
   }
 
-  get timesOfDayOrder$(): Observable<string[]> {
+  get timesOfDayOrder$(): Observable<TimeOfDay[]> {
     return this.userService.timesOfDayOrder$;
   }
 
@@ -45,11 +45,11 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.userService.runTasks();
 
     this.tasksSub = this.userService.tasks$.subscribe((tasks) => {
-      this.updateTasksViews(tasks, this.userService.timesOfDayOrder.getValue());
+      this.updateTasksViews(tasks, this.userService.timesOfDayOrder.getValue().map((val) => val.id));
     });
 
     this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder) => {
-      this.updateTasksViews(this.userService.tasks.getValue(), timesOfDayOrder);
+      this.updateTasksViews(this.userService.tasks.getValue(), timesOfDayOrder.map((val) => val.id));
     });
   }
 

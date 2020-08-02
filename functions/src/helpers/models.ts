@@ -11,3 +11,9 @@ export interface Task {
   timesOfDay: string[];
   daysOfTheWeek: {[key in Day]: boolean}
 }
+
+export interface TimeOfDay {
+  counter: number;
+  prev?: string;
+  next?: string;
+}

@@ -58,11 +58,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         const task: Task = taskDocSnap.data() as Task;
 
-        // read current tasksLength
-        const taskLength = userDocSnap.data()?.taskLength || 0;
-
-        // read current timesOfDayLength
-        let timesOfDayLength = userDocSnap.data()?.timesOfDayLength || 0;
+        let currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
+        const currentTaskSize = userDocSnap.data()?.taskSize;
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
@@ -75,8 +72,28 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           (timeOfDay) => transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay))
         ));
 
+        const timesOfDayDocSnaps: {[p: string]: DocumentSnapshot} = {};
+        (await timesOfDayDocSnapsPromise).forEach((e) => timesOfDayDocSnaps[e.id] = e);
+
+        const toUpdatePromise: Promise<DocumentSnapshot>[] = [];
+
+        for (const timeOfDay in timesOfDayDocSnaps) {
+          if (timesOfDayDocSnaps.hasOwnProperty(timeOfDay)) {
+            const counter = timesOfDayDocSnaps[timeOfDay].data()?.counter;
+            if (counter - 1 === 0) {
+              if (timesOfDayDocSnaps[timeOfDay].data()?.prev) {
+                toUpdatePromise.push(transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timesOfDayDocSnaps[timeOfDay].data()?.prev)).then((docSnap) => docSnap));
+              }
+              if (timesOfDayDocSnaps[timeOfDay].data()?.next) {
+                toUpdatePromise.push(transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timesOfDayDocSnaps[timeOfDay].data()?.next)).then((docSnap) => docSnap));
+              }
+            }
+          }
+        }
+
         const todayTasks = await todayTasksPromise;
-        const timesOfDayDocSnaps = await timesOfDayDocSnapsPromise;
+        const toUpdate: {[p: string]: DocumentSnapshot} = {};
+        (await Promise.all(toUpdatePromise)).forEach((e) => {toUpdate[e.id] = e});
 
         /*
         * Proceed all data
@@ -90,23 +107,46 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           transaction.delete(todayTaskDocSnap.ref));
 
         // proceed timesOfDayDocSnaps
-        timesOfDayDocSnaps.forEach((timesOfDayDocSnapsDocData) => {
-          const counter = timesOfDayDocSnapsDocData.data()?.counter;
-          if (counter - 1 === 0) {
-            transaction.delete(timesOfDayDocSnapsDocData.ref);
-            timesOfDayLength--;
-          } else {
-            transaction.update(timesOfDayDocSnapsDocData.ref, {
-              counter: counter - 1
-            });
+        for (const timeOfDay in timesOfDayDocSnaps) {
+          if (timesOfDayDocSnaps.hasOwnProperty(timeOfDay)) {
+            const counter = timesOfDayDocSnaps[timeOfDay].data()?.counter;
+            if (counter - 1 === 0) {
+
+              const prev = timesOfDayDocSnaps[timeOfDay].data()?.prev;
+              const next = timesOfDayDocSnaps[timeOfDay].data()?.next;
+
+              if (toUpdate[prev]) {
+                transaction.update(toUpdate[prev].ref, {next});
+              }
+
+              if (toUpdate[next]) {
+                transaction.update(toUpdate[next].ref, {prev});
+              }
+
+              transaction.delete(timesOfDayDocSnaps[timeOfDay].ref);
+              delete toUpdate[timeOfDay];
+              currentTimesOfDaySize--;
+            } else {
+
+              transaction.update(timesOfDayDocSnaps[timeOfDay].ref, {
+                counter: counter - 1
+              });
+            }
           }
-        });
+        }
 
         // update user
-        transaction.update(userDocSnap.ref, {
-          timesOfDayLength,
-          taskLength: taskLength - 1 < 0 ? 0 : taskLength - 1
-        });
+        if (userDocSnap.exists) {
+          transaction.update(userDocSnap.ref, {
+            timesOfDaySize: currentTimesOfDaySize,
+            taskSize: currentTaskSize - 1
+          });
+        } else {
+          transaction.create(userDocSnap.ref, {
+            timesOfDaySize: currentTimesOfDaySize,
+            taskSize: currentTaskSize - 1
+          });
+        }
 
         return transaction;
 

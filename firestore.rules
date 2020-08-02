@@ -23,7 +23,7 @@ service cloud.firestore {
 
       // set progress
       allow update: if isOwner() && !isDisabled()
-        && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
+      	&& exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
         && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
         && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
@@ -37,10 +37,9 @@ service cloud.firestore {
       	&& request.query.limit == 50
     }
 
-    match /timesOfDay/{timesOfDayId} {
+    match /timesOfDay/{timesOfDay} {
       allow list: if isOwner() && !isDisabled()
-      	&& request.query.orderBy.position == 'ASC'
-      	&& request.query.limit == 20
+      	&& request.query.limit == 20;
     }
 
   }
