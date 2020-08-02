@@ -1,7 +1,6 @@
 import {OverlayModule} from '@angular/cdk/overlay';
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
-import {AngularFirePerformanceModule} from '@angular/fire/performance';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogModule} from '@angular/material/dialog';
@@ -42,7 +41,6 @@ import {SharedModule} from './shared.module';
     MatButtonModule,
     MatSnackBarModule,
     ReactiveFormsModule,
-    AngularFirePerformanceModule,
     FontAwesomeModule,
     MatProgressSpinnerModule
   ],

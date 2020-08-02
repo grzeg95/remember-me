@@ -4,16 +4,19 @@ $btn-success-border-color: #0e6b30
 // app-today
 \:host
   .container
-    margin: 0.5rem auto 1rem
+    margin: 0 auto 1rem
     padding: 1rem
 
     .col
       .row
+        &.message
+          padding: 1rem
+
         .add-task
           text-align: right
 
     .time-of-day-row
-      margin-bottom: 1rem
+      margin-bottom: 0
 
       &:first-child
         margin-top: 0

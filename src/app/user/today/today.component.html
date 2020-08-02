@@ -46,7 +46,7 @@
                      [checked]="button.done">
               <label class="form-check-label btn"
                      [ngClass]="checkbox.checked ? 'btn-success' : 'border rounded'"
-                     (click)="setProgress(checkbox, $event, button.id, todayItem.timeOfDay)">
+                     (click)="setProgress(checkbox, $event, button.id, todayItem.timeOfDay.id)">
                 {{ button.description }}
                 <mat-progress-bar *ngIf="checkbox.disabled" mode="indeterminate"></mat-progress-bar>
               </label>

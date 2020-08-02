@@ -4,11 +4,14 @@
   margin: auto
 
   .container
-    margin: 0.5rem auto 1rem
+    margin: 0 auto 1rem
     padding: 1rem
 
     .col
       .row
+        &.message
+          padding: 1rem
+
         &.title
           margin-bottom: 1rem
 
@@ -27,7 +30,7 @@
   border-top: 1px solid #e0e0e0
   background: white
   color: #212121
-  font-size: 0.875rem
+  font-size: 0.95rem
   cursor: move
 
   &:hover
@@ -71,10 +74,12 @@
   margin: auto
 
 .title
-  padding: 1rem
-  color: #424242
-  font-size: 0.8125rem
+  padding: 1rem 0.5rem
+  border-top: none
+  color: #212121
+  font-size: 0.95rem
   font-weight: 500
+  vertical-align: bottom
 
 .times-of-day-row-content, .times-of-day-list
   width: 100%

@@ -4,11 +4,14 @@
   margin: auto
 
   .container
-    margin: 0.5rem auto 1rem
+    margin: 0 auto 1rem
     padding: 1rem
 
     .col
       .row
+        &.message
+          padding: 1rem
+
         .add-task-button
           width: 100%
           text-align: right
@@ -20,8 +23,8 @@
             padding: 1rem 0.5rem
             border-top: none
             border-bottom: 1px solid #e0e0e0
-            color: #8e8e8e
-            font-size: 0.75rem
+            color: #212121
+            font-size: 0.95rem
             font-weight: 500
             vertical-align: bottom
 
@@ -35,7 +38,7 @@
             padding: 0.75rem 0.5rem
             border-top: 1px solid #e0e0e0
             color: #212121
-            font-size: 0.875rem
+            font-size: 0.95rem
             vertical-align: middle
 
             &:first-child
