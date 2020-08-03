@@ -31,7 +31,6 @@ export interface TimeOfDayFirestore {
 
 export interface TimeOfDay {
   id: string;
-  index: number;
   data: {
     prev?: string;
     next?: string;

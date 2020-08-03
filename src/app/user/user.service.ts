@@ -217,7 +217,6 @@ export class UserService {
             orderMap[timesOfDay[i].payload.doc.id] = data;
             if (!data.prev) {
               next = {
-                index: 0,
                 id: timesOfDay[i].payload.doc.ref.id,
                 data: timesOfDay[i].payload.doc.data()
               };
@@ -225,12 +224,10 @@ export class UserService {
           }
 
           const order: TimeOfDay[] = [];
-          let j = 1;
            while (next) {
             order.push(next);
             if (next.data.next) {
               next = {
-                index: j++,
                 id: next.data.next,
                 data: orderMap[next.data.next]
               };

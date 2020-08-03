@@ -62,20 +62,21 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         const currentTaskSize = userDocSnap.data()?.taskSize;
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
+        let todayTasksPromise: Promise<DocumentSnapshot[]> | undefined = Promise.all(
           (Object.keys(task.daysOfTheWeek) as Day[]).filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]).map((day) =>
               transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
         ));
 
         // read all times of day
-        const timesOfDayDocSnapsPromise: Promise<DocumentSnapshot[]> = Promise.all(task.timesOfDay.map(
+        let timesOfDayDocSnapsPromise: Promise<DocumentSnapshot[]> | undefined = Promise.all(task.timesOfDay.map(
           (timeOfDay) => transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDay))
         ));
 
         const timesOfDayDocSnaps: {[p: string]: DocumentSnapshot} = {};
         (await timesOfDayDocSnapsPromise).forEach((e) => timesOfDayDocSnaps[e.id] = e);
+        timesOfDayDocSnapsPromise = undefined;
 
-        const toUpdatePromise: Promise<DocumentSnapshot>[] = [];
+        let toUpdatePromise: Promise<DocumentSnapshot>[] | undefined = [];
 
         for (const timeOfDay in timesOfDayDocSnaps) {
           if (timesOfDayDocSnaps.hasOwnProperty(timeOfDay)) {
@@ -92,8 +93,12 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         }
 
         const todayTasks = await todayTasksPromise;
+        todayTasksPromise = undefined;
+
         const toUpdate: {[p: string]: DocumentSnapshot} = {};
+
         (await Promise.all(toUpdatePromise)).forEach((e) => {toUpdate[e.id] = e});
+        toUpdatePromise = undefined;
 
         /*
         * Proceed all data

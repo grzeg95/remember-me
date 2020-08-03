@@ -62,7 +62,7 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
     moveItemInArray(this.timesOfDayOrder, event.previousIndex, event.currentIndex);
 
-    this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder((event.currentIndex - event.previousIndex) / Math.abs(event.currentIndex - event.previousIndex), prev, curr).subscribe((success) => {
+    this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(event.currentIndex - event.previousIndex, curr, prev).subscribe((success) => {
       this.snackBar.open(success.details);
     }, (error) => {
       this.snackBar.open(error.details);

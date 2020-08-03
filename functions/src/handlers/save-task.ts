@@ -6,6 +6,7 @@ import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import '../../../global.prototype';
 import DocumentReference = firestore.DocumentReference;
+import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
@@ -104,8 +105,6 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
       timesOfDay: newTimesOfDay
     });
 
-  } else { // do nothing
-    transaction.delete(todayTaskDocSnapDayPack.docSnap.ref);
   }
 
 };
@@ -141,7 +140,7 @@ const proceedTimesOfDay = async (
     return await user.ref.collection('timesOfDay').doc().get().then((docSnap) => docSnap);
   });
 
-  const firstDocSnap = await transaction.get(firstTimeOfDayRaw.ref).then((docSnap) => docSnap);
+  let firstDocSnap: any = await transaction.get(firstTimeOfDayRaw.ref).then((docSnap) => docSnap);
   let first = {
     ref: firstDocSnap.ref,
     exists: firstDocSnap.exists,
@@ -152,9 +151,10 @@ const proceedTimesOfDay = async (
       next: firstDocSnap.data()?.next || null,
     }
   };
+  firstDocSnap = undefined;
 
   // prepare next and prev of timeOfDay that will be removed
-  const timesOfDayToEntanglementPromise: Promise<DocumentSnapshot>[] = [];
+  let timesOfDayToEntanglementPromise: Promise<DocumentSnapshot>[] | undefined = [];
 
   for(const timeOfDay in taskDocSnapsTimesOfDay) {
     if (!dataTaskDocSnapsTimeOfDay[timeOfDay]) {
@@ -174,8 +174,8 @@ const proceedTimesOfDay = async (
   (await Promise.all(timesOfDayToEntanglementPromise)).forEach((docSnap) => {
     timesOfDayToEntanglement[docSnap.id] = docSnap;
   });
+  timesOfDayToEntanglementPromise = undefined;
 
-  // TODO first prepare, then create
   const toCreate: {
     [p: string]: {
       ref: DocumentReference;
@@ -239,7 +239,7 @@ const proceedTimesOfDay = async (
         }
 
         if (timesOfDayToEntanglement[next]) {
-          transaction.update(timesOfDayToEntanglement[prev].ref, {prev});
+          transaction.update(timesOfDayToEntanglement[next].ref, {prev});
         }
 
         transaction.delete(taskDocSnapsTimesOfDay[timeOfDay].ref);
@@ -277,7 +277,7 @@ const getTodayTaskDocSnapsDayPackPromise = (transaction: Transaction, taskDocSna
   );
 };
 
-const proceedTodayTasks = (transaction: Transaction, task: Task, todayTaskDocSnapsDayPack: {docSnap: firestore.DocumentSnapshot<firestore.DocumentData>, day: Day}[]) => {
+const proceedTodayTasks = (transaction: Transaction, task: Task, todayTaskDocSnapsDayPack: {docSnap: DocumentSnapshot<DocumentData>, day: Day}[]) => {
   todayTaskDocSnapsDayPack.forEach((todayTaskDocSnapDayPack) =>
     proceedTodayTask(transaction, todayTaskDocSnapDayPack, task)
   );
@@ -485,7 +485,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         }
 
-        const todayTaskDocSnapsDayPackPromise = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
+        let todayTaskDocSnapsDayPackPromise: Promise<{docSnap: firestore.DocumentSnapshot<firestore.DocumentData>, day: Day}[]> | undefined = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
 
         // read current currentTimesOfDaySize
         const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
@@ -518,13 +518,17 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           taskDocSnapsTimesOfDay = {};
         }
 
-        const dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} = (await dataTaskDocSnapsTimeOfDayPromise).reduce((acc, curr) => {
+        let dataTaskDocSnapsTimeOfDay: {[timeOfDay: string]: DocumentSnapshot} | undefined = (await dataTaskDocSnapsTimeOfDayPromise).reduce((acc, curr) => {
           Object.assign(acc, {[curr.id]: curr});
           return acc;
         }, {});
 
         const timesOfDaysToStoreSize = await proceedTimesOfDay(transaction, taskDocSnap, userDocSnap, taskDocSnapsTimesOfDay, dataTaskDocSnapsTimeOfDay, currentTimesOfDaySize);
+        dataTaskDocSnapsTimeOfDay = undefined;
+        taskDocSnapsTimesOfDay = undefined;
+
         proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
+        todayTaskDocSnapsDayPackPromise = undefined;
 
         // update task
         transaction.set(taskDocSnap.ref, task);
