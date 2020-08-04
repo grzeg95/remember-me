@@ -1,3 +1,6 @@
+import {firestore} from 'firebase-admin';
+import DocumentReference = firestore.DocumentReference;
+
 /**
  * @type Day
  **/
@@ -13,7 +16,12 @@ export interface Task {
 }
 
 export interface TimeOfDay {
-  counter: number;
-  prev?: string;
-  next?: string;
+  status: 'created' | 'updated' | 'removed';
+  ref: DocumentReference,
+  exists?: boolean,
+  data: {
+    counter: number,
+    next: string | null,
+    prev: string | null
+  }
 }

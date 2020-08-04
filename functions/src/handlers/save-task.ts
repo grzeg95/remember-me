@@ -1,23 +1,12 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
-import {Day, Task} from '../helpers/models';
+import {Day, Task, TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import '../../../global.prototype';
-import DocumentReference = firestore.DocumentReference;
-import DocumentData = firestore.DocumentData;
 
-interface Item {
-  status: 'created' | 'updated' | 'removed';
-  ref: DocumentReference,
-  exists?: boolean,
-  data: {
-    counter: number,
-    next: string | null,
-    prev: string | null
-  }
-}
+import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
@@ -122,7 +111,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
 
 };
 
-const getItemFromSnap = (docSnap: DocumentSnapshot): Item => {
+const getItemFromSnap = (docSnap: DocumentSnapshot): TimeOfDay => {
   return {
     status: 'updated',
     ref: docSnap.ref,
@@ -132,10 +121,10 @@ const getItemFromSnap = (docSnap: DocumentSnapshot): Item => {
       prev: docSnap.data()?.prev || null,
       next: docSnap.data()?.next || null,
     }
-  } as Item;
+  } as TimeOfDay;
 }
 
-const getItem = async (transaction: Transaction, userDocSnap: DocumentSnapshot, timeOfDayId: string): Promise<Item> => {
+const getItem = async (transaction: Transaction, userDocSnap: DocumentSnapshot, timeOfDayId: string): Promise<TimeOfDay> => {
 
   return transaction.get(
     userDocSnap.ref.collection('timesOfDay').doc(timeOfDayId)
@@ -160,7 +149,7 @@ const proceedTimesOfDay = async (
   enteredTimesOfDay: string[],
   currentTimesOfDaySize: number): Promise<number> => {
 
-  const affected: { [p: string]: Item } = {};
+  const affected: { [p: string]: TimeOfDay } = {};
 
   const toAdd = enteredTimesOfDay.toSet().difference(currentTimesOfDay.toSet()).toArray();
   const toRemove = currentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet()).toArray();
@@ -233,9 +222,7 @@ const proceedTimesOfDay = async (
       added++;
       head.status = 'created';
     }
-  }
-
-  if (toAdd.includes(head.ref.id)) {
+  } else if (toAdd.includes(head.ref.id)) {
     head.data.counter = head.data.counter + 1;
     toAdd.splice(toAdd.lastIndexOf(head.ref.id), 1);
   }
@@ -243,8 +230,6 @@ const proceedTimesOfDay = async (
   if (!affected[head.ref.id]) {
     affected[head.ref.id] = head;
   }
-
-
 
   for (; toAddIndex < toAdd.length; ++toAddIndex) {
     const timeOfDay = await getItem(transaction, userDocSnap, toAdd[toAddIndex]);
