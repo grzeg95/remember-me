@@ -2,31 +2,10 @@ import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {Day, Task, TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
+import {getTimeOfDay} from '../helpers/timeOfDay';
 import DocumentSnapshot = firestore.DocumentSnapshot;
-import Transaction = firestore.Transaction;
 
 const app = firestore();
-
-const getItemFromSnap = (docSnap: DocumentSnapshot): TimeOfDay => {
-  return {
-    status: 'updated',
-    ref: docSnap.ref,
-    exists: docSnap.exists,
-    data: {
-      counter: docSnap.data()?.counter || 1,
-      prev: docSnap.data()?.prev || null,
-      next: docSnap.data()?.next || null,
-    }
-  } as TimeOfDay;
-}
-
-const getItem = async (transaction: Transaction, userDocSnap: DocumentSnapshot, timeOfDayId: string): Promise<TimeOfDay> => {
-
-  return transaction.get(
-    userDocSnap.ref.collection('timesOfDay').doc(timeOfDayId)
-  ).then((docSnap) => getItemFromSnap(docSnap));
-
-};
 
 /**
  * Read user data about task and remove it
@@ -96,7 +75,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         for (const timeOfDayId of toRemove) {
 
           if (!affected[timeOfDayId]) {
-            affected[timeOfDayId] = await getItem(transaction, userDocSnap, timeOfDayId);
+            affected[timeOfDayId] = await getTimeOfDay(transaction, userDocSnap, timeOfDayId);
           }
 
           if (affected[timeOfDayId].data.counter - 1 === 0) {
@@ -104,11 +83,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
             currentTimesOfDaySize--;
 
             if (affected[timeOfDayId].data.next && !affected[affected[timeOfDayId].data.next as string]) {
-              affected[affected[timeOfDayId].data.next as string] = await getItem(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
+              affected[affected[timeOfDayId].data.next as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
             }
 
             if (affected[timeOfDayId].data.prev && !affected[affected[timeOfDayId].data.prev as string]) {
-              affected[affected[timeOfDayId].data.prev as string] = await getItem(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
+              affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
             }
 
             if (affected[timeOfDayId].data.next) {

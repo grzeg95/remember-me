@@ -1,13 +1,15 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import '../../../global.prototype';
+import {getTimeOfDay} from '../helpers/timeOfDay';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
 
-const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSnapshot, a: DocumentSnapshot, b: DocumentSnapshot): Promise<void> => {
+const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSnapshot, a: TimeOfDay, b: TimeOfDay): Promise<void> => {
 
   let aPrev;
   let aPrevDataUpdate = null;
@@ -15,41 +17,32 @@ const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSn
   let bNextDataUpdate = null;
 
   const aDataUpdate = {
-    next: b.data()?.next,
-    prev: b.id
+    next: b.data.next,
+    prev: b.ref.id
   };
 
   const bDataUpdate = {
-    next: a.id,
-    prev: a.data()?.prev
+    next: a.ref.id,
+    prev: a.data.prev
   };
 
-  let aPrevPromise;
-  let bNextPromise;
-
-  if (a.data()?.prev) {
-    aPrevPromise = transaction.get(userDocSnap.ref.collection('timesOfDay').doc(a.data()?.prev)).then((docSnap) => docSnap);
+  if (a.data.prev) {
+    aPrev = await getTimeOfDay(transaction, userDocSnap, a.data.prev);
   }
 
-  if (b.data()?.next) {
-    bNextPromise = transaction.get(userDocSnap.ref.collection('timesOfDay').doc(b.data()?.next)).then((docSnap) => docSnap);
+  if (b.data.next) {
+    bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
   }
-
-  aPrev = await aPrevPromise;
-  aPrevPromise = undefined;
-
-  bNext = await bNextPromise;
-  bNextPromise = undefined;
 
   if (aPrev && aPrev.exists) {
     aPrevDataUpdate = {
-      next: b.id
+      next: b.ref.id
     };
   }
 
   if (bNext && bNext.exists) {
     bNextDataUpdate = {
-      prev: a.id
+      prev: a.ref.id
     };
   }
 
@@ -65,7 +58,7 @@ const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSn
   }
 }
 
-const processNotSiblings = async (dir: number, transaction: Transaction, userDocSnap: DocumentSnapshot, a: DocumentSnapshot, b: DocumentSnapshot): Promise<void> => {
+const processNotSiblings = async (dir: number, transaction: Transaction, userDocSnap: DocumentSnapshot, a: TimeOfDay, b: TimeOfDay): Promise<void> => {
 
   let aDataUpdate;
   let bDataUpdate;
@@ -80,67 +73,58 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
 
   if (dir > 0) {
     aDataUpdate = {
-      next: b.data()?.next,
-      prev: b.id
+      next: b.data.next,
+      prev: b.ref.id
     }
     bDataUpdate = {
-      next: a.id
+      next: a.ref.id
     }
   } else {
     aDataUpdate = {
-      next: b.id,
-      prev: b.data()?.prev
+      next: b.ref.id,
+      prev: b.data.prev
     };
     bDataUpdate = {
-      prev: a.id
+      prev: a.ref.id
     };
   }
 
-  let aNextPromise;
-  let aPrevPromise;
-
-  if (a.data()?.next) {
-    aNextPromise = transaction.get(userDocSnap.ref.collection('timesOfDay').doc(a.data()?.next)).then((docSnap) => docSnap);
+  if (a.data.prev) {
+    aPrev = await getTimeOfDay(transaction, userDocSnap, a.data.prev);
   }
 
-  if (a.data()?.prev) {
-    aPrevPromise = transaction.get(userDocSnap.ref.collection('timesOfDay').doc(a.data()?.prev)).then((docSnap) => docSnap);
+  if (a.data.next) {
+    aNext = await getTimeOfDay(transaction, userDocSnap, a.data.next);
   }
-
-  aNext = await aNextPromise;
-  aNextPromise = undefined;
-
-  aPrev = await aPrevPromise;
-  aPrevPromise = undefined;
 
   if (aNext && aNext.exists) {
     aNextDataUpdate = {
-      prev: a.data()?.prev
+      prev: a.data.prev
     };
   }
 
   if (aPrev && aPrev.exists) {
     aPrevDataUpdate = {
-      next: a.data()?.next
+      next: a.data.next
     };
   }
 
   if (dir > 0) {
-    if (b.data()?.next) {
-      bNext = await transaction.get(userDocSnap.ref.collection('timesOfDay').doc(b.data()?.next)).then((docSnap) => docSnap);
+    if (b.data.next) {
+      bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
     }
     if (bNext && bNext.exists) {
       bNextDataUpdate = {
-        prev: a.id
+        prev: a.ref.id
       };
     }
   } else {
-    if (b.data()?.prev) {
-      bPrev = await transaction.get(userDocSnap.ref.collection('timesOfDay').doc(b.data()?.prev)).then((docSnap) => docSnap);
+    if (b.data.prev) {
+      bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev);
     }
     if (bPrev && bPrev.exists) {
       bPrevDataUpdate = {
-        next: a.id
+        next: a.ref.id
       };
     }
   }
@@ -213,17 +197,18 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       * Read all data
       * */
 
-      const a = await transaction.get(userDocSnap.ref.collection('timesOfDay').doc(data.is)).then((docSnap) => docSnap);
-      const b = await transaction.get(userDocSnap.ref.collection('timesOfDay').doc(data.was)).then((docSnap) => docSnap);
+
+      const a = await getTimeOfDay(transaction, userDocSnap, data.is);
+      const b = await getTimeOfDay(transaction, userDocSnap, data.was);
 
       // siblings a <-> b
-      if (a.data()?.next === b.id && b.data()?.prev === a.id) {
+      if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
         await processSiblings(transaction, userDocSnap, a, b);
         return transaction;
       }
 
       // siblings b <-> a
-      if (b.data()?.next === a.id && a.data()?.prev === b.id) {
+      if (b.data.next === a.ref.id && a.data.prev === b.ref.id) {
         await processSiblings(transaction, userDocSnap, b, a);
         return transaction;
       }

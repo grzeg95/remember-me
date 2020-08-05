@@ -4,6 +4,7 @@ import {Day, Task, TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
+import {getTimeOfDay, getTimeOfDayFromSnap} from '../helpers/timeOfDay';
 import '../../../global.prototype';
 
 import DocumentData = firestore.DocumentData;
@@ -21,9 +22,9 @@ interface TaskDiff {
 }
 
 /**
- * @interface TimesOfDay
+ * @interface TodayTaskTimesOfDay
  **/
-interface TimesOfDay {
+interface TodayTaskTimesOfDay {
   [key: string]: boolean
 }
 
@@ -32,7 +33,7 @@ interface TimesOfDay {
  **/
 interface TodayTask {
   description: string;
-  timesOfDay: TimesOfDay
+  timesOfDay: TodayTaskTimesOfDay
 }
 
 /**
@@ -63,7 +64,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
 
   if (!todayTaskDocSnapDayPack.docSnap.exists && task.daysOfTheWeek[todayTaskDocSnapDayPack.day]) { // set
     // add task timesOfDay
-    const timesOfDay: TimesOfDay = {};
+    const timesOfDay: TodayTaskTimesOfDay = {};
 
     task.timesOfDay.forEach((timeOfDay) => timesOfDay[timeOfDay] = false);
 
@@ -76,7 +77,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
   } else if (todayTaskDocSnapDayPack.docSnap.exists && task.daysOfTheWeek[todayTaskDocSnapDayPack.day]) { // update
 
     // add task timesOfDay to newTimesOfDay
-    const newTimesOfDay: TimesOfDay = {};
+    const newTimesOfDay: TodayTaskTimesOfDay = {};
 
     // select inserted task timesOfDay to newTimesOfDay
     const taskTimesOdDaySet = task.timesOfDay;
@@ -86,7 +87,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
 
     // select current stored task timesOfDay to oldTimesOfDay
     // there can be selected true value
-    let oldTimesOfDay: TimesOfDay = {};
+    let oldTimesOfDay: TodayTaskTimesOfDay = {};
 
     const docData = todayTaskDocSnapDayPack.docSnap.data() as TodayTask;
     if (docData) {
@@ -111,27 +112,6 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
 
 };
 
-const getItemFromSnap = (docSnap: DocumentSnapshot): TimeOfDay => {
-  return {
-    status: 'updated',
-    ref: docSnap.ref,
-    exists: docSnap.exists,
-    data: {
-      counter: docSnap.data()?.counter || 1,
-      prev: docSnap.data()?.prev || null,
-      next: docSnap.data()?.next || null,
-    }
-  } as TimeOfDay;
-}
-
-const getItem = async (transaction: Transaction, userDocSnap: DocumentSnapshot, timeOfDayId: string): Promise<TimeOfDay> => {
-
-  return transaction.get(
-    userDocSnap.ref.collection('timesOfDay').doc(timeOfDayId)
-  ).then((docSnap) => getItemFromSnap(docSnap));
-
-};
-
 /**
  * @function proceedTimesOfDay
  * Update times of day
@@ -152,22 +132,14 @@ const proceedTimesOfDay = async (
   const affected: { [p: string]: TimeOfDay } = {};
 
   const toAdd = enteredTimesOfDay.toSet().difference(currentTimesOfDay.toSet()).toArray();
-  const toRemove = currentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet()).toArray();
-
-  if (currentTimesOfDaySize - toRemove.length + toAdd.length > 20) {
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      `You can own 20 times of day but merge has ${currentTimesOfDaySize - toRemove.length + toAdd.length} 🤔`
-    );
-  }
+  const toRemove = currentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet());
 
   let added = 0;
   let removed = 0;
 
   let head = await userDocSnap.ref.collection('timesOfDay').where('prev', '==', null).limit(1).get().then(async (docsSnap) => {
     if (docsSnap.size === 1) {
-      return await transaction.get(docsSnap.docs[0].ref).then((docSnap) => getItemFromSnap(docSnap));
+      return await transaction.get(docsSnap.docs[0].ref).then((docSnap) => getTimeOfDayFromSnap(docSnap));
     }
     return null;
   });
@@ -175,7 +147,7 @@ const proceedTimesOfDay = async (
   for (const timeOfDayId of toRemove) {
 
     if (!affected[timeOfDayId]) {
-      affected[timeOfDayId] = await getItem(transaction, userDocSnap, timeOfDayId);
+      affected[timeOfDayId] = await getTimeOfDay(transaction, userDocSnap, timeOfDayId);
     }
 
     if (affected[timeOfDayId].data.counter - 1 === 0) {
@@ -183,11 +155,11 @@ const proceedTimesOfDay = async (
       removed++;
 
       if (affected[timeOfDayId].data.next && !affected[affected[timeOfDayId].data.next as string]) {
-        affected[affected[timeOfDayId].data.next as string] = await getItem(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
+        affected[affected[timeOfDayId].data.next as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
       }
 
       if (affected[timeOfDayId].data.prev && !affected[affected[timeOfDayId].data.prev as string]) {
-        affected[affected[timeOfDayId].data.prev as string] = await getItem(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
+        affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
       }
 
       if (affected[timeOfDayId].data.next) {
@@ -215,7 +187,7 @@ const proceedTimesOfDay = async (
   let toAddIndex = 0;
 
   if (!head) {
-    head = await getItem(transaction, userDocSnap, toAdd[toAddIndex++]);
+    head = await getTimeOfDay(transaction, userDocSnap, toAdd[toAddIndex++]);
     if (head.exists) {
       head.data.counter = head.data.counter + 1;
     } else {
@@ -232,7 +204,7 @@ const proceedTimesOfDay = async (
   }
 
   for (; toAddIndex < toAdd.length; ++toAddIndex) {
-    const timeOfDay = await getItem(transaction, userDocSnap, toAdd[toAddIndex]);
+    const timeOfDay = await getTimeOfDay(transaction, userDocSnap, toAdd[toAddIndex]);
 
     if (timeOfDay.exists) {
       timeOfDay.data.counter = timeOfDay.data.counter + 1;
@@ -253,14 +225,24 @@ const proceedTimesOfDay = async (
       const timeOfDay = affected[id];
       if (timeOfDay.status === 'removed') {
         transaction.delete(timeOfDay.ref);
+        continue;
       }
       if (timeOfDay.status === 'created') {
         transaction.create(timeOfDay.ref, timeOfDay.data);
+        continue;
       }
       if (timeOfDay.status === 'updated') {
         transaction.update(timeOfDay.ref, timeOfDay.data);
       }
     }
+  }
+
+  if (currentTimesOfDaySize - removed + added > 20) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      `You can own 20 times of day but merge has ${currentTimesOfDaySize - removed + added} 🤔`
+    );
   }
 
   return currentTimesOfDaySize - removed + added;
@@ -357,9 +339,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data.task.timesOfDay.length is not in [1, 20]
   testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 20);
 
-  // data.task.timesOfDay contains duplicates
-  testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
-
   data.task.timesOfDay = data.task.timesOfDay.map((timeOfDay: any) => {
 
     // data.task.timesOfDay contains other than string
@@ -375,6 +354,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
     return timeOfDayTrim;
   });
+
+  // data.task.timesOfDay contains duplicates
+  testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
 
   const auth: { uid: string } | undefined = context.auth;
 
@@ -410,11 +392,11 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         let taskDocSnap: DocumentSnapshot;
         if (!taskDocSnapTmp.exists) {
 
-          if (currentTaskSize + 1 > 20) {
+          if (currentTaskSize + 1 > 50) {
             throw new HttpsError(
               'invalid-argument',
               'Bad Request',
-              `You can own up tp 20 tasks but merge has ${currentTaskSize + 1} 🤔`
+              `You can own up tp 50 tasks but merge has ${currentTaskSize + 1} 🤔`
             );
           }
 
@@ -493,7 +475,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         }
 
-        let todayTaskDocSnapsDayPackPromise: Promise<{docSnap: firestore.DocumentSnapshot<firestore.DocumentData>, day: Day}[]> | undefined = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
+        const todayTaskDocSnapsDayPackPromise: Promise<{docSnap: firestore.DocumentSnapshot<firestore.DocumentData>, day: Day}[]> = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
 
         // read current currentTimesOfDaySize
         const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
@@ -501,7 +483,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         const timesOfDaysToStoreSize = await proceedTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize);
 
         proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
-        todayTaskDocSnapsDayPackPromise = undefined;
 
         // update task
         transaction.set(taskDocSnap.ref, task);
