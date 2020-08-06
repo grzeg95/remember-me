@@ -2,6 +2,7 @@ import {Component, HostListener, Input, OnDestroy, OnInit, ViewEncapsulation} fr
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
 import {BehaviorSubject, Subscription} from 'rxjs';
+import {startWith} from 'rxjs/operators';
 import '../../../../../global.prototype';
 import {UserService} from '../../user.service';
 
@@ -20,8 +21,11 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
       TaskDialogTimeOfDay.timeOfDayValidatorLength]
     )
   });
-  options: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  filteredOptions: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  options: string[] = [];
+
   timesOfDayOrderSub: Subscription;
+  timeOfDayValueChanges: Subscription;
 
   @HostListener('window:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {
@@ -36,6 +40,10 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
+    this.timeOfDayValueChanges = this.timeOfDayForm.get('timeOfDay').valueChanges.pipe(
+      startWith('')
+    ).subscribe((value) => this.applyFilter(value));
+
     this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrderNext) => {
       const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(this.selectedTimesOfDay.toSet());
       const timesOfDayOrder = [];
@@ -47,7 +55,8 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
         }
       }
 
-      this.options.next(timesOfDayOrder);
+      this.options = timesOfDayOrder;
+      this.applyFilter(this.timeOfDayForm.get('timeOfDay').value);
 
     });
 
@@ -55,6 +64,12 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.timesOfDayOrderSub.unsubscribe();
+    this.timeOfDayValueChanges.unsubscribe();
+  }
+
+  private applyFilter(value: string): void {
+    const filterValue = value.toLowerCase();
+    this.filteredOptions.next(this.options.filter((option) => option.toLowerCase().includes(filterValue)));
   }
 
   onNoClick(): void {

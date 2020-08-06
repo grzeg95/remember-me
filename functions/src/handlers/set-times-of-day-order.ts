@@ -4,6 +4,7 @@ import {TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import '../../../global.prototype';
 import {getTimeOfDay} from '../helpers/timeOfDay';
+import {getUser} from '../helpers/user';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
@@ -179,46 +180,38 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   const auth: { uid: string } | undefined = context.auth;
 
-  return app.runTransaction(async (transaction) =>
-    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+  return app.runTransaction(async (transaction) => {
 
-      const userData = userDocSnap.data();
-      const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
+    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
 
-      if (isDisabled) {
-        throw new HttpsError(
-          'permission-denied',
-          'This account is disabled',
-          'Contact administrator to resolve this problem'
-        );
-      }
+    /*
+    * Read all data
+    * */
 
-      /*
-      * Read all data
-      * */
+    const aPromise = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
+    const bPromise = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
 
-      const a = await getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
-      const b = await getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
+    const a = await aPromise;
+    const b = await bPromise;
 
-      // siblings a <-> b
-      if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
-        await processSiblings(transaction, userDocSnap, a, b);
-        return transaction;
-      }
-
-      // siblings b <-> a
-      if (b.data.next === a.ref.id && a.data.prev === b.ref.id) {
-        await processSiblings(transaction, userDocSnap, b, a);
-        return transaction;
-      }
-
-      // not siblings
-      await processNotSiblings(data.dir, transaction, userDocSnap, b, a);
-
+    // siblings a <-> b
+    if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
+      await processSiblings(transaction, userDocSnap, a, b);
       return transaction;
+    }
 
-    })
-  ).then(() => ({
+    // siblings b <-> a
+    if (b.data.next === a.ref.id && a.data.prev === b.ref.id) {
+      await processSiblings(transaction, userDocSnap, b, a);
+      return transaction;
+    }
+
+    // not siblings
+    await processNotSiblings(data.dir, transaction, userDocSnap, b, a);
+
+    return transaction;
+
+  }).then(() => ({
     details: 'Order has been updated 🙃'
   })).catch((error: HttpsError) => {
     const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';

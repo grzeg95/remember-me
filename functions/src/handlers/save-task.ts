@@ -7,6 +7,7 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentData = firestore.DocumentData;
 import {getTimeOfDay, getTimeOfDayFromSnap} from '../helpers/timeOfDay';
 import '../../../global.prototype';
+import {getUser} from '../helpers/user';
 
 const app = firestore();
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
@@ -354,12 +355,12 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // data.task.timesOfDay contains other than string
     testRequirement(typeof timeOfDay !== 'string');
 
-    const timeOfDayTrim = (timeOfDay as string).trim();
+    const timeOfDayTrim = (timeOfDay as string).trim().encodeFirebaseCharacters().decodeFirebaseCharacters();
 
     // data.task.timesOfDay contains string that trim is not in [1, 20]
     testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
 
-    return timeOfDayTrim.decodeFirebaseCharacters().encodeFirebaseCharacters();
+    return timeOfDayTrim.encodeFirebaseCharacters();
 
   });
 
@@ -371,154 +372,140 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   let created = false;
   let taskId: string = data.taskId;
 
-  return app.runTransaction((transaction) =>
-    transaction.get(app.collection('users').doc(auth?.uid as string)).then(async (userDocSnap) => {
+  return app.runTransaction(async (transaction) => {
 
-      const userData = userDocSnap.data();
-      const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
+    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
+    const taskDocSnapTmp = await transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then((docSnap) => docSnap);
 
-      if (isDisabled) {
+    const task = data.task as Task;
+    task.description = task.description.trim();
+    task.timesOfDay = task.timesOfDay.map((timeOfDay) => timeOfDay.trim());
+    let currentTaskSize = userDocSnap.data()?.taskSize || 0;
+
+    /*
+    * Read all data
+    * */
+
+    // read task or create it
+    let taskDocSnap: DocumentSnapshot;
+    if (!taskDocSnapTmp.exists) {
+
+      if (currentTaskSize + 1 > 50) {
         throw new HttpsError(
-          'permission-denied',
-          'This account is disabled',
-          'Contact administrator to resolve this problem'
+          'invalid-argument',
+          'Bad Request',
+          `You can own up tp 50 tasks but merge has ${currentTaskSize + 1} 🤔`
         );
       }
 
-      return transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then(async (taskDocSnapTmp) => {
+      created = true;
+      taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => newTaskSnap);
+      taskId = taskDocSnap.id;
+      currentTaskSize++;
+    }
+    else {
+      taskDocSnap = taskDocSnapTmp;
 
-        const task = data.task as Task;
-        task.description = task.description.trim();
-        task.timesOfDay = task.timesOfDay.map((timeOfDay) => timeOfDay.trim());
-        let currentTaskSize = userDocSnap.data()?.taskSize || 0;
+      /*
+      * Check if nothing changed or only description was changed
+      * */
+      const taskChange = getTaskChange((taskDocSnap.data() as Task), task);
+
+      /*
+      * Check if nothing was changed
+      * */
+      if (!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+        transaction.update(taskDocSnap.ref, task);
+        return transaction;
+      }
+
+      /*
+      * Only description was changed
+      * */
+      if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+
+        // read all task for user/{userId}/today/{day}/task/{taskId}
+        const todayTaskDocSnapsToUpdate = await Promise.all(
+          days.filter((day) => task.daysOfTheWeek[day]).map((day) =>
+            transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+              .then((docSnap) => docSnap)
+          )
+        );
 
         /*
-        * Read all data
+        * Proceed all data
         * */
 
-        // read task or create it
-        let taskDocSnap: DocumentSnapshot;
-        if (!taskDocSnapTmp.exists) {
-
-          if (currentTaskSize + 1 > 50) {
+        todayTaskDocSnapsToUpdate.forEach((todayTask) => {
+          if (!todayTask.exists) {
             throw new HttpsError(
               'invalid-argument',
-              'Bad Request',
-              `You can own up tp 50 tasks but merge has ${currentTaskSize + 1} 🤔`
+              `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
+              'Some went wrong 🤫 Try again 🙂'
             );
           }
+          transaction.update(todayTask.ref, {
+            description: task.description
+          });
+        });
 
-          created = true;
-          taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => newTaskSnap);
-          taskId = taskDocSnap.id;
-          currentTaskSize++;
-        }
-        else {
-          taskDocSnap = taskDocSnapTmp;
+        transaction.update(taskDocSnap.ref, {
+          description: task.description
+        });
 
-          /*
-          * Check if nothing changed or only description was changed
-          * */
-          const taskChange = getTaskChange((taskDocSnap.data() as Task), task);
+        return transaction;
 
-          /*
-          * Check if nothing was changed
-          * */
-          if (!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
-            transaction.update(taskDocSnap.ref, task);
-            return transaction;
-          }
+      }
 
-          /*
-          * Only description was changed
-          * */
-          if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+      /*
+      * Only daysOfTheWeek was changed
+      * */
+      if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-            // read all task for user/{userId}/today/{day}/task/{taskId}
-            const todayTaskDocSnapsToUpdate = await Promise.all(
-              days.filter((day) => task.daysOfTheWeek[day]).map((day) =>
-                transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-                  .then((docSnap) => docSnap)
-              )
-            );
-
-            /*
-            * Proceed all data
-            * */
-
-            todayTaskDocSnapsToUpdate.forEach((todayTask) => {
-              if (!todayTask.exists) {
-                throw new HttpsError(
-                  'invalid-argument',
-                  `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
-                  'Some went wrong 🤫 Try again 🙂'
-                );
-              }
-              transaction.update(todayTask.ref, {
-                description: task.description
-              });
-            });
-
-            transaction.update(taskDocSnap.ref, {
-              description: task.description
-            });
-
-            return transaction;
-
-          }
-
-          /*
-          * Only daysOfTheWeek was changed
-          * */
-          if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
-
-            const pack = await getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
-            proceedTodayTasks(transaction, task, pack);
-
-            // update task
-            transaction.set(taskDocSnap.ref, task);
-
-            return transaction;
-          }
-
-        }
-
-        const todayTaskDocSnapsDayPackPromise: Promise<{docSnap: DocumentSnapshot, day: Day}[]> = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
-
-        // read current currentTimesOfDaySize
-        const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
-
-        const timesOfDaysToStoreSize = await proceedTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize);
-
-        proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
+        const pack = await getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
+        proceedTodayTasks(transaction, task, pack);
 
         // update task
         transaction.set(taskDocSnap.ref, task);
 
-        // delete taskDocSnapTmp if created
-        if (created) {
-          transaction.delete(taskDocSnapTmp.ref);
-        }
-
-        // update user
-
-        const userDataUpdate = {
-          timesOfDaySize: timesOfDaysToStoreSize,
-          taskSize: currentTaskSize
-        };
-
-        if (userDocSnap.exists) {
-          transaction.update(userDocSnap.ref, userDataUpdate);
-        } else {
-          transaction.create(userDocSnap.ref, userDataUpdate);
-        }
-
         return transaction;
+      }
 
-      });
+    }
 
-    })
-  ).then(() =>
+    const todayTaskDocSnapsDayPackPromise: Promise<{docSnap: DocumentSnapshot, day: Day}[]> = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
+
+    // read current currentTimesOfDaySize
+    const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
+
+    const timesOfDaysToStoreSize = await proceedTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize);
+
+    proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
+
+    // update task
+    transaction.set(taskDocSnap.ref, task);
+
+    // delete taskDocSnapTmp if created
+    if (created) {
+      transaction.delete(taskDocSnapTmp.ref);
+    }
+
+    // update user
+
+    const userDataUpdate = {
+      timesOfDaySize: timesOfDaysToStoreSize,
+      taskSize: currentTaskSize
+    };
+
+    if (userDocSnap.exists) {
+      transaction.update(userDocSnap.ref, userDataUpdate);
+    } else {
+      transaction.create(userDocSnap.ref, userDataUpdate);
+    }
+
+    return transaction;
+
+  }).then(() =>
     created ? ({
       'created': true,
       'details': 'Your task has been created 😉',
