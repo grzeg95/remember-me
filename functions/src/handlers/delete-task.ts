@@ -120,7 +120,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         todayTasks.forEach((todayTaskDocSnap) =>
           transaction.delete(todayTaskDocSnap.ref));
 
-        // TODO proceed timesOfDayDocSnaps
+        // proceed timesOfDayDocSnaps
         for (const id in affected) {
           if (affected.hasOwnProperty(id)) {
             const timeOfDay = affected[id];

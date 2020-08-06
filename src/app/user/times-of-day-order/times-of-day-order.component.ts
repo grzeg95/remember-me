@@ -51,6 +51,10 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
     this.timesOfDayOrderSub.unsubscribe();
   }
 
+  decodeFirebaseCharacters(str: string): string {
+    return str.decodeFirebaseCharacters();
+  }
+
   drop(event: CdkDragDrop<TimeOfDay[]>): void {
 
     if (event.previousIndex === event.currentIndex) {

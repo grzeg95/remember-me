@@ -78,4 +78,8 @@ export class TasksComponent implements OnInit, OnDestroy {
     });
   }
 
+  getTimesOfDay(timesOfDay: string[]): string[] {
+    return timesOfDay.map((timeOfDay) => timeOfDay.decodeFirebaseCharacters());
+  }
+
 }

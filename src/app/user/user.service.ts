@@ -236,6 +236,8 @@ export class UserService {
             }
           }
 
+          console.log(order);
+
           this.timesOfDayOrder.next(order);
           this.timesOfDayOrderFirstLoading.next(false);
         }

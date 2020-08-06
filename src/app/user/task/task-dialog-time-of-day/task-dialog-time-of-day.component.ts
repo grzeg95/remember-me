@@ -1,8 +1,7 @@
 import {Component, HostListener, Input, OnDestroy, OnInit, ViewEncapsulation} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
-import {Observable, Subscription} from 'rxjs';
-import {map, startWith} from 'rxjs/operators';
+import {BehaviorSubject, Subscription} from 'rxjs';
 import '../../../../../global.prototype';
 import {UserService} from '../../user.service';
 
@@ -15,14 +14,13 @@ import {UserService} from '../../user.service';
 export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
   @Input()
-  taskTimesOfDay: string[] = [];
+  selectedTimesOfDay: string[] = [];
   timeOfDayForm: FormGroup = new FormGroup({
     timeOfDay: new FormControl('', [
-      TaskDialogTimeOfDay.timeOfDayValidatorLength,
-      TaskDialogTimeOfDay.timeOfDayValidatorSlash]
+      TaskDialogTimeOfDay.timeOfDayValidatorLength]
     )
   });
-  filteredOptions: Observable<string[]>;
+  options: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
   timesOfDayOrderSub: Subscription;
 
   @HostListener('window:keydown', ['$event'])
@@ -32,29 +30,25 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
     }
   }
 
-  constructor(
-    public dialogRef: MatDialogRef<TaskDialogTimeOfDay>,
-    private userService: UserService) {}
+  constructor(public dialogRef: MatDialogRef<TaskDialogTimeOfDay>,
+              private userService: UserService) {
+  }
 
   ngOnInit(): void {
-    this.filteredOptions = this.timeOfDayForm.get('timeOfDay').valueChanges
-      .pipe(
-        startWith(''),
-        map((value) => this._filter(value))
-      );
 
     this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrderNext) => {
-      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(this.taskTimesOfDay.toSet());
+      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(this.selectedTimesOfDay.toSet());
       const timesOfDayOrder = [];
 
       for (const x of timesOfDayOrderNext) {
         if (timesOfDayOrderSet.has(x.id)) {
-          timesOfDayOrder.push(x.id);
+          timesOfDayOrder.push(x.id.decodeFirebaseCharacters());
           timesOfDayOrderSet.delete(x.id);
         }
       }
 
-      this.taskTimesOfDay = timesOfDayOrder;
+      this.options.next(timesOfDayOrder);
+
     });
 
   }
@@ -63,18 +57,12 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
     this.timesOfDayOrderSub.unsubscribe();
   }
 
-  private _filter(value: string): string[] {
-    const filterValue = value.toLowerCase();
-
-    return this.taskTimesOfDay.filter((option) => option.toLowerCase().includes(filterValue));
-  }
-
   onNoClick(): void {
     this.dialogRef.close();
   }
 
   addTimeOfDay(): void {
-    this.dialogRef.close(this.timeOfDayForm.get('timeOfDay').value.trim());
+    this.dialogRef.close(escape(this.timeOfDayForm.get('timeOfDay').value.trim()));
   }
 
   static timeOfDayValidatorLength(g: FormControl): { required: boolean } {
@@ -88,10 +76,6 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
     return (typeof g.value === 'string') &&
     (g.value.length > 0) && (g.value.length <= 20) ? null : {required: true};
-  }
-
-  static timeOfDayValidatorSlash(g: FormControl): { slash: boolean } {
-    return (typeof g.value === 'string') && !g.value.includes('/') ? null : {slash: true};
   }
 
 }

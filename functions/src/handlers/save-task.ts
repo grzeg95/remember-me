@@ -349,10 +349,8 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // data.task.timesOfDay contains string that trim is not in [1, 20]
     testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
 
-    // data.task.timesOfDay contains string that trim contains /
-    testRequirement(timeOfDayTrim.includes('/'));
+    return timeOfDayTrim.decodeFirebaseCharacters().encodeFirebaseCharacters();
 
-    return timeOfDayTrim;
   });
 
   // data.task.timesOfDay contains duplicates

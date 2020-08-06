@@ -168,8 +168,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   // data not hasOnly dir, is, wasIndex, was
   testRequirement(!['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()));
 
-  // data.dir is not an number
-  testRequirement(typeof data.dir !== 'number');
+  // data.dir is not an integer number or is zero
+  testRequirement(typeof data.dir !== 'number' || !Number.isInteger(data.dir) || data.dir === 0);
 
   // data.is is not an string
   testRequirement(typeof data.is !== 'string');
@@ -197,9 +197,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       * Read all data
       * */
 
-
-      const a = await getTimeOfDay(transaction, userDocSnap, data.is);
-      const b = await getTimeOfDay(transaction, userDocSnap, data.was);
+      const a = await getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
+      const b = await getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
 
       // siblings a <-> b
       if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {

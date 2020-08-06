@@ -8,6 +8,7 @@ import {ActivatedRoute} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
 import deepEqual from 'deep-equal';
 import {Observable, Subscription} from 'rxjs';
+import '../../../../global.prototype';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
 import {HTTPError, HTTPSuccess, Task} from '../models';
@@ -93,7 +94,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(TaskDialogTimeOfDay, {
       autoFocus: false
     });
-    dialogRef.componentInstance.taskTimesOfDay = this.taskForm.get('timesOfDay').value;
+    dialogRef.componentInstance.selectedTimesOfDay = this.taskForm.get('timesOfDay').value;
 
     dialogRef.afterClosed().subscribe((timeOfDay) => {
 
@@ -107,8 +108,8 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.snackBar.open('Enter time of day length from 1 to 20');
       } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length === 20) {
         this.snackBar.open('Up to 20 times of day per task');
-      } else if (timeOfDay && !((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim())) {
-        (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
+      } else if (timeOfDay && !((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim().encodeFirebaseCharacters())) {
+        (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim().encodeFirebaseCharacters()));
       }
 
     });
@@ -262,6 +263,10 @@ export class TaskComponent implements OnInit, OnDestroy {
     return this.initValues.description.length === rawValue['description'].trim().length &&
       deepEqual(this.initValues.daysOfTheWeek, rawValue['daysOfTheWeek']) &&
       this.initValues.timesOfDay.toSet().hasOnly(rawValue['timesOfDay'].toSet());
+  }
+
+  decodeFirebaseCharacters(str: string): string {
+    return str.decodeFirebaseCharacters();
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {

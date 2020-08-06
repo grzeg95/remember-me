@@ -16,6 +16,11 @@ declare global {
   interface Array<T> {
     toSet(): Set<T>;
   }
+
+  interface String {
+    encodeFirebaseCharacters(): string;
+    decodeFirebaseCharacters(): string;
+  }
 }
 
 Set.prototype.difference = function(otherSet: Set<any>): Set<any> {
@@ -90,4 +95,39 @@ Set.prototype.toArray = function(): any[] {
 
 Array.prototype.toSet = function(): Set<any> {
   return new Set(this);
+};
+
+const encodeReplace: {[p: string]: string} = {
+  '.': '%2E',
+  '$': '%24',
+  '[': '%5B',
+  ']': '%5D',
+  '#': '%23',
+  '/': '%2F'
+};
+
+const decodeReplace: {[p: string]: string} = {
+  '%2E': '.',
+  '%24': '$',
+  '%5B': '[',
+  '%5D': ']',
+  '%23': '#',
+  '%2F': '/'
+};
+
+String.prototype.encodeFirebaseCharacters = function(): string {
+  return ([...this] as string[]).map((char) => encodeReplace[char] || char).join('');
+};
+
+String.prototype.decodeFirebaseCharacters = function(): string {
+
+  let res: string = this as string;
+
+  for (const char in decodeReplace) {
+    if (decodeReplace.hasOwnProperty(char)) {
+      res = res.replace(new RegExp(char, 'g'), decodeReplace[char]);
+    }
+  }
+
+  return res;
 };

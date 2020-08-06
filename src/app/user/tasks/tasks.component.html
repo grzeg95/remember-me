@@ -45,7 +45,7 @@
               <tr *ngFor="let task of tasksView">
                 <td>{{ task.description }}</td>
                 <td>{{ task.daysOfTheWeek }}</td>
-                <td>{{ task.timesOfDay.join(', ') }}</td>
+                <td>{{ getTimesOfDay(task.timesOfDay).join(', ') }}</td>
                 <td>
                   <div class="pseudo-button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
                     <fa-icon [icon]="faEdit"></fa-icon>
