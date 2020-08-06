@@ -63,7 +63,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         const currentTaskSize = userDocSnap.data()?.taskSize;
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        let todayTasksPromise: Promise<DocumentSnapshot[]> | undefined = Promise.all(
+        const todayTasksPromise: Promise<DocumentSnapshot[]> | undefined = Promise.all(
           (Object.keys(task.daysOfTheWeek) as Day[]).filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]).map((day) =>
               transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
         ));
@@ -82,12 +82,22 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
             affected[timeOfDayId].status = 'removed';
             currentTimesOfDaySize--;
 
+            let getTimeOfDayNextPromise;
             if (affected[timeOfDayId].data.next && !affected[affected[timeOfDayId].data.next as string]) {
-              affected[affected[timeOfDayId].data.next as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
+              getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
             }
 
+            let getTimeOfDayPrevPromise;
             if (affected[timeOfDayId].data.prev && !affected[affected[timeOfDayId].data.prev as string]) {
-              affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
+              getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
+            }
+
+            if (getTimeOfDayNextPromise) {
+              affected[affected[timeOfDayId].data.next as string] = await getTimeOfDayNextPromise;
+            }
+
+            if (getTimeOfDayPrevPromise) {
+              affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDayPrevPromise;
             }
 
             if (affected[timeOfDayId].data.next) {
@@ -107,7 +117,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
         // wait for rest
 
         const todayTasks = await todayTasksPromise;
-        todayTasksPromise = undefined;
 
         /*
         * Proceed all data
@@ -121,15 +130,13 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           transaction.delete(todayTaskDocSnap.ref));
 
         // proceed timesOfDayDocSnaps
-        for (const id in affected) {
-          if (affected.hasOwnProperty(id)) {
-            const timeOfDay = affected[id];
-            if (timeOfDay.status === 'removed') {
-              transaction.delete(timeOfDay.ref);
-            }
-            if (timeOfDay.status === 'updated') {
-              transaction.update(timeOfDay.ref, timeOfDay.data);
-            }
+        for (const id of Object.getOwnPropertyNames(affected)) {
+          const timeOfDay = affected[id];
+          if (timeOfDay.status === 'removed') {
+            transaction.delete(timeOfDay.ref);
+          }
+          if (timeOfDay.status === 'updated') {
+            transaction.update(timeOfDay.ref, timeOfDay.data);
           }
         }
 

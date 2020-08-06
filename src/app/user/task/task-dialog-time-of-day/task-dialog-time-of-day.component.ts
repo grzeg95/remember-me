@@ -62,7 +62,7 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
   }
 
   addTimeOfDay(): void {
-    this.dialogRef.close(escape(this.timeOfDayForm.get('timeOfDay').value.trim()));
+    this.dialogRef.close(this.timeOfDayForm.get('timeOfDay').value.trim());
   }
 
   static timeOfDayValidatorLength(g: FormControl): { required: boolean } {

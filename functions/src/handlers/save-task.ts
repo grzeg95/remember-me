@@ -4,10 +4,9 @@ import {Day, Task, TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
+import DocumentData = firestore.DocumentData;
 import {getTimeOfDay, getTimeOfDayFromSnap} from '../helpers/timeOfDay';
 import '../../../global.prototype';
-
-import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
@@ -131,7 +130,7 @@ const proceedTimesOfDay = async (
 
   const affected: { [p: string]: TimeOfDay } = {};
 
-  const toAdd = enteredTimesOfDay.toSet().difference(currentTimesOfDay.toSet()).toArray();
+  const toAdd = enteredTimesOfDay.toSet().difference(currentTimesOfDay.toSet());
   const toRemove = currentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet());
 
   let added = 0;
@@ -144,96 +143,107 @@ const proceedTimesOfDay = async (
     return null;
   });
 
-  for (const timeOfDayId of toRemove) {
+  for (const timeOfDayIdToRemove of toRemove) {
 
-    if (!affected[timeOfDayId]) {
-      affected[timeOfDayId] = await getTimeOfDay(transaction, userDocSnap, timeOfDayId);
+    if (!affected[timeOfDayIdToRemove]) {
+      affected[timeOfDayIdToRemove] = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove);
     }
 
-    if (affected[timeOfDayId].data.counter - 1 === 0) {
-      affected[timeOfDayId].status = 'removed';
+    if (affected[timeOfDayIdToRemove].data.counter - 1 === 0) {
+      affected[timeOfDayIdToRemove].status = 'removed';
       removed++;
 
-      if (affected[timeOfDayId].data.next && !affected[affected[timeOfDayId].data.next as string]) {
-        affected[affected[timeOfDayId].data.next as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
+      let getTimeOfDayNextPromise;
+      if (affected[timeOfDayIdToRemove].data.next && !affected[affected[timeOfDayIdToRemove].data.next as string]) {
+        getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string);
       }
 
-      if (affected[timeOfDayId].data.prev && !affected[affected[timeOfDayId].data.prev as string]) {
-        affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
+      let getTimeOfDayPrevPromise;
+      if (affected[timeOfDayIdToRemove].data.prev && !affected[affected[timeOfDayIdToRemove].data.prev as string]) {
+        getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string);
       }
 
-      if (affected[timeOfDayId].data.next) {
-        affected[affected[timeOfDayId].data.next as string].data.prev = affected[timeOfDayId].data.prev;
+      if (getTimeOfDayNextPromise) {
+        affected[affected[timeOfDayIdToRemove].data.next as string] = await getTimeOfDayNextPromise;
       }
 
-      if (affected[timeOfDayId].data.prev) {
-        affected[affected[timeOfDayId].data.prev as string].data.next = affected[timeOfDayId].data.next;
+      if (getTimeOfDayPrevPromise) {
+        affected[affected[timeOfDayIdToRemove].data.prev as string] = await getTimeOfDayPrevPromise;
       }
 
-      if (affected[timeOfDayId].data.prev === null && affected[timeOfDayId].data.next !== null) {
-        head = affected[affected[timeOfDayId].data.next as string];
+      if (affected[timeOfDayIdToRemove].data.next) {
+        affected[affected[timeOfDayIdToRemove].data.next as string].data.prev = affected[timeOfDayIdToRemove].data.prev;
       }
 
-      if (affected[timeOfDayId].data.prev === null && affected[timeOfDayId].data.next === null) {
+      if (affected[timeOfDayIdToRemove].data.prev) {
+        affected[affected[timeOfDayIdToRemove].data.prev as string].data.next = affected[timeOfDayIdToRemove].data.next;
+      }
+
+      if (affected[timeOfDayIdToRemove].data.prev === null && affected[timeOfDayIdToRemove].data.next !== null) {
+        head = affected[affected[timeOfDayIdToRemove].data.next as string];
+      }
+
+      if (affected[timeOfDayIdToRemove].data.prev === null && affected[timeOfDayIdToRemove].data.next === null) {
         head = null;
       }
 
     } else {
-      affected[timeOfDayId].data.counter = affected[timeOfDayId].data.counter - 1;
+      affected[timeOfDayIdToRemove].data.counter = affected[timeOfDayIdToRemove].data.counter - 1;
     }
 
   }
 
-  let toAddIndex = 0;
+  const toAddIdsIterableIterator = toAdd.values();
+  let timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
 
   if (!head) {
-    head = await getTimeOfDay(transaction, userDocSnap, toAdd[toAddIndex++]);
+    head = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToAddIterator.value);
+    timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
     if (head.exists) {
       head.data.counter = head.data.counter + 1;
     } else {
       added++;
       head.status = 'created';
     }
-  } else if (toAdd.includes(head.ref.id)) {
+  } else if (toAdd.has(head.ref.id)) {
     head.data.counter = head.data.counter + 1;
-    toAdd.splice(toAdd.lastIndexOf(head.ref.id), 1);
+    toAdd.delete(head.ref.id);
   }
 
   if (!affected[head.ref.id]) {
     affected[head.ref.id] = head;
   }
 
-  for (; toAddIndex < toAdd.length; ++toAddIndex) {
-    const timeOfDay = await getTimeOfDay(transaction, userDocSnap, toAdd[toAddIndex]);
+  while (!timeOfDayIdToAddIterator.done) {
+    const timeOfDay = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToAddIterator.value);
 
     if (timeOfDay.exists) {
       timeOfDay.data.counter = timeOfDay.data.counter + 1;
-      affected[toAdd[toAddIndex]] = timeOfDay;
+      affected[timeOfDayIdToAddIterator.value] = timeOfDay;
     } else {
       added++;
       timeOfDay.data.next = head.ref.id;
       timeOfDay.status = 'created';
       affected[head.ref.id].data.prev = timeOfDay.ref.id;
-      affected[toAdd[toAddIndex]] = timeOfDay;
+      affected[timeOfDayIdToAddIterator.value] = timeOfDay;
       head = timeOfDay;
     }
 
+    timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
   }
 
-  for (const id in affected) {
-    if (affected.hasOwnProperty(id)) {
-      const timeOfDay = affected[id];
-      if (timeOfDay.status === 'removed') {
-        transaction.delete(timeOfDay.ref);
-        continue;
-      }
-      if (timeOfDay.status === 'created') {
-        transaction.create(timeOfDay.ref, timeOfDay.data);
-        continue;
-      }
-      if (timeOfDay.status === 'updated') {
-        transaction.update(timeOfDay.ref, timeOfDay.data);
-      }
+  for (const id of Object.getOwnPropertyNames(affected)) {
+    const timeOfDay = affected[id];
+    if (timeOfDay.status === 'removed') {
+      transaction.delete(timeOfDay.ref);
+      continue;
+    }
+    if (timeOfDay.status === 'created') {
+      transaction.create(timeOfDay.ref, timeOfDay.data);
+      continue;
+    }
+    if (timeOfDay.status === 'updated') {
+      transaction.update(timeOfDay.ref, timeOfDay.data);
     }
   }
 
@@ -249,7 +259,7 @@ const proceedTimesOfDay = async (
 
 };
 
-const getTodayTaskDocSnapsDayPackPromise = (transaction: Transaction, taskDocSnap: DocumentSnapshot, userDocSnap: DocumentSnapshot): Promise<{docSnap: firestore.DocumentSnapshot<firestore.DocumentData>, day: Day}[]> => {
+const getTodayTaskDocSnapsDayPackPromise = (transaction: Transaction, taskDocSnap: DocumentSnapshot, userDocSnap: DocumentSnapshot): Promise<{docSnap: DocumentSnapshot, day: Day}[]> => {
   // read all task for user/{userId}/today/{day}/task/{taskId}
   // Promise<{ docSnap: DocumentSnapshot, day: Day }[]> = [];
   return Promise.all(days.map((day) =>
@@ -473,7 +483,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         }
 
-        const todayTaskDocSnapsDayPackPromise: Promise<{docSnap: firestore.DocumentSnapshot<firestore.DocumentData>, day: Day}[]> = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
+        const todayTaskDocSnapsDayPackPromise: Promise<{docSnap: DocumentSnapshot, day: Day}[]> = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
 
         // read current currentTimesOfDaySize
         const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
