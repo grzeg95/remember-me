@@ -147,29 +147,19 @@ const proceedTimesOfDay = async (
   for (const timeOfDayIdToRemove of toRemove) {
 
     if (!affected[timeOfDayIdToRemove]) {
-      affected[timeOfDayIdToRemove] = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove);
+      affected[timeOfDayIdToRemove] = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove, true);
     }
 
     if (affected[timeOfDayIdToRemove].data.counter - 1 === 0) {
       affected[timeOfDayIdToRemove].status = 'removed';
       removed++;
 
-      let getTimeOfDayNextPromise;
       if (affected[timeOfDayIdToRemove].data.next && !affected[affected[timeOfDayIdToRemove].data.next as string]) {
-        getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string);
+        affected[affected[timeOfDayIdToRemove].data.next as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string, true);
       }
 
-      let getTimeOfDayPrevPromise;
       if (affected[timeOfDayIdToRemove].data.prev && !affected[affected[timeOfDayIdToRemove].data.prev as string]) {
-        getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string);
-      }
-
-      if (getTimeOfDayNextPromise) {
-        affected[affected[timeOfDayIdToRemove].data.next as string] = await getTimeOfDayNextPromise;
-      }
-
-      if (getTimeOfDayPrevPromise) {
-        affected[affected[timeOfDayIdToRemove].data.prev as string] = await getTimeOfDayPrevPromise;
+        affected[affected[timeOfDayIdToRemove].data.prev as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string, true);
       }
 
       if (affected[timeOfDayIdToRemove].data.next) {

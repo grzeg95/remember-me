@@ -63,7 +63,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     for (const timeOfDayId of toRemove) {
 
       if (!affected[timeOfDayId]) {
-        affected[timeOfDayId] = await getTimeOfDay(transaction, userDocSnap, timeOfDayId);
+        affected[timeOfDayId] = await getTimeOfDay(transaction, userDocSnap, timeOfDayId, true);
       }
 
       if (affected[timeOfDayId].data.counter - 1 === 0) {
@@ -72,12 +72,12 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         let getTimeOfDayNextPromise;
         if (affected[timeOfDayId].data.next && !affected[affected[timeOfDayId].data.next as string]) {
-          getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
+          getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string, true);
         }
 
         let getTimeOfDayPrevPromise;
         if (affected[timeOfDayId].data.prev && !affected[affected[timeOfDayId].data.prev as string]) {
-          getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
+          getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string, true);
         }
 
         if (getTimeOfDayNextPromise) {

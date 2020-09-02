@@ -2,7 +2,6 @@ import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
-import '../../../global.prototype';
 import {getTimeOfDay} from '../helpers/timeOfDay';
 import {getUser} from '../helpers/user';
 import Transaction = firestore.Transaction;
@@ -27,12 +26,23 @@ const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSn
     prev: a.data.prev
   };
 
+  let aPrevPromise;
+  let bNextPromise;
+
   if (a.data.prev) {
-    aPrev = await getTimeOfDay(transaction, userDocSnap, a.data.prev);
+    aPrevPromise = getTimeOfDay(transaction, userDocSnap, a.data.prev);
   }
 
   if (b.data.next) {
-    bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
+    bNextPromise = getTimeOfDay(transaction, userDocSnap, b.data.next);
+  }
+
+  if (aPrevPromise) {
+    aPrev = await aPrevPromise;
+  }
+
+  if (bNextPromise) {
+    bNext = await bNextPromise;
   }
 
   if (aPrev && aPrev.exists) {
@@ -91,11 +101,11 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   }
 
   if (a.data.prev) {
-    aPrev = await getTimeOfDay(transaction, userDocSnap, a.data.prev);
+    aPrev = await getTimeOfDay(transaction, userDocSnap, a.data.prev, true);
   }
 
   if (a.data.next) {
-    aNext = await getTimeOfDay(transaction, userDocSnap, a.data.next);
+    aNext = await getTimeOfDay(transaction, userDocSnap, a.data.next, true);
   }
 
   if (aNext && aNext.exists) {
@@ -112,7 +122,7 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
 
   if (dir > 0) {
     if (b.data.next) {
-      bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
+      bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next, true);
     }
     if (bNext && bNext.exists) {
       bNextDataUpdate = {
@@ -121,7 +131,7 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
     }
   } else {
     if (b.data.prev) {
-      bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev);
+      bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev, true);
     }
     if (bPrev && bPrev.exists) {
       bPrevDataUpdate = {
@@ -188,11 +198,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     * Read all data
     * */
 
-    const aPromise = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
-    const bPromise = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseCharacters().encodeFirebaseCharacters());
-
-    const a = await aPromise;
-    const b = await bPromise;
+    const a = await getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseCharacters().encodeFirebaseCharacters(), true);
+    const b = await getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseCharacters().encodeFirebaseCharacters(), true);
 
     // siblings a <-> b
     if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
