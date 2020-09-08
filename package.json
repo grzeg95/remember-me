@@ -2,7 +2,7 @@
   "name": "remember-me-angular",
   "version": "0.0.0",
   "scripts": {
-    "serve:emulators": "firebase use dev && firebase emulators:start",
+    "serve:emulators": "firebase use dev && firebase emulators:start --import=./emulators-backup --export-on-exit",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
