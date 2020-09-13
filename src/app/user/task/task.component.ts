@@ -96,19 +96,24 @@ export class TaskComponent implements OnInit, OnDestroy {
     });
     dialogRef.componentInstance.selectedTimesOfDay = this.taskForm.get('timesOfDay').value;
 
-    dialogRef.afterClosed().subscribe((timeOfDay) => {
+    dialogRef.afterClosed().subscribe((timeOfDayValue) => {
+
+      if (!timeOfDayValue) {
+        this.taskForm.get('timesOfDay').clearValidators();
+        return;
+      }
 
       this.taskForm.get('timesOfDay').markAsDirty();
 
+      const timeOfDay = timeOfDayValue.trim().encodeFirebaseCharacters();
+
       if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
         this.snackBar.open('Enter new one');
-      }
-
-      if (timeOfDay && timeOfDay.trim().length > 20) {
+      } else if (timeOfDay.length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
-      } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length === 20) {
+      } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
         this.snackBar.open('Up to 20 times of day per task');
-      } else if (timeOfDay && !((this.taskForm.get('timesOfDay') as FormArray).value as string[]).includes(timeOfDay.trim().encodeFirebaseCharacters())) {
+      } else {
         (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim().encodeFirebaseCharacters()));
       }
 
@@ -177,10 +182,10 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.savingInProgress = false;
       this.initValues = task;
       this.taskForm.enable();
-      this.snackBar.open(success.details);
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
 
-    }, () => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    }, (error: HTTPError) => {
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
     });
 
@@ -222,11 +227,11 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.deletingInProgress = true;
 
         this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: HTTPSuccess) => {
-          this.snackBar.open(success.details);
+          this.snackBar.open(success.details || 'Your operation has been done 😉');
           this.deepResetForm();
           this.deletingInProgress = false;
         }, (error: HTTPError) => {
-          this.snackBar.open(error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂');
+          this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);
         });
       }

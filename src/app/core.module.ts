@@ -18,17 +18,14 @@ import {AuthService} from './auth/auth.service';
     {provide: FUNCTIONS_REGION, useValue: 'europe-west2'},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
     {provide: Window, useValue: window},
-    {provide: SETTINGS, useValue: !environment.production && environment.functions.dev ? {
-        host: 'localhost:8080',
-          ssl: false
-      } : undefined}
+    {provide: SETTINGS, useValue: !environment.production && environment.functions.dev ? environment.emulators.firestore : undefined}
   ]
 })
 export class CoreModule {
 
   constructor(private fns: AngularFireFunctions) {
     if (!environment.production && environment.functions.dev) {
-      this.fns.functions.useFunctionsEmulator(environment.functions.host);
+      this.fns.functions.useFunctionsEmulator(environment.emulators.functions.host);
     }
   }
 

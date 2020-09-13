@@ -10,7 +10,15 @@ export const environment = {
     authDomain: 'rem.grzeg.pl'
   },
   functions: {
-    dev: false,
-    host: null
+    dev: false
+  },
+  emulators: {
+    firestore: {
+      host: null,
+      ssl: false
+    },
+    functions: {
+      host: null
+    }
   }
 };

@@ -10,7 +10,15 @@ export const environment = {
     authDomain: 'dev.rem.grzeg.pl'
   },
   functions: {
-    dev: true,
-    host: 'http://localhost:5000'
+    dev: true
+  },
+  emulators: {
+    firestore: {
+      host: '192.168.0.15:8080',
+      ssl: false
+    },
+    functions: {
+      host: 'http://192.168.0.15:5000'
+    }
   }
 };
