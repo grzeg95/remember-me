@@ -1,5 +1,5 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {Observable, Subscription} from 'rxjs';
@@ -39,7 +39,8 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
-              private appService: AppService) {}
+              private appService: AppService,
+              private zone: NgZone) {}
 
   ngOnInit(): void {
     this.userService.runTimesOfDayOrder();
@@ -67,9 +68,13 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
     moveItemInArray(this.timesOfDayOrder, event.previousIndex, event.currentIndex);
 
     this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(event.currentIndex - event.previousIndex, curr, prev).subscribe((success) => {
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
+      this.zone.run(() => {
+        this.snackBar.open(success.details || 'Your operation has been done 😉');
+      });
     }, (error) => {
-      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      this.zone.run(() => {
+        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      });
     });
 
   }

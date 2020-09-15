@@ -1,4 +1,4 @@
-import {AfterViewChecked, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewChecked, ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
@@ -59,7 +59,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
               private authService: AuthService,
               private userService: UserService,
               private snackBar: MatSnackBar,
-              private appService: AppService) {
+              private appService: AppService,
+              private zone: NgZone) {
   }
 
   ngOnInit(): void {
@@ -142,11 +143,13 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.userService.todayName.getValue()}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
       checkbox.disabled = false;
     }).catch(() => {
-      if (!this.destroyed) {
-        checkbox.disabled = false;
-        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-        this.changeDay();
-      }
+      this.zone.run(() => {
+        if (!this.destroyed) {
+          checkbox.disabled = false;
+          this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+          this.changeDay();
+        }
+      });
     });
 
   }

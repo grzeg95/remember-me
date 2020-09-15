@@ -22,7 +22,7 @@
         <div *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];" class="form-check">
           <label
             class="form-check-label btn"
-            [class.disabled]="!(isConnected$ | async)"
+            [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
             [ngClass]="[inputRef.checked ? 'btn-outline-dark' : 'border']"
             [attr.for]="'dayOfTheWeek'+dayOfTheWeek">{{dayOfTheWeek | titlecase}}
             <input
@@ -47,7 +47,7 @@
           <label
             class="form-check-label btn"
             [ngClass]="'btn-outline-dark'"
-            [class.disabled]="!(isConnected$ | async)">{{decodeFirebaseCharacters(timeOfDay.value)}}
+            [class.disabled]="taskForm.disabled || !(isConnected$ | async)">{{decodeFirebaseCharacters(timeOfDay.value)}}
             <input
               [formGroupName]="i"
               type="checkbox"

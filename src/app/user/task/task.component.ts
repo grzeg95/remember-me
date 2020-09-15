@@ -1,5 +1,5 @@
 import {Location} from '@angular/common';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
@@ -71,7 +71,8 @@ export class TaskComponent implements OnInit, OnDestroy {
               public dialog: MatDialog,
               private snackBar: MatSnackBar,
               private appService: AppService,
-              private userService: UserService) {}
+              private userService: UserService,
+              private zone: NgZone) {}
 
   ngOnInit(): void {
     this.userService.runTimesOfDayOrder();
@@ -107,14 +108,14 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       const timeOfDay = timeOfDayValue.trim().encodeFirebaseCharacters();
 
-      if (this.taskForm.get('timesOfDay').get(timeOfDay)) {
+      if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
         this.snackBar.open('Enter new one');
       } else if (timeOfDay.length > 20) {
         this.snackBar.open('Enter time of day length from 1 to 20');
       } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
         this.snackBar.open('Up to 20 times of day per task');
       } else {
-        (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim().encodeFirebaseCharacters()));
+        (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
       }
 
     });
@@ -173,20 +174,22 @@ export class TaskComponent implements OnInit, OnDestroy {
       task,
       taskId: this.id
     }).subscribe((success: HTTPSuccess) => {
+      this.zone.run(() => {
+        if (success.created) {
+          this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task'] + '/' + success.taskId);
+        }
 
-      if (success.created) {
-        this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task'] + '/' + success.taskId);
-      }
-
-      this.id = success.taskId;
-      this.savingInProgress = false;
-      this.initValues = task;
-      this.taskForm.enable();
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
-
+        this.id = success.taskId;
+        this.savingInProgress = false;
+        this.initValues = task;
+        this.taskForm.enable();
+        this.snackBar.open(success.details || 'Your operation has been done 😉');
+      });
     }, (error: HTTPError) => {
-      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-      this.refreshTaskByParamId(this.id);
+      this.zone.run(() => {
+        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+        this.refreshTaskByParamId(this.id);
+      });
     });
 
   }
@@ -227,12 +230,16 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.deletingInProgress = true;
 
         this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: HTTPSuccess) => {
-          this.snackBar.open(success.details || 'Your operation has been done 😉');
-          this.deepResetForm();
-          this.deletingInProgress = false;
+          this.zone.run(() => {
+            this.snackBar.open(success.details || 'Your operation has been done 😉');
+            this.deepResetForm();
+            this.deletingInProgress = false;
+          });
         }, (error: HTTPError) => {
-          this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-          this.refreshTaskByParamId(this.id);
+          this.zone.run(() => {
+            this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+            this.refreshTaskByParamId(this.id);
+          });
         });
       }
 

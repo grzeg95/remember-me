@@ -61,9 +61,11 @@ export class AuthService {
     });
 
     interval(1000 * 60 * 10).subscribe(() => {
-      if (this.afAuth.auth.currentUser) {
-        this.afAuth.auth.currentUser.reload();
-      }
+      this.afAuth.currentUser.then((user) => {
+        if (user) {
+          user.reload();
+        }
+      });
     });
 
   }
@@ -91,7 +93,7 @@ export class AuthService {
   googleAuth(): void {
     this.whileLoginIn = true;
 
-    this.afAuth.auth.signInWithRedirect(new auth.GoogleAuthProvider()).then(() => {
+    this.afAuth.signInWithRedirect(new auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn = false;
         this.router.navigate(['/u/t']);
@@ -105,7 +107,7 @@ export class AuthService {
 
   signOut(): Promise<boolean> {
     this.userDoc$.unsubscribe();
-    return this.afAuth.auth.signOut().then(() => {
+    return this.afAuth.signOut().then(() => {
       this.userData = null;
       return this.router.navigate(['/']);
     });
