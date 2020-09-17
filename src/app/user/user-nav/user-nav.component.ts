@@ -4,7 +4,7 @@ import {RouterDict} from '../../app.constants';
 @Component({
   selector: 'app-nav-second',
   templateUrl: './user-nav.component.html',
-  styleUrls: ['./user-nav.component.sass'],
+  styleUrls: ['./user-nav.component.scss'],
   host: {class: 'app'}
 })
 export class UserNavComponent {

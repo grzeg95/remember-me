@@ -5,7 +5,7 @@ import {faListOl, faProjectDiagram, faSort} from '@fortawesome/free-solid-svg-ic
 @Component({
   selector: 'app-guest',
   templateUrl: './guest.component.html',
-  styleUrls: ['./guest.component.sass'],
+  styleUrls: ['./guest.component.scss'],
   host: {class: 'app'}
 })
 export class GuestComponent {

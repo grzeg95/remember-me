@@ -4,6 +4,7 @@ import {UserService} from './user.service';
 @Component({
   selector: 'app-user',
   templateUrl: './user.component.html',
+  styleUrls: ['./user.component.scss'],
   host: {class: 'app'}
 })
 export class UserComponent implements OnInit, OnDestroy {

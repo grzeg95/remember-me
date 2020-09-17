@@ -19,7 +19,7 @@ import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of
 @Component({
   selector: 'app-task',
   templateUrl: './task.component.html',
-  styleUrls: ['./task.component.sass'],
+  styleUrls: ['./task.component.scss'],
   host: {class: 'app'}
 })
 export class TaskComponent implements OnInit, OnDestroy {

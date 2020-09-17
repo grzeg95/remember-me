@@ -9,7 +9,7 @@ import {UserService} from '../../user.service';
 @Component({
   selector: 'app-task-dialog-time-of-day',
   templateUrl: 'task-dialog-time-of-day.component.html',
-  styleUrls: ['task-dialog-time-of-day.component.sass'],
+  styleUrls: ['task-dialog-time-of-day.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
 export class TaskDialogTimeOfDay implements OnInit, OnDestroy {

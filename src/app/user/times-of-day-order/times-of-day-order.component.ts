@@ -11,7 +11,7 @@ import {UserService} from '../user.service';
 @Component({
   selector: 'app-times-of-day-order',
   templateUrl: './times-of-day-order.component.html',
-  styleUrls: ['./times-of-day-order.component.sass'],
+  styleUrls: ['./times-of-day-order.component.scss'],
   host: {class: 'app'}
 })
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
