@@ -1,78 +1,75 @@
-// app-task
-:host {
+.container {
   max-width: 45rem !important; // sass-lint:disable-line no-important
   margin: auto;
 
-  .container {
-    .col {
-      background-color: white;
+  .col {
+    background-color: white;
 
-      .form-check {
-        display: inline;
-        padding: 0;
-      }
+    .form-check {
+      display: inline;
+      padding: 0;
+    }
 
-      .form-group {
-        width: calc(100% - 2rem);
-        margin: 2rem 1rem 1rem;
-      }
+    .form-group {
+      width: calc(100% - 2rem);
+      margin: 2rem 1rem 1rem;
+    }
 
-      .days-of-the-week {
-        margin: 1rem 1rem 2rem;
-      }
+    .days-of-the-week {
+      margin: 1rem 1rem 2rem;
+    }
 
-      .times-of-day {
-        margin: 1rem 1rem 0.5rem;
-      }
+    .times-of-day {
+      margin: 1rem 1rem 0.5rem;
+    }
 
-      .actions {
-        margin-top: 4px;
-
-        .btn {
-          margin: 0.5rem;
-        }
-      }
-
-      hr {
-        margin-bottom: calc(1rem - 4px);
-      }
-
-      input {
-        width: 100%;
-      }
+    .actions {
+      margin-top: 4px;
 
       .btn {
-        margin: 0.25rem;
-
-        .mat-progress-bar {
-          height: 0.125rem;
-          transition: opacity 250ms linear;
-          opacity: 0;
-        }
+        margin: 0.5rem;
       }
+    }
 
-      .btn-outline-dark:not(:disabled):not(.disabled):active,
-      .btn-outline-dark:not(:disabled):not(.disabled).active,
-      .show > .btn-outline-dark.dropdown-toggle {
-        border-color: #6b7580;
-        background-color: #ffffff;
-        color: #343a40;
-      }
+    hr {
+      margin-bottom: calc(1rem - 4px);
+    }
 
-      .btn-outline-dark:hover {
-        border-color: #343a40;
-        background-color: #ffffff;
-        color: #343a40;
-      }
+    input {
+      width: 100%;
+    }
 
-      .error {
-        color: #f44336 !important; // sass-lint:disable-line no-important
-      }
+    .btn {
+      margin: 0.25rem;
 
-      .btn:focus, .btn.focus {
-        outline: 0;
-        box-shadow: none;
+      .mat-progress-bar {
+        height: 0.125rem;
+        transition: opacity 250ms linear;
+        opacity: 0;
       }
+    }
+
+    .btn-outline-dark:not(:disabled):not(.disabled):active,
+    .btn-outline-dark:not(:disabled):not(.disabled).active,
+    .show > .btn-outline-dark.dropdown-toggle {
+      border-color: #6b7580;
+      background-color: #ffffff;
+      color: #343a40;
+    }
+
+    .btn-outline-dark:hover {
+      border-color: #343a40;
+      background-color: #ffffff;
+      color: #343a40;
+    }
+
+    .error {
+      color: #f44336 !important; // sass-lint:disable-line no-important
+    }
+
+    .btn:focus, .btn.focus {
+      outline: 0;
+      box-shadow: none;
     }
   }
 }

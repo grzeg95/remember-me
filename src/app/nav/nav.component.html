@@ -11,7 +11,7 @@
         <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
           <button [disabled]="!(isConnected$ | async)" class="btn btn-primary" type="button" (click)="auth()">
             <fa-icon [icon]="faUserCircle"></fa-icon>
-            <span>  Log In</span>
+            <span> Log In</span>
           </button>
         </div>
 
@@ -29,7 +29,7 @@
             </div>
           </div>
           <img *ngIf="userPhoto" [src]="userPhoto"/>
-          <div *ngIf="!userPhoto" class="noPhoto"><fa-icon [icon]="faUser"></fa-icon></div>
+          <div *ngIf="!userPhoto" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
         </div>
       </div>
 

@@ -1,33 +1,30 @@
 @import '../../node_modules/@angular/material/prebuilt-themes/indigo-pink.css';
 
 :root {
-  --active-color: black;
-  --inactive-color: #828282;
-  --separator-color: #e0e0e0;
-  --separator-border: 1px solid var(--separator-color);
+  --color: black;
+  --color-active: var(--color);
+  --color-inactive: #828282;
+  --color-separator: #e0e0e0;
+  --border-separator: 1px solid var(--color-separator);
+  --color-button-success-background: #12ab49;
+  --color-button-success-border: #0e6b30;
 }
 
 body {
-  color: #212121;
+  color: var(--color);
+  max-width: 71.25rem !important; // sass-lint:disable-line no-important
+  margin: auto;
+}
 
-  .app {
-    display: block;
+.button[disabled], input[disabled], .disabled {
+  cursor: default;
+  pointer-events: none;
+}
 
-    .container {
-      background-color: white;
-    }
-
-    .btn[disabled], input[disabled], .disabled {
-      cursor: default;
-      pointer-events: none;
-    }
-
-    .btn {
-      &:focus, &.focus {
-        outline: 0;
-        box-shadow: none;
-      }
-    }
+button {
+  &:focus, &.focus {
+    outline: 0;
+    box-shadow: none;
   }
 }
 

@@ -7,8 +7,7 @@ import {AuthService} from '../auth/auth.service';
 @Component({
   selector: 'app-nav',
   templateUrl: './nav.component.html',
-  styleUrls: ['./nav.component.scss'],
-  host: {class: 'app'}
+  styleUrls: ['./nav.component.scss']
 })
 export class NavComponent {
 

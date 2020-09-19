@@ -10,8 +10,7 @@ import {UserService} from '../user.service';
 @Component({
   selector: 'app-tasks',
   templateUrl: './tasks.component.html',
-  styleUrls: ['./tasks.component.scss'],
-  host: {class: 'app'}
+  styleUrls: ['./tasks.component.scss']
 })
 export class TasksComponent implements OnInit, OnDestroy {
 

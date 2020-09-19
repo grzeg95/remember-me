@@ -1,26 +1,19 @@
-// app-times-of-day-order
-:host {
+.container {
   max-width: 33.75rem !important; // sass-lint:disable-line no-important
-  margin: auto;
+  margin: 0 auto 1rem;
+  padding: 1rem;
 
-  .container {
-    margin: 0 auto 1rem;
-    padding: 1rem;
+  .col .row {
+    &.message {
+      padding: 1rem;
+    }
 
-    .col {
-      .row {
-        &.message {
-          padding: 1rem;
-        }
+    &.title {
+      margin-bottom: 1rem;
+    }
 
-        &.title {
-          margin-bottom: 1rem;
-        }
-
-        .add-task {
-          text-align: right;
-        }
-      }
+    .add-task {
+      text-align: right;
     }
   }
 }
@@ -35,20 +28,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-top: var(--separator-border);
+  border-top: var(--border-separator);
   background: white;
-  color: #212121;
   font-size: 0.95rem;
   cursor: move;
 
-  &:hover {
-    fa-icon {
-      color: black;
-    }
+  &:hover fa-icon {
+    color: var(--color-active);
   }
 
   fa-icon {
-    color: #828282;
+    color: var(--color-inactive);
   }
 }
 
