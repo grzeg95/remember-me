@@ -153,8 +153,8 @@ export class TodayComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   }
 
-  decodeFirebaseCharacters(str: string): string {
-    return str.decodeFirebaseCharacters();
+  decodeFirebaseSpecialCharacters(str: string): string {
+    return str.decodeFirebaseSpecialCharacters();
   }
 
 }

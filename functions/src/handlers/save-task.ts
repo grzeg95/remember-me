@@ -345,12 +345,12 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // data.task.timesOfDay contains other than string
     testRequirement(typeof timeOfDay !== 'string');
 
-    const timeOfDayTrim = (timeOfDay as string).trim().encodeFirebaseCharacters().decodeFirebaseCharacters();
+    const timeOfDayTrim = (timeOfDay as string).trim().encodeFirebaseSpecialCharacters().decodeFirebaseSpecialCharacters();
 
     // data.task.timesOfDay contains string that trim is not in [1, 20]
     testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
 
-    return timeOfDayTrim.encodeFirebaseCharacters();
+    return timeOfDayTrim.encodeFirebaseSpecialCharacters();
 
   });
 

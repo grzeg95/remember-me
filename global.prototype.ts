@@ -18,8 +18,8 @@ declare global {
   }
 
   interface String {
-    encodeFirebaseCharacters(): string;
-    decodeFirebaseCharacters(): string;
+    encodeFirebaseSpecialCharacters(): string;
+    decodeFirebaseSpecialCharacters(): string;
   }
 }
 
@@ -97,7 +97,7 @@ Array.prototype.toSet = function(): Set<any> {
   return new Set(this);
 };
 
-const encodeReplace: {[p: string]: string} = {
+const firebaseSpecialCharactersEncodeMap: {[p: string]: string} = {
   '.': '%2E',
   '$': '%24',
   '[': '%5B',
@@ -106,7 +106,7 @@ const encodeReplace: {[p: string]: string} = {
   '/': '%2F'
 };
 
-const decodeReplace: {[p: string]: string} = {
+const firebaseSpecialCharactersDecodeMap: {[p: string]: string} = {
   '%2E': '.',
   '%24': '$',
   '%5B': '[',
@@ -115,17 +115,17 @@ const decodeReplace: {[p: string]: string} = {
   '%2F': '/'
 };
 
-String.prototype.encodeFirebaseCharacters = function(): string {
-  return ([...this] as string[]).map((char) => encodeReplace[char] || char).join('');
+String.prototype.encodeFirebaseSpecialCharacters = function(): string {
+  return ([...this] as string[]).map((char) => firebaseSpecialCharactersEncodeMap[char] || char).join('');
 };
 
-String.prototype.decodeFirebaseCharacters = function(): string {
+String.prototype.decodeFirebaseSpecialCharacters = function(): string {
 
   let res: string = this as string;
 
-  for (const char in decodeReplace) {
-    if (decodeReplace.hasOwnProperty(char)) {
-      res = res.replace(new RegExp(char, 'g'), decodeReplace[char]);
+  for (const char in firebaseSpecialCharactersDecodeMap) {
+    if (firebaseSpecialCharactersDecodeMap.hasOwnProperty(char)) {
+      res = res.replace(new RegExp(char, 'g'), firebaseSpecialCharactersDecodeMap[char]);
     }
   }
 

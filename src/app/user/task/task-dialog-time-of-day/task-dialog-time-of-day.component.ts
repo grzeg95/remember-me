@@ -50,7 +50,7 @@ export class TaskDialogTimeOfDay implements OnInit, OnDestroy {
 
       for (const x of timesOfDayOrderNext) {
         if (timesOfDayOrderSet.has(x.id)) {
-          timesOfDayOrder.push(x.id.decodeFirebaseCharacters());
+          timesOfDayOrder.push(x.id.decodeFirebaseSpecialCharacters());
           timesOfDayOrderSet.delete(x.id);
         }
       }

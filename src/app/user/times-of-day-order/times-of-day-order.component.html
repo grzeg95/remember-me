@@ -41,7 +41,7 @@
             class="times-of-day-box"
             [class.disabled]="!(isConnected$ | async)"
             *ngFor="let item of timesOfDayOrder; let i = index">
-            <div class="times-of-day-item">{{ decodeFirebaseCharacters(item.id) }}</div>
+            <div class="times-of-day-item">{{ decodeFirebaseSpecialCharacters(item.id) }}</div>
             <fa-icon class="times-of-day-item-icon" [icon]="faGripLines"></fa-icon>
           </div>
         </div>

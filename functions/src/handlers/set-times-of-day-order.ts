@@ -198,8 +198,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     * Read all data
     * */
 
-    const a = await getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseCharacters().encodeFirebaseCharacters(), true);
-    const b = await getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseCharacters().encodeFirebaseCharacters(), true);
+    const a = await getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
+    const b = await getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
 
     // siblings a <-> b
     if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {

@@ -47,7 +47,7 @@
           <label
             class="form-check-label btn"
             [ngClass]="'btn-outline-dark'"
-            [class.disabled]="taskForm.disabled || !(isConnected$ | async)">{{decodeFirebaseCharacters(timeOfDay.value)}}
+            [class.disabled]="taskForm.disabled || !(isConnected$ | async)">{{decodeFirebaseSpecialCharacters(timeOfDay.value)}}
             <input
               [formGroupName]="i"
               type="checkbox"

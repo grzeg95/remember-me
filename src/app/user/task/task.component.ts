@@ -105,7 +105,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       this.taskForm.get('timesOfDay').markAsDirty();
 
-      const timeOfDay = timeOfDayValue.trim().encodeFirebaseCharacters();
+      const timeOfDay = timeOfDayValue.trim().encodeFirebaseSpecialCharacters();
 
       if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
         this.snackBar.open('Enter new one');
@@ -276,8 +276,8 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.initValues.timesOfDay.toSet().hasOnly(rawValue['timesOfDay'].toSet());
   }
 
-  decodeFirebaseCharacters(str: string): string {
-    return str.decodeFirebaseCharacters();
+  decodeFirebaseSpecialCharacters(str: string): string {
+    return str.decodeFirebaseSpecialCharacters();
   }
 
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {
