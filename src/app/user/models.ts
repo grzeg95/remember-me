@@ -4,10 +4,34 @@ export type DaysOfTheWeek = {
   [key in Day]: boolean;
 };
 
-export interface Task {
+export interface ITask {
   description: string;
   daysOfTheWeek: DaysOfTheWeek;
   timesOfDay: string[];
+}
+
+export class Task {
+  description: string;
+  daysOfTheWeek: DaysOfTheWeek;
+  timesOfDay: string[];
+
+  constructor(iTask: ITask) {
+    this.description = iTask.description;
+    this.daysOfTheWeek = iTask.daysOfTheWeek;
+    this.timesOfDay = iTask.timesOfDay;
+  }
+
+  isEquals(otherITask: ITask): boolean {
+    return this.description.trim() === otherITask.description.trim() &&
+      this.timesOfDay.toSet().hasOnly(otherITask.timesOfDay.toSet()) &&
+      this.daysOfTheWeek.mon === otherITask.daysOfTheWeek.mon &&
+      this.daysOfTheWeek.tue === otherITask.daysOfTheWeek.tue &&
+      this.daysOfTheWeek.wed === otherITask.daysOfTheWeek.wed &&
+      this.daysOfTheWeek.thu === otherITask.daysOfTheWeek.thu &&
+      this.daysOfTheWeek.fri === otherITask.daysOfTheWeek.fri &&
+      this.daysOfTheWeek.sat === otherITask.daysOfTheWeek.sat &&
+      this.daysOfTheWeek.sun === otherITask.daysOfTheWeek.sun;
+  }
 }
 
 export interface TodayItem {

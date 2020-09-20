@@ -6,12 +6,11 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
-import deepEqual from 'deep-equal';
 import {Observable, Subscription} from 'rxjs';
 import '../../../../global.prototype';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
-import {HTTPError, HTTPSuccess, Task} from '../models';
+import {HTTPError, HTTPSuccess, ITask, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of-day.component';
@@ -33,7 +32,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   faCheckCircle = faCheckCircle;
   faPlus = faPlus;
-  initValues: Task = {
+  initValues: Task = new Task({
     daysOfTheWeek: {
       mon: false,
       tue: false,
@@ -45,7 +44,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     },
     description: '',
     timesOfDay: []
-  };
+  });
   id = 'null';
   taskForm: FormGroup = new FormGroup({
     description: new FormControl('', TaskComponent.descriptionValidator),
@@ -137,13 +136,13 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       this.id = taskId;
 
-      this.userService.getTaskById$(this.id).subscribe((task) => {
-        if (typeof task === 'undefined') {
+      this.userService.getTaskById$(this.id).subscribe((iTask) => {
+        if (typeof iTask === 'undefined') {
           this.resetId();
           this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
           this.taskForm.enable();
-        } else if (task) {
-          this.setAll(task);
+        } else if (iTask) {
+          this.setAll(iTask);
         }
         this.savingInProgress = false;
       });
@@ -157,20 +156,20 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   saveTask(): void {
 
-    if (this.isDeepEqual()) {
+    if (this.nothingChanged()) {
       return;
     }
 
     this.taskForm.disable();
     this.savingInProgress = true;
 
-    const task = this.taskForm.getRawValue() as Task;
-    const trimDescription = task.description.trim();
-    task.description = trimDescription;
+    const iTask = this.taskForm.getRawValue() as ITask;
+    const trimDescription = iTask.description.trim();
+    iTask.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
 
     this.fns.httpsCallable('saveTask')({
-      task,
+      task: iTask,
       taskId: this.id
     }).subscribe((success: HTTPSuccess) => {
       this.zone.run(() => {
@@ -180,17 +179,22 @@ export class TaskComponent implements OnInit, OnDestroy {
 
         this.id = success.taskId;
         this.savingInProgress = false;
-        this.initValues = task;
+        this.initValues = new Task(iTask);
         this.taskForm.enable();
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
     }, (error: HTTPError) => {
       this.zone.run(() => {
+        console.log(error);
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         this.refreshTaskByParamId(this.id);
       });
     });
 
+  }
+
+  nothingChanged(): boolean {
+    return this.initValues.isEquals(this.taskForm.getRawValue() as ITask);
   }
 
   deepResetForm(): void {
@@ -216,6 +220,20 @@ export class TaskComponent implements OnInit, OnDestroy {
     });
 
     (this.taskForm.get('timesOfDay') as FormArray).clear();
+
+    this.initValues = new Task({
+      daysOfTheWeek: {
+        mon: false,
+        tue: false,
+        wed: false,
+        thu: false,
+        fri: false,
+        sat: false,
+        sun: false
+      },
+      description: '',
+      timesOfDay: []
+    });
   }
 
   deleteTask(): void {
@@ -246,15 +264,15 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   }
 
-  setAll(task: Task): void {
+  setAll(iTask: ITask): void {
 
     this.restartForm();
     this.taskForm.disable();
-    this.initValues = task;
-    this.taskForm.get('description').setValue(task.description);
-    this.taskForm.get('daysOfTheWeek').setValue(task.daysOfTheWeek);
+    this.initValues = new Task(iTask);
+    this.taskForm.get('description').setValue(iTask.description);
+    this.taskForm.get('daysOfTheWeek').setValue(iTask.daysOfTheWeek);
 
-    (task.timesOfDay as string[]).forEach((timeOfDay) => {
+    (iTask.timesOfDay as string[]).forEach((timeOfDay) => {
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
     });
 
@@ -266,14 +284,6 @@ export class TaskComponent implements OnInit, OnDestroy {
     $event.preventDefault();
     (this.taskForm.get('timesOfDay') as FormArray).markAsDirty();
     (this.taskForm.get('timesOfDay') as FormArray).removeAt(index);
-  }
-
-  isDeepEqual(): boolean {
-    const rawValue = this.taskForm.getRawValue();
-
-    return this.initValues.description.length === rawValue['description'].trim().length &&
-      deepEqual(this.initValues.daysOfTheWeek, rawValue['daysOfTheWeek']) &&
-      this.initValues.timesOfDay.toSet().hasOnly(rawValue['timesOfDay'].toSet());
   }
 
   decodeFirebaseSpecialCharacters(str: string): string {

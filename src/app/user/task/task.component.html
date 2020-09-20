@@ -68,23 +68,22 @@
         <button
           class="btn btn-primary border-primary shadow"
           type="submit"
-          [disabled]="taskForm.disabled || taskForm.invalid || !(isConnected$ | async) || isDeepEqual()"
-          (click)="saveTask()">{{ idIsNull() ? 'Create' : 'Save' }}&nbsp;<fa-icon [icon]="faCheckCircle"></fa-icon>
-        </button>
+          [disabled]="taskForm.disabled || taskForm.invalid || !(isConnected$ | async) || nothingChanged()"
+          (click)="saveTask()">
+            {{ idIsNull() ? 'Create' : 'Save' }}
+            <fa-icon [icon]="faCheckCircle"></fa-icon></button>
         <button
           *ngIf="!idIsNull()"
           class="btn btn-secondary border rounded-0 shadow"
           type="button"
           [disabled]="taskForm.disabled || !(isConnected$ | async)"
-          (click)="deepResetForm()">New
-        </button>
+          (click)="deepResetForm()">New</button>
         <button
           *ngIf="!idIsNull()"
           class="btn btn-outline-danger border rounded-0"
           type="button"
           [disabled]="taskForm.disabled || !(isConnected$ | async)"
-          (click)="deleteTask()">Delete
-        </button>
+          (click)="deleteTask()">Delete</button>
       </div>
     </div>
   </div>
