@@ -1,7 +1,7 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="todayItemsView.length === 0; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="(todayItemsView$ | async)?.length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
       <div class="row message" *ngIf="((todayFirstLoading$ | async) || (timesOfDayFirstLoading$ | async)) && (isConnected$ | async); else onOneExists">
@@ -31,7 +31,7 @@
 
     <ng-template #showItems>
 
-      <div class="time-of-day-row" *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
+      <div class="time-of-day-row" *ngFor="let todayItem of (todayItemsView$ | async); let i = index; trackBy: trackByTodayItems">
 
         <div class="row">
           <div class="col">

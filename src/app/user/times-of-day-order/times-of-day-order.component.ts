@@ -1,8 +1,8 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {Component, NgZone, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
-import {Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {TimeOfDay} from '../models';
@@ -13,7 +13,7 @@ import {UserService} from '../user.service';
   templateUrl: './times-of-day-order.component.html',
   styleUrls: ['./times-of-day-order.component.scss']
 })
-export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
+export class TimesOfDayOrderComponent implements OnInit {
 
   set setTimesOfDayOrderSub(setTimesOfDayOrderSub: Subscription) {
     this.userService.setTimesOfDayOrderSub = setTimesOfDayOrderSub;
@@ -31,10 +31,12 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
     return this.appService.isConnected$;
   }
 
+  get timesOfDayOrder$(): BehaviorSubject<TimeOfDay[]> {
+    return this.userService.timesOfDayOrder$;
+  }
+
   faGripLines = faGripLines;
   RouterDict = RouterDict;
-  timesOfDayOrder: TimeOfDay[] = [];
-  timesOfDayOrderSub: Subscription;
 
   constructor(private userService: UserService,
               private snackBar: MatSnackBar,
@@ -43,12 +45,6 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.userService.runTimesOfDayOrder();
-    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$
-      .subscribe((timesOfDayOrder) => this.timesOfDayOrder = timesOfDayOrder);
-  }
-
-  ngOnDestroy(): void {
-    this.timesOfDayOrderSub.unsubscribe();
   }
 
   decodeFirebaseSpecialCharacters(str: string): string {
@@ -61,10 +57,11 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const prev = this.timesOfDayOrder[event.previousIndex].id;
-    const curr = this.timesOfDayOrder[event.currentIndex].id;
+    const timesOfDayOrder = this.timesOfDayOrder$.getValue();
+    const prev = timesOfDayOrder[event.previousIndex].id;
+    const curr = timesOfDayOrder[event.currentIndex].id;
 
-    moveItemInArray(this.timesOfDayOrder, event.previousIndex, event.currentIndex);
+    moveItemInArray(timesOfDayOrder, event.previousIndex, event.currentIndex);
 
     this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(event.currentIndex - event.previousIndex, curr, prev).subscribe((success) => {
       this.zone.run(() => {

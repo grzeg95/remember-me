@@ -1,7 +1,7 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="tasksView.length === 0; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="(tasksView$ | async).length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
       <div class="row message" *ngIf="((tasksFirstLoading$ | async) || (timesOfDayOrderFirstLoading$ | async)) && (isConnected$ | async); else onOneExists">
@@ -42,7 +42,7 @@
               </tr>
             </thead>
             <tbody id="tasksTable">
-              <tr *ngFor="let task of tasksView">
+              <tr *ngFor="let task of (tasksView$ | async)">
                 <td>{{ task.description }}</td>
                 <td>{{ task.daysOfTheWeek }}</td>
                 <td>{{ getTimesOfDay(task.timesOfDay).join(', ') }}</td>
@@ -57,7 +57,7 @@
         </div>
       </div>
 
-      <div *ngIf="tasksView.length !== 0" class="row">
+      <div *ngIf="(tasksView$ | async).length !== 0" class="row">
         <div class="add-task-button">
           <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
         </div>

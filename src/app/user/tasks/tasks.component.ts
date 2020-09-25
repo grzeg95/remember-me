@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
-import {Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import '../../../../global.prototype';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
@@ -32,9 +32,8 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   RouterDict = RouterDict;
   faEdit = faEdit;
-  tasksView: TasksListItem[] = [];
-  tasksSub: Subscription;
-  timesOfDayOrderSub: Subscription;
+  tasksView$: BehaviorSubject<TasksListItem[]> = new BehaviorSubject([]);
+  tasksViewSub: Subscription = new Subscription();
 
   constructor(private userService: UserService,
               private appService: AppService) {}
@@ -43,24 +42,21 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.userService.runTimesOfDayOrder();
     this.userService.runTasks();
 
-    this.tasksSub = this.userService.tasks$.subscribe((tasks) => {
-      this.updateTasksViews(tasks, this.userService.timesOfDayOrder.getValue().map((val) => val.id));
-    });
-
-    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrder) => {
-      this.updateTasksViews(this.userService.tasks.getValue(), timesOfDayOrder.map((val) => val.id));
-    });
+    this.tasksViewSub.add(this.userService.tasks$.subscribe(() => this.updateTasksViews()));
+    this.tasksViewSub.add(this.userService.timesOfDayOrder$.subscribe(() => this.updateTasksViews()));
   }
 
   ngOnDestroy(): void {
-    this.tasksSub.unsubscribe();
-    this.timesOfDayOrderSub.unsubscribe();
+    this.tasksViewSub.unsubscribe();
   }
 
-  updateTasksViews(tasks: TasksListItem[], timesOfDayOrder: string[]): void {
+  updateTasksViews(): void {
+
+    const tasks = this.userService.tasks$.getValue();
+    const timesOfDayOrder = this.userService.timesOfDayOrder$.getValue().map((val) => val.id);
 
     const timesOfDayOrderSet = timesOfDayOrder.toSet();
-    this.tasksView = tasks.map((taskListItem) => {
+    this.tasksView$.next(tasks.map((taskListItem) => {
 
       const timesOfDayOrderSetIntersectionTaskListItemTimesOfDay = timesOfDayOrderSet.intersection((taskListItem.timesOfDay as string[]).toSet());
       const timesOfDayOrderTmp = [];
@@ -74,7 +70,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
       taskListItem.timesOfDay = timesOfDayOrderTmp;
       return taskListItem;
-    });
+    }));
   }
 
   getTimesOfDay(timesOfDay: string[]): string[] {

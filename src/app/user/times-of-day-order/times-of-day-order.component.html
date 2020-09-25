@@ -2,7 +2,7 @@
 
   <div class="col" [ngClass]="{'disabled': setTimesOfDayOrderSub && !setTimesOfDayOrderSub.closed}">
 
-    <ng-template *ngIf="timesOfDayOrder.length === 0; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="(timesOfDayOrder$ | async).length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
       <div *ngIf="(timesOfDayOrderFirstLoading$ | async) && (isConnected$ | async); else onOneExists" class="row message">
@@ -40,7 +40,7 @@
             cdkDrag
             class="times-of-day-box"
             [class.disabled]="!(isConnected$ | async)"
-            *ngFor="let item of timesOfDayOrder; let i = index">
+            *ngFor="let item of (timesOfDayOrder$ | async); let i = index">
             <div class="times-of-day-item">{{ decodeFirebaseSpecialCharacters(item.id) }}</div>
             <fa-icon class="times-of-day-item-icon" [icon]="faGripLines"></fa-icon>
           </div>
