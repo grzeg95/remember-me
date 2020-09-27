@@ -63,9 +63,6 @@ node_modules/
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
-/auth0-server/node_modules
-/auth0-server/remember-me-3-firebase-adminsdk.json
-
 # compiled output
 /public
 /tmp
@@ -115,3 +112,6 @@ Thumbs.db
 **/*.css
 **/*.css.map
 **/*.min.css
+
+# Firestore backup
+/firestore-backup
