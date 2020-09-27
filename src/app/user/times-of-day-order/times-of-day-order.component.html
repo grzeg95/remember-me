@@ -32,17 +32,14 @@
 
     <ng-template #showItems>
       <div class="row">
-        <span class="times-of-day-row-content title">Change times of day order</span>
-      </div>
-      <div class="row">
-        <div [cdkDropListDisabled]="!(isConnected$ | async)" cdkDropList class="times-of-day-list" (cdkDropListDropped)="drop($event)">
-          <div
-            cdkDrag
-            class="times-of-day-box"
-            [class.disabled]="!(isConnected$ | async)"
-            *ngFor="let item of (timesOfDayOrder$ | async); let i = index">
-            <div class="times-of-day-item">{{ decodeFirebaseSpecialCharacters(item.id) }}</div>
-            <fa-icon class="times-of-day-item-icon" [icon]="faGripLines"></fa-icon>
+        <div class="drag-container">
+          <div class="drag-container-header mat-header-cell">Change times of day order</div>
+
+          <div [cdkDropListDisabled]="!(isConnected$ | async)" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
+            <div cdkDrag class="drag-item mat-cell" [class.disabled]="!(isConnected$ | async)" *ngFor="let item of (timesOfDayOrder$ | async); let i = index">
+              <span class="drag-span">{{ decodeFirebaseSpecialCharacters(item.id) }}</span>
+              <fa-icon class="drag-icon" [icon]="faGripLines"></fa-icon>
+            </div>
           </div>
         </div>
       </div>

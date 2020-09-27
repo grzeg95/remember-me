@@ -1,7 +1,7 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="(tasksView$ | async).length === 0; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="(tasks$ | async).length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
       <div class="row message" *ngIf="((tasksFirstLoading$ | async) || (timesOfDayOrderFirstLoading$ | async)) && (isConnected$ | async); else onOneExists">
@@ -30,34 +30,36 @@
     </ng-template>
 
     <ng-template #showItems>
-      <div class="row list">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th scope="col">Description</th>
-                <th scope="col">Days</th>
-                <th scope="col">Times of day</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody id="tasksTable">
-              <tr *ngFor="let task of (tasksView$ | async)">
-                <td>{{ task.description }}</td>
-                <td>{{ task.daysOfTheWeek }}</td>
-                <td>{{ getTimesOfDay(task.timesOfDay).join(', ') }}</td>
-                <td>
-                  <div class="pseudo-button" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], task.id]">
-                    <fa-icon [icon]="faEdit"></fa-icon>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="row">
+        <table mat-table [dataSource]="tasks$ | async" *ngIf="timesOfDayOrder$ | async; let timesOfDayOrder">
 
-      <div *ngIf="(tasksView$ | async).length !== 0" class="row">
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let element">{{ element.description }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="daysOfTheWeek">
+            <th mat-header-cell *matHeaderCellDef>Days</th>
+            <td mat-cell *matCellDef="let element">{{ element.daysOfTheWeek }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="timesOfDays">
+            <th mat-header-cell *matHeaderCellDef>Times of day</th>
+            <td mat-cell *matCellDef="let element">{{ getTimesOfDay(timesOfDayOrder, element.timesOfDay).join(', ') }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="edit">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell class="edit-button" *matCellDef="let element" [routerLink]="['/', RouterDict['user'],  RouterDict['task'], element.id]">
+              <fa-icon [icon]="faEdit"></fa-icon>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        </table>
+
         <div class="add-task-button">
           <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
         </div>
