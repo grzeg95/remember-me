@@ -5,85 +5,70 @@
         <mat-form-field class="form-group" floatLabel="always">
           <mat-label>Task description</mat-label>
           <input autocomplete="off" matInput formControlName="description" [placeholder]="'Your task description'">
-          <mat-error
-            *ngIf="!taskForm.disabled && !taskForm.get('description').valid && (taskForm.get('description').dirty || taskForm.get('description').touched)">
-            Enter description from 4 to 40 characters
-          </mat-error>
+          <mat-error *ngIf="!taskForm.disabled && !description.valid && (description.dirty || description.touched)">Enter description from 4 to 40 characters</mat-error>
         </mat-form-field>
       </div>
     </div>
-    <small
-      class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && !taskForm.get('daysOfTheWeek').valid && taskForm.get('daysOfTheWeek').dirty ? 'error' : ''"
-    >Mark days</small>
+    <small class="form-text text-center text-muted"
+           [ngClass]="!taskForm.disabled && !daysOfTheWeek.valid && daysOfTheWeek.dirty ? 'error' : ''">Mark days</small>
     <div class="row">
       <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
-
-        <div *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];" class="form-check">
-          <label
-            class="form-check-label btn"
-            [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
-            [ngClass]="[inputRef.checked ? 'btn-outline-dark' : 'border']"
-            [attr.for]="'dayOfTheWeek'+dayOfTheWeek">{{dayOfTheWeek | titlecase}}
-            <input
-              #inputRef
-              type="checkbox"
-              class="form-check-input d-none"
-              [attr.id]="'dayOfTheWeek'+dayOfTheWeek"
-              [formControlName]="dayOfTheWeek"
-              [checked]="taskForm.get('daysOfTheWeek').get(dayOfTheWeek).value == true">
-          </label>
-        </div>
-
+        <mat-slide-toggle
+          *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];"
+          [checked]="daysOfTheWeek.get(dayOfTheWeek).value == true"
+          [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
+          [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
       </div>
     </div>
-    <small
-      class="form-text text-center text-muted"
-      [ngClass]="!taskForm.disabled && !taskForm.get('timesOfDay').valid && taskForm.get('timesOfDay').dirty ? 'error' : ''">Add time of day</small>
-    <small class="form-text text-center text-muted">To remove click one</small>
     <div class="row">
-      <div formArrayName="timesOfDay" class="col text-center times-of-day">
-        <div *ngFor="let timeOfDay of timesOfDay; let i = index" class="form-check">
-          <label
-            class="form-check-label btn"
-            [ngClass]="'btn-outline-dark'"
-            [class.disabled]="taskForm.disabled || !(isConnected$ | async)">{{decodeFirebaseSpecialCharacters(timeOfDay.value)}}
-            <input
-              [formGroupName]="i"
-              type="checkbox"
-              class="form-check-input d-none"
-              [value]="timeOfDay.value"
-              (click)="removeTimeOfDay($event, i)">
-          </label>
-        </div>
-        <button [disabled]="taskForm.disabled || !(isConnected$ | async)" class="btn btn-secondary" (click)="openTimeOfDayDialog()">
-          <fa-icon [icon]="faPlus"></fa-icon>
-        </button>
-      </div>
+      <small class="form-text text-center text-muted error"
+             *ngIf="!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty">Enter at leas one time of day</small>
+      <mat-form-field class="form-group">
+        <mat-chip-list #chipList>
+          <div formArrayName="timesOfDay">
+            <mat-chip *ngFor="let timeOfDay of timesOfDay.controls; let i = index"
+                      [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
+                      [formGroupName]="i"
+                      [value]="timeOfDay.value"
+                      [removable]="true"
+                      [selected]="false"
+                      (selectionChange)="$event.source.deselect()"
+                      (removed)="removeTimeOfDay(i)">{{ decodeFirebaseSpecialCharacters(timeOfDay.value) }}
+              <mat-icon class="material-icons" matChipRemove>cancel</mat-icon>
+            </mat-chip>
+          </div>
+          <input autocomplete="off"
+                 formControlName="timeOfDay"
+                 matInput
+                 #input
+                 [matAutocomplete]="auto"
+                 [matChipInputFor]="chipList"
+                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 (matChipInputTokenEnd)="add($event)"
+                 placeholder="Times of day">
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
+            <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">{{ option }}</mat-option>
+          </mat-autocomplete>
+        </mat-chip-list>
+      </mat-form-field>
     </div>
-    <hr>
     <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
     <div class="row">
       <div class="col text-center actions">
-        <button
-          class="btn btn-primary border-primary shadow"
-          type="submit"
-          [disabled]="taskForm.disabled || taskForm.invalid || !(isConnected$ | async) || nothingChanged()"
-          (click)="saveTask()">
-            {{ idIsNull() ? 'Create' : 'Save' }}
-            <fa-icon [icon]="faCheckCircle"></fa-icon></button>
-        <button
-          *ngIf="!idIsNull()"
-          class="btn btn-secondary border rounded-0 shadow"
-          type="button"
-          [disabled]="taskForm.disabled || !(isConnected$ | async)"
-          (click)="deepResetForm()">New</button>
-        <button
-          *ngIf="!idIsNull()"
-          class="btn btn-outline-danger border rounded-0"
-          type="button"
-          [disabled]="taskForm.disabled || !(isConnected$ | async)"
-          (click)="deleteTask()">Delete</button>
+        <button mat-flat-button
+                color="primary"
+                [disabled]="taskForm.disabled || taskForm.invalid || !(isConnected$ | async) || nothingChanged()"
+                (click)="saveTask()">{{ idIsNull() ? 'Create' : 'Save' }}</button>
+        <button *ngIf="!idIsNull()"
+                mat-flat-button
+                color="primary"
+                [disabled]="taskForm.disabled || !(isConnected$ | async)"
+                (click)="deepResetForm()">New</button>
+        <button *ngIf="!idIsNull()"
+                mat-stroked-button
+                color="warn"
+                [disabled]="taskForm.disabled || !(isConnected$ | async)"
+                (click)="deleteTask()">Delete</button>
       </div>
     </div>
   </div>

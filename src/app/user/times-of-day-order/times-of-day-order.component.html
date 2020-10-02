@@ -18,7 +18,9 @@
           </div>
           <div class="col">
             <div class="add-task">
-              <button class="btn btn-primary shadow" type="button" [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new task</button>
+              <button mat-flat-button
+                      color="primary"
+                      [routerLink]="['/', RouterDict['user'], RouterDict['task']]">Add new</button>
             </div>
           </div>
         </div>

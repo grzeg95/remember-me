@@ -41,6 +41,7 @@
     "functions": "file:functions",
     "g": "^2.0.1",
     "jquery": "^3.5.1",
+    "material-design-icons": "^3.0.1",
     "mixin-deep": "^2.0.1",
     "ng-connection-service": "^1.0.4",
     "ngx-cookie-service": "^10.0.1",
@@ -51,7 +52,7 @@
     "sass-loader": "^7.3.1",
     "set-value": "^3.0.2",
     "tslib": "^2.0.0",
-    "zone.js": "^0.10.3"
+    "zone.js": "^0.11.1"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^0.1001.3",

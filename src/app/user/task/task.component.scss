@@ -10,25 +10,15 @@
       padding: 0;
     }
 
-    .form-group {
-      width: calc(100% - 2rem);
-      margin: 2rem 1rem 1rem;
-    }
-
     .days-of-the-week {
-      margin: 1rem 1rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 1rem;
     }
 
     .times-of-day {
       margin: 1rem 1rem 0.5rem;
-    }
-
-    .actions {
-      margin-top: 4px;
-
-      .btn {
-        margin: 0.5rem;
-      }
     }
 
     hr {
@@ -41,35 +31,67 @@
 
     .btn {
       margin: 0.25rem;
-
-      .mat-progress-bar {
-        height: 0.125rem;
-        transition: opacity 250ms linear;
-        opacity: 0;
-      }
-    }
-
-    .btn-outline-dark:not(:disabled):not(.disabled):active,
-    .btn-outline-dark:not(:disabled):not(.disabled).active,
-    .show > .btn-outline-dark.dropdown-toggle {
-      border-color: #6b7580;
-      background-color: #ffffff;
-      color: #343a40;
-    }
-
-    .btn-outline-dark:hover {
-      border-color: #343a40;
-      background-color: #ffffff;
-      color: #343a40;
     }
 
     .error {
       color: #f44336 !important; // sass-lint:disable-line no-important
     }
-
-    .btn:focus, .btn.focus {
-      outline: 0;
-      box-shadow: none;
-    }
   }
+
+  ::ng-deep .mat-slide-toggle-label {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    height: auto;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  ::ng-deep .mat-slide-toggle {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.5rem;
+    outline: none;
+    line-height: inherit;
+    white-space: nowrap;
+  }
+
+  ::ng-deep .mat-slide-toggle-bar {
+    position: relative;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 0.875rem;
+    margin-right: 0;
+    margin-left: 0;
+    border-radius: 0.5rem;
+  }
+
+  ::ng-deep .mat-slide-toggle-content {
+    margin-top: 0.5rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+}
+
+.example-chip-list {
+  width: 100%;
+}
+
+.actions {
+  margin-top: 4px;
+
+  button {
+    margin: 0.5rem;
+  }
+}
+
+.form-group {
+  display: block;
+  width: calc(100% - 2rem);
+  max-width: 500px;
+  margin: 2rem auto 1rem;
 }

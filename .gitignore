@@ -114,4 +114,4 @@ Thumbs.db
 **/*.min.css
 
 # Firestore backup
-/firestore-backup
+/emulators-backup/

@@ -223,3 +223,7 @@ table.mat-table {
 .mat-header-cell {
   font-size: 0.75rem;
 }
+
+.mat-chip mat-icon.mat-chip-remove, .mat-chip mat-icon.mat-chip-trailing-icon {
+  font-size: 18px;
+}

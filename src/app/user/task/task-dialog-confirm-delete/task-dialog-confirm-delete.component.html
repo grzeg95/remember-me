@@ -1,8 +1,10 @@
 <h1 mat-dialog-title>Are you sure to delete?</h1>
 <p>This action will permanently remove this task.</p>
 <div mat-dialog-actions>
-  <button class="btn btn-primary border-primary shadow"
+  <button mat-flat-button
+          color="primary"
           (click)="rejectDelete()">Reject</button>
-  <button class="btn btn-outline-danger border rounded-0"
+  <button mat-stroked-button
+          color="warn"
           (click)="confirmDelete()">Confirm</button>
 </div>

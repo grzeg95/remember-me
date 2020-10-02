@@ -1,19 +1,21 @@
+import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
-import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
+import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
-import {faCheckCircle, faPlus} from '@fortawesome/free-solid-svg-icons';
-import {Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import '../../../../global.prototype';
+import {startWith} from 'rxjs/operators';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
 import {HTTPError, HTTPSuccess, ITask, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
-import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of-day.component';
 
 @Component({
   selector: 'app-task',
@@ -22,16 +24,22 @@ import {TaskDialogTimeOfDay} from './task-dialog-time-of-day/task-dialog-time-of
 })
 export class TaskComponent implements OnInit, OnDestroy {
 
-  get timesOfDay(): AbstractControl[] {
-    return (this.taskForm.get('timesOfDay') as FormArray).controls;
+  get description(): AbstractControl {
+    return this.taskForm.get('description');
+  }
+
+  get daysOfTheWeek(): FormGroup {
+    return this.taskForm.get('daysOfTheWeek') as FormGroup;
+  }
+
+  get timesOfDay(): FormArray {
+    return this.taskForm.get('timesOfDay') as FormArray;
   }
 
   get isConnected$(): Observable<boolean> {
     return this.appService.isConnected$;
   }
 
-  faCheckCircle = faCheckCircle;
-  faPlus = faPlus;
   initValues: Task = new Task({
     daysOfTheWeek: {
       mon: false,
@@ -57,11 +65,18 @@ export class TaskComponent implements OnInit, OnDestroy {
       sat: new FormControl(false),
       sun: new FormControl(false)
     }, TaskComponent.daysOfTheWeekValidator),
-    timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator)
+    timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator),
+    timeOfDay: new FormControl('')
   });
   savingInProgress = false;
   deletingInProgress = false;
   isConnectedSub: Subscription;
+  timesOfDayOrderSub: Subscription;
+  timeOfDayValueChanges: Subscription;
+  filteredOptions$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  separatorKeysCodes: number[] = [ENTER];
+  options: string[] = [];
+  @ViewChild('input') input: ElementRef<HTMLInputElement>;
 
   constructor(private activeRoute: ActivatedRoute,
               private location: Location,
@@ -73,6 +88,7 @@ export class TaskComponent implements OnInit, OnDestroy {
               private zone: NgZone) {}
 
   ngOnInit(): void {
+
     this.userService.runTimesOfDayOrder();
     this.taskForm.enable();
     this.isConnectedSub = this.isConnected$.subscribe((isConnected) => {
@@ -82,42 +98,110 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.disable();
       }
     });
+
+    this.timeOfDayValueChanges = (this.taskForm.get('timesOfDay') as FormArray).valueChanges.subscribe((timesOfDay: string[]) => {
+
+      const timesOfDayOrderNext = this.userService.timesOfDayOrder$.getValue();
+      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(timesOfDay.toSet());
+      const timesOfDayOrder = [];
+
+      for (const x of timesOfDayOrderNext) {
+        if (timesOfDayOrderSet.has(x.id)) {
+          timesOfDayOrder.push(x.id.decodeFirebaseSpecialCharacters());
+          timesOfDayOrderSet.delete(x.id);
+        }
+      }
+
+      this.options = timesOfDayOrder;
+      this.applyFilter(this.taskForm.get('timeOfDay').value);
+    });
+
+    this.taskForm.get('timeOfDay').valueChanges.pipe(startWith('')).subscribe((value) => {
+      this.applyFilter(value);
+    });
+
+    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrderNext) => {
+      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(this.taskForm.get('timesOfDay').value.toSet());
+      const timesOfDayOrder = [];
+
+      for (const x of timesOfDayOrderNext) {
+        if (timesOfDayOrderSet.has(x.id)) {
+          timesOfDayOrder.push(x.id.decodeFirebaseSpecialCharacters());
+          timesOfDayOrderSet.delete(x.id);
+        }
+      }
+
+      this.options = timesOfDayOrder;
+      this.applyFilter(this.taskForm.get('timeOfDay').value);
+    });
+
+  }
+
+  add(event: MatChipInputEvent): void {
+
+    const input = event.input;
+    const timeOfDayValue = event.value;
+
+    if (!timeOfDayValue) {
+      this.taskForm.get('timesOfDay').clearValidators();
+      return;
+    }
+
+    this.taskForm.get('timesOfDay').markAsDirty();
+    const timeOfDay = timeOfDayValue.trim().encodeFirebaseSpecialCharacters();
+
+    if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
+      this.snackBar.open('Enter new one');
+    } else if (timeOfDay.length > 20) {
+      this.snackBar.open('Enter time of day length from 1 to 20');
+    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
+      this.snackBar.open('Up to 20 times of day per task');
+    } else {
+      (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
+
+      // Reset the input value
+      if (input) {
+        input.value = '';
+      }
+    }
+  }
+
+  selected(event: MatAutocompleteSelectedEvent): void {
+    const timeOfDayValue = event.option.viewValue;
+
+    if (!timeOfDayValue) {
+      this.taskForm.get('timesOfDay').clearValidators();
+      return;
+    }
+
+    this.taskForm.get('timesOfDay').markAsDirty();
+    const timeOfDay = timeOfDayValue.trim().encodeFirebaseSpecialCharacters();
+
+    if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
+      this.snackBar.open('Enter new one');
+    } else if (timeOfDay.length > 20) {
+      this.snackBar.open('Enter time of day length from 1 to 20');
+    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
+      this.snackBar.open('Up to 20 times of day per task');
+    } else {
+      (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
+
+      this.input.nativeElement.value = '';
+      this.taskForm.get('timeOfDay').setValue('');
+    }
+  }
+
+  applyFilter(value: string): void {
+    if (value) {
+      const filterValue = value.toLowerCase();
+      this.filteredOptions$.next(this.options.filter((option) => option.toLowerCase().includes(filterValue)));
+    } else {
+      this.filteredOptions$.next(this.options);
+    }
   }
 
   ngOnDestroy(): void {
     this.isConnectedSub.unsubscribe();
-  }
-
-  openTimeOfDayDialog(): void {
-
-    const dialogRef = this.dialog.open(TaskDialogTimeOfDay, {
-      autoFocus: false
-    });
-    dialogRef.componentInstance.selectedTimesOfDay = this.taskForm.get('timesOfDay').value;
-
-    dialogRef.afterClosed().subscribe((timeOfDayValue) => {
-
-      if (!timeOfDayValue) {
-        this.taskForm.get('timesOfDay').clearValidators();
-        return;
-      }
-
-      this.taskForm.get('timesOfDay').markAsDirty();
-
-      const timeOfDay = timeOfDayValue.trim().encodeFirebaseSpecialCharacters();
-
-      if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
-        this.snackBar.open('Enter new one');
-      } else if (timeOfDay.length > 20) {
-        this.snackBar.open('Enter time of day length from 1 to 20');
-      } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
-        this.snackBar.open('Up to 20 times of day per task');
-      } else {
-        (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
-      }
-
-    });
-
   }
 
   resetId(): void {
@@ -167,6 +251,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     const trimDescription = iTask.description.trim();
     iTask.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
+    delete iTask['timeOfDay'];
 
     this.fns.httpsCallable('saveTask')({
       task: iTask,
@@ -278,12 +363,13 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     this.deletingInProgress = false;
     this.taskForm.enable();
+    this.userService.timesOfDayOrder$.next(this.userService.timesOfDayOrder$.getValue());
   }
 
-  removeTimeOfDay($event: MouseEvent, index: number): void {
-    $event.preventDefault();
+  removeTimeOfDay(index: number): void {
     (this.taskForm.get('timesOfDay') as FormArray).markAsDirty();
     (this.taskForm.get('timesOfDay') as FormArray).removeAt(index);
+    this.applyFilter(this.taskForm.get('timeOfDay').value);
   }
 
   decodeFirebaseSpecialCharacters(str: string): string {
@@ -312,4 +398,16 @@ export class TaskComponent implements OnInit, OnDestroy {
     return g.value.length > 0 && g.value.length <= 20 ? null : {required: true};
   }
 
+  static timeOfDayValidatorLength(g: FormControl): { required: boolean } {
+
+    const current = g.value as string;
+    const trim = (g.value as string).trimLeft();
+
+    if (current.length !== trim.length) {
+      g.setValue(trim);
+    }
+
+    return (typeof g.value === 'string') &&
+    (g.value.length > 0) && (g.value.length <= 20) ? null : {required: true};
+  }
 }
