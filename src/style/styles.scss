@@ -227,3 +227,13 @@ table.mat-table {
 .mat-chip mat-icon.mat-chip-remove, .mat-chip mat-icon.mat-chip-trailing-icon {
   font-size: 18px;
 }
+
+.mat-option {
+  height: 48px;
+  line-height: 48px;
+}
+
+/* TODO set in the TaskComponent */
+.mat-autocomplete-panel.times-of-days-selector {
+  max-height: calc(48px * 3);
+}
