@@ -60,7 +60,7 @@
                 [disabled]="taskForm.disabled || taskForm.invalid || !(isConnected$ | async) || nothingChanged()"
                 (click)="saveTask()">{{ idIsNull() ? 'Create' : 'Save' }}</button>
         <button *ngIf="!idIsNull()"
-                mat-flat-button
+                mat-stroked-button
                 color="primary"
                 [disabled]="taskForm.disabled || !(isConnected$ | async)"
                 (click)="deepResetForm()">New</button>

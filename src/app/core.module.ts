@@ -14,7 +14,6 @@ import {AuthService} from './auth/auth.service';
     AuthService,
     AuthGuardUserService,
     AuthGuardGuestService,
-    AngularFireFunctions,
     {provide: REGION, useValue: 'europe-west2'},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
     {provide: Window, useValue: window},
@@ -28,5 +27,4 @@ export class CoreModule {
       this.fns.useFunctionsEmulator(environment.emulators.functions.host).then((r) => console.log(r));
     }
   }
-
 }
