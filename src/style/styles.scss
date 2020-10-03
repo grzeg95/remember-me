@@ -233,6 +233,10 @@ table.mat-table {
   line-height: 48px;
 }
 
+.mat-autocomplete-panel {
+  overscroll-behavior: contain;
+}
+
 /* TODO set in the TaskComponent */
 .mat-autocomplete-panel.times-of-days-selector {
   max-height: calc(48px * 3);

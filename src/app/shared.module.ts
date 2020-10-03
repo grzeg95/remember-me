@@ -41,7 +41,7 @@ import {OverlayModule} from '@angular/cdk/overlay';
     MatTableModule,
     DragDropModule,
     MatAutocompleteModule,
-    MatChipsModule,
+    MatChipsModule
   ],
   exports: [
     AngularFireModule,

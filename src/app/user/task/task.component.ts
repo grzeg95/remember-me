@@ -1,9 +1,9 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
-import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
-import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
+import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -76,7 +76,8 @@ export class TaskComponent implements OnInit, OnDestroy {
   filteredOptions$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
   separatorKeysCodes: number[] = [ENTER];
   options: string[] = [];
-  @ViewChild('input') input: ElementRef<HTMLInputElement>;
+  @ViewChild(MatAutocompleteTrigger, {read: MatAutocompleteTrigger}) input: MatAutocompleteTrigger;
+  lastTwoInputs = [];
 
   constructor(private activeRoute: ActivatedRoute,
               private location: Location,
@@ -117,6 +118,12 @@ export class TaskComponent implements OnInit, OnDestroy {
     });
 
     this.taskForm.get('timeOfDay').valueChanges.pipe(startWith('')).subscribe((value) => {
+
+      this.lastTwoInputs.push(value);
+      if (this.lastTwoInputs.length === 3) {
+        this.lastTwoInputs = [this.lastTwoInputs[1], this.lastTwoInputs[2]];
+      }
+
       this.applyFilter(value);
     });
 
@@ -163,6 +170,10 @@ export class TaskComponent implements OnInit, OnDestroy {
       if (input) {
         input.value = '';
       }
+      this.taskForm.get('timeOfDay').setValue('');
+      this.applyFilter('');
+
+      this.input.openPanel();
     }
   }
 
@@ -184,10 +195,11 @@ export class TaskComponent implements OnInit, OnDestroy {
     } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
       this.snackBar.open('Up to 20 times of day per task');
     } else {
+      const inputToApply = this.lastTwoInputs[0];
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
-
-      this.input.nativeElement.value = '';
-      this.taskForm.get('timeOfDay').setValue('');
+      this.taskForm.get('timeOfDay').setValue(inputToApply);
+      this.applyFilter(inputToApply);
+      setTimeout(() => this.input.openPanel());
     }
   }
 
