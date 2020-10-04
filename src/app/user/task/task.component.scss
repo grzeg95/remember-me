@@ -95,3 +95,13 @@
   max-width: 500px;
   margin: 2rem auto 1rem;
 }
+
+.row-chip-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  .form-group {
+    margin-top: 0.5rem;
+  }
+}

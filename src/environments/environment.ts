@@ -1,3 +1,5 @@
+const host = '192.168.0.13';
+
 export const environment = {
   production: false,
   firebase: {
@@ -14,11 +16,11 @@ export const environment = {
   },
   emulators: {
     firestore: {
-      host: '192.168.0.15:8080',
+      host: host + ':8080',
       ssl: false
     },
     functions: {
-      host: 'http://192.168.0.15:5000'
+      host: 'http://' + host + ':5000'
     }
   }
 };

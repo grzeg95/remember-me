@@ -20,7 +20,7 @@
           [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
       </div>
     </div>
-    <div class="row">
+    <div class="row row-chip-list">
       <small class="form-text text-center text-muted error"
              *ngIf="!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty">Enter at leas one time of day</small>
       <mat-form-field class="form-group">
