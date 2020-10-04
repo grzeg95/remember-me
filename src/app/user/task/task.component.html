@@ -1,58 +1,66 @@
 <div class="container">
   <div class="col" [formGroup]="taskForm">
     <div class="row">
-      <div class="col">
-        <mat-form-field class="form-group" floatLabel="always">
+      <div class="col form-group">
+        <mat-form-field floatLabel="always">
           <mat-label>Task description</mat-label>
           <input autocomplete="off" matInput formControlName="description" [placeholder]="'Your task description'">
           <mat-error *ngIf="!taskForm.disabled && !description.valid && (description.dirty || description.touched)">Enter description from 4 to 40 characters</mat-error>
         </mat-form-field>
       </div>
     </div>
-    <small class="form-text text-center text-muted"
-           [ngClass]="!taskForm.disabled && !daysOfTheWeek.valid && daysOfTheWeek.dirty ? 'error' : ''">Mark days</small>
     <div class="row">
-      <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
-        <mat-slide-toggle
-          *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];"
-          [checked]="daysOfTheWeek.get(dayOfTheWeek).value == true"
-          [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
-          [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
+      <div class="col form-group">
+        <small class="form-text text-center text-muted"
+               [ngClass]="!taskForm.disabled && !daysOfTheWeek.valid && daysOfTheWeek.dirty ? 'error' : ''">Mark days</small>
+        <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
+          <mat-slide-toggle
+            *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];"
+            [checked]="daysOfTheWeek.get(dayOfTheWeek).value == true"
+            [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
+            [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
+        </div>
       </div>
     </div>
-    <div class="row row-chip-list">
-      <small class="form-text text-center text-muted error"
-             *ngIf="!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty">Enter at leas one time of day</small>
-      <mat-form-field class="form-group">
-        <mat-chip-list #chipList>
-          <div formArrayName="timesOfDay">
-            <mat-chip *ngFor="let timeOfDay of timesOfDay.controls; let i = index"
-                      [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
-                      [formGroupName]="i"
-                      [value]="timeOfDay.value"
-                      [removable]="true"
-                      [selected]="false"
-                      (selectionChange)="$event.source.deselect()"
-                      (removed)="removeTimeOfDay(i)">{{ decodeFirebaseSpecialCharacters(timeOfDay.value) }}
-              <mat-icon class="material-icons" matChipRemove>cancel</mat-icon>
-            </mat-chip>
-          </div>
-          <input autocomplete="off"
-                 formControlName="timeOfDay"
-                 matInput
-                 #input="matAutocompleteTrigger"
-                 [matAutocomplete]="auto"
-                 [matChipInputFor]="chipList"
-                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                 (matChipInputTokenEnd)="add($event)"
-                 placeholder="Times of day">
-          <mat-autocomplete class="times-of-days-selector" #auto="matAutocomplete" (optionSelected)="selected($event)">
-            <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">{{ option }}</mat-option>
-          </mat-autocomplete>
-        </mat-chip-list>
-      </mat-form-field>
+    <div class="row">
+      <div class="col form-group">
+        <small class="form-text text-center text-muted error"
+               *ngIf="!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty">Enter at leas one time of day</small>
+        <mat-form-field>
+          <mat-chip-list #chipList>
+            <div formArrayName="timesOfDay">
+              <mat-chip *ngFor="let timeOfDay of timesOfDay.controls; let i = index"
+                        [class.disabled]="taskForm.disabled || !(isConnected$ | async)"
+                        [formGroupName]="i"
+                        [value]="timeOfDay.value"
+                        [removable]="true"
+                        [selected]="false"
+                        (selectionChange)="$event.source.deselect()"
+                        (removed)="removeTimeOfDay(i)">{{ decodeFirebaseSpecialCharacters(timeOfDay.value) }}
+                <mat-icon class="material-icons" matChipRemove>cancel</mat-icon>
+              </mat-chip>
+            </div>
+            <input autocomplete="off"
+                   formControlName="timeOfDay"
+                   matInput
+                   #input="matAutocompleteTrigger"
+                   [matAutocomplete]="auto"
+                   [matChipInputFor]="chipList"
+                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                   (matChipInputTokenEnd)="add($event)"
+                   placeholder="Times of day">
+            <mat-autocomplete class="times-of-days-selector" #auto="matAutocomplete" (optionSelected)="selected($event)">
+              <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">{{ option }}</mat-option>
+            </mat-autocomplete>
+          </mat-chip-list>
+        </mat-form-field>
+      </div>
     </div>
-    <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+    <div class="row">
+      <div class="col">
+        <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+      </div>
+    </div>
     <div class="row">
       <div class="col text-center actions">
         <button mat-flat-button

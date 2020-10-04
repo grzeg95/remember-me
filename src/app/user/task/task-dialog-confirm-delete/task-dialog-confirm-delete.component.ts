@@ -3,19 +3,10 @@ import {MatDialogRef} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-task-dialog-confirm-delete',
-  templateUrl: 'task-dialog-confirm-delete.component.html',
-  styleUrls: ['task-dialog-confirm-delete.component.scss'],
+  templateUrl: 'task-dialog-confirm-delete.component.html'
 })
 export class TaskDialogConfirmDeleteComponent {
 
-  constructor(private dialogRef: MatDialogRef<TaskDialogConfirmDeleteComponent>) {}
-
-  rejectDelete(): void {
-    this.dialogRef.close(false);
+  constructor(public dialogRef: MatDialogRef<TaskDialogConfirmDeleteComponent>) {
   }
-
-  confirmDelete(): void {
-    this.dialogRef.close(true);
-  }
-
 }
