@@ -74,7 +74,9 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   let aDataUpdate;
   let bDataUpdate;
   let aNext;
+  let aNextPromise;
   let aPrev;
+  let aPrevPromise;
   let bNext = null;
   let bPrev = null;
   let aNextDataUpdate = null;
@@ -101,12 +103,15 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   }
 
   if (a.data.prev) {
-    aPrev = await getTimeOfDay(transaction, userDocSnap, a.data.prev, true);
+    aPrevPromise = getTimeOfDay(transaction, userDocSnap, a.data.prev, true);
   }
 
   if (a.data.next) {
-    aNext = await getTimeOfDay(transaction, userDocSnap, a.data.next, true);
+    aNextPromise = getTimeOfDay(transaction, userDocSnap, a.data.next, true);
   }
+
+  aPrev = await aPrevPromise;
+  aNext = await aNextPromise;
 
   if (aNext && aNext.exists) {
     aNextDataUpdate = {
@@ -198,8 +203,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     * Read all data
     * */
 
-    const a = await getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
-    const b = await getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
+    const aPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
+    const bPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
+
+    const a = await aPromiseGet;
+    const b = await bPromiseGet;
 
     // siblings a <-> b
     if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
