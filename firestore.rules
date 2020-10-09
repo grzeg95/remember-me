@@ -16,8 +16,8 @@ service cloud.firestore {
     allow get: if isOwner() && !isDisabled()
 
     match /today/{day}/task/{taskId} {
-      allow get: if isOwner() && !isDisabled()
-      allow list: if isOwner() && !isDisabled()
+      allow get: if isOwner() && !isDisabled() && day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+      allow list: if isOwner() && !isDisabled() && day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
         && request.query.orderBy.description == 'ASC'
       	&& request.query.limit == 50 * 20
 
@@ -26,6 +26,8 @@ service cloud.firestore {
       	&& exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
         && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
+        && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
+        && exists(/databases/$(database)/documents/users/$(userId)/timesOfDay/$(resource.data.timesOfDay.keys()[0]))
         && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
     }
 
