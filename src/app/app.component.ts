@@ -27,6 +27,9 @@ export class AppComponent {
       console.error = () => {};
       console.warn = () => {};
       console.info = () => {};
+      console.group = () => {};
+      console.groupEnd = () => {};
+      console.groupCollapsed = () => {};
     }
   }
 }
