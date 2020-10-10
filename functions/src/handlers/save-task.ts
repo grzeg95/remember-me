@@ -130,6 +130,7 @@ const proceedTimesOfDay = async (
   currentTimesOfDaySize: number): Promise<number> => {
 
   const affected: { [p: string]: TimeOfDay } = {};
+  let affectedPromise: { [p: string]: Promise<TimeOfDay> } = {};
 
   const toAdd = enteredTimesOfDay.toSet().difference(currentTimesOfDay.toSet());
   const toRemove = currentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet());
@@ -145,9 +146,14 @@ const proceedTimesOfDay = async (
   });
 
   for (const timeOfDayIdToRemove of toRemove) {
-
     if (!affected[timeOfDayIdToRemove]) {
-      affected[timeOfDayIdToRemove] = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove, true);
+      affectedPromise[timeOfDayIdToRemove] = getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove, true);
+    }
+  }
+
+  for (const timeOfDayIdToRemove of toRemove) {
+    if (!affected[timeOfDayIdToRemove]) {
+      affected[timeOfDayIdToRemove] = await affectedPromise[timeOfDayIdToRemove];
     }
 
     if (affected[timeOfDayIdToRemove].data.counter - 1 === 0) {
@@ -155,11 +161,25 @@ const proceedTimesOfDay = async (
       removed++;
 
       if (affected[timeOfDayIdToRemove].data.next && !affected[affected[timeOfDayIdToRemove].data.next as string]) {
-        affected[affected[timeOfDayIdToRemove].data.next as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string, true);
+        affectedPromise[affected[timeOfDayIdToRemove].data.next as string] = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string, true);
       }
 
       if (affected[timeOfDayIdToRemove].data.prev && !affected[affected[timeOfDayIdToRemove].data.prev as string]) {
-        affected[affected[timeOfDayIdToRemove].data.prev as string] = await getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string, true);
+        affectedPromise[affected[timeOfDayIdToRemove].data.prev as string] = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string, true);
+      }
+    }
+  }
+
+  for (const timeOfDayIdToRemove of toRemove) {
+
+    if (affected[timeOfDayIdToRemove].data.counter - 1 === 0) {
+
+      if (affected[timeOfDayIdToRemove].data.next && !affected[affected[timeOfDayIdToRemove].data.next as string]) {
+        affected[affected[timeOfDayIdToRemove].data.next as string] = await affectedPromise[affected[timeOfDayIdToRemove].data.next as string];
+      }
+
+      if (affected[timeOfDayIdToRemove].data.prev && !affected[affected[timeOfDayIdToRemove].data.prev as string]) {
+        affected[affected[timeOfDayIdToRemove].data.prev as string] = await affectedPromise[affected[timeOfDayIdToRemove].data.prev as string];
       }
 
       if (affected[timeOfDayIdToRemove].data.next) {
@@ -184,6 +204,9 @@ const proceedTimesOfDay = async (
 
   }
 
+  // @ts-ignore
+  affectedPromise = undefined;
+
   const toAddIdsIterableIterator = toAdd.values();
   let timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
 
@@ -205,22 +228,27 @@ const proceedTimesOfDay = async (
     affected[head.ref.id] = head;
   }
 
+  const timeOfDayIdToAddPromise: Promise<TimeOfDay>[] = [];
   while (!timeOfDayIdToAddIterator.done) {
-    const timeOfDay = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToAddIterator.value);
+    timeOfDayIdToAddPromise.push(getTimeOfDay(transaction, userDocSnap, timeOfDayIdToAddIterator.value));
+    timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
+  }
+
+  for (const timeOfDayToAdd of timeOfDayIdToAddPromise) {
+
+    const timeOfDay = await timeOfDayToAdd;
 
     if (timeOfDay.exists) {
       timeOfDay.data.counter = timeOfDay.data.counter + 1;
-      affected[timeOfDayIdToAddIterator.value] = timeOfDay;
+      affected[timeOfDay.ref.id] = timeOfDay;
     } else {
       added++;
       timeOfDay.data.next = head.ref.id;
       timeOfDay.status = 'created';
       affected[head.ref.id].data.prev = timeOfDay.ref.id;
-      affected[timeOfDayIdToAddIterator.value] = timeOfDay;
+      affected[timeOfDay.ref.id] = timeOfDay;
       head = timeOfDay;
     }
-
-    timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
   }
 
   for (const id of Object.getOwnPropertyNames(affected)) {

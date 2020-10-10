@@ -59,11 +59,18 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     // read all times of day
     const toRemove = task.timesOfDay;
     const affected: { [p: string]: TimeOfDay } = {};
+    const affectedPromise: { [p: string]: Promise<TimeOfDay> } = {};
+
+    for (const timeOfDayId of toRemove) {
+      if (!affectedPromise[timeOfDayId]) {
+        affectedPromise[timeOfDayId] = getTimeOfDay(transaction, userDocSnap, timeOfDayId, true);
+      }
+    }
 
     for (const timeOfDayId of toRemove) {
 
       if (!affected[timeOfDayId]) {
-        affected[timeOfDayId] = await getTimeOfDay(transaction, userDocSnap, timeOfDayId, true);
+        affected[timeOfDayId] = await affectedPromise[timeOfDayId];
       }
 
       if (affected[timeOfDayId].data.counter - 1 === 0) {
