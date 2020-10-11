@@ -10,7 +10,6 @@
   "license": "ISC",
   "devDependencies": {
     "@firebase/rules-unit-testing": "^1.0.6",
-    "@firebase/testing": "^0.20.5",
     "mocha": "^8.1.3"
   }
 }

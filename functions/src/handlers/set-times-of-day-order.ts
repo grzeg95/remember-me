@@ -176,22 +176,18 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!context.auth, 'Please login in');
 
-  // data in not an object
-  testRequirement(typeof data !== 'object');
-
-  // data not hasOnly dir, is, wasIndex, was
-  testRequirement(!['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()));
-
-  // data.dir is not an integer number or is zero
-  testRequirement(typeof data.dir !== 'number' || !Number.isInteger(data.dir) || data.dir === 0);
-
-  // data.is is not an string
-  testRequirement(typeof data.is !== 'string');
-
-  // data.was is not an string
-  testRequirement(typeof data.was !== 'string');
+  // data
+  testRequirement(
+    data === null || Array.isArray(data) || typeof data !== 'object' ||
+    !['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()) ||
+    typeof data.dir !== 'number' || !Number.isInteger(data.dir) || data.dir === 0 ||
+    typeof data.is !== 'string' || data.is.length === 0 ||
+    typeof data.was !== 'string' || data.was.length === 0 ||
+    data.is === data.was,
+    'data format is { dir: integer & ¬0, is: string & length !== 0, was: string & length !== 0 && ¬is }'
+  );
 
   const auth: { uid: string } | undefined = context.auth;
 

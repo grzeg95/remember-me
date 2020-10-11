@@ -26,7 +26,7 @@ export const getTimeOfDay = async (transaction: Transaction, userDocSnap: Docume
       throw new HttpsError(
         'invalid-argument',
         'Bad Request',
-        'This should works 🙄'
+        `timeOfDayId '${timeOfDayId}' does not exists`
       );
     }
     return getTimeOfDayFromSnap(docSnap);

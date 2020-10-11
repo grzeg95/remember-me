@@ -13,17 +13,12 @@ const getFirestoreAdmin = () => firebase.initializeAdminApp({projectId}).firesto
 
 describe('Firestore security rules tests', () => {
 
-  let me;
-  let admin;
+  const me = getFirestore(myAuth);
+  const admin = getFirestoreAdmin();
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const timeOfDay_0 = 'timesOfDay_0';
   const timeOfDay_1 = 'timesOfDay_1';
   const task_0 = 'task_0';
-
-  before(async () => {
-    admin = getFirestoreAdmin();
-    me = getFirestore(myAuth);
-  });
 
   describe('Is disabled', () => {
 

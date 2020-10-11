@@ -1,4 +1,4 @@
-const host = '192.168.0.13';
+const host = '192.168.0.15';
 
 export const environment = {
   production: false,
