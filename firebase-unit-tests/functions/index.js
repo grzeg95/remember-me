@@ -172,7 +172,6 @@ describe(`My functions tests`, () => {
           expect(result).to.eql(expected);
         });
 
-
       });
 
       describe(`siblings [a, b]`, () => {
@@ -222,8 +221,8 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: null, prev: 'b' },
-            b: { counter: 1, next: 'a', prev: null }
+            a: {prev: 'b', next: null, counter: 1},
+            b: {prev: null, next: 'a', counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b']));
         });
 
@@ -243,8 +242,8 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'b', prev: null },
-            b: { counter: 1, next: null, prev: 'a' }
+            a: {prev: null, next: 'b', counter: 1},
+            b: {prev: 'a', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b']));
         });
 
@@ -286,9 +285,9 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'c', prev: 'b' },
-            b: { counter: 1, next: 'a', prev: null },
-            c: { counter: 1, prev: 'a', next: null }
+            a: {prev: 'b', next: 'c', counter: 1},
+            b: {prev: null, next: 'a', counter: 1},
+            c: {prev: 'a', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
         });
 
@@ -308,9 +307,9 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'b', prev: null },
-            b: { counter: 1, next: 'c', prev: 'a' },
-            c: { counter: 1, prev: 'b', next: null }
+            a: {prev: null, next: 'b', counter: 1},
+            b: {prev: 'a', next: 'c', counter: 1},
+            c: {prev: 'b', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
         });
 
@@ -352,9 +351,9 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'c', prev: null },
-            b: { counter: 1, next: null, prev: 'c' },
-            c: { counter: 1, prev: 'a', next: 'b' }
+            a: {prev: null, next: 'c', counter: 1},
+            b: {prev: 'c', next: null, counter: 1},
+            c: {next: 'b', prev: 'a', counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
         });
 
@@ -374,9 +373,9 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'b', prev: null },
-            b: { counter: 1, next: 'c', prev: 'a' },
-            c: { counter: 1, prev: 'b', next: null }
+            a: {prev: null, next: 'b', counter: 1},
+            b: {prev: 'a', next: 'c', counter: 1},
+            c: {prev: 'b', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
         });
 
@@ -419,10 +418,10 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'c', prev: null },
-            b: { counter: 1, next: 'd', prev: 'c' },
-            c: { counter: 1, prev: 'a', next: 'b' },
-            d: { counter: 1, next: null, prev: 'b'}
+            a: {prev: null, next: 'c', counter: 1},
+            b: {prev: 'c', next: 'd', counter: 1},
+            c: {prev: 'a', next: 'b', counter: 1},
+            d: {prev: 'b', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
         });
 
@@ -442,10 +441,10 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'b', prev: null },
-            b: { counter: 1, next: 'c', prev: 'a' },
-            c: { counter: 1, prev: 'b', next: 'd' },
-            d: { counter: 1, prev: 'c', next: null }
+            a: {prev: null, next: 'b', counter: 1},
+            b: {prev: 'a', next: 'c', counter: 1},
+            c: {prev: 'b', next: 'd', counter: 1},
+            d: {prev: 'c', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
         });
 
@@ -480,9 +479,9 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: null, prev: 'c' },
-            b: { counter: 1, next: 'c', prev: null },
-            c: { counter: 1, prev: 'b', next: 'a' }
+            a: {prev: 'c', next: null, counter: 1},
+            b: {prev: null, next: 'c', counter: 1},
+            c: {prev: 'b', next: 'a', counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
         });
 
@@ -500,9 +499,9 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'c', prev: 'b' },
-            b: { counter: 1, prev: null, next: 'a' },
-            c: { counter: 1, next: null, prev: 'a' }
+            a: {prev: 'b', next: 'c', counter: 1},
+            b: {prev: null, next: 'a', counter: 1},
+            c: {prev: 'a', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
         });
 
@@ -529,10 +528,10 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'd', prev: 'c' },
-            b: { counter: 1, next: 'c', prev: null },
-            c: { counter: 1, prev: 'b', next: 'a' },
-            d: { counter: 1, prev: 'a' , next: null }
+            a: {prev: 'c', next: 'd', counter: 1},
+            b: {prev: null, next: 'c', counter: 1},
+            c: {prev: 'b', next: 'a', counter: 1},
+            d: {prev: 'a', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
 
         });
@@ -552,10 +551,10 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'c', prev: 'b' },
-            b: { counter: 1, prev: null, next: 'a' },
-            c: { counter: 1, next: 'd', prev: 'a' },
-            d: { counter: 1, prev: 'c' , next: null }
+            a: {prev: 'b', next: 'c', counter: 1},
+            b: {prev: null, next: 'a', counter: 1},
+            c: {prev: 'a', next: 'd', counter: 1},
+            d: {prev: 'c', next: null, counter: 1}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
 
         });
@@ -584,11 +583,11 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: null, prev: 'e' },
-            b: { counter: 2, next: 'c', prev: null },
-            c: { counter: 3, prev: 'b', next: 'd' },
-            d: { counter: 4, prev: 'c' , next: 'e' },
-            e: { counter: 5, prev: 'd' , next: 'a' }
+            a: {prev: 'e', next: null, counter: 1},
+            b: {prev: null, next: 'c', counter: 2},
+            c: {prev: 'b', next: 'd', counter: 3},
+            d: {prev: 'c', next: 'e', counter: 4},
+            e: {prev: 'd', next: 'a', counter: 5}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
 
         });
@@ -609,11 +608,61 @@ describe(`My functions tests`, () => {
           });
 
           expect({
-            a: { counter: 1, next: 'e', prev: 'd' },
-            b: { counter: 2, next: 'c', prev: null },
-            c: { counter: 3, prev: 'b', next: 'd' },
-            d: { counter: 4, prev: 'c' , next: 'a' },
-            e: { counter: 5, prev: 'a' , next: null }
+            a: {prev: 'd', next: 'e', counter: 1},
+            b: {prev: null, next: 'c', counter: 2},
+            c: {prev: 'b', next: 'd', counter: 3},
+            d: {prev: 'c', next: 'a', counter: 4},
+            e: {prev: 'a', next: null, counter: 5}
+          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
+
+        });
+
+        it(`{ dir: 1, is: 'd', was: 'a' } -> b, c, d, a, e`, async () => {
+
+          await setTimesOfDay({
+            a: {prev: null, next: 'b', counter: 1},
+            b: {prev: 'a', next: 'c', counter: 2},
+            c: {prev: 'b', next: 'd', counter: 3},
+            d: {prev: 'c', next: 'e', counter: 4},
+            e: {prev: 'd', next: null, counter: 5}
+          });
+
+          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'd', was: 'a' }, myAuth);
+          expect(result).to.eql({
+            details: 'Order has been updated 🙃'
+          });
+
+          expect({
+            a: {prev: 'd', next: 'e', counter: 1},
+            b: {prev: null, next: 'c', counter: 2},
+            c: {prev: 'b', next: 'd', counter: 3},
+            d: {prev: 'c', next: 'a', counter: 4},
+            e: {prev: 'a', next: null, counter: 5}
+          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
+
+        });
+
+        it(`{ dir: -1, is: 'd', was: 'a' } -> b, c, a, d, e`, async () => {
+
+          await setTimesOfDay({
+            a: {prev: null, next: 'b', counter: 1},
+            b: {prev: 'a', next: 'c', counter: 2},
+            c: {prev: 'b', next: 'd', counter: 3},
+            d: {prev: 'c', next: 'e', counter: 4},
+            e: {prev: 'd', next: null, counter: 5}
+          });
+
+          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'd', was: 'a' }, myAuth);
+          expect(result).to.eql({
+            details: 'Order has been updated 🙃'
+          });
+
+          expect({
+            a: {prev: 'c', next: 'd', counter: 1},
+            b: {prev: null, next: 'c', counter: 2},
+            c: {prev: 'b', next: 'a', counter: 3},
+            d: {prev: 'a', next: 'e', counter: 4},
+            e: {prev: 'd', next: null, counter: 5}
           }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
 
         });
