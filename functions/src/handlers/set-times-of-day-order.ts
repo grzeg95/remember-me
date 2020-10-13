@@ -39,10 +39,12 @@ const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSn
 
   if (aPrevPromise) {
     aPrev = await aPrevPromise;
+    testRequirement(aPrev.data.next !== a.ref.id, 'a.data.prev !== a.ref.id');
   }
 
   if (bNextPromise) {
     bNext = await bNextPromise;
+    testRequirement(bNext.data.prev !== b.ref.id, 'b.data.next !== b.ref.id');
   }
 
   if (aPrev && aPrev.exists) {
@@ -182,11 +184,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   testRequirement(
     data === null || Array.isArray(data) || typeof data !== 'object' ||
     !['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()) ||
-    typeof data.dir !== 'number' || !Number.isInteger(data.dir) || data.dir === 0 ||
+    typeof data.dir !== 'number' || !Number.isInteger(data.dir) || (data.dir !== -1 && data.dir !== 1) ||
     typeof data.is !== 'string' || data.is.length === 0 ||
     typeof data.was !== 'string' || data.was.length === 0 ||
     data.is === data.was,
-    'data format is { dir: integer & ¬0, is: string & length !== 0, was: string & length !== 0 && ¬is }'
+    'expected format: { dir: -1 or 1, [is, was]: not empty string, was !== is }'
   );
 
   const auth: { uid: string } | undefined = context.auth;
@@ -207,12 +209,14 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
     // siblings a <-> b
     if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
+      testRequirement(data.dir > 0, 'The direction must correlate with the order change');
       await processSiblings(transaction, userDocSnap, a, b);
       return transaction;
     }
 
     // siblings b <-> a
     if (b.data.next === a.ref.id && a.data.prev === b.ref.id) {
+      testRequirement(data.dir < 0, 'The direction must correlate with the order change');
       await processSiblings(transaction, userDocSnap, b, a);
       return transaction;
     }
