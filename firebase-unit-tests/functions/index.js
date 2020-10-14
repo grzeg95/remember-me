@@ -60,6 +60,32 @@ const getTimesOfDay = async (timesOfDay) => {
     .reduce((acc, curr) => ({...acc, ...curr}), {});
 };
 
+const createTimesOfDayMockup = (timesOfDay) => {
+
+  if (timesOfDay.length === 1) {
+    return {[timesOfDay[0]]: {prev: null, next: null, counter: 1}};
+  }
+
+  if (timesOfDay.length === 2) {
+    return {
+      [timesOfDay[0]]: {prev: null, next: timesOfDay[1], counter: 1},
+      [timesOfDay[1]]: {prev: timesOfDay[0], next: null, counter: 1}
+    };
+  }
+
+  let prev = null;
+  const mockup = {};
+
+  let i = 0
+  for (; i < timesOfDay.length - 1; ++i) {
+    mockup[timesOfDay[i]] = {prev, next: timesOfDay[i + 1], counter: 1};
+    prev = timesOfDay[i];
+  }
+  mockup[timesOfDay[i]] = {prev: timesOfDay[i - 1], next: null, counter: 1};
+
+  return mockup;
+};
+
 describe(`My functions tests`, () => {
 
   describe(`setTimesOfDayOrder`, () => {
@@ -174,500 +200,68 @@ describe(`My functions tests`, () => {
 
       });
 
-      describe(`siblings [a, b]`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-        });
-
-        it(`a not exists, { dir: 1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
+      const tests = [
+        {
+          from: 'a b',
+          to: 'b a',
+          args: { dir: 1, is: 'a', was: 'b' },
+          expected: { details: 'Order has been updated 🙃' }
+        },
+        {
+          from: 'a b',
+          to: 'b a',
+          args: { dir: -1, is: 'b', was: 'a' },
+          expected: { details: 'Order has been updated 🙃' }
+        },
+        {
+          from: 'a b',
+          to: 'a b',
+          args: { dir: -1, is: 'a', was: 'b' },
+          expected: {
             code: 'invalid-argument',
-            message: 'Bad Request',
-            details: `timeOfDayId 'a' does not exists`
-          });
-        });
-
-        it(`b not exists, { dir: 1, is: 'a', was: 'b' }`, async () => {
-          await setTimesOfDay({a: {prev: null, next: null, counter: 1}});
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            code: 'invalid-argument',
-            message: 'Bad Request',
-            details: `timeOfDayId 'b' does not exists`
-          });
-        });
-
-        it(`not possible { dir: 1, is: 'a', was: 'b' }`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: null, counter: 1}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: -1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'b', next: null, counter: 1},
-            b: {prev: null, next: 'a', counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b']));
-        });
-
-        it(`not possible { dir: -1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: 1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b']));
-        });
-
-        it(`not possible { dir: 1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-      });
-
-      describe(`siblings prev,next [a, b], c`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: null, counter: 1}
-          });
-        });
-
-        it(`not possible { dir: 1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: -1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'b', next: 'c', counter: 1},
-            b: {prev: null, next: 'a', counter: 1},
-            c: {prev: 'a', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
-        });
-
-        it(`not possible { dir: -1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: 1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
-        });
-
-        it(`not possible { dir: 1, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-      });
-
-      describe(`siblings prev,next a, [b, c]`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: null, counter: 1}
-          });
-        });
-
-        it(`not possible { dir: 1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: -1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: null, next: 'c', counter: 1},
-            b: {prev: 'c', next: null, counter: 1},
-            c: {next: 'b', prev: 'a', counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
-        });
-
-        it(`not possible { dir: -1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: 1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
-        });
-
-        it(`not possible { dir: 1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-      });
-
-      describe(`siblings prev,next a, [b, c], d`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: 'd', counter: 1},
-            d: {prev: 'c', next: null, counter: 1}
-          });
-        });
-
-        it(`not possible { dir: 1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: -1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: null, next: 'c', counter: 1},
-            b: {prev: 'c', next: 'd', counter: 1},
-            c: {prev: 'a', next: 'b', counter: 1},
-            d: {prev: 'b', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
-        });
-
-        it(`not possible { dir: -1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-        it(`possible { dir: 1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: 'd', counter: 1},
-            d: {prev: 'c', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
-        });
-
-        it(`not possible { dir: 1, is: 'b', was: 'c' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'b', was: 'c' }, myAuth);
-          expect(result).to.eql({
-            'code': 'invalid-argument',
-            'details': 'The direction must correlate with the order change',
-            'message': 'Bad Request'
-          });
-        });
-
-      });
-
-      describe(`a, b, c`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-        });
-
-        it(`b, c, a`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: null, counter: 1}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'c', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'c', next: null, counter: 1},
-            b: {prev: null, next: 'c', counter: 1},
-            c: {prev: 'b', next: 'a', counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
-        });
-
-        it(`b, a, c`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: null, counter: 1}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'c', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'b', next: 'c', counter: 1},
-            b: {prev: null, next: 'a', counter: 1},
-            c: {prev: 'a', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c']));
-        });
-
-      });
-
-      describe(`a, b, c, d`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-        });
-
-        it(`{ dir: 1, is: 'c', was: 'a' } -> b, c, a, d`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: 'd', counter: 1},
-            d: {prev: 'c', next: null, counter: 1}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'c', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'c', next: 'd', counter: 1},
-            b: {prev: null, next: 'c', counter: 1},
-            c: {prev: 'b', next: 'a', counter: 1},
-            d: {prev: 'a', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
-
-        });
-
-        it(`{ dir: -1, is: 'c', was: 'a' } -> b, a, c, d`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 1},
-            c: {prev: 'b', next: 'd', counter: 1},
-            d: {prev: 'c', next: null, counter: 1}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'c', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'b', next: 'c', counter: 1},
-            b: {prev: null, next: 'a', counter: 1},
-            c: {prev: 'a', next: 'd', counter: 1},
-            d: {prev: 'c', next: null, counter: 1}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd']));
-
-        });
-
-      });
-
-      describe(`a, b, c, d, e`, () => {
-
-        before(async () => {
-          await deleteTimesOfDay();
-        });
-
-        it(`{ dir: 1, is: 'e', was: 'a' } -> b, c, d, e, a`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'e', counter: 4},
-            e: {prev: 'd', next: null, counter: 5}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'e', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'e', next: null, counter: 1},
-            b: {prev: null, next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'e', counter: 4},
-            e: {prev: 'd', next: 'a', counter: 5}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
-
-        });
-
-        it(`{ dir: -1, is: 'e', was: 'a' } -> b, c, d, a, e`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'e', counter: 4},
-            e: {prev: 'd', next: null, counter: 5}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'e', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'd', next: 'e', counter: 1},
-            b: {prev: null, next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'a', counter: 4},
-            e: {prev: 'a', next: null, counter: 5}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
-
-        });
-
-        it(`{ dir: 1, is: 'd', was: 'a' } -> b, c, d, a, e`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'e', counter: 4},
-            e: {prev: 'd', next: null, counter: 5}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'd', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'd', next: 'e', counter: 1},
-            b: {prev: null, next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'a', counter: 4},
-            e: {prev: 'a', next: null, counter: 5}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
-
-        });
-
-        it(`{ dir: -1, is: 'd', was: 'a' } -> b, c, a, d, e`, async () => {
-
-          await setTimesOfDay({
-            a: {prev: null, next: 'b', counter: 1},
-            b: {prev: 'a', next: 'c', counter: 2},
-            c: {prev: 'b', next: 'd', counter: 3},
-            d: {prev: 'c', next: 'e', counter: 4},
-            e: {prev: 'd', next: null, counter: 5}
-          });
-
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'd', was: 'a' }, myAuth);
-          expect(result).to.eql({
-            details: 'Order has been updated 🙃'
-          });
-
-          expect({
-            a: {prev: 'c', next: 'd', counter: 1},
-            b: {prev: null, next: 'c', counter: 2},
-            c: {prev: 'b', next: 'a', counter: 3},
-            d: {prev: 'a', next: 'e', counter: 4},
-            e: {prev: 'd', next: null, counter: 5}
-          }).to.eql(await getTimesOfDay(['a', 'b', 'c', 'd', 'e']));
-
-        });
-
-      });
+            details: 'The direction must correlate with the order change',
+            message: 'Bad Request'
+          }
+        },
+        {
+          from: 'a b c d',
+          to: 'b c d a',
+          args: { dir: 1, is: 'a', was: 'd' },
+          expected: { details: 'Order has been updated 🙃' }
+        },
+        {
+          from: 'a b c d',
+          to: 'b c a d',
+          args: { dir: -1, is: 'a', was: 'd' },
+          expected: { details: 'Order has been updated 🙃' }
+        },
+        {
+          from: 'a b c d e f g h',
+          to: 'b c d e f g h a',
+          args: { dir: 1, is: 'a', was: 'h' },
+          expected: { details: 'Order has been updated 🙃' }
+        },
+        {
+          from: 'a b c d e f g h',
+          to: 'h a b c d e f g',
+          args: { dir: -1, is: 'h', was: 'a' },
+          expected: { details: 'Order has been updated 🙃' }
+        },
+        {
+          from: 'a b c d e f g h',
+          to: 'a h b c d e f g',
+          args: { dir: 1, is: 'h', was: 'a' },
+          expected: { details: 'Order has been updated 🙃' }
+        }
+      ];
+
+      tests.forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
+        await deleteTimesOfDay();
+        await setTimesOfDay(createTimesOfDayMockup(test.from.split(' ')));
+        const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
+        expect(result).to.eql(test.expected);
+        expect(createTimesOfDayMockup(test.to.split(' '))).to.eql(await getTimesOfDay(test.from.split(' ')));
+      }));
 
     });
 

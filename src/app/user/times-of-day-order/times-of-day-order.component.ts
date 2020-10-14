@@ -58,12 +58,13 @@ export class TimesOfDayOrderComponent implements OnInit {
     }
 
     const timesOfDayOrder = this.timesOfDayOrder$.getValue();
-    const prev = timesOfDayOrder[event.previousIndex].id;
-    const curr = timesOfDayOrder[event.currentIndex].id;
+    const curr = timesOfDayOrder[event.previousIndex].id;
+    const prev = timesOfDayOrder[event.currentIndex].id;
+    const dir = (event.currentIndex - event.previousIndex) / Math.abs(event.currentIndex - event.previousIndex);
 
     moveItemInArray(timesOfDayOrder, event.previousIndex, event.currentIndex);
 
-    this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(event.currentIndex - event.previousIndex, curr, prev).subscribe((success) => {
+    this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(dir, curr, prev).subscribe((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
