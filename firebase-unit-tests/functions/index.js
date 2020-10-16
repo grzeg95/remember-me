@@ -142,7 +142,7 @@ describe(`My functions tests`, () => {
         });
       });
 
-      timesOfDayTests.authenticated['valid argument'].forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
+      timesOfDayTests.authenticated['valid argument'].shuffle().forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
         await deleteTimesOfDay();
         await setTimesOfDay(createTimesOfDayMockup(test.from.split('')));
         const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
