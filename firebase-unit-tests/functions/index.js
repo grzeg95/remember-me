@@ -114,7 +114,7 @@ describe(`My functions tests`, () => {
           details: 'expected format: { dir: -1 or 1, [is, was]: not empty string, was !== is }'
         };
 
-        timesOfDayTests.authenticated['invalid argument'].forEach((test) => it(`${JSON.stringify(test)}`, async () => {
+        timesOfDayTests.authenticated['invalid argument'].shuffle().forEach((test) => it(`${JSON.stringify(test)}`, async () => {
           const result = await getResult(setTimesOfDayOrder, test, myAuth);
           expect(result).to.eql(expected);
         }));
