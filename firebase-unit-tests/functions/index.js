@@ -111,7 +111,7 @@ describe(`My functions tests`, () => {
         const expected = {
           code: 'invalid-argument',
           message: 'Bad Request',
-          details: 'expected format: { dir: -1 or 1, [is, was]: not empty string, was !== is }'
+          details: 'expected format: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }'
         };
 
         timesOfDayTests.authenticated['invalid argument'].shuffle().forEach((test) => it(`${JSON.stringify(test)}`, async () => {
