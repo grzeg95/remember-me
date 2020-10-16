@@ -1,5 +1,6 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 
+const timesOfDayTests = require('./timesOfDayOrder.tests.json')
 const admin = require('firebase-admin');
 const test = require('firebase-functions-test')();
 const chai = require('chai');
@@ -113,154 +114,40 @@ describe(`My functions tests`, () => {
           details: 'expected format: { dir: -1 or 1, [is, was]: not empty string, was !== is }'
         };
 
-        it(`null`, async () => {
-          const result = await getResult(setTimesOfDayOrder, null, myAuth);
+        timesOfDayTests.authenticated['invalid argument'].forEach((test) => it(`${JSON.stringify(test)}`, async () => {
+          const result = await getResult(setTimesOfDayOrder, test, myAuth);
           expect(result).to.eql(expected);
-        });
-
-        it(`[]`, async () => {
-          const result = await getResult(setTimesOfDayOrder,[], myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{}`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{}, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`number: 0`, async () => {
-          const result = await getResult(setTimesOfDayOrder,0, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`string`, async () => {
-          const result = await getResult(setTimesOfDayOrder,'string', myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ other: null }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ other: null }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 0 }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 0 }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 0.1 }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 0.1 }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 1, is: null }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: null }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 1, is: '' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: '' }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 1, is: 'a' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a' }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 1, is: 'a', was: null }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: null }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 1, is: 'a', was: '' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: '' }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 1, is: 'a', was: 'a' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 1, is: 'a', was: 'a' }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: -1, is: 'a', was: 'a' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -1, is: 'a', was: 'a' }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: -2, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: -2, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql(expected);
-        });
-
-        it(`{ dir: 2, is: 'a', was: 'b' }`, async () => {
-          const result = await getResult(setTimesOfDayOrder,{ dir: 2, is: 'a', was: 'b' }, myAuth);
-          expect(result).to.eql(expected);
-        });
+        }));
 
       });
 
-      const tests = [
-        {
-          from: 'a b',
-          to: 'b a',
-          args: { dir: 1, is: 'a', was: 'b' },
-          expected: { details: 'Order has been updated 🙃' }
-        },
-        {
-          from: 'a b',
-          to: 'b a',
-          args: { dir: -1, is: 'b', was: 'a' },
-          expected: { details: 'Order has been updated 🙃' }
-        },
-        {
-          from: 'a b',
-          to: 'a b',
-          args: { dir: -1, is: 'a', was: 'b' },
-          expected: {
-            code: 'invalid-argument',
-            details: 'The direction must correlate with the order change',
-            message: 'Bad Request'
-          }
-        },
-        {
-          from: 'a b c d',
-          to: 'b c d a',
-          args: { dir: 1, is: 'a', was: 'd' },
-          expected: { details: 'Order has been updated 🙃' }
-        },
-        {
-          from: 'a b c d',
-          to: 'b c a d',
-          args: { dir: -1, is: 'a', was: 'd' },
-          expected: { details: 'Order has been updated 🙃' }
-        },
-        {
-          from: 'a b c d e f g h',
-          to: 'b c d e f g h a',
-          args: { dir: 1, is: 'a', was: 'h' },
-          expected: { details: 'Order has been updated 🙃' }
-        },
-        {
-          from: 'a b c d e f g h',
-          to: 'h a b c d e f g',
-          args: { dir: -1, is: 'h', was: 'a' },
-          expected: { details: 'Order has been updated 🙃' }
-        },
-        {
-          from: 'a b c d e f g h',
-          to: 'a h b c d e f g',
-          args: { dir: 1, is: 'h', was: 'a' },
-          expected: { details: 'Order has been updated 🙃' }
-        }
-      ];
-
-      tests.forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
+      it(`{was: a} and {is: b} does not exist`, async () => {
         await deleteTimesOfDay();
-        await setTimesOfDay(createTimesOfDayMockup(test.from.split(' ')));
+        const result = await getResult(setTimesOfDayOrder, {dir: 1, was: 'a', is: 'b'}, myAuth);
+        expect(result).to.eql({
+          code: 'invalid-argument',
+          message: 'Bad Request',
+          details: `timeOfDayId 'a' does not exists`
+        });
+      });
+
+      it(`{was: a} exists, {is: b} does not exist`, async () => {
+        await deleteTimesOfDay();
+        await setTimesOfDay(createTimesOfDayMockup(['a']));
+        const result = await getResult(setTimesOfDayOrder, {dir: 1, was: 'a', is: 'b'}, myAuth);
+        expect(result).to.eql({
+          code: 'invalid-argument',
+          message: 'Bad Request',
+          details: `timeOfDayId 'b' does not exists`
+        });
+      });
+
+      timesOfDayTests.authenticated['valid argument'].forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
+        await deleteTimesOfDay();
+        await setTimesOfDay(createTimesOfDayMockup(test.from.split('')));
         const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
         expect(result).to.eql(test.expected);
-        expect(createTimesOfDayMockup(test.to.split(' '))).to.eql(await getTimesOfDay(test.from.split(' ')));
+        expect(createTimesOfDayMockup(test.to.split(''))).to.eql(await getTimesOfDay(test.from.split('')));
       }));
 
     });

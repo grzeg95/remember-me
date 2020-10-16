@@ -1,0 +1,382 @@
+{
+  "authenticated": {
+    "invalid argument": [
+
+      null,
+      [],
+      0,
+      "",
+      "string",
+      { "a": null },
+
+      { "dir": null, "is": null, "was": null },
+      { "dir": {}, "is": null, "was": null },
+      { "dir": [], "is": null, "was": null },
+      { "dir": 0, "is": null, "was": null },
+      { "dir": "", "is": null, "was": null },
+      { "dir": "string", "is": null, "was": null },
+
+      { "dir": 1, "is": null, "was": null },
+      { "dir": 1, "is": {}, "was": null },
+      { "dir": 1, "is": [], "was": null },
+      { "dir": 1, "is": 0, "was": null },
+      { "dir": 1, "is": "", "was": null },
+
+      { "dir": -1, "is": null, "was": null },
+      { "dir": -1, "is": {}, "was": null },
+      { "dir": -1, "is": [], "was": null },
+      { "dir": -1, "is": 0, "was": null },
+      { "dir": -1, "is": "", "was": null },
+
+      { "dir": 1, "is": "a", "was": null },
+      { "dir": 1, "is": "a", "was": {} },
+      { "dir": 1, "is": "a", "was": [] },
+      { "dir": 1, "is": "a", "was": 0 },
+      { "dir": 1, "is": "a", ",was": "" },
+
+      { "dir": -1, "is": "a", "was": null },
+      { "dir": -1, "is": "a", "was": {} },
+      { "dir": -1, "is": "a", "was": [] },
+      { "dir": -1, "is": "a", "was": 0 },
+      { "dir": -1, "is": "a", "was": "" },
+
+      { "dir": -1, "is": "a", "was": "a" },
+      { "dir": 1, "is": "a", "was": "a" }
+
+    ],
+    "valid argument": [
+      {
+        "from": "aXb",
+        "to": "Xab",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXb",
+        "to": "Xba",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXb",
+        "to": "baX",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXb",
+        "to": "abX",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "aXYb",
+        "to": "XYab",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXYb",
+        "to": "XYba",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXYb",
+        "to": "baXY",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXYb",
+        "to": "abXY",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "ZaXb",
+        "to": "ZXab",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZXba",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZbaX",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZabX",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "ZaXYb",
+        "to": "ZXYab",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZXYba",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZbaXY",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZabXY",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "aXbC",
+        "to": "XabC",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXbC",
+        "to": "XbaC",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXbC",
+        "to": "baXC",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXbC",
+        "to": "abXC",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "aXYbC",
+        "to": "XYabC",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXYbC",
+        "to": "XYbaC",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXYbC",
+        "to": "baXYC",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "aXYbC",
+        "to": "abXYC",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "ZaXbC",
+        "to": "ZXabC",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZXbaC",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZbaXC",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZabXC",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "ZaXYbC",
+        "to": "ZXYabC",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZXYbaC",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZbaXYC",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZabXYC",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+
+      {
+        "from": "ab",
+        "to": "ab",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+      {
+        "from": "ab",
+        "to": "ba",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ab",
+        "to": "ba",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ab",
+        "to": "ab",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+
+      {
+        "from": "Zab",
+        "to": "Zab",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+      {
+        "from": "Zab",
+        "to": "Zba",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "Zab",
+        "to": "Zba",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "Zab",
+        "to": "Zab",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+
+      {
+        "from": "ZabC",
+        "to": "ZabC",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+      {
+        "from": "ZabC",
+        "to": "ZbaC",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZabC",
+        "to": "ZbaC",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "ZabC",
+        "to": "ZabC",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+
+      {
+        "from": "abC",
+        "to": "abC",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      },
+      {
+        "from": "abC",
+        "to": "baC",
+        "args": { "dir": 1, "is": "a", "was": "b" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "abC",
+        "to": "baC",
+        "args": { "dir": -1, "is": "b", "was": "a" },
+        "expected": { "details": "Order has been updated 🙃" }
+      },
+      {
+        "from": "abC",
+        "to": "abC",
+        "args": { "dir": 1, "is": "b", "was": "a" },
+        "expected": {
+          "code": "invalid-argument",
+          "details": "The direction must correlate with the order change",
+          "message": "Bad Request"
+        }
+      }
+
+    ]
+  }
+}
