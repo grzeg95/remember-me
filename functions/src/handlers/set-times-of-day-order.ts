@@ -182,9 +182,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   // data
   testRequirement(
-    data === null || Array.isArray(data) || typeof data !== 'object' ||
-    !['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()) ||
-    typeof data.dir !== 'number' || !Number.isInteger(data.dir) || (data.dir !== -1 && data.dir !== 1) ||
+    data === null || !['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()) ||
+    (data.dir !== -1 && data.dir !== 1) ||
     typeof data.is !== 'string' || data.is.length === 0 ||
     typeof data.was !== 'string' || data.was.length === 0 ||
     data.is === data.was,
