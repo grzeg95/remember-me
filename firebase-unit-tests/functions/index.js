@@ -1,8 +1,10 @@
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+// process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 
 const timesOfDayTests = require('./timesOfDayOrder.tests.json')
 const admin = require('firebase-admin');
-const test = require('firebase-functions-test')();
+const test = require('firebase-functions-test')({
+  projectId: 'remember-me-dev'
+});
 const chai = require('chai');
 const expect = chai.expect;
 const myFunctions = require('../../functions/lib/functions/src/index');
