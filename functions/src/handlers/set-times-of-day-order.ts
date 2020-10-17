@@ -202,10 +202,10 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     const bPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
 
     const a = await aPromiseGet;
-    testRequirement(!a.exists, `Try again time of day '${data.was}' disappear`)
-
     const b = await bPromiseGet;
-    testRequirement(!b.exists, `Try again time of day '${data.is}' disappear`)
+
+    testRequirement(!a.exists, `Try again time of day '${data.was}' disappear`);
+    testRequirement(!b.exists, `Try again time of day '${data.is}' disappear`);
 
     // siblings a <-> b
     if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
