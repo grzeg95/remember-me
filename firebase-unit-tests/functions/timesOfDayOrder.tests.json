@@ -41,7 +41,10 @@
       { "dir": -1, "is": "a", "was": "" },
 
       { "dir": -1, "is": "a", "was": "a" },
-      { "dir": 1, "is": "a", "was": "a" }
+      { "dir": 1, "is": "a", "was": "a" },
+
+      { "dir": -1, "is": "a ", "was": "b" },
+      { "dir": 1, "is": "b", "was": "a " }
 
     ],
     "valid argument": [
