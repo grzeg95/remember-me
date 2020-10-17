@@ -182,8 +182,8 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   testRequirement(
     data === null || !['dir', 'is', 'was'].toSet().hasOnly(Object.keys(data).toSet()) ||
     (data.dir !== -1 && data.dir !== 1) ||
-    typeof data.is !== 'string' || data.is.length === 0 ||
-    typeof data.was !== 'string' || data.was.length === 0 ||
+    typeof data.is !== 'string' || data.is.trim().length !== data.is.length || data.is.length === 0 ||
+    typeof data.was !== 'string' || data.was.trim().length !== data.was.length || data.was.length === 0 ||
     data.is === data.was,
     'expected format: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }'
   );
