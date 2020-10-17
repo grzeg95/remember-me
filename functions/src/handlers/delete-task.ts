@@ -90,11 +90,17 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         if (getTimeOfDayNextPromise) {
           affected[affected[timeOfDayId].data.next as string] = await getTimeOfDayNextPromise;
-          testRequirement(!affected[affected[timeOfDayId].data.next as string].exists, `Try again time of day '${affected[affected[timeOfDayId].data.next as string].ref.id}' disappear`);
         }
 
         if (getTimeOfDayPrevPromise) {
           affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDayPrevPromise;
+        }
+
+        if (getTimeOfDayNextPromise) {
+          testRequirement(!affected[affected[timeOfDayId].data.next as string].exists, `Try again time of day '${affected[affected[timeOfDayId].data.next as string].ref.id}' disappear`);
+        }
+
+        if (getTimeOfDayPrevPromise) {
           testRequirement(!affected[affected[timeOfDayId].data.prev as string].exists, `Try again time of day '${affected[affected[timeOfDayId].data.prev as string].ref.id}' disappear`);
         }
 
@@ -155,13 +161,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
-  })).catch((error: HttpsError) => {
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-    throw new HttpsError(
-      error.code,
-      error.message,
-      details
-    );
-  });
+  }));
 
 };
