@@ -1,5 +1,5 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {getTimeOfDay} from '../helpers/timeOfDay';
@@ -39,12 +39,10 @@ const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSn
 
   if (aPrevPromise) {
     aPrev = await aPrevPromise;
-    testRequirement(aPrev.data.next !== a.ref.id, 'a.data.prev !== a.ref.id');
   }
 
   if (bNextPromise) {
     bNext = await bNextPromise;
-    testRequirement(bNext.data.prev !== b.ref.id, 'b.data.next !== b.ref.id');
   }
 
   if (aPrev && aPrev.exists) {
@@ -105,11 +103,11 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   }
 
   if (a.data.prev) {
-    aPrevPromise = getTimeOfDay(transaction, userDocSnap, a.data.prev, true);
+    aPrevPromise = getTimeOfDay(transaction, userDocSnap, a.data.prev);
   }
 
   if (a.data.next) {
-    aNextPromise = getTimeOfDay(transaction, userDocSnap, a.data.next, true);
+    aNextPromise = getTimeOfDay(transaction, userDocSnap, a.data.next);
   }
 
   aPrev = await aPrevPromise;
@@ -129,7 +127,7 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
 
   if (dir > 0) {
     if (b.data.next) {
-      bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next, true);
+      bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
     }
     if (bNext && bNext.exists) {
       bNextDataUpdate = {
@@ -138,7 +136,7 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
     }
   } else {
     if (b.data.prev) {
-      bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev, true);
+      bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev);
     }
     if (bPrev && bPrev.exists) {
       bPrevDataUpdate = {
@@ -200,11 +198,14 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     * Read all data
     * */
 
-    const aPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
-    const bPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
+    const aPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
+    const bPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
 
     const a = await aPromiseGet;
+    testRequirement(!a.exists, `Try again time of day '${data.was}' disappear`)
+
     const b = await bPromiseGet;
+    testRequirement(!b.exists, `Try again time of day '${data.is}' disappear`)
 
     // siblings a <-> b
     if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
@@ -222,18 +223,10 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
     // not siblings
     await processNotSiblings(data.dir, transaction, userDocSnap, b, a);
-
     return transaction;
 
   }).then(() => ({
     details: 'Order has been updated 🙃'
-  })).catch((error: HttpsError) => {
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-    throw new HttpsError(
-      error.code,
-      error.message,
-      details
-    );
-  });
+  }));
 
 };

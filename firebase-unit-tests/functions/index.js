@@ -127,7 +127,7 @@ describe(`My functions tests`, () => {
         expect(result).to.eql({
           code: 'invalid-argument',
           message: 'Bad Request',
-          details: `timeOfDayId 'a' does not exists`
+          details: `Try again time of day 'a' disappear`
         });
       });
 
@@ -138,7 +138,7 @@ describe(`My functions tests`, () => {
         expect(result).to.eql({
           code: 'invalid-argument',
           message: 'Bad Request',
-          details: `timeOfDayId 'b' does not exists`
+          details: `Try again time of day 'b' disappear`
         });
       });
 
