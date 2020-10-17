@@ -104,7 +104,7 @@ describe(`My functions tests`, () => {
 
     describe(`authenticated`, () => {
 
-      describe(`data param format is wrong`, () => {
+      describe(`invalid argument`, () => {
 
         const expected = {
           code: 'invalid-argument',
@@ -116,37 +116,17 @@ describe(`My functions tests`, () => {
           const result = await getResult(setTimesOfDayOrder, test, myAuth);
           expect(result).to.eql(expected);
         }));
-
       });
 
-      it(`{was: a} and {is: b} does not exist`, async () => {
-        await deleteTimesOfDay();
-        const result = await getResult(setTimesOfDayOrder, {dir: 1, was: 'a', is: 'b'}, myAuth);
-        expect(result).to.eql({
-          code: 'invalid-argument',
-          message: 'Bad Request',
-          details: `Try again time of day 'a' disappear`
-        });
+      describe(`valid argument`, () => {
+        timesOfDayTests.authenticated['valid argument'].shuffle().forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
+          await deleteTimesOfDay();
+          await setTimesOfDay(createTimesOfDayMockup(test.from.split('')));
+          const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
+          expect(result).to.eql(test.expected);
+          expect(createTimesOfDayMockup(test.to.split(''))).to.eql(await getTimesOfDay(test.from.split('')));
+        }));
       });
-
-      it(`{was: a} exists, {is: b} does not exist`, async () => {
-        await deleteTimesOfDay();
-        await setTimesOfDay(createTimesOfDayMockup(['a']));
-        const result = await getResult(setTimesOfDayOrder, {dir: 1, was: 'a', is: 'b'}, myAuth);
-        expect(result).to.eql({
-          code: 'invalid-argument',
-          message: 'Bad Request',
-          details: `Try again time of day 'b' disappear`
-        });
-      });
-
-      timesOfDayTests.authenticated['valid argument'].shuffle().forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
-        await deleteTimesOfDay();
-        await setTimesOfDay(createTimesOfDayMockup(test.from.split('')));
-        const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
-        expect(result).to.eql(test.expected);
-        expect(createTimesOfDayMockup(test.to.split(''))).to.eql(await getTimesOfDay(test.from.split('')));
-      }));
 
     });
 
