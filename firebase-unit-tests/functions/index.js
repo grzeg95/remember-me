@@ -36,14 +36,12 @@ const getTimeOfDayRef = (timeOfDayId) => {
 };
 
 const setTimesOfDay = async (timesOfDay) => {
-  const promises = [];
-
-  Object.getOwnPropertyNames(timesOfDay).forEach((timeOfDay) => {
-    promises.push(getTimeOfDayRef(timeOfDay).set(timesOfDay[timeOfDay]));
-  });
-
-  return await Promise.all(promises);
-};
+  return await Promise.all(
+    Object.getOwnPropertyNames(timesOfDay).map(
+      (timeOfDay) => getTimeOfDayRef(timeOfDay).set(timesOfDay[timeOfDay])
+    )
+  );
+}
 
 const deleteTimesOfDay = async () => {
   const promises = [];
