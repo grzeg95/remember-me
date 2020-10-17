@@ -185,7 +185,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     typeof data.is !== 'string' || data.is.length === 0 ||
     typeof data.was !== 'string' || data.was.length === 0 ||
     data.is === data.was,
-    'expected format: { dir: -1 or 1, [is, was]: not empty string, was !== is }'
+    'expected format: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }'
   );
 
   const auth: { uid: string } | undefined = context.auth;
