@@ -17,13 +17,16 @@ const app = firestore();
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!context.auth, 'Please login in');
 
-  // data has not taskId
-  testRequirement(!data.taskId);
-
-  // data.taskId is not string
-  testRequirement(typeof data.taskId !== 'string');
+  // data
+  testRequirement(
+    !data.taskId ||
+    typeof data.taskId !== 'string' ||
+    data.taskId.trim().length !== data.taskId.length ||
+    data.taskId.length !== 0,
+    'expected format: { taskId: not empty string and trim().length === length }'
+  );
 
   const auth: { uid: string } | undefined = context.auth;
 
