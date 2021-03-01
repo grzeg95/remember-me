@@ -1,12 +1,12 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
+import {User} from 'firebase/app';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 import {ITask, Task, TasksListItem, TimeOfDay, TimeOfDayFirestore, TodayItem} from './models';
-import User = firebase.User;
 
 @Injectable()
 export class UserService {
@@ -207,7 +207,7 @@ export class UserService {
 
   getTaskById$(id: string): Observable<ITask> {
     return this.afs.doc<User>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
-      map((taskDocSnap) => taskDocSnap.data() as Task)
+      map((taskDocSnap) => taskDocSnap.data() as unknown as Task)
     );
   }
 

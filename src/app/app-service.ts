@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ConnectionService} from 'ng-connection-service';
+import {ConnectionService} from './connection.service';
 import {BehaviorSubject, Observable} from 'rxjs';
 
 @Injectable()
@@ -13,7 +13,7 @@ export class AppService {
 
   constructor(private connectionService: ConnectionService) {
     this.connectionService.monitor().subscribe((isConnected) =>
-      this.isConnected.next(isConnected)
+      this.isConnected.next(isConnected.hasNetworkConnection)
     );
   }
 

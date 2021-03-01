@@ -7,6 +7,7 @@ import {AppService} from './app-service';
 import {AuthGuardGuestService} from './auth/auth.guard.guest.service';
 import {AuthGuardUserService} from './auth/auth.guard.user.service';
 import {AuthService} from './auth/auth.service';
+import {ConnectionService} from './connection.service';
 
 @NgModule({
   providers: [
@@ -14,6 +15,7 @@ import {AuthService} from './auth/auth.service';
     AuthService,
     AuthGuardUserService,
     AuthGuardGuestService,
+    ConnectionService,
     {provide: REGION, useValue: 'europe-west2'},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
     {provide: Window, useValue: window},
