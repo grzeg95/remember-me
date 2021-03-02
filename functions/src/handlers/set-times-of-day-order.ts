@@ -196,10 +196,10 @@ export const handler = async (data: any, context: CallableContext) => {
     const isPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
 
     const was = await wasPromiseGet;
-    testRequirement(!was.exists, `timeOfDayId '${data.was}' does not exists`);
+    testRequirement(!was.exists, `Try again time of day '${data.was}' disappear`);
 
     const is = await isPromiseGet;
-    testRequirement(!is.exists, `timeOfDayId '${data.is}' does not exists`);
+    testRequirement(!is.exists, `Try again time of day '${data.is}' disappear`);
 
     // siblings was <-> is
     if (was.data.next === is.ref.id && is.data.prev === was.ref.id) {
