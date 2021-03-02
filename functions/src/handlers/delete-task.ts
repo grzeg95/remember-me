@@ -17,16 +17,13 @@ const app = firestore();
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // not logged in
-  testRequirement(!context.auth, 'Please login in');
+  testRequirement(!context.auth);
 
-  // data
-  testRequirement(
-    !data.taskId ||
-    typeof data.taskId !== 'string' ||
-    data.taskId.trim().length !== data.taskId.length ||
-    data.taskId.length !== 0,
-    'expected format: { taskId: not empty string and trim().length === length }'
-  );
+  // data has not taskId
+  testRequirement(!data.taskId);
+
+  // data.taskId is not string
+  testRequirement(typeof data.taskId !== 'string');
 
   const auth: { uid: string } | undefined = context.auth;
 
@@ -74,7 +71,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
       if (!affected[timeOfDayId]) {
         affected[timeOfDayId] = await affectedPromise[timeOfDayId];
-        testRequirement(!affected[timeOfDayId].exists, `Try again time of day '${affected[timeOfDayId].ref.id}' disappear`);
       }
 
       if (affected[timeOfDayId].data.counter - 1 === 0) {
@@ -97,14 +93,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         if (getTimeOfDayPrevPromise) {
           affected[affected[timeOfDayId].data.prev as string] = await getTimeOfDayPrevPromise;
-        }
-
-        if (getTimeOfDayNextPromise) {
-          testRequirement(!affected[affected[timeOfDayId].data.next as string].exists, `Try again time of day '${affected[affected[timeOfDayId].data.next as string].ref.id}' disappear`);
-        }
-
-        if (getTimeOfDayPrevPromise) {
-          testRequirement(!affected[affected[timeOfDayId].data.prev as string].exists, `Try again time of day '${affected[affected[timeOfDayId].data.prev as string].ref.id}' disappear`);
         }
 
         if (affected[timeOfDayId].data.next) {
@@ -164,6 +152,12 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
-  }));
+  })).catch(() => {
+    throw new HttpsError(
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
+    );
+  });
 
 };

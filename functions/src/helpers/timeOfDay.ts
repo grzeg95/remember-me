@@ -17,6 +17,7 @@ export const getTimeOfDayFromSnap = (docSnap: DocumentSnapshot): TimeOfDay => {
 }
 
 export const getTimeOfDay = async (transaction: Transaction, userDocSnap: DocumentSnapshot, timeOfDayId: string): Promise<TimeOfDay> => {
-  return transaction.get(userDocSnap.ref.collection('timesOfDay').doc(timeOfDayId))
-    .then((docSnap) => getTimeOfDayFromSnap(docSnap));
+  return transaction.get(
+    userDocSnap.ref.collection('timesOfDay').doc(timeOfDayId)
+  ).then((docSnap) => getTimeOfDayFromSnap(docSnap));
 };

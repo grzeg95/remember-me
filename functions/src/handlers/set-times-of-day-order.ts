@@ -1,5 +1,5 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {getTimeOfDay} from '../helpers/timeOfDay';
@@ -84,7 +84,7 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   let bNextDataUpdate = null;
   let bPrevDataUpdate = null;
 
-  if (dir > 0) {
+  if (dir === 1) {
     aDataUpdate = {
       next: b.data.next,
       prev: b.ref.id
@@ -125,24 +125,18 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
     };
   }
 
-  if (dir > 0) {
-    if (b.data.next) {
-      bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
-    }
-    if (bNext && bNext.exists) {
-      bNextDataUpdate = {
-        prev: a.ref.id
-      };
-    }
-  } else {
-    if (b.data.prev) {
-      bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev);
-    }
-    if (bPrev && bPrev.exists) {
-      bPrevDataUpdate = {
-        next: a.ref.id
-      };
-    }
+  if (dir === 1 && b.data.next) {
+    bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
+    bNextDataUpdate = {
+      prev: a.ref.id
+    };
+  }
+
+  if (dir === -1 && b.data.prev) {
+    bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev);
+    bPrevDataUpdate = {
+      next: a.ref.id
+    };
   }
 
   transaction.update(a.ref, aDataUpdate);
@@ -169,11 +163,11 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
 /**
  * @function handler
  * Set times of day order
- * @param data: {isIndex: number, is: string, wasIndex: number, was: string}
+ * @param data: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }
  * @param context CallableContext
- * @return Promise<{[key: string]: string}>
+ * @return Promise<{ [key: string]: string }>
  **/
-export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = async (data: any, context: CallableContext) => {
 
   // not logged in
   testRequirement(!context.auth, 'Please login in');
@@ -198,35 +192,43 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     * Read all data
     * */
 
-    const aPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
-    const bPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
+    const wasPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
+    const isPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
 
-    const a = await aPromiseGet;
-    const b = await bPromiseGet;
+    const was = await wasPromiseGet;
+    testRequirement(!was.exists, `timeOfDayId '${data.was}' does not exists`);
 
-    testRequirement(!a.exists, `Try again time of day '${data.was}' disappear`);
-    testRequirement(!b.exists, `Try again time of day '${data.is}' disappear`);
+    const is = await isPromiseGet;
+    testRequirement(!is.exists, `timeOfDayId '${data.is}' does not exists`);
 
-    // siblings a <-> b
-    if (a.data.next === b.ref.id && b.data.prev === a.ref.id) {
-      testRequirement(data.dir > 0, 'The direction must correlate with the order change');
-      await processSiblings(transaction, userDocSnap, a, b);
+    // siblings was <-> is
+    if (was.data.next === is.ref.id && is.data.prev === was.ref.id) {
+      testRequirement(data.dir === 1, 'The direction must correlate with the order change');
+      await processSiblings(transaction, userDocSnap, was, is);
       return transaction;
     }
 
-    // siblings b <-> a
-    if (b.data.next === a.ref.id && a.data.prev === b.ref.id) {
-      testRequirement(data.dir < 0, 'The direction must correlate with the order change');
-      await processSiblings(transaction, userDocSnap, b, a);
+    // siblings is <-> was
+    if (is.data.next === was.ref.id && was.data.prev === is.ref.id) {
+      testRequirement(data.dir === -1, 'The direction must correlate with the order change');
+      await processSiblings(transaction, userDocSnap, is, was);
       return transaction;
     }
 
     // not siblings
-    await processNotSiblings(data.dir, transaction, userDocSnap, b, a);
+    await processNotSiblings(data.dir, transaction, userDocSnap, is, was);
+
     return transaction;
 
   }).then(() => ({
     details: 'Order has been updated 🙃'
-  }));
+  })).catch((error: HttpsError) => {
+    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+    throw new HttpsError(
+      error.code,
+      error.message,
+      details
+    );
+  });
 
 };

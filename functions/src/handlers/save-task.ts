@@ -6,6 +6,7 @@ import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentData = firestore.DocumentData;
 import {getTimeOfDay, getTimeOfDayFromSnap} from '../helpers/timeOfDay';
+// tslint:disable-next-line:no-import-side-effect
 import '../../../global.prototype';
 import {getUser} from '../helpers/user';
 
@@ -536,14 +537,11 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       'details': 'Your task has been updated 🙃',
       'taskId': taskId
     })
-  ).catch((error: HttpsError) => {
-    console.log(error);
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+  ).catch(() => {
     throw new HttpsError(
-      error.code,
-      error.message,
-      details
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
     );
   });
-
 };
