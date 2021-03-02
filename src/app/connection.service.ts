@@ -3,6 +3,7 @@ import {fromEvent, Observable, Subscription, timer} from 'rxjs';
 import {debounceTime, delay, retryWhen, startWith, switchMap, tap} from 'rxjs/operators';
 import * as _ from 'lodash';
 import { HttpClient } from '@angular/common/http';
+import {environment} from '../environments/environment';
 
 export interface ConnectionState {
   /**
@@ -20,7 +21,6 @@ export interface ConnectionServiceOptions {
   heartbeatUrl?: string;
   heartbeatInterval?: number;
   heartbeatRetryInterval?: number;
-  requestMethod?: 'get' | 'post' | 'head' | 'options';
 }
 
 /**
@@ -64,6 +64,10 @@ export class ConnectionService implements OnDestroy {
 
   private checkInternetState(): void {
 
+    if (!environment.production) {
+      return;
+    }
+
     if (!_.isNil(this.httpSubscription)) {
       this.httpSubscription.unsubscribe();
     }
@@ -71,7 +75,7 @@ export class ConnectionService implements OnDestroy {
     if (this.serviceOptions.enableHeartbeat) {
       this.httpSubscription = timer(0, this.serviceOptions.heartbeatInterval)
         .pipe(
-          switchMap(() => this.http[this.serviceOptions.requestMethod](this.serviceOptions.heartbeatUrl, {responseType: 'text'})),
+          switchMap(() => this.http.head(this.serviceOptions.heartbeatUrl)),
           retryWhen(errors =>
             errors.pipe(
               // log error message
@@ -114,12 +118,9 @@ export class ConnectionService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    try {
-      this.offlineSubscription.unsubscribe();
-      this.onlineSubscription.unsubscribe();
-      this.httpSubscription.unsubscribe();
-    } catch (e) {
-    }
+    this.offlineSubscription.unsubscribe();
+    this.onlineSubscription.unsubscribe();
+    this.httpSubscription.unsubscribe();
   }
 
   /**
@@ -151,9 +152,8 @@ export class ConnectionService implements OnDestroy {
 
   private static DEFAULT_OPTIONS: ConnectionServiceOptions = {
     enableHeartbeat: true,
-    heartbeatUrl: '//internethealthtest.org',
+    heartbeatUrl: 'https://www.rem.grzeg.pl/',
     heartbeatInterval: 30000,
-    heartbeatRetryInterval: 1000,
-    requestMethod: 'head'
+    heartbeatRetryInterval: 1000
   };
 }

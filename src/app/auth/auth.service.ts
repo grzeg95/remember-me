@@ -2,7 +2,7 @@ import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
-import {auth, User} from 'firebase/app';
+import * as firebase from 'firebase';
 import {interval, Observable, of, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
@@ -12,7 +12,7 @@ import {UserData} from './user-data.model';
 export class AuthService {
 
   userData: UserData;
-  user$: Observable<User>;
+  user$: Observable<firebase.default.User>;
   userDoc$: Subscription;
   whileLoginIn = false;
   firstLoginChecking = true;
@@ -26,7 +26,7 @@ export class AuthService {
 
     this.user$ = this.afAuth.authState;
 
-    this.user$.subscribe((user: User) => {
+    this.user$.subscribe((user: firebase.default.User) => {
 
       if (user) {
 
@@ -93,7 +93,7 @@ export class AuthService {
   googleAuth(): void {
     this.whileLoginIn = true;
 
-    this.afAuth.signInWithRedirect(new auth.GoogleAuthProvider()).then(() => {
+    this.afAuth.signInWithRedirect(new firebase.default.auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn = false;
         this.router.navigate(['/u/t']);
