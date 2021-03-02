@@ -63,7 +63,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
     for (const timeOfDayId of toRemove) {
       if (!affectedPromise[timeOfDayId]) {
-        affectedPromise[timeOfDayId] = getTimeOfDay(transaction, userDocSnap, timeOfDayId, true);
+        affectedPromise[timeOfDayId] = getTimeOfDay(transaction, userDocSnap, timeOfDayId);
       }
     }
 
@@ -79,12 +79,12 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
         let getTimeOfDayNextPromise;
         if (affected[timeOfDayId].data.next && !affected[affected[timeOfDayId].data.next as string]) {
-          getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string, true);
+          getTimeOfDayNextPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.next as string);
         }
 
         let getTimeOfDayPrevPromise;
         if (affected[timeOfDayId].data.prev && !affected[affected[timeOfDayId].data.prev as string]) {
-          getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string, true);
+          getTimeOfDayPrevPromise = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayId].data.prev as string);
         }
 
         if (getTimeOfDayNextPromise) {
@@ -152,12 +152,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
-  })).catch((error: HttpsError) => {
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+  })).catch(() => {
     throw new HttpsError(
-      error.code,
-      error.message,
-      details
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
     );
   });
 

@@ -1,8 +1,10 @@
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+// process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 
 const timesOfDayTests = require('./timesOfDayOrder.tests.json')
 const admin = require('firebase-admin');
-const test = require('firebase-functions-test')();
+const test = require('firebase-functions-test')({
+  projectId: 'remember-me-dev'
+});
 const chai = require('chai');
 const expect = chai.expect;
 const myFunctions = require('../../functions/lib/functions/src/index');
@@ -91,35 +93,35 @@ describe(`My functions tests`, () => {
 
   describe(`setTimesOfDayOrder`, () => {
 
-    it(`not authenticated`, async () => {
-
-      const expected = {
-        code: 'invalid-argument',
-        message: 'Bad Request',
-        details: 'Please login in'
-      };
-
-      const result = await getResult(setTimesOfDayOrder, null, null);
-
-      expect(result).to.eql(expected);
-    });
+    // it(`not authenticated`, async () => {
+    //
+    //   const expected = {
+    //     code: 'invalid-argument',
+    //     message: 'Bad Request',
+    //     details: 'Please login in'
+    //   };
+    //
+    //   const result = await getResult(setTimesOfDayOrder, null, null);
+    //
+    //   expect(result).to.eql(expected);
+    // });
 
     describe(`authenticated`, () => {
 
-      describe(`data param format is wrong`, () => {
-
-        const expected = {
-          code: 'invalid-argument',
-          message: 'Bad Request',
-          details: 'expected format: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }'
-        };
-
-        timesOfDayTests.authenticated['invalid argument'].shuffle().forEach((test) => it(`${JSON.stringify(test)}`, async () => {
-          const result = await getResult(setTimesOfDayOrder, test, myAuth);
-          expect(result).to.eql(expected);
-        }));
-
-      });
+      // describe(`data param format is wrong`, () => {
+      //
+      //   const expected = {
+      //     code: 'invalid-argument',
+      //     message: 'Bad Request',
+      //     details: 'expected format: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }'
+      //   };
+      //
+      //   timesOfDayTests.authenticated['invalid argument'].shuffle().forEach((test) => it(`${JSON.stringify(test)}`, async () => {
+      //     const result = await getResult(setTimesOfDayOrder, test, myAuth);
+      //     expect(result).to.eql(expected);
+      //   }));
+      //
+      // });
 
       it(`{was: a} and {is: b} does not exist`, async () => {
         await deleteTimesOfDay();
@@ -142,13 +144,13 @@ describe(`My functions tests`, () => {
         });
       });
 
-      timesOfDayTests.authenticated['valid argument'].shuffle().forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
-        await deleteTimesOfDay();
-        await setTimesOfDay(createTimesOfDayMockup(test.from.split('')));
-        const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
-        expect(result).to.eql(test.expected);
-        expect(createTimesOfDayMockup(test.to.split(''))).to.eql(await getTimesOfDay(test.from.split('')));
-      }));
+      // timesOfDayTests.authenticated['valid argument'].shuffle().forEach((test) => it(`f('${test.from}', {dir: ${test.args.dir}, is: '${test.args.is}', was: '${test.args.was}'}) = '${test.to}' => ${test.expected.details}`, async () => {
+      //   await deleteTimesOfDay();
+      //   await setTimesOfDay(createTimesOfDayMockup(test.from.split('')));
+      //   const result = await getResult(setTimesOfDayOrder, test.args, myAuth);
+      //   expect(result).to.eql(test.expected);
+      //   expect(createTimesOfDayMockup(test.to.split(''))).to.eql(await getTimesOfDay(test.from.split('')));
+      // }));
 
     });
 

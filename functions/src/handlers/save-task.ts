@@ -6,6 +6,7 @@ import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentData = firestore.DocumentData;
 import {getTimeOfDay, getTimeOfDayFromSnap} from '../helpers/timeOfDay';
+// tslint:disable-next-line:no-import-side-effect
 import '../../../global.prototype';
 import {getUser} from '../helpers/user';
 
@@ -130,7 +131,7 @@ const proceedTimesOfDay = async (
   currentTimesOfDaySize: number): Promise<number> => {
 
   const affected: { [p: string]: TimeOfDay } = {};
-  let affectedPromise: { [p: string]: Promise<TimeOfDay> } = {};
+  const affectedPromise: { [p: string]: Promise<TimeOfDay> } = {};
 
   const toAdd = enteredTimesOfDay.toSet().difference(currentTimesOfDay.toSet());
   const toRemove = currentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet());
@@ -147,7 +148,7 @@ const proceedTimesOfDay = async (
 
   for (const timeOfDayIdToRemove of toRemove) {
     if (!affected[timeOfDayIdToRemove]) {
-      affectedPromise[timeOfDayIdToRemove] = getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove, true);
+      affectedPromise[timeOfDayIdToRemove] = getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove);
     }
   }
 
@@ -161,11 +162,11 @@ const proceedTimesOfDay = async (
       removed++;
 
       if (affected[timeOfDayIdToRemove].data.next && !affected[affected[timeOfDayIdToRemove].data.next as string]) {
-        affectedPromise[affected[timeOfDayIdToRemove].data.next as string] = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string, true);
+        affectedPromise[affected[timeOfDayIdToRemove].data.next as string] = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.next as string);
       }
 
       if (affected[timeOfDayIdToRemove].data.prev && !affected[affected[timeOfDayIdToRemove].data.prev as string]) {
-        affectedPromise[affected[timeOfDayIdToRemove].data.prev as string] = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string, true);
+        affectedPromise[affected[timeOfDayIdToRemove].data.prev as string] = getTimeOfDay(transaction, userDocSnap, affected[timeOfDayIdToRemove].data.prev as string);
       }
     }
   }
@@ -203,9 +204,6 @@ const proceedTimesOfDay = async (
     }
 
   }
-
-  // @ts-ignore
-  affectedPromise = undefined;
 
   const toAddIdsIterableIterator = toAdd.values();
   let timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
@@ -533,14 +531,11 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       'details': 'Your task has been updated 🙃',
       'taskId': taskId
     })
-  ).catch((error: HttpsError) => {
-    console.log(error);
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
+  ).catch(() => {
     throw new HttpsError(
-      error.code,
-      error.message,
-      details
+      'invalid-argument',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
     );
   });
-
 };

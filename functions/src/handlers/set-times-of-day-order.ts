@@ -1,5 +1,5 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {TimeOfDay} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {getTimeOfDay} from '../helpers/timeOfDay';
@@ -39,12 +39,10 @@ const processSiblings = async (transaction: Transaction, userDocSnap: DocumentSn
 
   if (aPrevPromise) {
     aPrev = await aPrevPromise;
-    testRequirement(aPrev.data.next !== a.ref.id, 'a.data.prev !== a.ref.id');
   }
 
   if (bNextPromise) {
     bNext = await bNextPromise;
-    testRequirement(bNext.data.prev !== b.ref.id, 'b.data.next !== b.ref.id');
   }
 
   if (aPrev && aPrev.exists) {
@@ -105,11 +103,11 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   }
 
   if (a.data.prev) {
-    aPrevPromise = getTimeOfDay(transaction, userDocSnap, a.data.prev, true);
+    aPrevPromise = getTimeOfDay(transaction, userDocSnap, a.data.prev);
   }
 
   if (a.data.next) {
-    aNextPromise = getTimeOfDay(transaction, userDocSnap, a.data.next, true);
+    aNextPromise = getTimeOfDay(transaction, userDocSnap, a.data.next);
   }
 
   aPrev = await aPrevPromise;
@@ -128,14 +126,14 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
   }
 
   if (dir === 1 && b.data.next) {
-    bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next, true);
+    bNext = await getTimeOfDay(transaction, userDocSnap, b.data.next);
     bNextDataUpdate = {
       prev: a.ref.id
     };
   }
 
   if (dir === -1 && b.data.prev) {
-    bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev, true);
+    bPrev = await getTimeOfDay(transaction, userDocSnap, b.data.prev);
     bPrevDataUpdate = {
       next: a.ref.id
     };
@@ -165,11 +163,11 @@ const processNotSiblings = async (dir: number, transaction: Transaction, userDoc
 /**
  * @function handler
  * Set times of day order
- * @param data: { dir: -1 or 1, [is, was]: not empty string, was !== is }
+ * @param data: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }
  * @param context CallableContext
- * @return Promise<{[key: string]: string}>
+ * @return Promise<{ [key: string]: string }>
  **/
-export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = async (data: any, context: CallableContext) => {
 
   // not logged in
   testRequirement(!context.auth, 'Please login in');
@@ -194,11 +192,14 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     * Read all data
     * */
 
-    const wasPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
-    const isPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters(), true);
+    const wasPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.was as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
+    const isPromiseGet = getTimeOfDay(transaction, userDocSnap, (data.is as string).decodeFirebaseSpecialCharacters().encodeFirebaseSpecialCharacters());
 
     const was = await wasPromiseGet;
+    testRequirement(!was.exists, `timeOfDayId '${data.was}' does not exists`);
+
     const is = await isPromiseGet;
+    testRequirement(!is.exists, `timeOfDayId '${data.is}' does not exists`);
 
     // siblings was <-> is
     if (was.data.next === is.ref.id && is.data.prev === was.ref.id) {
@@ -221,13 +222,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Order has been updated 🙃'
-  })).catch((error: HttpsError) => {
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-    throw new HttpsError(
-      error.code,
-      error.message,
-      details
-    );
-  });
+  }));
 
 };
