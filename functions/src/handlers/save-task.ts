@@ -128,7 +128,7 @@ const proceedTimesOfDay = async (
   userDocSnap: DocumentSnapshot,
   currentTimesOfDay: string[],
   enteredTimesOfDay: string[],
-  currentTimesOfDaySize: number): Promise<number> => {
+  currentTimesOfDaySize: number): Promise<number | string> => {
 
   const affected: { [p: string]: TimeOfDay } = {};
   const affectedPromise: { [p: string]: Promise<TimeOfDay> } = {};
@@ -155,6 +155,9 @@ const proceedTimesOfDay = async (
   for (const timeOfDayIdToRemove of toRemove) {
     if (!affected[timeOfDayIdToRemove]) {
       affected[timeOfDayIdToRemove] = await affectedPromise[timeOfDayIdToRemove];
+      if (!affected[timeOfDayIdToRemove].exists) {
+        return `Try again time of day '${affected[timeOfDayIdToRemove].ref.id}' disappear`;
+      }
     }
 
     if (affected[timeOfDayIdToRemove].data.counter - 1 === 0) {
@@ -177,10 +180,16 @@ const proceedTimesOfDay = async (
 
       if (affected[timeOfDayIdToRemove].data.next && !affected[affected[timeOfDayIdToRemove].data.next as string]) {
         affected[affected[timeOfDayIdToRemove].data.next as string] = await affectedPromise[affected[timeOfDayIdToRemove].data.next as string];
+        if (!affected[affected[timeOfDayIdToRemove].data.next as string].exists) {
+          return `Try again time of day '${affected[affected[timeOfDayIdToRemove].data.next as string].ref.id}' disappear`;
+        }
       }
 
       if (affected[timeOfDayIdToRemove].data.prev && !affected[affected[timeOfDayIdToRemove].data.prev as string]) {
         affected[affected[timeOfDayIdToRemove].data.prev as string] = await affectedPromise[affected[timeOfDayIdToRemove].data.prev as string];
+        if (!affected[affected[timeOfDayIdToRemove].data.prev as string].exists) {
+          return `Try again time of day '${affected[affected[timeOfDayIdToRemove].data.prev as string].ref.id}' disappear`;
+        }
       }
 
       if (affected[timeOfDayIdToRemove].data.next) {
@@ -265,11 +274,7 @@ const proceedTimesOfDay = async (
   }
 
   if (currentTimesOfDaySize - removed + added > 20) {
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      `You can own 20 times of day but merge has ${currentTimesOfDaySize - removed + added} 🤔`
-    );
+    return `You can own 20 times of day but merge has ${currentTimesOfDaySize - removed + added} 🤔`;
   }
 
   return currentTimesOfDaySize - removed + added;
@@ -495,6 +500,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
 
     const timesOfDaysToStoreSize = await proceedTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize);
+    testRequirement(typeof timesOfDaysToStoreSize === 'string', timesOfDaysToStoreSize as string);
 
     proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
 

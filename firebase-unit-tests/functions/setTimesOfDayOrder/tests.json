@@ -48,6 +48,29 @@
 
     ],
     "valid argument": [
+
+      {
+        "from": "b",
+        "to": "b",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Try again time of day 'a' disappear"
+        }
+      },
+
+      {
+        "from": "a",
+        "to": "a",
+        "args": { "dir": -1, "is": "a", "was": "b" },
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Try again time of day 'b' disappear"
+        }
+      },
+
       {
         "from": "aXb",
         "to": "Xab",
