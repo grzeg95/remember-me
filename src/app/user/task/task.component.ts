@@ -1,6 +1,6 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
-import {Component, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
@@ -77,6 +77,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   separatorKeysCodes: number[] = [ENTER];
   options: string[] = [];
   @ViewChild(MatAutocompleteTrigger, {read: MatAutocompleteTrigger}) input: MatAutocompleteTrigger;
+  @ViewChild('basicInput') basicInput: ElementRef<HTMLInputElement>;
   lastTwoInputs = [];
 
   constructor(private activeRoute: ActivatedRoute,
@@ -159,8 +160,9 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
       this.snackBar.open('Enter new one');
-    } else if (timeOfDay.length > 20) {
+    } else if (timeOfDay.length > 20 || timeOfDay.length === 0) {
       this.snackBar.open('Enter time of day length from 1 to 20');
+      this.basicInput.nativeElement.value = '';
     } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
       this.snackBar.open('Up to 20 times of day per task');
     } else {
@@ -190,7 +192,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
       this.snackBar.open('Enter new one');
-    } else if (timeOfDay.length > 20) {
+    } else if (timeOfDay.length > 20 || timeOfDay.length === 0) {
       this.snackBar.open('Enter time of day length from 1 to 20');
     } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
       this.snackBar.open('Up to 20 times of day per task');
