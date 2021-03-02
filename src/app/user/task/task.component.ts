@@ -199,7 +199,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
       this.taskForm.get('timeOfDay').setValue(inputToApply);
       this.applyFilter(inputToApply);
-      setTimeout(() => this.input.openPanel());
     }
   }
 
