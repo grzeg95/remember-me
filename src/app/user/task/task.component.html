@@ -47,6 +47,7 @@
                    [matAutocomplete]="auto"
                    [matChipInputFor]="chipList"
                    [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                   [matChipInputAddOnBlur]="true"
                    (matChipInputTokenEnd)="add($event)"
                    placeholder="Times of day">
             <mat-autocomplete class="times-of-days-selector" #auto="matAutocomplete" (optionSelected)="selected($event)">
