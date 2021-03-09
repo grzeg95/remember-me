@@ -1,4 +1,4 @@
-// process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
+process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 module.exports.admin = require('firebase-admin');
 module.exports.admin.initializeApp();
 module.exports.test = require('firebase-functions-test')({ projectId: 'remember-me-dev' });

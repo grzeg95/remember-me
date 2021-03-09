@@ -1,3 +1,4 @@
+process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 const {chai, test, myFunctions, getResult, myAuth, myId, firestore} = require('../index');
 
 const expect = chai.expect;
