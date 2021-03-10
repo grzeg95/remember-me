@@ -125,6 +125,238 @@ const removeUser = async (userId) => {
 
 describe(`saveTask`, async () => {
 
+  describe(`create`, async () => {
+
+    it(`x.a -> 1a`, async () => {
+      // clear user
+      await removeUser(myId);
+
+      const x = await getResult(saveTask, {
+        task: {
+          timesOfDay: ['a'],
+          daysOfTheWeek: {
+            mon: true,
+            tue: false,
+            wed: false,
+            thu: false,
+            fri: false,
+            sat: false,
+            sun: false
+          },
+          description: '0001'
+        },
+        taskId: 'null'
+      }, myAuth);
+
+      expect({
+        created: true,
+        details: 'Your task has been created 😉',
+        taskId: x.taskId
+      }).to.eql(x);
+
+      const mustBe = {
+        "taskSize": 1,
+        "timesOfDaySize": 1,
+        "task": {
+          [x.taskId]: {
+            "description": "0001",
+            "timesOfDay": ["a"],
+            "daysOfTheWeek": {
+              "thu": false,
+              "tue": false,
+              "sat": false,
+              "mon": true,
+              "sun": false,
+              "wed": false,
+              "fri": false
+            }
+          }
+        },
+        "timesOfDay": {
+          "a": {
+            "next": null,
+            "prev": null,
+            "counter": 1
+          }
+        },
+        "today": {
+          "mon": {
+            "task": {
+              [x.taskId]: {
+                "description": "0001",
+                "timesOfDay": {
+                  "a": false
+                }
+              }
+            }
+          }
+        }
+      };
+
+      expect(mustBe).to.eql(await getUserJson(myId));
+
+    });
+
+    it(`x.ab -> 1b1a`, async () => {
+      // clear user
+      await removeUser(myId);
+
+      const x = await getResult(saveTask, {
+        task: {
+          timesOfDay: ['a', 'b'],
+          daysOfTheWeek: {
+            mon: true,
+            tue: false,
+            wed: false,
+            thu: false,
+            fri: false,
+            sat: false,
+            sun: false
+          },
+          description: '0001'
+        },
+        taskId: 'null'
+      }, myAuth);
+
+      expect({
+        created: true,
+        details: 'Your task has been created 😉',
+        taskId: x.taskId
+      }).to.eql(x);
+
+      const mustBe = {
+        "taskSize": 1,
+        "timesOfDaySize": 2,
+        "task": {
+          [x.taskId]: {
+            "description": "0001",
+            "timesOfDay": ["a", "b"],
+            "daysOfTheWeek": {
+              "thu": false,
+              "tue": false,
+              "sat": false,
+              "mon": true,
+              "sun": false,
+              "wed": false,
+              "fri": false
+            }
+          }
+        },
+        "timesOfDay": {
+          "a": {
+            "next": null,
+            "prev": "b",
+            "counter": 1
+          },
+          "b": {
+            "next": "a",
+            "prev": null,
+            "counter": 1
+          }
+        },
+        "today": {
+          "mon": {
+            "task": {
+              [x.taskId]: {
+                "description": "0001",
+                "timesOfDay": {
+                  "a": false,
+                  "b": false,
+                }
+              }
+            }
+          }
+        }
+      };
+
+      expect(mustBe).to.eql(await getUserJson(myId));
+
+    });
+
+    it(`x.abc -> 1c1b1a`, async () => {
+      // clear user
+      await removeUser(myId);
+
+      const x = await getResult(saveTask, {
+        task: {
+          timesOfDay: ['a', 'b', 'c'],
+          daysOfTheWeek: {
+            mon: true,
+            tue: false,
+            wed: false,
+            thu: false,
+            fri: false,
+            sat: false,
+            sun: false
+          },
+          description: '0001'
+        },
+        taskId: 'null'
+      }, myAuth);
+
+      expect({
+        created: true,
+        details: 'Your task has been created 😉',
+        taskId: x.taskId
+      }).to.eql(x);
+
+      const mustBe = {
+        "taskSize": 1,
+        "timesOfDaySize": 3,
+        "task": {
+          [x.taskId]: {
+            "description": "0001",
+            "timesOfDay": ["a", "b", "c"],
+            "daysOfTheWeek": {
+              "thu": false,
+              "tue": false,
+              "sat": false,
+              "mon": true,
+              "sun": false,
+              "wed": false,
+              "fri": false
+            }
+          }
+        },
+        "timesOfDay": {
+          "a": {
+            "next": null,
+            "prev": "b",
+            "counter": 1
+          },
+          "b": {
+            "next": "a",
+            "prev": "c",
+            "counter": 1
+          },
+          "c": {
+            "next": "b",
+            "prev": null,
+            "counter": 1
+          }
+        },
+        "today": {
+          "mon": {
+            "task": {
+              [x.taskId]: {
+                "description": "0001",
+                "timesOfDay": {
+                  "a": false,
+                  "b": false,
+                  "c": false,
+                }
+              }
+            }
+          }
+        }
+      };
+
+      expect(mustBe).to.eql(await getUserJson(myId));
+
+    });
+
+  });
+
   describe(`add`, async () => {
     it(`x.a + y.a = 2a`, async () => {
       // clear user
