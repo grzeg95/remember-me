@@ -146,12 +146,13 @@ const proceedTimesOfDay = async (
     return null;
   });
 
+  // get promises of times of days to remove
   for (const timeOfDayIdToRemove of toRemove) {
-    if (!affected[timeOfDayIdToRemove]) {
-      affectedPromise[timeOfDayIdToRemove] = getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove);
-    }
+    affectedPromise[timeOfDayIdToRemove] = getTimeOfDay(transaction, userDocSnap, timeOfDayIdToRemove);
   }
 
+  // wait for promises of times of days to remove
+  // get promises of next and prev for timesOfDay to remove
   for (const timeOfDayIdToRemove of toRemove) {
     if (!affected[timeOfDayIdToRemove]) {
       affected[timeOfDayIdToRemove] = await affectedPromise[timeOfDayIdToRemove];
@@ -174,6 +175,8 @@ const proceedTimesOfDay = async (
     }
   }
 
+  // connect next and prev if needed
+  // change head if needed
   for (const timeOfDayIdToRemove of toRemove) {
 
     if (affected[timeOfDayIdToRemove].data.counter - 1 === 0) {
@@ -217,38 +220,51 @@ const proceedTimesOfDay = async (
   const toAddIdsIterableIterator = toAdd.values();
   let timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
 
+  // if there is no head create it
   if (!head) {
     head = await getTimeOfDay(transaction, userDocSnap, timeOfDayIdToAddIterator.value);
     timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
+    // if there is head o_o
+    // head was get at first and after changed if needed while was removing lol
     if (head.exists) {
+      // so if exists then increment it's counter
       head.data.counter = head.data.counter + 1;
     } else {
+      // if not exists this option should be always lol
       added++;
       head.status = 'created';
     }
-  } else if (toAdd.has(head.ref.id)) {
-    head.data.counter = head.data.counter + 1;
-    toAdd.delete(head.ref.id);
+  } else if (toAdd.has(head.ref.id)) { // wtf, if the toAdd Set has head ??
+    // ?
+    head.data.counter = head.data.counter + 1; // increase head counter
+    toAdd.delete(head.ref.id);// remove this head from toAdd
   }
 
+  // if head was not spotted in the affected timesOfDay that was downloaded
   if (!affected[head.ref.id]) {
     affected[head.ref.id] = head;
   }
 
+  // get promises of timesOfDay to add
   const timeOfDayIdToAddPromise: Promise<TimeOfDay>[] = [];
   while (!timeOfDayIdToAddIterator.done) {
     timeOfDayIdToAddPromise.push(getTimeOfDay(transaction, userDocSnap, timeOfDayIdToAddIterator.value));
     timeOfDayIdToAddIterator = toAddIdsIterableIterator.next();
   }
 
+  // this task can add new timesOfDay for himself but globally this one timeOfDay can exists
   for (const timeOfDayToAdd of timeOfDayIdToAddPromise) {
 
     const timeOfDay = await timeOfDayToAdd;
 
+    // if timeOfDay to add exists
+    // increase it's counter
     if (timeOfDay.exists) {
       timeOfDay.data.counter = timeOfDay.data.counter + 1;
+      // store to affected
       affected[timeOfDay.ref.id] = timeOfDay;
     } else {
+      // insert new timeOfDay as head
       added++;
       timeOfDay.data.next = head.ref.id;
       timeOfDay.status = 'created';
@@ -258,6 +274,7 @@ const proceedTimesOfDay = async (
     }
   }
 
+  // apply transaction operations
   for (const id of Object.getOwnPropertyNames(affected)) {
     const timeOfDay = affected[id];
     if (timeOfDay.status === 'removed') {
