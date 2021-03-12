@@ -337,15 +337,13 @@ const proceedTodayTasks = (transaction: Transaction, task: Task, todayTaskDocSna
  **/
 export const handler = async (data: any, context: CallableContext): Promise<{ created: boolean; details: string; taskId: string }> => {
 
-  const dataKeys = Object.keys(data);
-  const dataTaskKeys = Object.keys(data.task);
-  const dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek);
-
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!context.auth, 'Please login in');
 
-  // data is not an object
-  testRequirement(typeof data !== 'object');
+  // data is not an object or is null
+  testRequirement(typeof data !== 'object' || data === null);
+
+  const dataKeys = Object.keys(data);
 
   // data has not 2 keys
   testRequirement(dataKeys.length !== 2);
@@ -353,11 +351,13 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data has not 'task' and 'taskId'
   testRequirement(!dataKeys.toSet().hasOnly(['task', 'taskId'].toSet()));
 
-  // data.taskId is not string
-  testRequirement(typeof data.taskId !== 'string');
+  // data.taskId is not empty string
+  testRequirement(typeof data.taskId !== 'string' || data.taskId.length === 0);
 
-  // data task is not an object
-  testRequirement(typeof data.task !== 'object');
+  // data task is not an object or is null
+  testRequirement(typeof data.task !== 'object' || data.task === null);
+
+  const dataTaskKeys = Object.keys(data.task);
 
   // data.task has not 3 keys
   testRequirement(dataTaskKeys.length !== 3);
@@ -373,10 +373,15 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data.task.description is not a string in [4, 40]
   testRequirement(data.task.description.length < 4 || data.task.description.length > 40);
 
-  // data.task.daysOfTheWeek has not ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+  // data.task.daysOfTheWeek is not an object or is null
+  testRequirement(typeof data.task.daysOfTheWeek !== 'object' || data.task.daysOfTheWeek === null);
+
+  const dataTaskDaysOfTheWeekKeys = Object.keys(data.task.daysOfTheWeek);
+
+  // data.task.daysOfTheWeek has not only ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
   testRequirement(!dataTaskDaysOfTheWeekKeys.toSet().hasAny(days.toSet()));
 
-  // data.task.daysOfTheWeek has not boolean value
+  // data.task.daysOfTheWeek has not only boolean value
   testRequirement(dataTaskDaysOfTheWeekKeys.some((e) => typeof data.task.daysOfTheWeek[e as Day] !== 'boolean'));
 
   // data.task.daysOfTheWeek has not boolean true value

@@ -1,4 +1,508 @@
 {
+  "invalid": {
+    "data is not an object and null": [
+      null,
+      [],
+      "",
+      0,
+      "0",
+      true
+    ],
+    "data has not 2 keys": [
+      {},
+      {
+        "key1": "value"
+      },
+      {
+        "key1": "value",
+        "key2": "value",
+        "key3": "value"
+      }
+    ],
+    "data has not 'task' and 'taskId'": [
+      {
+        "key1": "value",
+        "task": ""
+      },
+      {
+        "key1": "value",
+        "taskId": "value"
+      }
+    ],
+    "data.taskId is not empty string": [
+      {
+        "task": "value",
+        "taskId": null
+      },
+      {
+        "task": "value",
+        "taskId": []
+      },
+      {
+        "task": "value",
+        "taskId": {}
+      },
+      {
+        "task": "value",
+        "taskId": ""
+      },
+      {
+        "task": "value",
+        "taskId": 0
+      },
+      {
+        "task": "value",
+        "taskId": true
+      }
+    ],
+    "data task is not an object or is null": [
+      {
+        "task": null,
+        "taskId": "id"
+      },
+      {
+        "task": [],
+        "taskId": "id"
+      },
+      {
+        "task": "",
+        "taskId": "id"
+      },
+      {
+        "task": 0,
+        "taskId": "id"
+      },
+      {
+        "task": "0",
+        "taskId": "id"
+      },
+      {
+        "task": true,
+        "taskId": "id"
+      }
+    ],
+    "data.task has not 3 keys": [
+      {
+        "task": {},
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "key1": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "key1": "value",
+          "key2": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "key1": "value",
+          "key2": "value",
+          "key3": "value",
+          "key4": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task has not ['description', 'daysOfTheWeek', 'timesOfDay']": [
+      {
+        "task": {
+          "key1": "value",
+          "description": "value",
+          "daysOfTheWeek": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "key1": "value",
+          "description": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "key1": "value",
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.description is not a string": [
+      {
+        "task": {
+          "description": null,
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": [],
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": {},
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": 0,
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": true,
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.description is not a string in [4, 40]": [
+      {
+        "task": {
+          "description": "",
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwe",
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfg",
+          "daysOfTheWeek": "value",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.daysOfTheWeek is not an object or is null": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": null,
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": [],
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": "",
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": 0,
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": true,
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.daysOfTheWeek has not only ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {},
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "key1": "value"
+          },
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "key1": "value",
+            "mon": "value",
+            "tue": "value",
+            "wed": "value",
+            "thu": "value",
+            "fri": "value",
+            "sat": "value",
+            "sun": "value"
+          },
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.daysOfTheWeek has not only boolean value": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": 0,
+            "tue": true,
+            "wed": true,
+            "thu": true,
+            "fri": true,
+            "sat": true,
+            "sun": true
+          },
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.daysOfTheWeek has not boolean true value": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": false,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": "value"
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.timesOfDay is not an array": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": null
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": {}
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": ""
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": 0
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": "0"
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": true
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.timesOfDay.length is not in [1, 20]": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": []
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.timesOfDay contains other than string": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [0]
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.timesOfDay contains string that trim is not in [1, 20]": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [" "]
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [" qwertyuiopasdfghjklzx"]
+        },
+        "taskId": "id"
+      }
+    ]
+  },
   "create": [
     {
       "name": "x.a -> 1a",

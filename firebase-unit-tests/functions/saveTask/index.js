@@ -126,6 +126,41 @@ const removeUser = async (userId) => {
 
 describe(`saveTask`, async () => {
 
+  it(`not authenticated`, async () => {
+
+    const expected = {
+      code: 'invalid-argument',
+      message: 'Bad Request',
+      details: 'Please login in'
+    };
+
+    const result = await getResult(saveTask, null, null);
+
+    expect(result).to.eql(expected);
+  });
+
+  describe(`invalid`, async () => {
+
+    const expected = {
+      code: 'invalid-argument',
+      message: 'Bad Request',
+      details: 'Some went wrong 🤫 Try again 🙂'
+    };
+
+    for (const invalidKey in tests['invalid']) {
+      if (tests['invalid'].hasOwnProperty(invalidKey)) {
+        const invalidCase = tests['invalid'][invalidKey];
+        describe(invalidKey, async () => {
+          invalidCase.forEach((test) => it(JSON.stringify(test), async () => {
+            const result = await getResult(saveTask, test, myAuth);
+            expect(result).to.eql(expected);
+          }));
+        });
+      }
+
+    }
+  });
+
   describe(`create`, async () => {
 
     beforeEach(async () => await removeUser(myId));
