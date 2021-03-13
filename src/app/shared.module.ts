@@ -5,6 +5,8 @@ import {AngularFirestoreModule} from '@angular/fire/firestore';
 import {AngularFireFunctionsModule} from '@angular/fire/functions';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatChipsModule} from '@angular/material/chips';
+import {MatIconModule} from '@angular/material/icon';
+import {MatMenuModule} from '@angular/material/menu';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTableModule} from '@angular/material/table';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
@@ -17,6 +19,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {OverlayModule} from '@angular/cdk/overlay';
+import {MatToolbarModule} from '@angular/material/toolbar';
 
 const MODULES = [
   AngularFireAuthModule,
@@ -37,7 +40,10 @@ const MODULES = [
   MatTableModule,
   DragDropModule,
   MatAutocompleteModule,
-  MatChipsModule
+  MatChipsModule,
+  MatToolbarModule,
+  MatIconModule,
+  MatMenuModule
 ];
 
 @NgModule({

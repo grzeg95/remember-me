@@ -1,38 +1,32 @@
 <div class="container">
   <div class="row">
     <div class="col d-flex">
-      <div class="d-flex align-items-center left">
-        <span>Remember Me</span>
-        <fa-icon [icon]="faTasks" class="d-block"></fa-icon>
-      </div>
+      <mat-toolbar>
+        <mat-toolbar-row>
+          <span class="app-name">Remember Me</span>
+          <fa-icon [icon]="faTasks" class="d-block logo"></fa-icon>
+          <span class="example-spacer"></span>
 
-      <div *ngIf="isLoggedIn !== null">
+          <div *ngIf="isLoggedIn !== null">
 
-        <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
-          <button [disabled]="!(isConnected$ | async)" class="btn btn-primary" type="button" (click)="auth()">
-            <fa-icon [icon]="faUserCircle"></fa-icon>
-            <span> Log In</span>
-          </button>
-        </div>
-
-        <div *ngIf="isLoggedIn" class="d-flex align-items-center right">
-          <div class="menu-toggle">
-            <input #menuToggleCheckbox type="checkbox" id="menu-toggle-checkbox"/>
-            <label for="menu-toggle-checkbox">
-              <fa-icon [icon]="faListUl" id="icon-bars"></fa-icon>
-            </label>
-            <div class="nav-list">
-              <div class="item" (click)="signOut()">
-                <fa-icon [icon]="faSignOutAlt"></fa-icon>
-                <span class="my-list-item-span"> Log out</span>
-              </div>
+            <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
+              <button [disabled]="!(isConnected$ | async)" class="btn btn-primary" type="button" (click)="auth()">
+                <fa-icon [icon]="faUserCircle"></fa-icon>
+                <span> Log In</span>
+              </button>
             </div>
-          </div>
-          <img *ngIf="userPhoto" [src]="userPhoto"/>
-          <div *ngIf="!userPhoto" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
-        </div>
-      </div>
 
+            <div *ngIf="isLoggedIn" class="d-flex align-items-center right">
+              <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
+              <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="signOut()"> Log out</button>
+              </mat-menu>
+            </div>
+
+          </div>
+        </mat-toolbar-row>
+      </mat-toolbar>
     </div>
   </div>
 </div>
