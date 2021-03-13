@@ -463,7 +463,71 @@
             "sat": false,
             "sun": false
           },
+          "timesOfDay": [null]
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [[]]
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [{}]
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
           "timesOfDay": [0]
+        },
+        "taskId": "id"
+      },
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": [true]
         },
         "taskId": "id"
       }
@@ -498,6 +562,24 @@
             "sun": false
           },
           "timesOfDay": [" qwertyuiopasdfghjklzx"]
+        },
+        "taskId": "id"
+      }
+    ],
+    "data.task.timesOfDay contains duplicates": [
+      {
+        "task": {
+          "description": "qwer",
+          "daysOfTheWeek": {
+            "mon": true,
+            "tue": false,
+            "wed": false,
+            "thu": false,
+            "fri": false,
+            "sat": false,
+            "sun": false
+          },
+          "timesOfDay": ["a", "a", "b"]
         },
         "taskId": "id"
       }

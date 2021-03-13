@@ -213,8 +213,6 @@ describe(`saveTask`, async () => {
     afterAll(async () => await removeUser(myId));
   });
 
-  // TODO a - b
-
-  // TODO a with days -> LOL it's hard
+  // TODO edit
 
 });
