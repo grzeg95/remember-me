@@ -20,7 +20,8 @@ export const handler = async (data: any, context: CallableContext) => {
   // data
   testRequirement(
     data === null || !Array.isArray(data) || data.length !== 2 ||
-    typeof data[0] !== 'string' || !Number.isInteger(data[1]) || data[1] === 0
+    typeof data[0] !== 'string' || data[0].length === 0 || !Number.isInteger(data[1]) || data[1] === 0,
+    'data is incorrect'
   );
 
   const auth: { uid: string } | undefined = context.auth;
@@ -34,14 +35,15 @@ export const handler = async (data: any, context: CallableContext) => {
     const timesOfDay: string[] = userDocSnap.data()?.timesOfDay || [];
     const timesOfDayCardinality: number[] = userDocSnap.data()?.timesOfDayCardinality || [];
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
-    testRequirement(toMoveIndex === -1);
+
+    testRequirement(toMoveIndex === -1, 'time of day not exists');
 
     if (moveBy > 0) {
-      testRequirement(toMoveIndex + moveBy > timesOfDay.length);
+      testRequirement(toMoveIndex + moveBy >= timesOfDay.length, 'out of array +');
     }
 
     if (moveBy < 0) {
-      testRequirement(toMoveIndex + moveBy < 0);
+      testRequirement(toMoveIndex + moveBy < 0, 'out of array -');
     }
 
     timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);

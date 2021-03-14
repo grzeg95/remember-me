@@ -608,7 +608,6 @@
       },
       "mustBe": {
         "taskSize":1,
-        "timesOfDaySize":1,
         "task":{
           "{x}":{
             "description":"0001",
@@ -626,13 +625,8 @@
             }
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["a"],
+        "timesOfDayCardinality": [1],
         "today":{
           "mon":{
             "task":{
@@ -670,7 +664,6 @@
       },
       "mustBe":{
         "taskSize":1,
-        "timesOfDaySize":2,
         "task":{
           "{x}":{
             "description":"0001",
@@ -689,18 +682,8 @@
             }
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":"b",
-            "counter":1
-          },
-          "b":{
-            "next":"a",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["b", "a"],
+        "timesOfDayCardinality": [1, 1],
         "today":{
           "mon":{
             "task":{
@@ -740,7 +723,6 @@
       },
       "mustBe": {
         "taskSize":1,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -760,23 +742,8 @@
             }
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":"b",
-            "counter":1
-          },
-          "b":{
-            "next":"a",
-            "prev":"c",
-            "counter":1
-          },
-          "c":{
-            "next":"b",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,1,1],
         "today":{
           "mon":{
             "task":{
@@ -796,90 +763,96 @@
   ],
   "add": [
     {
-      "name": "x.a + y.a = 2a",
-      "x": {
-        "task": {
-          "timesOfDay": ["a"],
-          "daysOfTheWeek": {
-            "mon": true,
-            "tue": false,
-            "wed": false,
-            "thu": false,
-            "fri": false,
-            "sat": false,
-            "sun": false
+      "name":"x.a + y.a = 2a",
+      "x":{
+        "task":{
+          "timesOfDay":[
+            "a"
+          ],
+          "daysOfTheWeek":{
+            "mon":true,
+            "tue":false,
+            "wed":false,
+            "thu":false,
+            "fri":false,
+            "sat":false,
+            "sun":false
           },
-          "description": "0001"
+          "description":"0001"
         },
-        "taskId": "null"
+        "taskId":"null"
       },
-      "y": {
-        "task": {
-          "timesOfDay": ["a"],
-          "daysOfTheWeek": {
-            "mon": true,
-            "tue": false,
-            "wed": false,
-            "thu": false,
-            "fri": false,
-            "sat": false,
-            "sun": false
+      "y":{
+        "task":{
+          "timesOfDay":[
+            "a"
+          ],
+          "daysOfTheWeek":{
+            "mon":true,
+            "tue":false,
+            "wed":false,
+            "thu":false,
+            "fri":false,
+            "sat":false,
+            "sun":false
           },
-          "description": "0002"
+          "description":"0002"
         },
-        "taskId": "null"
+        "taskId":"null"
       },
-      "mustBe": {
-        "taskSize": 2,
-        "timesOfDaySize": 1,
-        "task": {
-          "{x}": {
-            "description": "0001",
-            "timesOfDay": ["a"],
-            "daysOfTheWeek": {
-              "thu": false,
-              "tue": false,
-              "sat": false,
-              "mon": true,
-              "sun": false,
-              "wed": false,
-              "fri": false
+      "mustBe":{
+        "taskSize":2,
+        "task":{
+          "{x}":{
+            "description":"0001",
+            "timesOfDay":[
+              "a"
+            ],
+            "daysOfTheWeek":{
+              "thu":false,
+              "tue":false,
+              "sat":false,
+              "mon":true,
+              "sun":false,
+              "wed":false,
+              "fri":false
             }
           },
-          "{y}": {
-            "daysOfTheWeek": {
-              "fri": false,
-              "mon": true,
-              "sat": false,
-              "sun": false,
-              "thu": false,
-              "tue": false,
-              "wed": false
+          "{y}":{
+            "daysOfTheWeek":{
+              "fri":false,
+              "mon":true,
+              "sat":false,
+              "sun":false,
+              "thu":false,
+              "tue":false,
+              "wed":false
             },
-            "description": "0002",
-            "timesOfDay": ["a"]
+            "description":"0002",
+            "timesOfDay":[
+              "a"
+            ]
           }
         },
-        "timesOfDay": {
-          "a": {
-            "next": null,
-            "prev": null,
-            "counter": 2
-          }
-        },
-        "today": {
-          "mon": {
-            "task": {
-              "{x}": {
-                "description": "0001",
-                "timesOfDay": {
-                  "a": false
+        "timesOfDay":[
+          "a"
+        ],
+        "timesOfDayCardinality":[
+          2
+        ],
+        "today":{
+          "mon":{
+            "task":{
+              "{x}":{
+                "description":"0001",
+                "timesOfDay":{
+                  "a":false
                 }
               },
-              "{y}": {
-                "description": "0002",
-                "timesOfDay": {
-                  "a": false
+              "{y}":{
+                "description":"0002",
+                "timesOfDay":{
+                  "a":false
                 }
               }
             }
@@ -888,33 +861,195 @@
       }
     },
     {
-      "name": "x.b + y.a = 1a1b",
-      "x": {
-        "task": {
-          "timesOfDay": [
+      "name":"x.b + y.a = 1a1b",
+      "x":{
+        "task":{
+          "timesOfDay":[
             "b"
           ],
-          "daysOfTheWeek": {
-            "mon": true,
-            "tue": false,
-            "wed": false,
-            "thu": false,
-            "fri": false,
-            "sat": false,
-            "sun": false
+          "daysOfTheWeek":{
+            "mon":true,
+            "tue":false,
+            "wed":false,
+            "thu":false,
+            "fri":false,
+            "sat":false,
+            "sun":false
           },
-          "description": "0001"
+          "description":"0001"
         },
-        "taskId": "null"
+        "taskId":"null"
       },
-      "y": {"task":{"timesOfDay":["a"],"daysOfTheWeek":{"mon":true,"tue":false,"wed":false,"thu":false,"fri":false,"sat":false,"sun":false},"description":"0002"},"taskId":"null"},
-      "mustBe": {"taskSize":2,"timesOfDaySize":2,"task":{"{x}":{"description":"0001","timesOfDay":["b"],"daysOfTheWeek":{"thu":false,"tue":false,"sat":false,"mon":true,"sun":false,"wed":false,"fri":false}},"{y}":{"daysOfTheWeek":{"fri":false,"mon":true,"sat":false,"sun":false,"thu":false,"tue":false,"wed":false},"description":"0002","timesOfDay":["a"]}},"timesOfDay":{"a":{"counter":1,"next":"b","prev":null},"b":{"counter":1,"next":null,"prev":"a"}},"today":{"mon":{"task":{"{x}":{"description":"0001","timesOfDay":{"b":false}},"{y}":{"description":"0002","timesOfDay":{"a":false}}}}}}
+      "y":{
+        "task":{
+          "timesOfDay":[
+            "a"
+          ],
+          "daysOfTheWeek":{
+            "mon":true,
+            "tue":false,
+            "wed":false,
+            "thu":false,
+            "fri":false,
+            "sat":false,
+            "sun":false
+          },
+          "description":"0002"
+        },
+        "taskId":"null"
+      },
+      "mustBe":{
+        "taskSize":2,
+        "task":{
+          "{x}":{
+            "description":"0001",
+            "timesOfDay":[
+              "b"
+            ],
+            "daysOfTheWeek":{
+              "thu":false,
+              "tue":false,
+              "sat":false,
+              "mon":true,
+              "sun":false,
+              "wed":false,
+              "fri":false
+            }
+          },
+          "{y}":{
+            "daysOfTheWeek":{
+              "fri":false,
+              "mon":true,
+              "sat":false,
+              "sun":false,
+              "thu":false,
+              "tue":false,
+              "wed":false
+            },
+            "description":"0002",
+            "timesOfDay":[
+              "a"
+            ]
+          }
+        },
+        "timesOfDay": ["a","b"],
+        "timesOfDayCardinality": [1,1],
+        "today":{
+          "mon":{
+            "task":{
+              "{x}":{
+                "description":"0001",
+                "timesOfDay":{
+                  "b":false
+                }
+              },
+              "{y}":{
+                "description":"0002",
+                "timesOfDay":{
+                  "a":false
+                }
+              }
+            }
+          }
+        }
+      }
     },
     {
-      "name": "x.ab + y.a = 1b2a",
-      "x":{"task":{"timesOfDay":["a","b"],"daysOfTheWeek":{"mon":true,"tue":false,"wed":false,"thu":false,"fri":false,"sat":false,"sun":false},"description":"0001"},"taskId":"null"},
-      "y":{"task":{"timesOfDay":["a"],"daysOfTheWeek":{"mon":true,"tue":false,"wed":false,"thu":false,"fri":false,"sat":false,"sun":false},"description":"0002"},"taskId":"null"},
-      "mustBe":{"taskSize":2,"timesOfDaySize":2,"task":{"{x}":{"description":"0001","timesOfDay":["a","b"],"daysOfTheWeek":{"thu":false,"tue":false,"sat":false,"mon":true,"sun":false,"wed":false,"fri":false}},"{y}":{"daysOfTheWeek":{"fri":false,"mon":true,"sat":false,"sun":false,"thu":false,"tue":false,"wed":false},"description":"0002","timesOfDay":["a"]}},"timesOfDay":{"a":{"counter":2,"next":null,"prev":"b"},"b":{"counter":1,"next":"a","prev":null}},"today":{"mon":{"task":{"{x}":{"description":"0001","timesOfDay":{"b":false,"a":false}},"{y}":{"description":"0002","timesOfDay":{"a":false}}}}}}
+      "name":"x.ab + y.a = 1b2a",
+      "x":{
+        "task":{
+          "timesOfDay":[
+            "a",
+            "b"
+          ],
+          "daysOfTheWeek":{
+            "mon":true,
+            "tue":false,
+            "wed":false,
+            "thu":false,
+            "fri":false,
+            "sat":false,
+            "sun":false
+          },
+          "description":"0001"
+        },
+        "taskId":"null"
+      },
+      "y":{
+        "task":{
+          "timesOfDay":[
+            "a"
+          ],
+          "daysOfTheWeek":{
+            "mon":true,
+            "tue":false,
+            "wed":false,
+            "thu":false,
+            "fri":false,
+            "sat":false,
+            "sun":false
+          },
+          "description":"0002"
+        },
+        "taskId":"null"
+      },
+      "mustBe":{
+        "taskSize":2,
+        "task":{
+          "{x}":{
+            "description":"0001",
+            "timesOfDay":[
+              "a",
+              "b"
+            ],
+            "daysOfTheWeek":{
+              "thu":false,
+              "tue":false,
+              "sat":false,
+              "mon":true,
+              "sun":false,
+              "wed":false,
+              "fri":false
+            }
+          },
+          "{y}":{
+            "daysOfTheWeek":{
+              "fri":false,
+              "mon":true,
+              "sat":false,
+              "sun":false,
+              "thu":false,
+              "tue":false,
+              "wed":false
+            },
+            "description":"0002",
+            "timesOfDay":[
+              "a"
+            ]
+          }
+        },
+        "timesOfDay": ["b","a"],
+        "timesOfDayCardinality": [1,2],
+        "today":{
+          "mon":{
+            "task":{
+              "{x}":{
+                "description":"0001",
+                "timesOfDay":{
+                  "b":false,
+                  "a":false
+                }
+              },
+              "{y}":{
+                "description":"0002",
+                "timesOfDay":{
+                  "a":false
+                }
+              }
+            }
+          }
+        }
+      }
     },
     {
       "name": "x.bc + y.a = 1a1c1b",
@@ -957,7 +1092,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -991,23 +1125,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":"c",
-            "prev":null
-          },
-          "b":{
-            "counter":1,
-            "next":null,
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":"a"
-          }
-        },
+        "timesOfDay": ["a","c","b"],
+        "timesOfDayCardinality": [1,1,1],
         "today":{
           "mon":{
             "task":{
@@ -1071,7 +1190,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1106,23 +1224,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":1,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,1,2],
         "today":{
           "mon":{
             "task":{
@@ -1186,7 +1289,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":2,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1220,18 +1322,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["b","a"],
+        "timesOfDayCardinality": [2,1],
         "today":{
           "mon":{
             "task":{
@@ -1295,7 +1387,6 @@
       },
       "mustBe": {
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1330,23 +1421,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,2,1],
         "today":{
           "mon":{
             "task":{
@@ -1411,7 +1487,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1446,23 +1521,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":1,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [2,1,1],
         "today":{
           "mon":{
             "task":{
@@ -1526,7 +1586,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":2,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1560,18 +1619,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":"b",
-            "counter":2
-          },
-          "b":{
-            "next":"a",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["b", "a"],
+        "timesOfDayCardinality": [1,2],
         "today":{
           "mon":{
             "task":{
@@ -1634,7 +1683,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":2,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1668,18 +1716,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"b",
-            "prev":null,
-            "counter":1
-          },
-          "b":{
-            "next":null,
-            "prev":"a",
-            "counter":2
-          }
-        },
+        "timesOfDay": ["a","b"],
+        "timesOfDayCardinality": [1,2],
         "today":{
           "mon":{
             "task":{
@@ -1742,7 +1780,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1776,23 +1813,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"c",
-            "prev":"b",
-            "counter":1
-          },
-          "b":{
-            "next":"a",
-            "prev":null,
-            "counter":1
-          },
-          "c":{
-            "next":null,
-            "prev":"a",
-            "counter":1
-          }
-        },
+        "timesOfDay": ["b","a","c"],
+        "timesOfDayCardinality": [1,1,1],
         "today":{
           "mon":{
             "task":{
@@ -1856,7 +1878,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":2,
         "task":{
           "{x}":{
             "description":"0001",
@@ -1891,18 +1912,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["b","a"],
+        "timesOfDayCardinality": [2,2],
         "today":{
           "mon":{
             "task":{
@@ -1967,7 +1978,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":2,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2002,18 +2012,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          },
-          "b":{
-            "counter":2,
-            "next":null,
-            "prev":"a"
-          }
-        },
+        "timesOfDay": ["a","b"],
+        "timesOfDayCardinality": [2,2],
         "today":{
           "mon":{
             "task":{
@@ -2078,7 +2078,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2113,23 +2112,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"c"
-          },
-          "b":{
-            "counter":1,
-            "next":"c",
-            "prev":null
-          },
-          "c":{
-            "counter":1,
-            "next":"a",
-            "prev":"b"
-          }
-        },
+        "timesOfDay": ["b","c","a"],
+        "timesOfDayCardinality": [1,1,2],
         "today":{
           "mon":{
             "task":{
@@ -2194,7 +2178,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2229,23 +2212,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":"c",
-            "prev":null
-          },
-          "b":{
-            "counter":2,
-            "next":null,
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":"a"
-          }
-        },
+        "timesOfDay": ["a","c","b"],
+        "timesOfDayCardinality": [1,1,2],
         "today":{
           "mon":{
             "task":{
@@ -2311,7 +2279,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2347,23 +2314,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -2388,7 +2340,7 @@
       }
     },
     {
-      "name": "x.cba + y.ab = 2a2a1c",
+      "name": "x.cba + y.ab = 2a2b1c",
       "x":{
         "task":{
           "timesOfDay":[
@@ -2430,7 +2382,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2466,23 +2417,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          },
-          "b":{
-            "counter":2,
-            "next":"c",
-            "prev":"a"
-          },
-          "c":{
-            "counter":1,
-            "next":null,
-            "prev":"b"
-          }
-        },
+        "timesOfDay": ["a","b","c"],
+        "timesOfDayCardinality": [2,2,1],
         "today":{
           "mon":{
             "task":{
@@ -2549,7 +2485,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2585,23 +2520,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -2667,7 +2587,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2702,23 +2621,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":"b",
-            "prev":"c"
-          },
-          "b":{
-            "counter":1,
-            "next":null,
-            "prev":"a"
-          },
-          "c":{
-            "counter":1,
-            "next":"a",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","a","b"],
+        "timesOfDayCardinality": [1,2,1],
         "today":{
           "mon":{
             "task":{
@@ -2783,7 +2687,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2818,23 +2721,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":"c",
-            "prev":null
-          },
-          "b":{
-            "counter":1,
-            "next":null,
-            "prev":"c"
-          },
-          "c":{
-            "counter":2,
-            "next":"b",
-            "prev":"a"
-          }
-        },
+        "timesOfDay": ["a","c","b"],
+        "timesOfDayCardinality": [1,2,1],
         "today":{
           "mon":{
             "task":{
@@ -2900,7 +2788,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -2936,23 +2823,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":1,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [2,1,2],
         "today":{
           "mon":{
             "task":{
@@ -3019,7 +2891,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3055,23 +2926,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          },
-          "b":{
-            "counter":1,
-            "next":"c",
-            "prev":"a"
-          },
-          "c":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          }
-        },
+        "timesOfDay": ["a","b","c"],
+        "timesOfDayCardinality": [2,1,2],
         "today":{
           "mon":{
             "task":{
@@ -3138,7 +2994,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3174,23 +3029,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":1,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [2,2,1],
         "today":{
           "mon":{
             "task":{
@@ -3256,7 +3096,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3291,23 +3130,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":"b",
-            "counter":2
-          },
-          "b":{
-            "next":"a",
-            "prev":"c",
-            "counter":1
-          },
-          "c":{
-            "next":"b",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,1,2],
         "today":{
           "mon":{
             "task":{
@@ -3372,7 +3196,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3407,23 +3230,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"b",
-            "prev":"c",
-            "counter":1
-          },
-          "b":{
-            "next":null,
-            "prev":"a",
-            "counter":2
-          },
-          "c":{
-            "next":"a",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["c","a","b"],
+        "timesOfDayCardinality": [1,1,2],
         "today":{
           "mon":{
             "task":{
@@ -3488,7 +3296,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3523,23 +3330,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"c",
-            "prev":"b",
-            "counter":1
-          },
-          "b":{
-            "next":"a",
-            "prev":null,
-            "counter":1
-          },
-          "c":{
-            "next":null,
-            "prev":"a",
-            "counter":2
-          }
-        },
+        "timesOfDay": ["b","a","c"],
+        "timesOfDayCardinality": [1,1,2],
         "today":{
           "mon":{
             "task":{
@@ -3605,7 +3397,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3641,23 +3432,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":"b",
-            "counter":2
-          },
-          "b":{
-            "next":"a",
-            "prev":"c",
-            "counter":2
-          },
-          "c":{
-            "next":"b",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -3724,7 +3500,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3760,23 +3535,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"b",
-            "prev":"c",
-            "counter":2
-          },
-          "b":{
-            "next":null,
-            "prev":"a",
-            "counter":2
-          },
-          "c":{
-            "next":"a",
-            "prev":null,
-            "counter":1
-          }
-        },
+        "timesOfDay": ["c","a","b"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -3843,7 +3603,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3879,23 +3638,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":null,
-            "prev":"c",
-            "counter":2
-          },
-          "b":{
-            "next":"c",
-            "prev":null,
-            "counter":1
-          },
-          "c":{
-            "next":"a",
-            "prev":"b",
-            "counter":2
-          }
-        },
+        "timesOfDay": ["b","c","a"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -3962,7 +3706,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -3998,23 +3741,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"c",
-            "prev":null,
-            "counter":1
-          },
-          "b":{
-            "next":null,
-            "prev":"c",
-            "counter":2
-          },
-          "c":{
-            "next":"b",
-            "prev":"a",
-            "counter":2
-          }
-        },
+        "timesOfDay":["a","c","b"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -4082,7 +3810,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -4119,23 +3846,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":2,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [2,2,2],
         "today":{
           "mon":{
             "task":{
@@ -4204,7 +3916,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -4241,23 +3952,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "next":"b",
-            "prev":null,
-            "counter":2
-          },
-          "b":{
-            "next":"c",
-            "prev":"a",
-            "counter":2
-          },
-          "c":{
-            "next":null,
-            "prev":"b",
-            "counter":2
-          }
-        },
+        "timesOfDay": ["a","b","c"],
+        "timesOfDayCardinality": [2,2,2],
         "today":{
           "mon":{
             "task":{
@@ -4325,7 +4021,6 @@
       },
       "mustBe":{
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -4361,23 +4056,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"b"
-          },
-          "b":{
-            "counter":2,
-            "next":"a",
-            "prev":"c"
-          },
-          "c":{
-            "counter":1,
-            "next":"b",
-            "prev":null
-          }
-        },
+        "timesOfDay": ["c","b","a"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
@@ -4444,7 +4124,6 @@
       },
       "mustBe": {
         "taskSize":2,
-        "timesOfDaySize":3,
         "task":{
           "{x}":{
             "description":"0001",
@@ -4480,23 +4159,8 @@
             ]
           }
         },
-        "timesOfDay":{
-          "a":{
-            "counter":2,
-            "next":null,
-            "prev":"c"
-          },
-          "b":{
-            "counter":1,
-            "next":"c",
-            "prev":null
-          },
-          "c":{
-            "counter":2,
-            "next":"a",
-            "prev":"b"
-          }
-        },
+        "timesOfDay": ["b","c","a"],
+        "timesOfDayCardinality": [1,2,2],
         "today":{
           "mon":{
             "task":{
