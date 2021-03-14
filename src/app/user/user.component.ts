@@ -1,4 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Router} from '@angular/router';
+import {RouterDict} from '../app.constants';
 import {UserService} from './user.service';
 
 @Component({
@@ -8,7 +10,14 @@ import {UserService} from './user.service';
 })
 export class UserComponent implements OnInit, OnDestroy {
 
-  constructor(private userService: UserService) {}
+  get isNudeUser(): boolean {
+    return this.router.isActive('/' + RouterDict['user'], true);
+  }
+
+  constructor(
+    private userService: UserService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.userService.clearCache();

@@ -1,2 +1,7 @@
 <app-nav-second></app-nav-second>
 <router-outlet></router-outlet>
+
+<div class="nude-user" *ngIf="isNudeUser">
+  <img [src]="'/assets/teapot_icon_126656.svg'" alt="teapot">
+  <span>418 I'm a teapot</span>
+</div>

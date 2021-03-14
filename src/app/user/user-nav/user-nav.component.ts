@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {Router} from '@angular/router';
 import {RouterDict} from '../../app.constants';
 
 @Component({
@@ -7,6 +8,10 @@ import {RouterDict} from '../../app.constants';
   styleUrls: ['./user-nav.component.scss']
 })
 export class UserNavComponent {
+
+  get isNudeUser(): boolean {
+    return this.router.isActive('/' + RouterDict['user'], true);
+  }
 
   routes = [
     {
@@ -26,5 +31,8 @@ export class UserNavComponent {
       href: '/' + RouterDict['user'] + '/' + RouterDict['times-of-day-order']
     }
   ];
+
+  constructor(protected router: Router) {
+  }
 
 }
