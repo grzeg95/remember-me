@@ -6,7 +6,7 @@ import {BehaviorSubject, interval, Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {TimeOfDay, TodayItem} from '../models';
+import {TodayItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -16,8 +16,8 @@ import {UserService} from '../user.service';
 })
 export class TodayComponent implements OnInit, OnDestroy {
 
-  get timesOfDayOrder$(): Observable<TimeOfDay[]> {
-    return this.userService.timesOfDayOrder$;
+  get timesOfDay$(): Observable<string[]> {
+    return this.userService.timesOfDay$;
   }
 
   get todayFirstLoading(): Observable<boolean> {
@@ -30,10 +30,6 @@ export class TodayComponent implements OnInit, OnDestroy {
 
   get todayFirstLoading$(): Observable<boolean> {
     return this.userService.todayFirstLoading$;
-  }
-
-  get today$(): Observable<{ [timeOfDay: string]: TodayItem[] }> {
-    return this.userService.today$;
   }
 
   get todayFullName$(): Observable<string> {
@@ -50,7 +46,7 @@ export class TodayComponent implements OnInit, OnDestroy {
   todayItemsViewSub: Subscription = new Subscription();
   destroyed = false;
   isConnectedSub: Subscription;
-  todayItemsView$: BehaviorSubject<{ timeOfDay: TimeOfDay, tasks: TodayItem[] }[]> = new BehaviorSubject([]);
+  todayItemsView$: BehaviorSubject<{ timeOfDay: string, tasks: TodayItem[] }[]> = new BehaviorSubject([]);
 
   constructor(private afs: AngularFirestore,
               private authService: AuthService,
@@ -67,19 +63,17 @@ export class TodayComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.userService.runTimesOfDayOrder();
-
     this.todayItemsViewSub.add(this.userService.today$.subscribe(() => this.todayItemsViewUpdate()));
-    this.todayItemsViewSub.add(this.userService.timesOfDayOrder$.subscribe(() => this.todayItemsViewUpdate()));
+    this.todayItemsViewSub.add(this.userService.timesOfDay$.subscribe(() => this.todayItemsViewUpdate()));
   }
 
   todayItemsViewUpdate(): void {
-    const order = this.userService.timesOfDayOrder$.getValue();
+    const order = this.userService.timesOfDay$.getValue();
     const today = this.userService.today$.getValue();
 
-    this.todayItemsView$.next(order.filter((timeOfDay) => today[timeOfDay.id]).map((timeOfDay) => ({
+    this.todayItemsView$.next(order.filter((timeOfDay) => today[timeOfDay]).map((timeOfDay) => ({
       timeOfDay,
-      tasks: today[timeOfDay.id]
+      tasks: today[timeOfDay]
     })));
   }
 
@@ -92,12 +86,12 @@ export class TodayComponent implements OnInit, OnDestroy {
     this.destroyed = true;
   }
 
-  todayItemIsDone(timeOfDay: TimeOfDay): boolean {
-    return !this.userService.today$.getValue()[timeOfDay.id].some((task) => !task.done);
+  todayItemIsDone(timeOfDay: string): boolean {
+    return !this.userService.today$.getValue()[timeOfDay].some((task) => !task.done);
   }
 
-  trackByTodayItems(index: number, item: { timeOfDay: TimeOfDay, tasks: TodayItem[] }): string {
-    return index + item.timeOfDay.id;
+  trackByTodayItems(index: number, item: { timeOfDay: string, tasks: TodayItem[] }): string {
+    return index + item.timeOfDay;
   }
 
   trackByTodayItem(index: number, item: TodayItem): string {

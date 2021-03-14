@@ -16,7 +16,7 @@ export class AuthGuardGuestService implements CanActivate {
               private router: Router) {}
 
   canActivate(): Observable<boolean> {
-    return this.auth.user$.pipe(
+    return this.auth.firebaseUser$.pipe(
       take(1),
       map((authState: firebase.default.User | null) => !!!authState),
       tap((notAuthenticated) => {

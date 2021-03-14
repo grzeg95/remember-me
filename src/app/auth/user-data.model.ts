@@ -5,3 +5,7 @@ export interface UserData {
   photoURL: string;
   emailVerified: boolean;
 }
+
+export interface User {
+  timesOfDay: string[];
+}

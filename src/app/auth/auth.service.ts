@@ -3,16 +3,17 @@ import {AngularFireAuth} from '@angular/fire/auth';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import * as firebase from 'firebase';
-import {interval, Observable, of, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, Observable, of, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
-import {UserData} from './user-data.model';
+import {User, UserData} from './user-data.model';
 
 @Injectable()
 export class AuthService {
 
   userData: UserData;
-  user$: Observable<firebase.default.User>;
+  firebaseUser$: Observable<firebase.default.User>;
+  user$: BehaviorSubject<User> = new BehaviorSubject<User>(null);
   userDoc$: Subscription;
   whileLoginIn = false;
   firstLoginChecking = true;
@@ -24,9 +25,9 @@ export class AuthService {
     private afs: AngularFirestore
   ) {
 
-    this.user$ = this.afAuth.authState;
+    this.firebaseUser$ = this.afAuth.authState;
 
-    this.user$.subscribe((user: firebase.default.User) => {
+    this.firebaseUser$.subscribe((user: firebase.default.User) => {
 
       if (user) {
 
@@ -42,7 +43,11 @@ export class AuthService {
             }
             throw error;
           })
-        ).subscribe();
+        ).subscribe((userDoc) => {
+          this.user$.next({
+            timesOfDay: (userDoc.payload.data() as User)?.timesOfDay || []
+          });
+        });
 
         this.userData = {
           uid: user.uid,

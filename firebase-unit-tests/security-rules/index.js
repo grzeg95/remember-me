@@ -440,25 +440,6 @@ describe('Firestore security rules tests', () => {
       await firebase.assertSucceeds(doc);
     });
 
-    describe(`Can't list /timesOfDay`, () => {
-
-      it(`empty query params`, async() => {
-        const doc = me.collection('users').doc(myId).collection('timesOfDay').get();
-        await firebase.assertFails(doc);
-      });
-
-      it(`limit == 50`, async() => {
-        const doc = me.collection('users').doc(myId).collection('timesOfDay').limit(50).get();
-        await firebase.assertFails(doc);
-      });
-
-    });
-
-    it(`Can't list /timesOfDay limit == 20`, async() => {
-      const doc = me.collection('users').doc(myId).collection('timesOfDay').limit(20).get();
-      await firebase.assertSucceeds(doc);
-    });
-
   });
 
 });

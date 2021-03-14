@@ -1,11 +1,10 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, NgZone, OnInit} from '@angular/core';
+import {Component, NgZone} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
-import {TimeOfDay} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -13,7 +12,7 @@ import {UserService} from '../user.service';
   templateUrl: './times-of-day-order.component.html',
   styleUrls: ['./times-of-day-order.component.scss']
 })
-export class TimesOfDayOrderComponent implements OnInit {
+export class TimesOfDayOrderComponent {
 
   set setTimesOfDayOrderSub(setTimesOfDayOrderSub: Subscription) {
     this.userService.setTimesOfDayOrderSub = setTimesOfDayOrderSub;
@@ -31,8 +30,8 @@ export class TimesOfDayOrderComponent implements OnInit {
     return this.appService.isConnected$;
   }
 
-  get timesOfDayOrder$(): BehaviorSubject<TimeOfDay[]> {
-    return this.userService.timesOfDayOrder$;
+  get timesOfDay$(): BehaviorSubject<string[]> {
+    return this.userService.timesOfDay$;
   }
 
   faGripLines = faGripLines;
@@ -43,34 +42,30 @@ export class TimesOfDayOrderComponent implements OnInit {
               private appService: AppService,
               private zone: NgZone) {}
 
-  ngOnInit(): void {
-    this.userService.runTimesOfDayOrder();
-  }
-
   decodeFirebaseSpecialCharacters(str: string): string {
     return str.decodeFirebaseSpecialCharacters();
   }
 
-  drop(event: CdkDragDrop<TimeOfDay[]>): void {
+  drop(event: CdkDragDrop<string[]>): void {
 
     if (event.previousIndex === event.currentIndex) {
       return;
     }
 
-    const timesOfDayOrder = this.timesOfDayOrder$.getValue();
-    const curr = timesOfDayOrder[event.previousIndex].id;
-    const prev = timesOfDayOrder[event.currentIndex].id;
-    const dir = (event.currentIndex - event.previousIndex) / Math.abs(event.currentIndex - event.previousIndex);
+    const timesOfDayOrder = this.timesOfDay$.getValue();
+    const timeOfDay = timesOfDayOrder[event.previousIndex];
+    const moveBy = event.currentIndex - event.previousIndex;
 
     moveItemInArray(timesOfDayOrder, event.previousIndex, event.currentIndex);
 
-    this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(dir, curr, prev).subscribe((success) => {
+    this.setTimesOfDayOrderSub = this.userService.updateTimesOfDayOrder(timeOfDay, moveBy).subscribe((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
     }, (error) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+        moveItemInArray(timesOfDayOrder, event.currentIndex, event.previousIndex);
       });
     });
 

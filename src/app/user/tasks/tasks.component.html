@@ -33,7 +33,7 @@
 
     <ng-template #showItems>
       <div class="row">
-        <table mat-table [dataSource]="tasks$ | async" *ngIf="timesOfDayOrder$ | async; let timesOfDayOrder">
+        <table mat-table [dataSource]="tasks$ | async" *ngIf="timesOfDay$ | async; let timesOfDay">
 
           <ng-container matColumnDef="description">
             <th mat-header-cell *matHeaderCellDef>Description</th>
@@ -47,7 +47,7 @@
 
           <ng-container matColumnDef="timesOfDays">
             <th mat-header-cell *matHeaderCellDef>Times of day</th>
-            <td mat-cell *matCellDef="let element">{{ getTimesOfDay(timesOfDayOrder, element.timesOfDay).join(', ') }}</td>
+            <td mat-cell *matCellDef="let element">{{ getTimesOfDay(timesOfDay, element.timesOfDay).join(', ') }}</td>
           </ng-container>
 
           <ng-container matColumnDef="edit">

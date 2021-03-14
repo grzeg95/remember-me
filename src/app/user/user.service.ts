@@ -6,7 +6,7 @@ import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
-import {ITask, Task, TasksListItem, TimeOfDay, TimeOfDayFirestore, TodayItem} from './models';
+import {ITask, Task, TasksListItem, TodayItem} from './models';
 
 @Injectable()
 export class UserService {
@@ -28,7 +28,7 @@ export class UserService {
   today$ = new BehaviorSubject<{[p: string]: TodayItem[]}>({});
   now$ = new BehaviorSubject<Date>(new Date());
   tasks$ = new BehaviorSubject<TasksListItem[]> ([]);
-  timesOfDayOrder$ = new BehaviorSubject<TimeOfDay[]>([]);
+  timesOfDay$ = new BehaviorSubject<string[]>([]);
   todayName$ = new BehaviorSubject<string>('');
   todayFullName$ = new BehaviorSubject<string>('');
 
@@ -39,7 +39,7 @@ export class UserService {
   clearCache(): void {
     this.today$.next({});
     this.tasks$.next([]);
-    this.timesOfDayOrder$.next([]);
+    this.timesOfDay$.next([]);
     this.todayFirstLoading$.next(true);
     this.tasksFirstLoading$.next(true);
     this.timesOfDayOrderFirstLoading$.next(true);
@@ -80,6 +80,15 @@ export class UserService {
     this.now$.subscribe((now) => {
       this.todayFullName$.next(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]);
       this.todayName$.next(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]);
+    });
+
+    this.authService.user$.subscribe((user) => {
+      if (user) {
+        this.timesOfDay$.next(user.timesOfDay);
+        this.timesOfDayOrderFirstLoading$.next(false);
+      } else {
+        this.timesOfDay$.next([]);
+      }
     });
   }
 
@@ -161,58 +170,14 @@ export class UserService {
       });
   }
 
-  runTimesOfDayOrder(): void {
-    if (this.timesOfDayOrderSub && !this.timesOfDayOrderSub.closed) {
-      return;
-    }
-
-    this.timesOfDayOrderSub = this.afs
-      .doc<firebase.default.User>(`users/${this.authService.userData.uid}`)
-      .collection<TimeOfDayFirestore>('timesOfDay', (ref) => ref.limit(20))
-      .snapshotChanges()
-      .subscribe((timesOfDay) => {
-        if (timesOfDay) {
-
-          const orderMap = {};
-          let next: TimeOfDay = null;
-          for (let i = timesOfDay.length - 1; i >= 0; --i) {
-            const data = timesOfDay[i].payload.doc.data();
-            orderMap[timesOfDay[i].payload.doc.id] = data;
-            if (!data.prev) {
-              next = {
-                id: timesOfDay[i].payload.doc.ref.id,
-                data: timesOfDay[i].payload.doc.data()
-              };
-            }
-          }
-
-          const order: TimeOfDay[] = [];
-           while (next) {
-            order.push(next);
-            if (next.data.next) {
-              next = {
-                id: next.data.next,
-                data: orderMap[next.data.next]
-              };
-            } else {
-              next = null;
-            }
-          }
-
-          this.timesOfDayOrder$.next(order);
-          this.timesOfDayOrderFirstLoading$.next(false);
-        }
-      });
-  }
-
   getTaskById$(id: string): Observable<ITask> {
     return this.afs.doc<firebase.default.User>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
       map((taskDocSnap) => taskDocSnap.data() as unknown as Task)
     );
   }
 
-  updateTimesOfDayOrder(dir: number, is: string, was: string): Observable<{[key: string]: string}> {
-    return this.fns.httpsCallable('setTimesOfDayOrder')({dir, is, was});
+  updateTimesOfDayOrder(timeOfDay: string, moveBy: number): Observable<{[key: string]: string}> {
+    return this.fns.httpsCallable('setTimesOfDayOrder')([timeOfDay, moveBy]);
   }
 
 }

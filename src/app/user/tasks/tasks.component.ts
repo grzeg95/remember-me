@@ -4,7 +4,7 @@ import {BehaviorSubject, Observable} from 'rxjs';
 import '../../../../global.prototype';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
-import {TasksListItem, TimeOfDay} from '../models';
+import {TasksListItem} from '../models';
 import {UserService} from '../user.service';
 
 @Component({
@@ -22,8 +22,8 @@ export class TasksComponent implements OnInit {
     return this.userService.tasksFirstLoading$;
   }
 
-  get timesOfDayOrder$(): Observable<TimeOfDay[]> {
-    return this.userService.timesOfDayOrder$;
+  get timesOfDay$(): Observable<string[]> {
+    return this.userService.timesOfDay$;
   }
 
   get isConnected$(): Observable<boolean> {
@@ -42,14 +42,13 @@ export class TasksComponent implements OnInit {
               private appService: AppService) {}
 
   ngOnInit(): void {
-    this.userService.runTimesOfDayOrder();
     this.userService.runTasks();
   }
 
-  getTimesOfDay(timesOfDayOrder: TimeOfDay[], taskTimesOfDay: string[]): string[] {
+  getTimesOfDay(timesOfDayOrder: string[], taskTimesOfDay: string[]): string[] {
     const taskTimesOfDaySet = taskTimesOfDay.toSet();
-    return timesOfDayOrder.filter((timeOfDayOrderItem) => taskTimesOfDaySet.has(timeOfDayOrderItem.id))
-      .map((timeOfDayOrderItem) => timeOfDayOrderItem.id.decodeFirebaseSpecialCharacters());
+    return timesOfDayOrder.filter((timeOfDayOrderItem) => taskTimesOfDaySet.has(timeOfDayOrderItem))
+      .map((timeOfDayOrderItem) => timeOfDayOrderItem.decodeFirebaseSpecialCharacters());
   }
 
 }

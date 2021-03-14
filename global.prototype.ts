@@ -16,6 +16,7 @@ declare global {
   interface Array<T> {
     toSet(): Set<T>;
     shuffle(): T[];
+    move(from: number, to: number): T[];
   }
 
   interface String {
@@ -103,6 +104,11 @@ Array.prototype.shuffle = function(): any[] {
     const j = Math.floor(Math.random() * (i + 1));
     [this[i], this[j]] = [this[j], this[i]];
   }
+  return [...this];
+};
+
+Array.prototype.move = function(from: number, to: number): any[] {
+  this.splice(to, 0, this.splice(from, 1)[0]);
   return [...this];
 };
 

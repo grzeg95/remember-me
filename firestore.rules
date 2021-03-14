@@ -39,11 +39,6 @@ service cloud.firestore {
       	&& request.query.limit == 50
     }
 
-    match /timesOfDay/{timesOfDay} {
-      allow list: if isOwner() && !isDisabled()
-      	&& request.query.limit == 20;
-    }
-
   }
 
 }

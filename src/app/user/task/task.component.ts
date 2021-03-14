@@ -91,7 +91,6 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    this.userService.runTimesOfDayOrder();
     this.taskForm.enable();
     this.isConnectedSub = this.isConnected$.subscribe((isConnected) => {
       if (isConnected) {
@@ -103,14 +102,14 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     this.timeOfDayValueChanges = (this.taskForm.get('timesOfDay') as FormArray).valueChanges.subscribe((timesOfDay: string[]) => {
 
-      const timesOfDayOrderNext = this.userService.timesOfDayOrder$.getValue();
-      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(timesOfDay.toSet());
+      const timesOfDayOrderNext = this.userService.timesOfDay$.getValue();
+      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val).toSet().difference(timesOfDay.toSet());
       const timesOfDayOrder = [];
 
       for (const x of timesOfDayOrderNext) {
-        if (timesOfDayOrderSet.has(x.id)) {
-          timesOfDayOrder.push(x.id.decodeFirebaseSpecialCharacters());
-          timesOfDayOrderSet.delete(x.id);
+        if (timesOfDayOrderSet.has(x)) {
+          timesOfDayOrder.push(x.decodeFirebaseSpecialCharacters());
+          timesOfDayOrderSet.delete(x);
         }
       }
 
@@ -128,14 +127,14 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.applyFilter(value);
     });
 
-    this.timesOfDayOrderSub = this.userService.timesOfDayOrder$.subscribe((timesOfDayOrderNext) => {
-      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val.id).toSet().difference(this.taskForm.get('timesOfDay').value.toSet());
+    this.timesOfDayOrderSub = this.userService.timesOfDay$.subscribe((timesOfDayOrderNext) => {
+      const timesOfDayOrderSet = timesOfDayOrderNext.map((val) => val).toSet().difference(this.taskForm.get('timesOfDay').value.toSet());
       const timesOfDayOrder = [];
 
       for (const x of timesOfDayOrderNext) {
-        if (timesOfDayOrderSet.has(x.id)) {
-          timesOfDayOrder.push(x.id.decodeFirebaseSpecialCharacters());
-          timesOfDayOrderSet.delete(x.id);
+        if (timesOfDayOrderSet.has(x)) {
+          timesOfDayOrder.push(x.decodeFirebaseSpecialCharacters());
+          timesOfDayOrderSet.delete(x);
         }
       }
 
@@ -376,7 +375,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     this.deletingInProgress = false;
     this.taskForm.enable();
-    this.userService.timesOfDayOrder$.next(this.userService.timesOfDayOrder$.getValue());
+    this.userService.timesOfDay$.next(this.userService.timesOfDay$.getValue());
   }
 
   removeTimeOfDay(index: number): void {

@@ -53,15 +53,6 @@ export interface TimeOfDayFirestore {
   counter: number;
 }
 
-export interface TimeOfDay {
-  id: string;
-  data: {
-    prev?: string;
-    next?: string;
-    counter: number;
-  };
-}
-
 export interface HTTPSuccess {
   details: string;
   taskId?: string;
