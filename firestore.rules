@@ -13,6 +13,12 @@ service cloud.firestore {
     	return user == null ? false : 'disabled' in user.data ? user.data.disabled : false
     }
 
+    function userHasTimeOfDayAndIsNotDisabled(timeOfDay) {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      let timesOfDay = user.data.timesOfDay;
+      return !(user == null ? false : 'disabled' in user.data ? user.data.disabled : false) && (timesOfDay != null && timeOfDay in timesOfDay)
+    }
+
     allow get: if isOwner() && !isDisabled()
 
     match /today/{day}/task/{taskId} {
@@ -22,12 +28,12 @@ service cloud.firestore {
       	&& request.query.limit == 50 * 20
 
       // set progress
-      allow update: if isOwner() && !isDisabled()
+      allow update: if isOwner()
+        && userHasTimeOfDayAndIsNotDisabled(resource.data.timesOfDay.keys()[0])
       	&& exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
         && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
-        && exists(/databases/$(database)/documents/users/$(userId)/timesOfDay/$(resource.data.timesOfDay.keys()[0]))
         && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
     }
 
