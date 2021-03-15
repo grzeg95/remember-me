@@ -43,11 +43,6 @@ describe('Firestore security rules tests', () => {
         await firebase.assertFails(doc.get());
       });
 
-      it(`/timesOfDay/{timesOfDay}`, async() => {
-        const doc = me.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0);
-        await firebase.assertFails(doc.get());
-      });
-
     });
 
     describe(`Can't list`, () => {
@@ -64,11 +59,6 @@ describe('Firestore security rules tests', () => {
 
       it(`/users/{userId}/task/{taskId}`, async () => {
         const doc = me.collection('users').doc(myId).collection('task').doc(task_0);
-        await firebase.assertFails(doc.get());
-      });
-
-      it(`/users/{userId}/timesOfDay`, async () => {
-        const doc = me.collection('users').doc(myId).collection('timesOfDay');
         await firebase.assertFails(doc.get());
       });
 
@@ -115,11 +105,6 @@ describe('Firestore security rules tests', () => {
 
       it(`/users/{userId}/task/{taskId}`, async () => {
         const doc = me.collection('users').doc(theirId).collection('task').doc(task_0);
-        await firebase.assertFails(doc.get());
-      });
-
-      it(`/users/{userId}/timesOfDay`, async () => {
-        const doc = me.collection('users').doc(theirId).collection('timesOfDay');
         await firebase.assertFails(doc.get());
       });
     });
@@ -182,7 +167,10 @@ describe('Firestore security rules tests', () => {
         it(`{timesOfDay: true -> false}`, async () => {
 
           await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-          await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
+          await admin.collection('users').doc(myId).set({
+            timesOfDay: [timeOfDay_0],
+            timesOfDayCardinality: [1]
+          });
 
           await Promise.all(days.map((day) => {
             admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -215,7 +203,10 @@ describe('Firestore security rules tests', () => {
         it(`timesOfDay(not exists)`, async () => {
 
           await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-          await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).delete();
+          await admin.collection('users').doc(myId).set({
+            timesOfDay: [],
+            timesOfDayCardinality: []
+          });
 
           await Promise.all(days.map((day) => {
             admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -242,7 +233,10 @@ describe('Firestore security rules tests', () => {
           it(`timeofDay : { timeofDay_0: true }, other : { timeofDay_0: false }`, async () => {
 
             await admin.collection('users').doc(myId).collection('task').doc(task_0).delete();
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
+            await admin.collection('users').doc(myId).set({
+              timesOfDay: [timeOfDay_0],
+              timesOfDayCardinality: [1]
+            });
 
             await Promise.all(days.map((day) => {
               admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -267,7 +261,10 @@ describe('Firestore security rules tests', () => {
           it(`{timesOfDay: true -> true}`, async () => {
 
             await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
+            await admin.collection('users').doc(myId).set({
+              timesOfDay: [timeOfDay_0],
+              timesOfDayCardinality: [1]
+            });
 
             await Promise.all(days.map((day) => {
               admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -292,8 +289,10 @@ describe('Firestore security rules tests', () => {
           it(`{timesOfDay_0: true -> false, timesOfDay_1: true -> false}`, async () => {
 
             await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_1).set({});
+            await admin.collection('users').doc(myId).set({
+              timesOfDay: [timeOfDay_0, timeOfDay_1],
+              timesOfDayCardinality: [1, 1]
+            });
 
             await Promise.all(days.map((day) => {
               admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -320,8 +319,10 @@ describe('Firestore security rules tests', () => {
           it(`{timesOfDay_0: true} {timesOfDay_1: false}`, async () => {
 
             await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_1).set({});
+            await admin.collection('users').doc(myId).set({
+              timesOfDay: [timeOfDay_0, timeOfDay_1],
+              timesOfDayCardinality: [1, 1]
+            });
 
             await Promise.all(days.map((day) => {
               admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -346,7 +347,10 @@ describe('Firestore security rules tests', () => {
           it(`{timesOfDay_0: true -> 'false'}`, async () => {
 
             await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-            await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
+            await admin.collection('users').doc(myId).set({
+              timesOfDay: [timeOfDay_0],
+              timesOfDayCardinality: [1]
+            });
 
             await Promise.all(days.map((day) => {
               admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
@@ -372,12 +376,13 @@ describe('Firestore security rules tests', () => {
 
       });
 
-
-
       it(`/users/{userId}/task/{taskId} not exists, timesOfDay(exists)`, async () => {
 
         await admin.collection('users').doc(myId).collection('task').doc(task_0).delete();
-        await admin.collection('users').doc(myId).collection('timesOfDay').doc(timeOfDay_0).set({});
+        await admin.collection('users').doc(myId).set({
+          timesOfDay: [timeOfDay_0],
+          timesOfDayCardinality: [1]
+        });
 
         await Promise.all(days.map((day) => {
           admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
