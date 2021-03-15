@@ -76,4 +76,5 @@ module.exports.removeUser = async (userId) => {
 describe(`My functions tests`, () => {
   require('./setTimesOfDayOrder');
   require('./deleteTask');
+  require('./saveTask');
 });
