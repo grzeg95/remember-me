@@ -11,17 +11,10 @@ export const environment = {
     apiKey: 'AIzaSyAJDxhsiwiggRaJ6NI0rNqyXEW_L_qBdxw',
     authDomain: 'dev.rem.grzeg.pl'
   },
-  functions: {
-    dev: true
-  },
+  dev: true,
   emulators: {
-
-    firestore: {
-      host: host + ':8080',
-      ssl: false
-    },
-    functions: {
-      host: 'http://' + host + ':5000'
-    }
+    firestore: [host, 8080],
+    functions: [host, 5000],
+    auth: [host, 9099],
   }
 };
