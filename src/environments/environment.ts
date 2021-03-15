@@ -1,4 +1,4 @@
-const host = 'localhost';
+const host = 'http://localhost';
 
 export const environment = {
   production: false,
@@ -13,8 +13,17 @@ export const environment = {
   },
   dev: true,
   emulators: {
-    firestore: [host, 8080],
-    functions: [host, 5000],
-    auth: [host, 9099],
+    firestore: {
+      host,
+      port: 8080
+    },
+    functions: {
+      host,
+      port: 5000
+    },
+    auth: {
+      host,
+      port: 9099
+    }
   }
 };

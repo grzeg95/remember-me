@@ -11,8 +11,17 @@ export const environment = {
   },
   dev: false,
   emulators: {
-    firestore: null,
-    functions: null,
-    auth: null
+    firestore: {
+      host: null,
+      port: null
+    },
+    functions: {
+      host: null,
+      port: null
+    },
+    auth: {
+      host: null,
+      port: null
+    }
   }
 };

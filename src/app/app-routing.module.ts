@@ -1,4 +1,4 @@
-import {PreloadAllModules, RouterModule, Routes} from '@angular/router';
+import {RouterModule, Routes} from '@angular/router';
 
 import {NgModule} from '@angular/core';
 import {RouterDict} from './app.constants';
@@ -13,7 +13,7 @@ const appRoutes: Routes = [
 
 @NgModule({
   providers: [],
-  imports: [RouterModule.forRoot(appRoutes, {preloadingStrategy: PreloadAllModules})],
+  imports: [RouterModule.forRoot(appRoutes)],
   exports: [RouterModule]
 })
 

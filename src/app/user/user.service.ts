@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {AngularFireFunctions} from '@angular/fire/functions';
-import * as firebase from 'firebase';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AppService} from '../app-service';
@@ -144,7 +143,7 @@ export class UserService {
       return;
     }
 
-    this.tasksSub = this.afs.doc<firebase.default.User>(`users/${this.authService.userData.uid}/`)
+    this.tasksSub = this.afs.doc(`users/${this.authService.userData.uid}/`)
       .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
       .snapshotChanges().pipe(
         map((documentChangeActionArr) =>
@@ -171,8 +170,8 @@ export class UserService {
   }
 
   getTaskById$(id: string): Observable<ITask> {
-    return this.afs.doc<firebase.default.User>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
-      map((taskDocSnap) => taskDocSnap.data() as unknown as Task)
+    return this.afs.doc<ITask>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
+      map((taskDocSnap) => taskDocSnap.data())
     );
   }
 

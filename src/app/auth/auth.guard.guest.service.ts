@@ -3,7 +3,7 @@ import {
   CanActivate,
   Router
 } from '@angular/router';
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
 import {Observable} from 'rxjs';
 import {map, take, tap} from 'rxjs/operators';
 import {RouterDict} from '../app.constants';
@@ -18,7 +18,7 @@ export class AuthGuardGuestService implements CanActivate {
   canActivate(): Observable<boolean> {
     return this.auth.firebaseUser$.pipe(
       take(1),
-      map((authState: firebase.default.User | null) => !!!authState),
+      map((authState: firebase.User) => !!!authState),
       tap((notAuthenticated) => {
         if (notAuthenticated) {
           return true;

@@ -282,7 +282,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       });
     }, (error: HTTPError) => {
       this.zone.run(() => {
-        console.log(error);
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         this.refreshTaskByParamId(this.id);
       });

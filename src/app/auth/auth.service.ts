@@ -1,8 +1,9 @@
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
-import {AngularFirestore} from '@angular/fire/firestore';
+import {Action, AngularFirestore, DocumentSnapshot} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
+import 'firebase/auth';
 import {BehaviorSubject, interval, Observable, of, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
@@ -12,7 +13,7 @@ import {User, UserData} from './user-data.model';
 export class AuthService {
 
   userData: UserData;
-  firebaseUser$: Observable<firebase.default.User>;
+  firebaseUser$: Observable<firebase.User>;
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(null);
   userDoc$: Subscription;
   whileLoginIn = false;
@@ -27,7 +28,7 @@ export class AuthService {
 
     this.firebaseUser$ = this.afAuth.authState;
 
-    this.firebaseUser$.subscribe((user: firebase.default.User) => {
+    this.firebaseUser$.subscribe((user: firebase.User) => {
 
       if (user) {
 
@@ -38,15 +39,16 @@ export class AuthService {
         this.userDoc$ = this.afs.doc(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
             if (error.code === 'permission-denied') {
-             this.signOut();
-             return of(null);
+             return of(this.signOut());
             }
             throw error;
           })
         ).subscribe((userDoc) => {
-          this.user$.next({
-            timesOfDay: (userDoc.payload.data() as User)?.timesOfDay || []
-          });
+          if (userDoc !== null) {
+            this.user$.next({
+              timesOfDay: ((userDoc as Action<DocumentSnapshot<any>>).payload.data() as User)?.timesOfDay || []
+            });
+          }
         });
 
         this.userData = {
@@ -98,13 +100,12 @@ export class AuthService {
   googleAuth(): void {
     this.whileLoginIn = true;
 
-    this.afAuth.signInWithRedirect(new firebase.default.auth.GoogleAuthProvider()).then(() => {
+    this.afAuth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn = false;
         this.router.navigate(['/u/t']);
       });
-    }).catch((error) => {
-      console.error(error);
+    }).catch(() => {
       this.whileLoginIn = false;
     });
 
