@@ -1,5 +1,3 @@
-const host = 'http://localhost';
-
 export const environment = {
   production: false,
   firebase: {
@@ -11,19 +9,5 @@ export const environment = {
     apiKey: 'AIzaSyAJDxhsiwiggRaJ6NI0rNqyXEW_L_qBdxw',
     authDomain: 'dev.rem.grzeg.pl'
   },
-  dev: true,
-  emulators: {
-    firestore: {
-      host,
-      port: 8080
-    },
-    functions: {
-      host,
-      port: 5000
-    },
-    auth: {
-      host,
-      port: 9099
-    }
-  }
+  dev: true
 };

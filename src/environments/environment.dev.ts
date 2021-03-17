@@ -9,19 +9,5 @@ export const environment = {
     apiKey: 'AIzaSyAJDxhsiwiggRaJ6NI0rNqyXEW_L_qBdxw',
     authDomain: 'dev.rem.grzeg.pl'
   },
-  dev: false,
-  emulators: {
-    firestore: {
-      host: null,
-      port: null
-    },
-    functions: {
-      host: null,
-      port: null
-    },
-    auth: {
-      host: null,
-      port: null
-    }
-  }
+  dev: false
 };
