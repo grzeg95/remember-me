@@ -18,4 +18,10 @@ describe(`deleteTask`, () => {
     expect(result).to.eql(expected);
   });
 
+  // create then remove
+  // 3 cases
+
+  // add a to b and remove a then b, and remove b then a
+  // 34 * 2 = 68
+
 });
