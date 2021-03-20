@@ -330,7 +330,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTaskDocSnapsToUpdate = await Promise.all(
-          days.filter((day) => numberToDayArray(task.daysOfTheWeek)).map((day) =>
+          numberToDayArray(task.daysOfTheWeek).map((day) =>
             transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
               .then((docSnap) => docSnap)
           )

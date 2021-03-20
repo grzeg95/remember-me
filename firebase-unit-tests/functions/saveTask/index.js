@@ -160,6 +160,37 @@ describe(`saveTask`, async () => {
     afterAll(async () => await removeUser(myId));
   });
 
-  // TODO edit
+  describe(`edit`, async () => {
+    beforeEach(async () => await removeUser(myId));
+
+    tests['edit'].forEach((test) => it(test.name, async () => {
+
+      const from = await getResult(saveTask, test['from'], myAuth);
+      expect({
+        created: true,
+        details: 'Your task has been created 😉',
+        taskId: from.taskId
+      }).to.eql(from);
+
+      let testTo = JSON.stringify(test['to']);
+      testTo = testTo.replace(/{from}/gm, from.taskId);
+      testTo = JSON.parse(testTo);
+
+      const to = await getResult(saveTask, testTo, myAuth);
+      expect({
+        created: false,
+        details: 'Your task has been updated 🙃',
+        taskId: from.taskId
+      }).to.eql(to);
+
+      let mustBe = JSON.stringify(test['mustBe']);
+      mustBe = mustBe.replace(/{from}/gm, from.taskId);
+      mustBe = JSON.parse(mustBe);
+
+      expect(mustBe).to.eql(await getUserJson(myId));
+    }));
+
+    afterAll(async () => await removeUser(myId));
+  });
 
 });
