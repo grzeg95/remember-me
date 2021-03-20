@@ -39,7 +39,6 @@ export class ConnectionService implements OnDestroy {
   }
 
   private emitEvent(): void {
-    console.log(this.currentState);
     this.stateChangeEventEmitter.emit(this.currentState);
   }
 
