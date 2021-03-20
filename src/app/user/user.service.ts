@@ -5,7 +5,8 @@ import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
-import {ITask, Task, TasksListItem, TodayItem} from './models';
+import {Day, ITask, ITaskFirestore, Task, TasksListItem, TodayItem} from './models';
+import {TaskService} from './task/task.service';
 
 @Injectable()
 export class UserService {
@@ -64,7 +65,8 @@ export class UserService {
   constructor(private afs: AngularFirestore,
               private authService: AuthService,
               private fns: AngularFireFunctions,
-              private appService: AppService) {
+              private appService: AppService,
+              private taskService: TaskService) {
     this.appService.isConnected$.subscribe((isConnected) => {
       if (!isConnected) {
         this.tasksFirstLoading$.next(true);
@@ -144,14 +146,14 @@ export class UserService {
     }
 
     this.tasksSub = this.afs.doc(`users/${this.authService.userData.uid}/`)
-      .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
+      .collection<ITaskFirestore>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
       .snapshotChanges().pipe(
         map((documentChangeActionArr) =>
           documentChangeActionArr.map((documentChangeAction) => {
 
-            const task = documentChangeAction.payload.doc.data() as Task;
-            const daysOfTheWeek: string[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-              .filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]);
+            const task = documentChangeAction.payload.doc.data() as ITaskFirestore;
+            const daysOfTheWeek: string[] = (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[])
+              .filter((dayOfTheWeek) => this.taskService.dayIsInNumber(task.daysOfTheWeek, dayOfTheWeek));
 
             return {
               description: task.description,
@@ -170,8 +172,15 @@ export class UserService {
   }
 
   getTaskById$(id: string): Observable<ITask> {
-    return this.afs.doc<ITask>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
-      map((taskDocSnap) => taskDocSnap.data())
+    return this.afs.doc<ITaskFirestore>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
+      map((taskDocSnap) => {
+        const iTaskFirestore = taskDocSnap.data();
+        return {
+          description: iTaskFirestore.description,
+          daysOfTheWeek: this.taskService.numberToDaysBooleanMap(iTaskFirestore.daysOfTheWeek),
+          timesOfDay: [...iTaskFirestore.timesOfDay]
+        } as ITask;
+      })
     );
   }
 

@@ -4,6 +4,7 @@ import {RouterModule} from '@angular/router';
 import {SharedModule} from '../shared.module';
 import {TaskDialogConfirmDeleteComponent} from './task/task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskComponent} from './task/task.component';
+import {TaskService} from './task/task.service';
 import {TasksComponent} from './tasks/tasks.component';
 import {TimesOfDayOrderComponent} from './times-of-day-order/times-of-day-order.component';
 import {TodayComponent} from './today/today.component';
@@ -29,7 +30,8 @@ import {UserService} from './user.service';
     UserRoutingModule
   ],
   providers: [
-    UserService
+    UserService,
+    TaskService
   ],
   entryComponents: [
     TaskDialogConfirmDeleteComponent

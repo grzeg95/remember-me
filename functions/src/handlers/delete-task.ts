@@ -2,6 +2,7 @@ import {firestore} from 'firebase-admin';
 import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
 import {Day, Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
+import {numberToDayArray} from '../helpers/times-of-days';
 import {getUser} from '../helpers/user';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
@@ -51,7 +52,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
     // read all task for user/{userId}/today/{day}/task/{taskId}
     const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
-      (Object.keys(task.daysOfTheWeek) as Day[]).filter((dayOfTheWeek) => task.daysOfTheWeek[dayOfTheWeek]).map((day) =>
+      (numberToDayArray(task.daysOfTheWeek) as Day[]).map((day) =>
         transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
       ));
 

@@ -13,9 +13,10 @@ import '../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {AppService} from '../../app-service';
 import {RouterDict} from '../../app.constants';
-import {HTTPError, HTTPSuccess, ITask, Task} from '../models';
+import {HTTPError, HTTPSuccess, ITask, ITaskFirestore, Task} from '../models';
 import {UserService} from '../user.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import {TaskService} from './task.service';
 
 @Component({
   selector: 'app-task',
@@ -87,7 +88,8 @@ export class TaskComponent implements OnInit, OnDestroy {
               private snackBar: MatSnackBar,
               private appService: AppService,
               private userService: UserService,
-              private zone: NgZone) {}
+              private zone: NgZone,
+              private taskService: TaskService) {}
 
   ngOnInit(): void {
 
@@ -265,8 +267,14 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.taskForm.get('description').setValue(trimDescription);
     delete iTask['timeOfDay'];
 
+    const iTaskFirestore: ITaskFirestore = {
+      description: iTask.description,
+      daysOfTheWeek: this.taskService.daysBooleanMapToNumber(iTask.daysOfTheWeek),
+      timesOfDay: iTask.timesOfDay
+    };
+
     this.fns.httpsCallable('saveTask')({
-      task: iTask,
+      task: iTaskFirestore,
       taskId: this.id
     }).subscribe((success: HTTPSuccess) => {
       this.zone.run(() => {

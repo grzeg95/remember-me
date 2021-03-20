@@ -9,5 +9,5 @@ export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export interface Task {
   description: string;
   timesOfDay: string[];
-  daysOfTheWeek: {[key in Day]: boolean}
+  daysOfTheWeek: number
 }

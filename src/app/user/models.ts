@@ -4,6 +4,12 @@ export type DaysOfTheWeek = {
   [key in Day]: boolean;
 };
 
+export interface ITaskFirestore {
+  description: string;
+  daysOfTheWeek: number;
+  timesOfDay: string[];
+}
+
 export interface ITask {
   description: string;
   daysOfTheWeek: DaysOfTheWeek;
