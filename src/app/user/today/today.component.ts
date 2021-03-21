@@ -16,14 +16,6 @@ import {UserService} from '../user.service';
 })
 export class TodayComponent implements OnInit, OnDestroy {
 
-  get timesOfDay$(): Observable<string[]> {
-    return this.userService.timesOfDay$;
-  }
-
-  get todayFirstLoading(): Observable<boolean> {
-    return this.userService.todayFirstLoading$;
-  }
-
   get timesOfDayFirstLoading$(): Observable<boolean> {
     return this.userService.timesOfDayOrderFirstLoading$;
   }

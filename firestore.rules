@@ -8,9 +8,17 @@ service cloud.firestore {
       return userId == request.auth.uid
     }
 
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+    }
+
+    function userIsDisabled() {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return 'disabled' in user.data ? user.data.disabled : false
+    }
+
     function isDisabled() {
-    	let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
-    	return user == null ? false : 'disabled' in user.data ? user.data.disabled : false
+    	return userExists() == false ? false : userIsDisabled()
     }
 
     function userHasTimeOfDayAndIsNotDisabled(timeOfDay) {
