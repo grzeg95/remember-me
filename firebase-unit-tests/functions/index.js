@@ -7,6 +7,7 @@ module.exports.myFunctions = require('../../functions/lib/functions/src/index');
 module.exports.firestore = module.exports.admin.firestore();
 module.exports.myId = 'myId';
 module.exports.myAuth = { auth: { uid: module.exports.myId } };
+
 module.exports.getResult = async (fn, ...args) => {
   try {
     return await fn(...args);
@@ -18,6 +19,7 @@ module.exports.getResult = async (fn, ...args) => {
     };
   }
 };
+
 module.exports.removeUser = async (userId) => {
   const firestore = module.exports.firestore;
   const myId = module.exports.myId;
@@ -71,6 +73,74 @@ module.exports.removeUser = async (userId) => {
     }
 
   });
+};
+
+module.exports.getUserJson = async (userId) => {
+  const firestore = module.exports.firestore;
+
+  let user = {};
+  const userDocSnap = await firestore.collection('users').doc(userId).get();
+  user = {...user, ...userDocSnap.data()}
+
+  await firestore.collection('users').doc(userId).listCollections().then(async (collections) =>  {
+    for (let collection of collections) {
+
+      if (collection.id === 'task') {
+        await firestore.collection('users').doc(userId).collection(collection.id).listDocuments().then(async (docs) => {
+
+          for (let doc of docs) {
+            if (!user['task']) {
+              user['task'] = {};
+            }
+            user['task'][doc.id] = (await doc.get()).data();
+          }
+        });
+      }
+
+      if (collection.id === 'timesOfDay') {
+        await firestore.collection('users').doc(userId).collection(collection.id).listDocuments().then(async (docs) => {
+
+          for (let doc of docs) {
+            if (!user['timesOfDay']) {
+              user['timesOfDay'] = {};
+            }
+            user['timesOfDay'][doc.id] = (await doc.get()).data();
+          }
+        });
+      }
+
+      if (collection.id === 'today') {
+        await firestore.collection('users').doc(userId).collection(collection.id).listDocuments().then(async (days) => {
+
+          for (let day of days) {
+            await firestore.collection('users').doc(userId).collection(collection.id).doc(day.id).listCollections().then(async (dayCollections) => {
+
+              for (let dayCollection of dayCollections) {
+
+                await firestore.collection('users').doc(userId).collection(collection.id).doc(day.id).collection(dayCollection.id).listDocuments().then(async (todayTasks) => {
+                  for (let todayTask of todayTasks) {
+                    if (!user[collection.id]) {
+                      user[collection.id] = {};
+                    }
+                    if (!user[collection.id][day.id]) {
+                      user[collection.id][day.id] = {};
+                    }
+                    if (!user[collection.id][day.id][dayCollection.id]) {
+                      user[collection.id][day.id][dayCollection.id] = {};
+                    }
+                    user[collection.id][day.id][dayCollection.id][todayTask.id] = (await todayTask.get()).data();
+                  }
+                });
+              }
+            });
+
+          }
+        });
+      }
+    }
+  });
+
+  return user;
 };
 
 describe(`My functions tests`, () => {

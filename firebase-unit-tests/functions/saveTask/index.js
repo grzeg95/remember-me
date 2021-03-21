@@ -1,75 +1,9 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-const {chai, test, myFunctions, getResult, firestore, myId, myAuth, removeUser} = require('../index');
+const {chai, test, myFunctions, getResult, firestore, myId, myAuth, removeUser, getUserJson} = require('../index');
 
 const expect = chai.expect;
 const saveTask = test.wrap(myFunctions.saveTask);
 const tests = require('./tests.json');
-
-const getUserJson = async (userId) => {
-  let user = {};
-  const userDocSnap = await firestore.collection('users').doc(userId).get();
-  user = {...user, ...userDocSnap.data()}
-
-  await firestore.collection('users').doc(userId).listCollections().then(async (collections) =>  {
-    for (let collection of collections) {
-
-      if (collection.id === 'task') {
-        await firestore.collection('users').doc(userId).collection(collection.id).listDocuments().then(async (docs) => {
-
-          for (let doc of docs) {
-            if (!user['task']) {
-              user['task'] = {};
-            }
-            user['task'][doc.id] = (await doc.get()).data();
-          }
-        });
-      }
-
-      if (collection.id === 'timesOfDay') {
-        await firestore.collection('users').doc(userId).collection(collection.id).listDocuments().then(async (docs) => {
-
-          for (let doc of docs) {
-            if (!user['timesOfDay']) {
-              user['timesOfDay'] = {};
-            }
-            user['timesOfDay'][doc.id] = (await doc.get()).data();
-          }
-        });
-      }
-
-      if (collection.id === 'today') {
-        await firestore.collection('users').doc(userId).collection(collection.id).listDocuments().then(async (days) => {
-
-          for (let day of days) {
-            await firestore.collection('users').doc(userId).collection(collection.id).doc(day.id).listCollections().then(async (dayCollections) => {
-
-              for (let dayCollection of dayCollections) {
-
-                await firestore.collection('users').doc(userId).collection(collection.id).doc(day.id).collection(dayCollection.id).listDocuments().then(async (todayTasks) => {
-                  for (let todayTask of todayTasks) {
-                    if (!user[collection.id]) {
-                      user[collection.id] = {};
-                    }
-                    if (!user[collection.id][day.id]) {
-                      user[collection.id][day.id] = {};
-                    }
-                    if (!user[collection.id][day.id][dayCollection.id]) {
-                      user[collection.id][day.id][dayCollection.id] = {};
-                    }
-                    user[collection.id][day.id][dayCollection.id][todayTask.id] = (await todayTask.get()).data();
-                  }
-                });
-              }
-            });
-
-          }
-        });
-      }
-    }
-  });
-
-  return user;
-};
 
 describe(`saveTask`, async () => {
 

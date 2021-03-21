@@ -19,6 +19,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   // not logged in
   testRequirement(!context.auth, 'Please login in');
 
+  // data is null
+  testRequirement(!data);
+
   // data has not taskId
   testRequirement(!data.taskId);
 
@@ -36,7 +39,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     if (!taskDocSnap.exists) {
       throw new HttpsError(
         'invalid-argument',
-        `Task does not exist: ${taskDocSnap.ref.path}`,
+        `Task does not exist`,
         `Some went wrong 🤫 Try again 🙂`
       );
     }
@@ -100,10 +103,10 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
-  })).catch(() => {
+  })).catch((exception) => {
     throw new HttpsError(
       'invalid-argument',
-      'Bad Request',
+      exception?.message || 'Bad Request',
       'Some went wrong 🤫 Try again 🙂'
     );
   });
