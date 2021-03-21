@@ -1,6 +1,7 @@
 import {Component} from '@angular/core';
 import {faEdit, faListAlt} from '@fortawesome/free-regular-svg-icons';
 import {faListOl, faProjectDiagram, faSort} from '@fortawesome/free-solid-svg-icons';
+import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 
 @Component({
   selector: 'app-guest',
@@ -14,5 +15,6 @@ export class GuestComponent {
   faListOl = faListOl;
   faProjectDiagram = faProjectDiagram;
   faSort = faSort;
+  faGoogle = faGoogle;
 
 }
