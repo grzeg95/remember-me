@@ -1,66 +1,20 @@
-import {EventEmitter, Injectable, OnDestroy} from '@angular/core';
-import {fromEvent, Observable, Subscription} from 'rxjs';
-import {debounceTime, startWith} from 'rxjs/operators';
-
-export interface ConnectionState {
-  /**
-   * "True" if browser has network connection. Determined by Window objects "online" / "offline" events.
-   */
-  hasNetworkConnection: boolean;
-}
+import {Injectable} from '@angular/core';
+import {BehaviorSubject, fromEvent} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ConnectionService implements OnDestroy {
+export class ConnectionService {
+
+  stateChange$ = new BehaviorSubject<boolean>(true);
 
   constructor() {
-    this.checkNetworkState();
-  }
-
-  private stateChangeEventEmitter = new EventEmitter<ConnectionState>();
-
-  private currentState: ConnectionState = {
-    hasNetworkConnection: window.navigator.onLine
-  };
-  private offlineSubscription: Subscription;
-  private onlineSubscription: Subscription;
-
-  private checkNetworkState(): void {
-    this.onlineSubscription = fromEvent(window, 'online').subscribe(() => {
-      this.currentState.hasNetworkConnection = true;
-      this.emitEvent();
+    fromEvent(window, 'online').subscribe(() => {
+      this.stateChange$.next(true);
     });
 
-    this.offlineSubscription = fromEvent(window, 'offline').subscribe(() => {
-      this.currentState.hasNetworkConnection = false;
-      this.emitEvent();
+    fromEvent(window, 'offline').subscribe(() => {
+      this.stateChange$.next(false);
     });
-  }
-
-  private emitEvent(): void {
-    this.stateChangeEventEmitter.emit(this.currentState);
-  }
-
-  ngOnDestroy(): void {
-    this.offlineSubscription.unsubscribe();
-    this.onlineSubscription.unsubscribe();
-  }
-
-  /**
-   * Monitor Network & Internet connection status by subscribing to this observer. If you set "reportCurrentState" to "false" then
-   * function will not report current status of the connections when initially subscribed.
-   * @param reportCurrentState Report current state when initial subscription. Default is "true"
-   */
-  monitor(reportCurrentState: boolean = true): Observable<ConnectionState> {
-    return reportCurrentState ?
-      this.stateChangeEventEmitter.pipe(
-        debounceTime(300),
-        startWith(this.currentState),
-      )
-      :
-      this.stateChangeEventEmitter.pipe(
-        debounceTime(300)
-      );
   }
 }

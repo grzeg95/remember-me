@@ -12,9 +12,8 @@ export class AppService {
   isConnected: BehaviorSubject<boolean> = new BehaviorSubject(true);
 
   constructor(private connectionService: ConnectionService) {
-    this.connectionService.monitor().subscribe((isConnected) =>
-      this.isConnected.next(isConnected.hasNetworkConnection)
+    this.connectionService.stateChange$.subscribe((isConnected) =>
+      this.isConnected.next(isConnected)
     );
   }
-
 }
