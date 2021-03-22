@@ -122,12 +122,6 @@ describe('Firestore security rules tests', () => {
       await admin.collection('users').doc(myId).set({'disabled': false});
     });
 
-    it(`Can get /users/{userId}/today/{day}/task/{taskId} day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']`, async () => {
-      const promises = days.map((day) =>
-        me.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).get());
-      await firebase.assertSucceeds(Promise.all(promises));
-    });
-
     it(`Can't get /users/{userId}/today/{day}/task/{taskId} day('other') not in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']`, async () => {
       const doc = me.collection('users').doc(myId).collection('today').doc('other').collection('task').doc(task_0);
       await firebase.assertFails(doc.get());
