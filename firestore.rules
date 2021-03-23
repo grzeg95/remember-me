@@ -12,22 +12,28 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    function _userExists() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-    }
-
     function _isDisabled(user) {
-      return 'disabled' in user.data ? user.data.disabled : false
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (user == null ? false : 'disabled' in user.data ? user.data.disabled : false)
     }
 
     function isDisabled() {
-    	return _userExists() == false ? false : _isDisabled(_getUser())
+      return _isDisabled(_getUser())
     }
 
-    function userHasTimeOfDayAndIsNotDisabled(timeOfDay) {
+    function allowSetProgress(taskId) {
       let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
       let timesOfDay = user.data.timesOfDay;
-      return _userExists() && !_isDisabled(user) && (timesOfDay != null && timeOfDay in timesOfDay)
+      let timeOfDay = resource.data.timesOfDay.keys()[0];
+
+      return isOwner()
+        && !_isDisabled(user)
+        && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
+        && (timesOfDay != null && timeOfDay in timesOfDay)
+        && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
+        && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
+        && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
+        && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
+
     }
 
     allow get: if isOwner() && !isDisabled()
@@ -38,13 +44,7 @@ service cloud.firestore {
       	&& request.query.limit == 50 * 20
 
       // set progress
-      allow update: if isOwner()
-        && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
-        && userHasTimeOfDayAndIsNotDisabled(resource.data.timesOfDay.keys()[0])
-        && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
-        && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
-        && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
-        && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
+      allow update: if allowSetProgress(taskId)
     }
 
     match /task/{taskId} {
