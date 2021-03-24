@@ -8,38 +8,27 @@ service cloud.firestore {
       return userId == request.auth.uid
     }
 
-    function _getUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    function _isDisabled(user) {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (user == null ? false : 'disabled' in user.data ? user.data.disabled : false)
-    }
-
+    // https://firebase.google.com/docs/firestore/pricing#firestore-rules
+    // You are only charged one read per dependent document even if your rules refer to that document more than once
     function isDisabled() {
-      return _isDisabled(_getUser())
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
     }
 
     function allowSetProgress(taskId) {
-      let user = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      let timesOfDay = user.data.timesOfDay;
-      let timeOfDay = resource.data.timesOfDay.keys()[0];
-
-      return isOwner()
-        && !_isDisabled(user)
+      return isOwner() && !isDisabled()
         && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
-        && (timesOfDay != null && timeOfDay in timesOfDay)
         && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
         && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
-
     }
 
     allow get: if isOwner() && !isDisabled()
 
     match /today/{day}/task/{taskId} {
-      allow list: if isOwner() && !isDisabled() && day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+      allow list: if isOwner() && !isDisabled()
+        && day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
         && request.query.orderBy.description == 'ASC'
       	&& request.query.limit == 50 * 20
 
@@ -49,12 +38,9 @@ service cloud.firestore {
 
     match /task/{taskId} {
     	allow get: if isOwner() && !isDisabled()
-      allow list: if
-      	isOwner() && !isDisabled()
+      allow list: if isOwner() && !isDisabled()
       	&& request.query.orderBy.description == 'ASC'
       	&& request.query.limit == 50
     }
-
   }
-
 }

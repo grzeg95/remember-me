@@ -192,35 +192,10 @@ describe('Firestore security rules tests', () => {
 
     describe(`Can't update /users/{userId}/today/{day}/task/{taskId}`, () => {
 
+      // REMOVED NOT POSSIBLE
+      // timesOfDay(not exists)
+
       describe(`/users/{userId}/task/{taskId} exists`, () => {
-
-        it(`timesOfDay(not exists)`, async () => {
-
-          await admin.collection('users').doc(myId).collection('task').doc(task_0).set({});
-          await admin.collection('users').doc(myId).set({
-            timesOfDay: [],
-            timesOfDayCardinality: []
-          });
-
-          await Promise.all(days.map((day) => {
-            admin.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).set({
-              'timesOfDay': {
-                [timeOfDay_0]: true
-              }
-            })
-          }));
-
-          const promises = days.map((day) => {
-            return me.collection('users').doc(myId).collection('today').doc(day).collection('task').doc(task_0).update({
-              'timesOfDay': {
-                [timeOfDay_0]: false
-              }
-            });
-          });
-
-          await firebase.assertFails(Promise.all(promises));
-
-        });
 
         describe(`timesOfDay(exists)`, () => {
 
