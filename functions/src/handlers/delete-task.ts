@@ -60,7 +60,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       ));
 
     // prepare timesOfDay and timesOfDayCardinality
-    task.timesOfDay.forEach((timeOfDay) => {
+    for (const timeOfDay of task.timesOfDay) {
       const indexToRemove = timesOfDay.indexOf(timeOfDay);
       if (indexToRemove > -1) {
         if (timesOfDayCardinality[indexToRemove] - 1 === 0) {
@@ -70,7 +70,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
           timesOfDayCardinality[indexToRemove]--;
         }
       }
-    });
+    }
 
     // wait for rest
 
@@ -84,7 +84,9 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     transaction.delete(taskDocSnap.ref);
 
     // remove todayTasks
-    todayTasks.forEach((todayTaskDocSnap) => transaction.delete(todayTaskDocSnap.ref));
+    for (const todayTaskDocSnap of todayTasks) {
+      transaction.delete(todayTaskDocSnap.ref)
+    }
 
     const userDataUpdate = {
       timesOfDayCardinality,

@@ -69,7 +69,9 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
     // add task timesOfDay
     const timesOfDay: TodayTaskTimesOfDay = {};
 
-    task.timesOfDay.forEach((timeOfDay) => timesOfDay[timeOfDay] = false);
+    for (const timeOfDay of task.timesOfDay) {
+      timesOfDay[timeOfDay] = false;
+    }
 
     transaction.set(todayTaskDocSnapDayPack.docSnap.ref, {
       description: task.description,
@@ -84,9 +86,9 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
 
     // select inserted task timesOfDay to newTimesOfDay
     const taskTimesOdDaySet = task.timesOfDay;
-    taskTimesOdDaySet.forEach((timeOfDay) => {
+    for (const timeOfDay of taskTimesOdDaySet) {
       newTimesOfDay[timeOfDay] = false;
-    });
+    }
 
     // select current stored task timesOfDay to oldTimesOfDay
     // there can be selected true value
@@ -98,11 +100,11 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
     }
 
     // maybe there exist selected timesOfDay
-    Object.keys(newTimesOfDay).forEach((newTimeOfDay) => {
+    for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
       if (oldTimesOfDay[newTimeOfDay]) {
         newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
       }
-    });
+    }
 
     transaction.update(todayTaskDocSnapDayPack.docSnap.ref, {
       description: task.description,
@@ -143,7 +145,7 @@ const proceedTimesOfDay = (
   const toAdd = enteredTimesOfDay.toSet().difference(taskCurrentTimesOfDay.toSet());
   const toRemove = taskCurrentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet());
 
-  toRemove.forEach((timeOfDay) => {
+  for (const timeOfDay of toRemove) {
     const indexToRemove = timesOfDay.indexOf(timeOfDay);
     if (indexToRemove > -1) {
       if (timesOfDayCardinality[indexToRemove] - 1 === 0) {
@@ -153,9 +155,9 @@ const proceedTimesOfDay = (
         timesOfDayCardinality[indexToRemove]--;
       }
     }
-  });
+  }
 
-  toAdd.forEach((timeOfDay) => {
+  for (const timeOfDay of toAdd) {
     const indexToAdd = timesOfDay.indexOf(timeOfDay);
     if (indexToAdd > -1) {
       timesOfDayCardinality[indexToAdd]++;
@@ -163,7 +165,7 @@ const proceedTimesOfDay = (
       timesOfDayCardinality.unshift(1);
       timesOfDay.unshift(timeOfDay)
     }
-  });
+  }
 
   if (timesOfDay.length > 20) {
     return `You can own 20 times of day but merge has ${timesOfDay.length} 🤔`;
@@ -186,9 +188,9 @@ const getTodayTaskDocSnapsDayPackPromise = (transaction: Transaction, taskDocSna
 };
 
 const proceedTodayTasks = (transaction: Transaction, task: Task, todayTaskDocSnapsDayPack: {docSnap: DocumentSnapshot<DocumentData>, day: Day}[]) => {
-  todayTaskDocSnapsDayPack.forEach((todayTaskDocSnapDayPack) =>
-    proceedTodayTask(transaction, todayTaskDocSnapDayPack, task)
-  );
+  for (const todayTaskDocSnapDayPack of todayTaskDocSnapsDayPack) {
+    proceedTodayTask(transaction, todayTaskDocSnapDayPack, task);
+  }
 };
 
 /**
@@ -339,7 +341,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         * Proceed all data
         * */
 
-        todayTaskDocSnapsToUpdate.forEach((todayTask) => {
+        for (const todayTask of todayTaskDocSnapsToUpdate) {
           if (!todayTask.exists) {
             throw new HttpsError(
               'invalid-argument',
@@ -350,7 +352,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           transaction.update(todayTask.ref, {
             description: task.description
           });
-        });
+        }
 
         transaction.update(taskDocSnap.ref, {
           description: task.description
