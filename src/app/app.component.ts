@@ -1,7 +1,6 @@
 import {Component} from '@angular/core';
 import {Observable} from 'rxjs';
 
-import {environment} from '../environments/environment';
 import {AppService} from './app-service';
 import {AuthService} from './auth/auth.service';
 
@@ -22,14 +21,5 @@ export class AppComponent {
 
   constructor(private appService: AppService,
               private authService: AuthService) {
-    if (environment.production) {
-      console.log = () => {};
-      console.error = () => {};
-      console.warn = () => {};
-      console.info = () => {};
-      console.group = () => {};
-      console.groupEnd = () => {};
-      console.groupCollapsed = () => {};
-    }
   }
 }
