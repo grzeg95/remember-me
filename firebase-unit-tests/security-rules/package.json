@@ -9,7 +9,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^1.2.2",
-    "mocha": "^8.3.0"
+    "@firebase/rules-unit-testing": "~1.2.5",
+    "@google-cloud/firestore": "~4.9.8",
+    "firebase-admin": "~9.5.0",
+    "mocha": "~8.3.2"
   }
 }

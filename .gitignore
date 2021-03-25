@@ -115,5 +115,3 @@ Thumbs.db
 
 # Firestore backup
 /emulators-backup/
-
-package-lock.json
