@@ -277,7 +277,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   return app.runTransaction(async (transaction) => {
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
-    const taskDocSnapTmp = await transaction.get(userDocSnap.ref.collection('task').doc(taskId)).then((docSnap) => docSnap);
+    const taskDocSnapTmp = await transaction.get(userDocSnap.ref.collection('task').doc(taskId));
 
     const task = data.task as Task;
     task.description = task.description.trim();
@@ -303,7 +303,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       }
 
       created = true;
-      taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc()).then((newTaskSnap) => newTaskSnap);
+      taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc());
       taskId = taskDocSnap.id;
       currentTaskSize++;
     }
@@ -332,7 +332,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         const todayTaskDocSnapsToUpdate = await Promise.all(
           numberToDayArray(task.daysOfTheWeek).map((day) =>
             transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-              .then((docSnap) => docSnap)
           )
         );
 

@@ -33,7 +33,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   return app.runTransaction(async (transaction) => {
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
-    const taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc(data.taskId)).then((docSnap) => docSnap);
+    const taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc(data.taskId));
 
     // interrupt if user has not this task
     if (!taskDocSnap.exists) {

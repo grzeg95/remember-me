@@ -6,7 +6,7 @@ import Firestore = firestore.Firestore;
 
 export const getUser = async (app: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot> => {
 
-  const userDocSnap = await transaction.get(app.collection('users').doc(uid)).then((docSnap) => docSnap);
+  const userDocSnap = await transaction.get(app.collection('users').doc(uid));
   const userData = userDocSnap.data();
   const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
 
