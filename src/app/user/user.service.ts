@@ -85,10 +85,8 @@ export class UserService {
 
     this.authService.user$.subscribe((user) => {
       if (user) {
-        this.timesOfDay$.next(user.timesOfDay);
+        this.timesOfDay$.next(user.timesOfDay || []);
         this.timesOfDayOrderFirstLoading$.next(false);
-      } else {
-        this.timesOfDay$.next([]);
       }
     });
   }
