@@ -20,6 +20,8 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {OverlayModule} from '@angular/cdk/overlay';
 import {MatToolbarModule} from '@angular/material/toolbar';
+import {LoadingTextComponent} from './loading-text/loading-text.component';
+import {CommonModule} from '@angular/common';
 
 const MODULES = [
   AngularFireAuthModule,
@@ -47,8 +49,15 @@ const MODULES = [
 ];
 
 @NgModule({
-  imports: MODULES,
-  exports: MODULES
+  imports: [
+    MODULES,
+    CommonModule
+  ],
+  exports: [
+    ...MODULES,
+    LoadingTextComponent
+  ],
+  declarations: [LoadingTextComponent]
 })
 export class SharedModule {
 }

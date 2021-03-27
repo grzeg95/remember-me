@@ -6,7 +6,7 @@
     <ng-template #waitForItems>
       <div class="row message" *ngIf="((tasksFirstLoading$ | async) || (timesOfDayOrderFirstLoading$ | async)) && (isConnected$ | async); else onOneExists">
         <div class="col">
-          <span>Loading...</span>
+          <app-loading-text></app-loading-text>
         </div>
       </div>
 
