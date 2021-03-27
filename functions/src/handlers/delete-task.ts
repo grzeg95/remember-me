@@ -4,7 +4,6 @@ import {Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {numberToDayArray} from '../helpers/times-of-days';
 import {getUser} from '../helpers/user';
-import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
 
@@ -54,10 +53,16 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     const timesOfDayCardinality: number[] = userDocSnap.data()?.timesOfDayCardinality || [];
 
     // read all task for user/{userId}/today/{day}/task/{taskId}
-    const todayTasksPromise: Promise<DocumentSnapshot[]> = Promise.all(
-      numberToDayArray(task.daysOfTheWeek).map((day) =>
-        transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${data.taskId}`))
-      ));
+    const todayTaskDocSnapsToUpdatePromises = [];
+
+    for (const day of numberToDayArray(task.daysOfTheWeek)) {
+      todayTaskDocSnapsToUpdatePromises.push(
+        transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+      );
+    }
+
+    const todayTasksPromise = Promise.all(todayTaskDocSnapsToUpdatePromises);
+
 
     // prepare timesOfDay and timesOfDayCardinality
     for (const timeOfDay of task.timesOfDay) {

@@ -181,10 +181,16 @@ const proceedTimesOfDay = (
 const getTodayTaskDocSnapsDayPackPromise = (transaction: Transaction, taskDocSnap: DocumentSnapshot, userDocSnap: DocumentSnapshot): Promise<{docSnap: DocumentSnapshot, day: Day}[]> => {
   // read all task for user/{userId}/today/{day}/task/{taskId}
   // Promise<{ docSnap: DocumentSnapshot, day: Day }[]> = [];
-  return Promise.all(days.map((day) =>
-    transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-      .then((docSnap) => ({docSnap, day})))
-  );
+  const todayTaskDocSnapsDayPackPromise = [];
+
+  for (const day of days) {
+    todayTaskDocSnapsDayPackPromise.push(
+      transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+      .then((docSnap) => ({docSnap, day}))
+    );
+  }
+
+  return Promise.all(todayTaskDocSnapsDayPackPromise);
 };
 
 const proceedTodayTasks = (transaction: Transaction, task: Task, todayTaskDocSnapsDayPack: {docSnap: DocumentSnapshot<DocumentData>, day: Day}[]) => {
@@ -254,8 +260,8 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data.task.timesOfDay.length is not in [1, 20]
   testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 20);
 
-  data.task.timesOfDay = data.task.timesOfDay.map((timeOfDay: any) => {
-
+  const timesOfDayTmp = [];
+  for (const timeOfDay of data.task.timesOfDay) {
     // data.task.timesOfDay contains other than string
     testRequirement(typeof timeOfDay !== 'string');
 
@@ -264,9 +270,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // data.task.timesOfDay contains string that trim is not in [1, 20]
     testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
 
-    return timeOfDayTrim.encodeFirebaseSpecialCharacters();
-
-  });
+    timesOfDayTmp.push(timeOfDayTrim.encodeFirebaseSpecialCharacters());
+  }
+  data.task.timesOfDay = timesOfDayTmp;
 
   // data.task.timesOfDay contains duplicates
   testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
@@ -283,7 +289,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
     const task = data.task as Task;
     task.description = task.description.trim();
-    task.timesOfDay = task.timesOfDay.map((timeOfDay) => timeOfDay.trim());
     let currentTaskSize = userDocSnap.data()?.taskSize || 0;
     const timesOfDay = userDocSnap.data()?.timesOfDay || [];
     const timesOfDayCardinality = userDocSnap.data()?.timesOfDayCardinality || [];
@@ -331,11 +336,15 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
         // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTaskDocSnapsToUpdate = await Promise.all(
-          numberToDayArray(task.daysOfTheWeek).map((day) =>
+        const todayTaskDocSnapsToUpdatePromises = [];
+
+        for (const day of numberToDayArray(task.daysOfTheWeek)) {
+          todayTaskDocSnapsToUpdatePromises.push(
             transaction.get(userDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-          )
-        );
+          );
+        }
+
+        const todayTaskDocSnapsToUpdate = await Promise.all(todayTaskDocSnapsToUpdatePromises);
 
         /*
         * Proceed all data

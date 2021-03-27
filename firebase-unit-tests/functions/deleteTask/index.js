@@ -95,10 +95,13 @@ describe(`deleteTask`, () => {
         userWithTaskY = await getUserJson(myId);
       });
 
-      it(`remove x then y`, async () => {
+      beforeEach(async () => {
         await removeUser(myId);
         x = await getResult(saveTask, test['x'], myAuth);
         y = await getResult(saveTask, test['y'], myAuth);
+      });
+
+      it(`remove x then y`, async () => {
 
         deletedResult = await getResult(deleteTask, {taskId: x.taskId}, myAuth);
         expect({
@@ -127,9 +130,6 @@ describe(`deleteTask`, () => {
 
       // remove y then x
       it(`remove y then x`, async () => {
-        await removeUser(myId);
-        x = await getResult(saveTask, test['x'], myAuth);
-        y = await getResult(saveTask, test['y'], myAuth);
 
         deletedResult = await getResult(deleteTask, {taskId: y.taskId}, myAuth);
         expect({
