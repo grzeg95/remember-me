@@ -1,10 +1,10 @@
 import {Injectable, NgZone} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/auth';
-import {Action, AngularFirestore, DocumentSnapshot} from '@angular/fire/firestore';
+import {AngularFirestore} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import firebase from 'firebase/app';
 import 'firebase/auth';
-import {BehaviorSubject, interval, Observable, of, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, Observable, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
 import {User, UserData} from './user-data.model';
@@ -36,19 +36,17 @@ export class AuthService {
           this.userDoc$.unsubscribe();
         }
 
-        this.userDoc$ = this.afs.doc(`users/${user.uid}`).snapshotChanges().pipe(
+        this.userDoc$ = this.afs.doc<User>(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
             if (error.code === 'permission-denied') {
-             return of(this.signOut());
+              this.signOut();
             }
             throw error;
           })
         ).subscribe((userDoc) => {
-          if (userDoc !== null) {
-            this.user$.next({
-              timesOfDay: ((userDoc as Action<DocumentSnapshot<any>>).payload.data() as User)?.timesOfDay || []
-            });
-          }
+          this.user$.next({
+            timesOfDay: userDoc.payload.data()?.timesOfDay || []
+          });
         });
 
         this.userData = {

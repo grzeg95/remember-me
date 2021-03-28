@@ -20,7 +20,7 @@ export class UserComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.userService.clearCache();
+    this.userService.init();
   }
 
   ngOnDestroy(): void {

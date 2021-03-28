@@ -34,9 +34,10 @@ export class UserService {
 
   private todaySub: Subscription;
   private tasksSub: Subscription;
-  private timesOfDayOrderSub: Subscription;
+  private subs: Subscription[] = [];
 
   clearCache(): void {
+
     this.today$.next({});
     this.tasks$.next([]);
     this.timesOfDay$.next([]);
@@ -44,17 +45,13 @@ export class UserService {
     this.tasksFirstLoading$.next(true);
     this.timesOfDayOrderFirstLoading$.next(true);
 
-    if (this.todaySub && !this.todaySub.closed) {
-      this.todaySub.unsubscribe();
-    }
+    this.subs.forEach((sub) => {
+      if (!sub.closed) {
+        sub.unsubscribe();
+      }
+    });
 
-    if (this.tasksSub && !this.tasksSub.closed) {
-      this.tasksSub.unsubscribe();
-    }
-
-    if (this.timesOfDayOrderSub && !this.timesOfDayOrderSub.closed) {
-      this.timesOfDayOrderSub.unsubscribe();
-    }
+    this.subs = [];
 
     if (this.setTimesOfDayOrderSub && !this.setTimesOfDayOrderSub.closed) {
       this.setTimesOfDayOrderSub.unsubscribe();
@@ -67,7 +64,10 @@ export class UserService {
               private fns: AngularFireFunctions,
               private appService: AppService,
               private taskService: TaskService) {
-    this.appService.isConnected$.subscribe((isConnected) => {
+  }
+
+  init(): void {
+    this.subs.push(this.appService.isConnected$.subscribe((isConnected) => {
       if (!isConnected) {
         this.tasksFirstLoading$.next(true);
         this.todayFirstLoading$.next(true);
@@ -76,19 +76,19 @@ export class UserService {
           this._setTimesOfDayOrderSub.unsubscribe();
         }
       }
-    });
+    }));
 
-    this.now$.subscribe((now) => {
+    this.subs.push(this.now$.subscribe((now) => {
       this.todayFullName$.next(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]);
       this.todayName$.next(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]);
-    });
+    }));
 
-    this.authService.user$.subscribe((user) => {
+    this.subs.push(this.authService.user$.subscribe((user) => {
       if (user) {
-        this.timesOfDay$.next(user.timesOfDay || []);
+        this.timesOfDay$.next(user.timesOfDay);
         this.timesOfDayOrderFirstLoading$.next(false);
       }
-    });
+    }));
   }
 
   runToday(): void {
@@ -136,6 +136,8 @@ export class UserService {
           this.todayFirstLoading$.next(false);
         }
       });
+
+    this.subs.push(this.todaySub);
   }
 
   runTasks(): void {
@@ -167,6 +169,8 @@ export class UserService {
           this.tasksFirstLoading$.next(false);
         }
       });
+
+    this.subs.push(this.tasksSub);
   }
 
   getTaskById$(id: string): Observable<ITask> {
