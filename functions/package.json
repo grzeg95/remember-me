@@ -2,7 +2,7 @@
   "name": "functions",
   "scripts": {
     "lint": "tslint --project tsconfig.json",
-    "build": "echo tsc && tsc && echo tsc done && python minify.py",
+    "build": "echo tsc: start && tsc && echo tsc: done && python minify.py",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
