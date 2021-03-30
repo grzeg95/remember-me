@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import os
 import threading
+import cursor
 
 def printInLine(text):
   print(str(text), end='\r')
@@ -17,6 +18,7 @@ def worker(queue, size):
 
 if __name__ == '__main__':
 
+  cursor.hide()
   printInLine('uglifyjs functions: 0%\r')
 
   queue = mp.JoinableQueue()
