@@ -1,5 +1,6 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {testRequirement} from '../helpers/test-requirement';
 import {getUser} from '../helpers/user';
 
@@ -61,13 +62,6 @@ export const handler = async (data: any, context: CallableContext) => {
 
   }).then(() => ({
     details: 'Order has been updated 🙃'
-  })).catch((error: HttpsError) => {
-    const details = error.code === 'permission-denied' ? '' : error.details && typeof error.details === 'string' ? error.details : 'Some went wrong 🤫 Try again 🙂';
-    throw new HttpsError(
-      error.code,
-      error.message,
-      details
-    );
-  });
+  })).catch(globalTransactionCatch);
 
 };

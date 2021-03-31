@@ -1,5 +1,6 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {Day, Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import Transaction = firestore.Transaction;
@@ -300,15 +301,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // read task or create it
     let taskDocSnap: DocumentSnapshot;
     if (!taskDocSnapTmp.exists) {
-
-      if (currentTaskSize + 1 > 50) {
-        throw new HttpsError(
-          'invalid-argument',
-          'Bad Request',
-          `You can own up tp 50 tasks but merge has ${currentTaskSize + 1} 🤔`
-        );
-      }
-
+      testRequirement(currentTaskSize + 1 > 50, `You can own up tp 50 tasks but merge has ${currentTaskSize + 1} 🤔`);
       created = true;
       taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc());
       taskId = taskDocSnap.id;
@@ -351,13 +344,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         * */
 
         for (const todayTask of todayTaskDocSnapsToUpdate) {
-          if (!todayTask.exists) {
-            throw new HttpsError(
-              'invalid-argument',
-              `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`,
-              'Some went wrong 🤫 Try again 🙂'
-            );
-          }
+          testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
           transaction.update(todayTask.ref, {
             description: task.description
           });
@@ -435,11 +422,5 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       'details': 'Your task has been updated 🙃',
       'taskId': taskId
     })
-  ).catch(() => {
-    throw new HttpsError(
-      'invalid-argument',
-      'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
-  });
+  ).catch(globalTransactionCatch);
 };

@@ -54,7 +54,7 @@
       ],
       "excepted": {
         "code": "invalid-argument",
-        "message": "Task does not exist",
+        "message": "Bad Request",
         "details": "Some went wrong 🤫 Try again 🙂"
       }
     }

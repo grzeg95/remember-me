@@ -1,5 +1,6 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext, HttpsError} from 'firebase-functions/lib/providers/https';
+import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {numberToDayArray} from '../helpers/times-of-days';
@@ -35,13 +36,7 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     const taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc(data.taskId));
 
     // interrupt if user has not this task
-    if (!taskDocSnap.exists) {
-      throw new HttpsError(
-        'invalid-argument',
-        `Task does not exist`,
-        `Some went wrong 🤫 Try again 🙂`
-      );
-    }
+    testRequirement(!taskDocSnap.exists);
 
     /*
     * Read all data
@@ -110,12 +105,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
-  })).catch((exception) => {
-    throw new HttpsError(
-      'invalid-argument',
-      exception?.message || 'Bad Request',
-      'Some went wrong 🤫 Try again 🙂'
-    );
-  });
+  })).catch(globalTransactionCatch);
 
 };
