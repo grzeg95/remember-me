@@ -5,7 +5,7 @@ from multiprocessing.queues import JoinableQueue
 import cursor
 from typing import Union
 from observable import Observable
-
+import sys
 
 obs = Observable()
 lock = threading.Lock()
@@ -13,7 +13,8 @@ lock = threading.Lock()
 
 @obs.on('progress')
 def print_progress(message: str):
-  print(message, end='\r')
+  sys.stdout.write('\r' + message)
+  sys.stdout.flush()
 
 
 def update_progress(maybe_text: Union[str, int, float], progress_to_update) -> None:
