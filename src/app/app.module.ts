@@ -1,6 +1,7 @@
 import {HttpClientModule} from '@angular/common/http';
 import {NgModule} from '@angular/core';
 import {AngularFireModule} from '@angular/fire';
+import {AngularFirePerformanceModule} from '@angular/fire/performance';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {environment} from '../environments/environment';
@@ -25,6 +26,7 @@ import {SharedModule} from './shared.module';
     CoreModule,
     HttpClientModule,
     AngularFireModule.initializeApp(environment.firebase),
+    AngularFirePerformanceModule
   ],
   bootstrap: [AppComponent]
 })
