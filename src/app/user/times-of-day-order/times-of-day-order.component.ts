@@ -42,10 +42,6 @@ export class TimesOfDayOrderComponent {
               private appService: AppService,
               private zone: NgZone) {}
 
-  decodeFirebaseSpecialCharacters(str: string): string {
-    return str.decodeFirebaseSpecialCharacters();
-  }
-
   drop(event: CdkDragDrop<string[]>): void {
 
     if (event.previousIndex === event.currentIndex) {

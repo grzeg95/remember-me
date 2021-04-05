@@ -39,7 +39,7 @@
 
           <div [cdkDropListDisabled]="!(isConnected$ | async)" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
             <div cdkDrag class="drag-item mat-cell" [class.disabled]="!(isConnected$ | async)" *ngFor="let item of (timesOfDay$ | async); let i = index">
-              <span class="drag-span">{{ decodeFirebaseSpecialCharacters(item) }}</span>
+              <span class="drag-span">{{ item }}</span>
               <fa-icon class="drag-icon" [icon]="faGripLines"></fa-icon>
             </div>
           </div>

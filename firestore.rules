@@ -4,39 +4,38 @@ service cloud.firestore {
 
 	match /databases/{database}/documents/users/{userId} {
 
-    function isOwner() {
-      return userId == request.auth.uid
-    }
-
     // https://firebase.google.com/docs/firestore/pricing#firestore-rules
     // You are only charged one read per dependent document even if your rules refer to that document more than once
-    function isDisabled() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
+    function userIsOk() {
+      return userId == request.auth.uid
+      && !(
+          exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
+      );
     }
 
-    allow get: if isOwner() && !isDisabled()
+    allow get: if userIsOk();
 
     match /today/{day}/task/{taskId} {
-      allow list: if isOwner() && !isDisabled()
+      allow list: if userIsOk()
         && day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
         && request.query.orderBy.description == 'ASC'
-      	&& request.query.limit == 50 * 20
+      	&& request.query.limit == 25;
 
       // set progress
-      allow update: if isOwner() && !isDisabled()
+      allow update: if userIsOk()
         && exists(/databases/$(database)/documents/users/$(userId)/task/$(taskId))
         && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
         && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
-        && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
+        && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false]);
     }
 
     match /task/{taskId} {
-    	allow get: if isOwner() && !isDisabled()
-      allow list: if isOwner() && !isDisabled()
+    	allow get: if userIsOk();
+      allow list: if userIsOk()
       	&& request.query.orderBy.description == 'ASC'
-      	&& request.query.limit == 50
+      	&& request.query.limit == 25;
     }
   }
 }

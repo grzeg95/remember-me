@@ -168,8 +168,8 @@ const proceedTimesOfDay = (
     }
   }
 
-  if (timesOfDay.length > 20) {
-    return `You can own 20 times of day but merge has ${timesOfDay.length} 🤔`;
+  if (timesOfDay.length > 10) {
+    return `You can own 10 times of day but merge has ${timesOfDay.length} 🤔`;
   }
 
   return {
@@ -249,8 +249,8 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
   data.task.description = data.task.description.trim();
 
-  // data.task.description is not a string in [4, 40]
-  testRequirement(data.task.description.length < 4 || data.task.description.length > 40);
+  // data.task.description is not a string in [1, 100]
+  testRequirement(data.task.description.length < 1 || data.task.description.length > 100);
 
   // data.task.daysOfTheWeek is not number between 1 and 128
   testRequirement(!Number.isInteger(data.task.daysOfTheWeek) || data.task.daysOfTheWeek < 0 || data.task.daysOfTheWeek > 128);
@@ -258,20 +258,20 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data.task.timesOfDay is not an array
   testRequirement(!Array.isArray(data.task.timesOfDay));
 
-  // data.task.timesOfDay.length is not in [1, 20]
-  testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 20);
+  // data.task.timesOfDay.length is not in [1, 10]
+  testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 10);
 
   const timesOfDayTmp = [];
   for (const timeOfDay of data.task.timesOfDay) {
     // data.task.timesOfDay contains other than string
     testRequirement(typeof timeOfDay !== 'string');
 
-    const timeOfDayTrim = (timeOfDay as string).trim().encodeFirebaseSpecialCharacters().decodeFirebaseSpecialCharacters();
+    const timeOfDayTrim = (timeOfDay as string).trim();
 
-    // data.task.timesOfDay contains string that trim is not in [1, 20]
-    testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 20);
+    // data.task.timesOfDay contains string that trim is not in [1, 100]
+    testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 100);
 
-    timesOfDayTmp.push(timeOfDayTrim.encodeFirebaseSpecialCharacters());
+    timesOfDayTmp.push(timeOfDayTrim);
   }
   data.task.timesOfDay = timesOfDayTmp;
 
@@ -301,7 +301,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // read task or create it
     let taskDocSnap: DocumentSnapshot;
     if (!taskDocSnapTmp.exists) {
-      testRequirement(currentTaskSize + 1 > 50, `You can own up tp 50 tasks but merge has ${currentTaskSize + 1} 🤔`);
+      testRequirement(currentTaskSize + 1 > 25, `You can own up tp 25 tasks but merge has ${currentTaskSize + 1} 🤔`);
       created = true;
       taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc());
       taskId = taskDocSnap.id;

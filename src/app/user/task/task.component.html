@@ -5,7 +5,7 @@
         <mat-form-field floatLabel="always">
           <mat-label>Task description</mat-label>
           <input autocomplete="off" matInput formControlName="description" [placeholder]="'Your task description'">
-          <mat-error *ngIf="!taskForm.disabled && !description.valid && (description.dirty || description.touched)">Enter description from 4 to 40 characters</mat-error>
+          <mat-error *ngIf="!taskForm.disabled && !description.valid && (description.dirty || description.touched)">Enter description from 1 to 100 characters</mat-error>
         </mat-form-field>
       </div>
     </div>
@@ -36,7 +36,7 @@
                         [removable]="true"
                         [selected]="false"
                         (selectionChange)="$event.source.deselect()"
-                        (removed)="removeTimeOfDay(i)">{{ decodeFirebaseSpecialCharacters(timeOfDay.value) }}
+                        (removed)="removeTimeOfDay(i)">{{ timeOfDay.value }}
                 <mat-icon class="material-icons" matChipRemove>cancel</mat-icon>
               </mat-chip>
             </div>

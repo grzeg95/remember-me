@@ -37,7 +37,7 @@
 
         <div class="row">
           <div class="col">
-            <span><fa-icon [hidden]="!todayItemIsDone(todayItem.timeOfDay)" [icon]="faCheckCircle"></fa-icon> {{decodeFirebaseSpecialCharacters(todayItem.timeOfDay)}}</span>
+            <span><fa-icon [hidden]="!todayItemIsDone(todayItem.timeOfDay)" [icon]="faCheckCircle"></fa-icon> {{todayItem.timeOfDay}}</span>
           </div>
         </div>
 

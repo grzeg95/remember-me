@@ -47,8 +47,7 @@ export class TasksComponent implements OnInit {
 
   getTimesOfDay(timesOfDayOrder: string[], taskTimesOfDay: string[]): string[] {
     const taskTimesOfDaySet = taskTimesOfDay.toSet();
-    return timesOfDayOrder.filter((timeOfDayOrderItem) => taskTimesOfDaySet.has(timeOfDayOrderItem))
-      .map((timeOfDayOrderItem) => timeOfDayOrderItem.decodeFirebaseSpecialCharacters());
+    return timesOfDayOrder.filter((timeOfDayOrderItem) => taskTimesOfDaySet.has(timeOfDayOrderItem));
   }
 
 }

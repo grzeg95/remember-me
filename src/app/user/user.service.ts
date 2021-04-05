@@ -104,7 +104,7 @@ export class UserService {
     }
 
     this.todaySub = this.afs.doc(`users/${this.authService.userData.uid}/today/${this.todayName$.getValue()}`)
-      .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(50 * 20))
+      .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
       .snapshotChanges().pipe(
         map((documentChangeActionArr) => {
 
@@ -146,7 +146,7 @@ export class UserService {
     }
 
     this.tasksSub = this.afs.doc(`users/${this.authService.userData.uid}/`)
-      .collection<ITaskFirestore>('task', (ref) => ref.orderBy('description', 'asc').limit(50))
+      .collection<ITaskFirestore>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
       .snapshotChanges().pipe(
         map((documentChangeActionArr) =>
           documentChangeActionArr.map((documentChangeAction) => {

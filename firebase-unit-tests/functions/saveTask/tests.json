@@ -177,10 +177,10 @@
         "taskId": "id"
       }
     ],
-    "data.task.description is not a string in [4, 40]": [
+    "data.task.description is not a string in [1, 100]": [
       {
         "task": {
-          "description": "",
+          "description": " ",
           "daysOfTheWeek": "value",
           "timesOfDay": "value"
         },
@@ -188,15 +188,7 @@
       },
       {
         "task": {
-          "description": "qwe",
-          "daysOfTheWeek": "value",
-          "timesOfDay": "value"
-        },
-        "taskId": "id"
-      },
-      {
-        "task": {
-          "description": "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfg",
+          "description": " qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcv",
           "daysOfTheWeek": "value",
           "timesOfDay": "value"
         },
@@ -319,7 +311,7 @@
         "taskId": "id"
       }
     ],
-    "data.task.timesOfDay.length is not in [1, 20]": [
+    "data.task.timesOfDay.length is not in [1, 10]": [
       {
         "task": {
           "description": "qwer",
@@ -344,16 +336,7 @@
             8,
             9,
             10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20
+            11
           ]
         },
         "taskId": "id"
@@ -411,10 +394,10 @@
         "taskId": "id"
       }
     ],
-    "data.task.timesOfDay contains string that trim is not in [1, 20]": [
+    "data.task.timesOfDay contains string that trim is not in [1, 100]": [
       {
         "task": {
-          "description": "qwer",
+          "description": " ",
           "daysOfTheWeek": 64,
           "timesOfDay": [
             " "
@@ -427,7 +410,7 @@
           "description": "qwer",
           "daysOfTheWeek": 64,
           "timesOfDay": [
-            " qwertyuiopasdfghjklzx"
+            " qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcv"
           ]
         },
         "taskId": "id"

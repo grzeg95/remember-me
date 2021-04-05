@@ -1,11 +1,11 @@
 const firebase = require('@firebase/rules-unit-testing');
 
 const projectId = 'remember-me-dev';
-const myId = 'myId';
-const theirId = 'theirId';
+const myId = 'myId_2';
+const theirId = 'theirId_2';
 const myAuth = {
   uid: myId,
-  email: 'myEmail'
+  email: 'myEmail_2'
 };
 
 const getFirestore = (auth) => firebase.initializeTestApp({projectId, auth}).firestore();
@@ -127,9 +127,9 @@ describe('Firestore security rules tests', () => {
       await firebase.assertFails(doc.get());
     });
 
-    it(`Can list /users/{userId}/today/{day}/task/{taskId} day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], orderBy.description == 'ASC', limit == 50 * 20`, async () => {
+    it(`Can list /users/{userId}/today/{day}/task/{taskId} day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], orderBy.description == 'ASC', limit == 25`, async () => {
       const promises = days.map((day) =>
-        me.collection('users').doc(myId).collection('today').doc(day).collection('task').orderBy('description', 'asc').limit(50 * 20).get());
+        me.collection('users').doc(myId).collection('today').doc(day).collection('task').orderBy('description', 'asc').limit(25).get());
       await firebase.assertSucceeds(Promise.all(promises));
     });
 
@@ -409,8 +409,8 @@ describe('Firestore security rules tests', () => {
 
     });
 
-    it(`Can list /task orderBy.description == 'ASC', limit == 50`, async() => {
-      const doc = me.collection('users').doc(myId).collection('task').orderBy('description', 'asc').limit(50).get();
+    it(`Can list /task orderBy.description == 'ASC', limit == 25`, async() => {
+      const doc = me.collection('users').doc(myId).collection('task').orderBy('description', 'asc').limit(25).get();
       await firebase.assertSucceeds(doc);
     });
 

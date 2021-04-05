@@ -128,9 +128,4 @@ export class TodayComponent implements OnInit, OnDestroy {
     });
 
   }
-
-  decodeFirebaseSpecialCharacters(str: string): string {
-    return str.decodeFirebaseSpecialCharacters();
-  }
-
 }

@@ -18,11 +18,6 @@ declare global {
     shuffle(): T[];
     move(from: number, to: number): T[];
   }
-
-  interface String {
-    encodeFirebaseSpecialCharacters(): string;
-    decodeFirebaseSpecialCharacters(): string;
-  }
 }
 
 Set.prototype.difference = function(otherSet: Set<any>): Set<any> {
@@ -110,39 +105,4 @@ Array.prototype.shuffle = function(): any[] {
 Array.prototype.move = function(from: number, to: number): any[] {
   this.splice(to, 0, this.splice(from, 1)[0]);
   return [...this];
-};
-
-const firebaseSpecialCharactersEncodeMap: {[p: string]: string} = {
-  '.': '%2E',
-  '$': '%24',
-  '[': '%5B',
-  ']': '%5D',
-  '#': '%23',
-  '/': '%2F'
-};
-
-const firebaseSpecialCharactersDecodeMap: {[p: string]: string} = {
-  '%2E': '.',
-  '%24': '$',
-  '%5B': '[',
-  '%5D': ']',
-  '%23': '#',
-  '%2F': '/'
-};
-
-String.prototype.encodeFirebaseSpecialCharacters = function(): string {
-  return ([...this] as string[]).map((char) => firebaseSpecialCharactersEncodeMap[char] || char).join('');
-};
-
-String.prototype.decodeFirebaseSpecialCharacters = function(): string {
-
-  let res: string = this as string;
-
-  for (const char in firebaseSpecialCharactersDecodeMap) {
-    if (firebaseSpecialCharactersDecodeMap.hasOwnProperty(char)) {
-      res = res.replace(new RegExp(char, 'g'), firebaseSpecialCharactersDecodeMap[char]);
-    }
-  }
-
-  return res;
 };

@@ -110,7 +110,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       for (const x of timesOfDayOrderNext) {
         if (timesOfDayOrderSet.has(x)) {
-          timesOfDayOrder.push(x.decodeFirebaseSpecialCharacters());
+          timesOfDayOrder.push(x);
           timesOfDayOrderSet.delete(x);
         }
       }
@@ -135,7 +135,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       for (const x of timesOfDayOrderNext) {
         if (timesOfDayOrderSet.has(x)) {
-          timesOfDayOrder.push(x.decodeFirebaseSpecialCharacters());
+          timesOfDayOrder.push(x);
           timesOfDayOrderSet.delete(x);
         }
       }
@@ -157,15 +157,15 @@ export class TaskComponent implements OnInit, OnDestroy {
     }
 
     this.taskForm.get('timesOfDay').markAsDirty();
-    const timeOfDay = timeOfDayValue.trim().encodeFirebaseSpecialCharacters();
+    const timeOfDay = timeOfDayValue.trim();
 
     if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
       this.snackBar.open('Enter new one');
-    } else if (timeOfDay.length > 20 || timeOfDay.length === 0) {
-      this.snackBar.open('Enter time of day length from 1 to 20');
+    } else if (timeOfDay.length > 100 || timeOfDay.length === 0) {
+      this.snackBar.open('Enter time of day length from 1 to 100');
       this.basicInput.nativeElement.value = '';
-    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
-      this.snackBar.open('Up to 20 times of day per task');
+    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length >= 10) {
+      this.snackBar.open('Up to 10 times of day per task');
     } else {
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
 
@@ -189,14 +189,14 @@ export class TaskComponent implements OnInit, OnDestroy {
     }
 
     this.taskForm.get('timesOfDay').markAsDirty();
-    const timeOfDay = timeOfDayValue.trim().encodeFirebaseSpecialCharacters();
+    const timeOfDay = timeOfDayValue.trim();
 
     if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
       this.snackBar.open('Enter new one');
-    } else if (timeOfDay.length > 20 || timeOfDay.length === 0) {
-      this.snackBar.open('Enter time of day length from 1 to 20');
-    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length > 20) {
-      this.snackBar.open('Up to 20 times of day per task');
+    } else if (timeOfDay.length > 100 || timeOfDay.length === 0) {
+      this.snackBar.open('Enter time of day length from 1 to 100');
+    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length >= 10) {
+      this.snackBar.open('Up to 10 times of day per task');
     } else {
       const inputToApply = this.lastTwoInputs[0];
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay));
@@ -391,10 +391,6 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.applyFilter(this.taskForm.get('timeOfDay').value);
   }
 
-  decodeFirebaseSpecialCharacters(str: string): string {
-    return str.decodeFirebaseSpecialCharacters();
-  }
-
   static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {
     const rawValue = g.getRawValue();
     const some = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].some((checkbox) => rawValue[checkbox]);
@@ -410,23 +406,10 @@ export class TaskComponent implements OnInit, OnDestroy {
       g.setValue(trimLeft);
     }
 
-    return (typeof g.value === 'string') && (g.value.trim().length > 3) && (g.value.trim().length <= 40) ? null : {required: true};
+    return (typeof g.value === 'string') && (g.value.trim().length > 0) && (g.value.trim().length <= 100) ? null : {required: true};
   }
 
   static timesOfDayValidator(g: FormArray): { required: boolean } {
-    return g.value.length > 0 && g.value.length <= 20 ? null : {required: true};
-  }
-
-  static timeOfDayValidatorLength(g: FormControl): { required: boolean } {
-
-    const current = g.value as string;
-    const trim = (g.value as string).trimLeft();
-
-    if (current.length !== trim.length) {
-      g.setValue(trim);
-    }
-
-    return (typeof g.value === 'string') &&
-    (g.value.length > 0) && (g.value.length <= 20) ? null : {required: true};
+    return g.value.length > 0 && g.value.length <= 10 ? null : {required: true};
   }
 }
