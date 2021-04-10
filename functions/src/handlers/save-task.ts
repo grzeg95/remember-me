@@ -129,7 +129,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
  * @param timesOfDayCardinality
  * @return { addedTimesOfDay: Set<string>, removedTimesOfDay: Set<string> }
  **/
-const proceedTimesOfDay = (
+const prepareTimesOfDay = (
   transaction: Transaction,
   userDocSnap: DocumentSnapshot,
   taskCurrentTimesOfDay: string[],
@@ -374,7 +374,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // read current currentTimesOfDaySize
     const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
 
-    let timesOfDaysToStoreMetadata = proceedTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize, timesOfDay, timesOfDayCardinality);
+    let timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize, timesOfDay, timesOfDayCardinality);
     testRequirement(typeof timesOfDaysToStoreMetadata === 'string', timesOfDaysToStoreMetadata as string);
     timesOfDaysToStoreMetadata = timesOfDaysToStoreMetadata as {
       timesOfDay: string[],
