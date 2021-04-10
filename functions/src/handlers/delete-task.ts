@@ -16,7 +16,7 @@ const app = firestore();
 export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // not logged in
-  testRequirement(!context.auth, 'Please login in');
+  testRequirement(!context.auth);
 
   // data is null
   testRequirement(!data);

@@ -12,7 +12,7 @@ describe(`setTimesOfDayOrder`, () => {
     const expected = {
       code: 'invalid-argument',
       message: 'Bad Request',
-      details: 'Please login in'
+      details: 'Some went wrong 🤫 Try again 🙂'
     };
 
     const result = await getResult(setTimesOfDayOrder, null, null);
@@ -27,7 +27,7 @@ describe(`setTimesOfDayOrder`, () => {
       const expected = {
         code: 'invalid-argument',
         message: 'Bad Request',
-        details: 'data is incorrect'
+        details: 'Some went wrong 🤫 Try again 🙂'
       };
 
       tests.authenticated['invalid argument'].forEach((test) => it(`${JSON.stringify(test)}`, async () => {

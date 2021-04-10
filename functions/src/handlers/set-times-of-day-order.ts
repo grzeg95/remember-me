@@ -8,20 +8,19 @@ const app = firestore();
 /**
  * @function handler
  * Set times of day order
- * @param data: { dir: -1 or 1, [is, was]: not empty string and trim().length === length, was !== is }
+ * @param data: [string, number]
  * @param context CallableContext
  * @return Promise<{ [key: string]: string }>
  **/
 export const handler = async (data: any, context: CallableContext) => {
 
   // not logged in
-  testRequirement(!context.auth, 'Please login in');
+  testRequirement(!context.auth);
 
   // data
   testRequirement(
     data === null || !Array.isArray(data) || data.length !== 2 ||
-    typeof data[0] !== 'string' || data[0].length === 0 || !Number.isInteger(data[1]) || data[1] === 0,
-    'data is incorrect'
+    typeof data[0] !== 'string' || data[0].length === 0 || !Number.isInteger(data[1]) || data[1] === 0
   );
 
   const auth: { uid: string } | undefined = context.auth;
@@ -36,15 +35,9 @@ export const handler = async (data: any, context: CallableContext) => {
     const timesOfDayCardinality: number[] = userDocSnap.data()?.timesOfDayCardinality || [];
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
 
-    testRequirement(toMoveIndex === -1, 'time of day not exists');
-
-    if (moveBy > 0) {
-      testRequirement(toMoveIndex + moveBy >= timesOfDay.length, 'out of array +');
-    }
-
-    if (moveBy < 0) {
-      testRequirement(toMoveIndex + moveBy < 0, 'out of array -');
-    }
+    testRequirement(toMoveIndex === -1);
+    testRequirement(moveBy > 0 && toMoveIndex + moveBy >= timesOfDay.length);
+    testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
 
     timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);

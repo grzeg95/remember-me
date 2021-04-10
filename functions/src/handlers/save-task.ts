@@ -213,7 +213,7 @@ const proceedTodayTasks = (transaction: Transaction, task: Task, todayTaskDocSna
 export const handler = async (data: any, context: CallableContext): Promise<{ created: boolean; details: string; taskId: string }> => {
 
   // not logged in
-  testRequirement(!context.auth, 'Please login in');
+  testRequirement(!context.auth);
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);

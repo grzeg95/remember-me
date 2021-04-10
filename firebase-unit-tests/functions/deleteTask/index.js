@@ -20,7 +20,7 @@ describe(`deleteTask`, () => {
     const expected = {
       code: 'invalid-argument',
       message: 'Bad Request',
-      details: 'Please login in'
+      details: 'Some went wrong 🤫 Try again 🙂'
     };
 
     const result = await getResult(deleteTask, null, null);

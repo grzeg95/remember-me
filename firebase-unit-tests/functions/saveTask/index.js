@@ -1,5 +1,5 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-const {chai, test, myFunctions, getResult, firestore, myId, myAuth, removeUser, getUserJson} = require('../index');
+const {chai, test, myFunctions, getResult, myId, myAuth, removeUser, getUserJson} = require('../index');
 
 const expect = chai.expect;
 const saveTask = test.wrap(myFunctions.saveTask);
@@ -12,7 +12,7 @@ describe(`saveTask`, async () => {
     const expected = {
       code: 'invalid-argument',
       message: 'Bad Request',
-      details: 'Please login in'
+      details: 'Some went wrong 🤫 Try again 🙂'
     };
 
     const result = await getResult(saveTask, null, null);
@@ -60,8 +60,6 @@ describe(`saveTask`, async () => {
 
       expect(mustBe).to.eql(await getUserJson(myId));
     }));
-
-    afterAll(async () => await removeUser(myId));
   });
 
   describe(`add`, async () => {
@@ -90,12 +88,30 @@ describe(`saveTask`, async () => {
 
       expect(mustBe).to.eql(await getUserJson(myId));
     }));
-
-    afterAll(async () => await removeUser(myId));
   });
 
   describe(`edit`, async () => {
     beforeEach(async () => await removeUser(myId));
+
+    it('Nothing was changed', async () => {
+      const from = await getResult(saveTask, tests['edit-nothing-was-changed']['from'], myAuth);
+      expect({
+        created: true,
+        details: 'Your task has been created 😉',
+        taskId: from.taskId
+      }).to.eql(from);
+
+      let testTo = JSON.stringify(tests['edit-nothing-was-changed']['to']);
+      testTo = testTo.replace(/{from}/gm, from.taskId);
+      testTo = JSON.parse(testTo);
+
+      const to = await getResult(saveTask, testTo, myAuth);
+      expect({
+        code: 'invalid-argument',
+        details: 'Some went wrong 🤫 Try again 🙂',
+        message: 'Bad Request'
+      }).to.eql(to);
+    });
 
     tests['edit'].forEach((test) => it(test.name, async () => {
 
@@ -123,8 +139,6 @@ describe(`saveTask`, async () => {
 
       expect(mustBe).to.eql(await getUserJson(myId));
     }));
-
-    afterAll(async () => await removeUser(myId));
   });
 
 });
