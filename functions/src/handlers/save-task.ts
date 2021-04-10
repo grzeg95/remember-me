@@ -355,8 +355,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       * */
       if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-        const pack = await getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
-        proceedTodayTasks(transaction, task, pack);
+        proceedTodayTasks(transaction, task, await getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap));
 
         // update task
         transaction.set(taskDocSnap.ref, task);
@@ -366,14 +365,11 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
     }
 
-    const todayTaskDocSnapsDayPackPromise: Promise<{docSnap: DocumentSnapshot, day: Day}[]> = getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap);
-
     // read current currentTimesOfDaySize
     const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
-
     const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize, timesOfDay, timesOfDayCardinality);
 
-    proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
+    proceedTodayTasks(transaction, task, await getTodayTaskDocSnapsDayPackPromise(transaction, taskDocSnap, userDocSnap));
 
     // update task
     transaction.set(taskDocSnap.ref, task);
