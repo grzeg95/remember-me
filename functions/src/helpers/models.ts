@@ -11,3 +11,9 @@ export interface Task {
   timesOfDay: string[];
   daysOfTheWeek: number
 }
+
+export interface User {
+  taskSize?: number;
+  timesOfDay?: string[],
+  timesOfDayCardinality?: number[],
+}

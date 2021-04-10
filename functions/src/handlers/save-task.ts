@@ -9,7 +9,7 @@ import DocumentData = firestore.DocumentData;
 // tslint:disable-next-line:no-import-side-effect
 import '../../../global.prototype';
 import {dayIsInNumber, numberToDayArray} from '../helpers/times-of-days';
-import {getUser} from '../helpers/user';
+import {getUser, writeUser} from '../helpers/user';
 
 const app = firestore();
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
@@ -397,18 +397,12 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     }
 
     // update user
-
-    const userDataUpdate = {
+    const userDataToWrite = {
       taskSize: currentTaskSize,
       timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
       timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
     };
-
-    if (userDocSnap.exists) {
-      transaction.update(userDocSnap.ref, userDataUpdate);
-    } else {
-      transaction.create(userDocSnap.ref, userDataUpdate);
-    }
+    writeUser(transaction, userDocSnap, userDataToWrite);
 
     return transaction;
 

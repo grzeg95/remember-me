@@ -4,7 +4,7 @@ import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {numberToDayArray} from '../helpers/times-of-days';
-import {getUser} from '../helpers/user';
+import {getUser, writeUser} from '../helpers/user';
 
 const app = firestore();
 
@@ -88,18 +88,13 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
       transaction.delete(todayTaskDocSnap.ref)
     }
 
-    const userDataUpdate = {
+    // update user
+    const userDataToWrite = {
       timesOfDayCardinality,
       taskSize: currentTaskSize - 1,
       timesOfDay
     };
-
-    // update user
-    if (userDocSnap.exists) {
-      transaction.update(userDocSnap.ref, userDataUpdate);
-    } else {
-      transaction.create(userDocSnap.ref, userDataUpdate);
-    }
+    writeUser(transaction, userDocSnap, userDataToWrite);
 
     return transaction;
 

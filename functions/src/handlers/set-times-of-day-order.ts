@@ -2,7 +2,7 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {testRequirement} from '../helpers/test-requirement';
-import {getUser} from '../helpers/user';
+import {getUser, writeUser} from '../helpers/user';
 
 const app = firestore();
 
@@ -50,13 +50,9 @@ export const handler = async (data: any, context: CallableContext) => {
     timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
-    const userDataUpdate = {timesOfDay, timesOfDayCardinality};
-
-    if (userDocSnap.exists) {
-      transaction.update(userDocSnap.ref, userDataUpdate);
-    } else {
-      transaction.create(userDocSnap.ref, userDataUpdate);
-    }
+    // update user
+    const userDataToWrite = {timesOfDay, timesOfDayCardinality};
+    writeUser(transaction, userDocSnap, userDataToWrite);
 
     return transaction;
 
