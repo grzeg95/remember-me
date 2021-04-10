@@ -1,6 +1,5 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import {numberToDayArray} from '../helpers/times-of-days';
@@ -100,6 +99,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
-  })).catch(globalTransactionCatch);
+  }));
 
 };

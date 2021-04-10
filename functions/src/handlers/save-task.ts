@@ -1,6 +1,5 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {Day, Task} from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 import Transaction = firestore.Transaction;
@@ -416,5 +415,5 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       'details': 'Your task has been updated 🙃',
       'taskId': taskId
     })
-  ).catch(globalTransactionCatch);
+  );
 };

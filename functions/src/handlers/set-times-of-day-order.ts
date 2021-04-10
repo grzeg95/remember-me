@@ -1,6 +1,5 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {globalTransactionCatch} from '../helpers/global-transaction-catch';
 import {testRequirement} from '../helpers/test-requirement';
 import {getUser, writeUser} from '../helpers/user';
 
@@ -58,6 +57,6 @@ export const handler = async (data: any, context: CallableContext) => {
 
   }).then(() => ({
     details: 'Order has been updated 🙃'
-  })).catch(globalTransactionCatch);
+  }));
 
 };
