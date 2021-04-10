@@ -3,6 +3,7 @@ import {faListUl, faSignOutAlt, faTasks, faUser, faUserCircle} from '@fortawesom
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
+import {GoogleAnalyticsService} from '../google-analytics.service';
 
 @Component({
   selector: 'app-nav',
@@ -36,10 +37,12 @@ export class NavComponent {
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(private authService: AuthService,
-              private appService: AppService) {
+              private appService: AppService,
+              private googleAnalyticsService: GoogleAnalyticsService) {
   }
 
   auth(): void {
+    this.googleAnalyticsService.eventEmitter('login_button', 'guest', 'click');
     this.authService.auth();
   }
 

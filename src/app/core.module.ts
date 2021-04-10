@@ -9,6 +9,7 @@ import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
 import {AngularFireAuth, USE_EMULATOR as USE_AUTH_EMULATOR} from '@angular/fire/auth';
 import {USE_EMULATOR as USE_FIRESTORE_EMULATOR} from '@angular/fire/firestore';
+import {GoogleAnalyticsService} from './google-analytics.service';
 
 export function initializeAuthEmulator(afAuth: AngularFireAuth, fns: AngularFireFunctions): () => Promise<void> {
   return () => {
@@ -41,7 +42,8 @@ export function initializeAuthEmulator(afAuth: AngularFireAuth, fns: AngularFire
     AuthService,
     AuthGuardUserService,
     AuthGuardGuestService,
-    ConnectionService
+    ConnectionService,
+    GoogleAnalyticsService
   ]
 })
 export class CoreModule {
