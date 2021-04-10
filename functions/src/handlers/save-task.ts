@@ -139,7 +139,7 @@ const prepareTimesOfDay = (
   timesOfDayCardinality: number[]): {
     timesOfDay: string[],
     timesOfDayCardinality: number[]
-  } | string =>
+  } =>
 {
 
   const toAdd = enteredTimesOfDay.toSet().difference(taskCurrentTimesOfDay.toSet());
@@ -167,15 +167,12 @@ const prepareTimesOfDay = (
     }
   }
 
-  if (timesOfDay.length > 10) {
-    return `You can own 10 times of day but merge has ${timesOfDay.length} 🤔`;
-  }
+  testRequirement(timesOfDay.length > 10, `You can own 10 times of day but merge has ${timesOfDay.length} 🤔`);
 
   return {
     timesOfDay,
     timesOfDayCardinality
   }
-
 };
 
 const getTodayTaskDocSnapsDayPackPromise = (transaction: Transaction, taskDocSnap: DocumentSnapshot, userDocSnap: DocumentSnapshot): Promise<{docSnap: DocumentSnapshot, day: Day}[]> => {
@@ -374,12 +371,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // read current currentTimesOfDaySize
     const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
 
-    let timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize, timesOfDay, timesOfDayCardinality);
-    testRequirement(typeof timesOfDaysToStoreMetadata === 'string', timesOfDaysToStoreMetadata as string);
-    timesOfDaysToStoreMetadata = timesOfDaysToStoreMetadata as {
-      timesOfDay: string[],
-      timesOfDayCardinality: number[]
-    };
+    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize, timesOfDay, timesOfDayCardinality);
 
     proceedTodayTasks(transaction, task, await todayTaskDocSnapsDayPackPromise);
 
