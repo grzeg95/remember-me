@@ -45,7 +45,15 @@ def re_maps_number_from_one_range_to_another(
 
 def worker(q: JoinableQueue, progress_to_work_with) -> None:
   for path in iter(q.get, None):
-    os.system('uglifyjs {0} -c -o {0}'.format(path))
+
+    with open(path, 'r') as f:
+      text = f.read().replace('\n', '')
+
+    if 'exports.' in text or 'prototype.' in text:
+      os.system('uglifyjs {0} -c -o {0}'.format(path))
+    else:
+      os.remove(path)
+
     update_progress(re_maps_number_from_one_range_to_another(q.qsize(), progress_to_work_with[1], 0, 0, 100), progress_to_work_with)
     q.task_done()
 
