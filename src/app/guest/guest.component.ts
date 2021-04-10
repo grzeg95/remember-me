@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {faEdit, faListAlt} from '@fortawesome/free-regular-svg-icons';
-import {faChartArea, faListOl, faProjectDiagram, faSort} from '@fortawesome/free-solid-svg-icons';
+import {faEdit, faListAlt, faChartBar} from '@fortawesome/free-regular-svg-icons';
+import {faTachometerAlt, faListOl, faProjectDiagram, faSort, faCarBattery} from '@fortawesome/free-solid-svg-icons';
 import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {AngularFirePerformance} from '@angular/fire/performance';
 import firebase from 'firebase/app';
@@ -23,7 +23,9 @@ export class GuestComponent implements OnInit, OnDestroy {
   faProjectDiagram = faProjectDiagram;
   faSort = faSort;
   faGoogle = faGoogle;
-  faChartArea = faChartArea;
+  faTachometerAlt = faTachometerAlt;
+  faChartBar = faChartBar;
+  faCarBattery = faCarBattery;
 
   ngOnInit(): void {
     this.guestComponentTrace = this.perf.trace('GuestComponent').then((e) => e && e.start());
