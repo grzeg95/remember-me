@@ -317,10 +317,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       /*
       * Check if nothing was changed
       * */
-      if (!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
-        transaction.update(taskDocSnap.ref, task);
-        return transaction;
-      }
+      testRequirement(!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay);
 
       /*
       * Only description was changed
@@ -354,7 +351,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         });
 
         return transaction;
-
       }
 
       /*
