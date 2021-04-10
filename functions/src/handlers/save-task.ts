@@ -118,7 +118,7 @@ const proceedTodayTask = (transaction: Transaction, todayTaskDocSnapDayPack: {do
 };
 
 /**
- * @function proceedTimesOfDay
+ * @function prepareTimesOfDay
  * Update times of day
  * @param transaction Transaction
  * @param taskCurrentTimesOfDay
