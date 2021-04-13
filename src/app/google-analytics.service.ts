@@ -14,11 +14,16 @@ export class GoogleAnalyticsService {
      eventLabel: string = null,
      eventValue: number = null
   ): void {
-    gtag('event', eventName, {
-      eventCategory,
-      eventLabel,
-      eventAction,
-      eventValue
-    });
+    try {
+      gtag('event', eventName, {
+        eventCategory,
+        eventLabel,
+        eventAction,
+        eventValue
+      });
+    } catch (e) {
+      console.error(`Google Analytics is blocked: We couldn't analyze this event :'(`);
+    }
+
   }
 }
