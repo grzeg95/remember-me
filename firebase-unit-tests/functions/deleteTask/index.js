@@ -52,7 +52,7 @@ describe(`deleteTask`, () => {
         taskId: x.taskId
       }).to.eql(x);
 
-      const deletedResult = await getResult(deleteTask, {taskId: x.taskId}, myAuth);
+      const deletedResult = await getResult(deleteTask, x.taskId, myAuth);
       expect({
         details: 'Your task has been deleted 🤭'
       }).to.eql(deletedResult);
@@ -103,7 +103,7 @@ describe(`deleteTask`, () => {
 
       it(`remove x then y`, async () => {
 
-        deletedResult = await getResult(deleteTask, {taskId: x.taskId}, myAuth);
+        deletedResult = await getResult(deleteTask, x.taskId, myAuth);
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
@@ -121,7 +121,7 @@ describe(`deleteTask`, () => {
         mustBe = JSON.parse(mustBe);
         expect(mustBe).to.eql(await getUserJson(myId));
 
-        deletedResult = await getResult(deleteTask, {taskId: y.taskId}, myAuth);
+        deletedResult = await getResult(deleteTask, y.taskId, myAuth);
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
@@ -131,7 +131,7 @@ describe(`deleteTask`, () => {
       // remove y then x
       it(`remove y then x`, async () => {
 
-        deletedResult = await getResult(deleteTask, {taskId: y.taskId}, myAuth);
+        deletedResult = await getResult(deleteTask, y.taskId, myAuth);
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
@@ -149,7 +149,7 @@ describe(`deleteTask`, () => {
         mustBe = JSON.parse(mustBe);
         expect(mustBe).to.eql(await getUserJson(myId));
 
-        deletedResult = await getResult(deleteTask, {taskId: x.taskId}, myAuth);
+        deletedResult = await getResult(deleteTask, x.taskId, myAuth);
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);

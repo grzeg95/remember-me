@@ -9,30 +9,24 @@ const app = firestore();
 
 /**
  * Read user data about task and remove it
- * @param data {taskId: any}
+ * @param taskId any
  * @param context CallableContext
  * @return Promise<{[key: string]: string}>
  **/
-export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (taskId: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // not logged in
   testRequirement(!context.auth);
 
-  // data is null
-  testRequirement(!data);
-
-  // data has not taskId
-  testRequirement(!data.taskId);
-
-  // data.taskId is not string
-  testRequirement(typeof data.taskId !== 'string');
+  // taskId is not string
+  testRequirement(!taskId || typeof taskId !== 'string');
 
   const auth: { uid: string } | undefined = context.auth;
 
   return app.runTransaction(async (transaction) => {
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
-    const taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc(data.taskId));
+    const taskDocSnap = await transaction.get(userDocSnap.ref.collection('task').doc(taskId));
 
     // interrupt if user has not this task
     testRequirement(!taskDocSnap.exists);
@@ -56,7 +50,6 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
     }
 
     const todayTasksPromise = Promise.all(todayTaskDocSnapsToUpdatePromises);
-
 
     // prepare timesOfDay and timesOfDayCardinality
     for (const timeOfDay of task.timesOfDay) {

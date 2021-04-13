@@ -350,7 +350,7 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.disable();
         this.deletingInProgress = true;
 
-        this.fns.httpsCallable('deleteTask')({taskId: this.id}).subscribe((success: HTTPSuccess) => {
+        this.fns.httpsCallable('deleteTask')(this.id).subscribe((success: HTTPSuccess) => {
           this.zone.run(() => {
             this.snackBar.open(success.details || 'Your operation has been done 😉');
             this.deepResetForm();

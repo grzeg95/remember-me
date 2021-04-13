@@ -1,43 +1,13 @@
 {
   "invalid": [
     {
-      "name": "data has not taskId",
+      "name": "taskId is not string",
       "cases": [
         [],
         null,
         {},
-        "",
         0,
-        "0",
-        true,
-        {
-          "key1": "val1"
-        }
-      ],
-      "excepted": {
-        "code": "invalid-argument",
-        "message": "Bad Request",
-        "details": "Some went wrong 🤫 Try again 🙂"
-      }
-    },
-    {
-      "name": "data.taskId is not string",
-      "cases": [
-        {
-          "taskId": []
-        },
-        {
-          "taskId": null
-        },
-        {
-          "taskId": {}
-        },
-        {
-          "taskId": 0
-        },
-        {
-          "taskId": true
-        }
+        true
       ],
       "excepted": {
         "code": "invalid-argument",
@@ -48,9 +18,7 @@
     {
       "name": "interrupt if user has not this task",
       "cases": [
-        {
-          "taskId": "task"
-        }
+        "task"
       ],
       "excepted": {
         "code": "invalid-argument",
