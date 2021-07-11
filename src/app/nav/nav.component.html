@@ -21,6 +21,7 @@
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu">
                 <button mat-menu-item (click)="signOut()"> Log out</button>
+                <button mat-menu-item onclick="Cookiebot.renew();"> Cookiebot</button>
               </mat-menu>
             </div>
 

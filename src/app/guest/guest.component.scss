@@ -1,3 +1,18 @@
 .container {
   margin-top: 2rem;
 }
+
+.icon.cookiebot {
+  height: 40px;
+}
+
+a.cookiebot-renew {
+  color: #007bff;
+  text-decoration: none;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -1,12 +1,12 @@
 export const environment = {
   production: true,
   firebase: {
-    projectId: 'remember-me-3',
-    appId: '1:824512670781:web:1deb2cdcdb73bee8',
-    databaseURL: 'https://remember-me-3.firebaseio.com',
-    storageBucket: 'remember-me-3.appspot.com',
-    locationId: 'europe-west2',
-    apiKey: 'AIzaSyBUnrZ8ADaX8cc7NLoqKe_yruHt0FBTq6c',
+    projectId: 'remember-me-4',
+    appId: '1:515065185932:web:1e781637e3a85407b65da9',
+    databaseURL: 'https://remember-me-4.firebaseio.com',
+    storageBucket: 'remember-me-4.appspot.com',
+    locationId: 'europe-central2',
+    apiKey: 'AIzaSyDGXnFNJ--PlLiuwNLjyEqdJBcFawejhfE',
     authDomain: 'rem.grzeg.pl'
   },
   dev: false,

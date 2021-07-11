@@ -33,7 +33,7 @@ export function initializeAuthEmulator(afAuth: AngularFireAuth, fns: AngularFire
       deps: [AngularFireAuth, AngularFireFunctions],
       useFactory: initializeAuthEmulator
     },
-    {provide: REGION, useValue: 'europe-west2'},
+    {provide: REGION, useValue: environment.firebase.locationId},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
     {provide: Window, useValue: window},
     {provide: USE_AUTH_EMULATOR, useValue: !environment.production && environment.dev ? [environment.emulators.auth.host, environment.emulators.auth.port] : undefined},
