@@ -11,6 +11,8 @@ export class TaskService {
     sun: 1
   };
 
+  dayToApply: Day;
+
   dayIsInNumber = (number: number, day: Day): boolean => {
     // tslint:disable-next-line:no-bitwise
     return (this.dayMap[day] & number) !== 0;

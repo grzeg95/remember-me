@@ -246,6 +246,11 @@ export class TaskComponent implements OnInit, OnDestroy {
       });
 
     } else {
+      if (this.taskService.dayToApply) {
+        this.taskForm.get('daysOfTheWeek').get(this.taskService.dayToApply).setValue(true);
+      }
+      this.taskService.dayToApply = null;
+
       this.savingInProgress = false;
       this.taskForm.enable();
     }

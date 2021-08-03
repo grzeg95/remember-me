@@ -6,8 +6,10 @@ import {BehaviorSubject, interval, Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../app-service';
 import {AuthService} from '../../auth/auth.service';
-import {TodayItem} from '../models';
+import {Day, TodayItem} from '../models';
 import {UserService} from '../user.service';
+import {Router} from '@angular/router';
+import {TaskService} from '../task/task.service';
 
 @Component({
   selector: 'app-today',
@@ -22,6 +24,10 @@ export class TodayComponent implements OnInit, OnDestroy {
 
   get todayFirstLoading$(): Observable<boolean> {
     return this.userService.todayFirstLoading$;
+  }
+
+  get todayName$(): BehaviorSubject<string> {
+    return this.userService.todayName$;
   }
 
   get todayFullName$(): Observable<string> {
@@ -45,7 +51,9 @@ export class TodayComponent implements OnInit, OnDestroy {
               private userService: UserService,
               private snackBar: MatSnackBar,
               private appService: AppService,
-              private zone: NgZone) {
+              private zone: NgZone,
+              private router: Router,
+              private taskService: TaskService) {
   }
 
   ngOnInit(): void {
@@ -127,5 +135,10 @@ export class TodayComponent implements OnInit, OnDestroy {
       });
     });
 
+  }
+
+  addNewTask(): void {
+    this.taskService.dayToApply = this.todayName$.getValue() as Day;
+    this.router.navigate(['/', RouterDict['user'], RouterDict['task']]);
   }
 }
