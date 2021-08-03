@@ -177,7 +177,7 @@ export class UserService {
     return this.afs.doc<ITaskFirestore>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
       map((taskDocSnap) => {
         const iTaskFirestore = taskDocSnap.data();
-        return {
+        return !iTaskFirestore ? undefined : {
           description: iTaskFirestore.description,
           daysOfTheWeek: this.taskService.numberToDaysBooleanMap(iTaskFirestore.daysOfTheWeek),
           timesOfDay: [...iTaskFirestore.timesOfDay]
