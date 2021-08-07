@@ -3,11 +3,12 @@ import {
   ActivatedRoute,
   CanActivate,
   CanActivateChild,
-  Router
+  Router,
+  UrlTree
 } from '@angular/router';
 import firebase from 'firebase/app';
 import {Observable} from 'rxjs';
-import {map, take, tap} from 'rxjs/operators';
+import {map, take} from 'rxjs/operators';
 import {AuthService} from './auth.service';
 
 @Injectable()
@@ -17,19 +18,21 @@ export class AuthGuardUserService implements CanActivate, CanActivateChild {
               private router: Router,
               private activatedRoute: ActivatedRoute) {}
 
-  canActivate(): Observable<boolean>  {
+  canActivate(): Observable<boolean | UrlTree>  {
     return this.authService.firebaseUser$.pipe(
       take(1),
-      map((authState: firebase.User) => !!authState),
-      tap((authenticated) => {
-        if (!authenticated) {
-          this.router.navigate(['../'], {relativeTo: this.activatedRoute});
+      map((authState: firebase.User) => {
+
+        // not authenticated
+        if (!!!authState) {
+          return this.router.createUrlTree(['../'], {relativeTo: this.activatedRoute});
         }
+        
+        return true;
       }));
   }
 
-  canActivateChild(): Observable<boolean> {
+  canActivateChild(): Observable<boolean | UrlTree> {
     return this.canActivate();
   }
-
 }
