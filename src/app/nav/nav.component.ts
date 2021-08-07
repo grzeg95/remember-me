@@ -29,6 +29,14 @@ export class NavComponent {
     return null;
   }
 
+  get whileLoginIn(): boolean {
+    return this.authService.whileLoginIn;
+  }
+
+  set whileLoginIn(whileLoginIn: boolean) {
+    this.authService.whileLoginIn = whileLoginIn;
+  }
+
   faUserCircle = faUserCircle;
   faTasks = faTasks;
   faListUl = faListUl;
@@ -42,6 +50,7 @@ export class NavComponent {
   }
 
   auth(): void {
+    this.whileLoginIn = true;
     this.googleAnalyticsService.eventEmitter('login_button', 'guest', 'click');
     this.authService.auth();
   }
