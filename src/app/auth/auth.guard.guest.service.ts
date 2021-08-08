@@ -20,13 +20,13 @@ export class AuthGuardGuestService implements CanActivate {
     return this.auth.firebaseUser$.pipe(
       take(1),
       map((authState: firebase.User) => {
-        
+
         // not authenticated
         if (!!!authState) {
           return true;
         }
 
-        return this.router.createUrlTree(['/' + RouterDict['user'] + '/' + RouterDict['today']]);
+        return this.router.createUrlTree(['/', RouterDict.user, RouterDict.today]);
       }));
   }
 

@@ -10,25 +10,25 @@ import {RouterDict} from '../../app.constants';
 export class UserNavComponent {
 
   get isNudeUser(): boolean {
-    return this.router.isActive('/' + RouterDict['user'], true);
+    return this.router.isActive('/' + RouterDict.user, true);
   }
 
   routes = [
     {
       label: 'Today',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['today']
+      href: '/' + RouterDict.user + '/' + RouterDict.today
     },
     {
       label: 'Tasks',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['tasks']
+      href: '/' + RouterDict.user + '/' + RouterDict.tasks
     },
     {
       label: 'Editor',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['task']
+      href: '/' + RouterDict.user + '/' + RouterDict.task
     },
     {
       label: 'Order',
-      href: '/' + RouterDict['user'] + '/' + RouterDict['times-of-day-order']
+      href: '/' + RouterDict.user + '/' + RouterDict.timesOfDayOrder
     }
   ];
 

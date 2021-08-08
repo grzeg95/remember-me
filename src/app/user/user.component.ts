@@ -11,7 +11,7 @@ import {UserService} from './user.service';
 export class UserComponent implements OnInit, OnDestroy {
 
   get isNudeUser(): boolean {
-    return this.router.isActive('/' + RouterDict['user'], true);
+    return this.router.isActive('/' + RouterDict.user, true);
   }
 
   constructor(

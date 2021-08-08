@@ -6,6 +6,7 @@ import firebase from 'firebase/app';
 import 'firebase/auth';
 import {BehaviorSubject, interval, Observable, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
+import {RouterDict} from '../app.constants';
 import {HTTPError} from '../user/models';
 import {User, UserData} from './user-data.model';
 
@@ -101,7 +102,7 @@ export class AuthService {
     this.afAuth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).then(() => {
       return this.ngZone.run(() => {
         this.whileLoginIn = false;
-        this.router.navigate(['/u/t']);
+        this.router.navigate(['/', RouterDict.user, RouterDict.today]);
       });
     }).catch(() => {
       this.whileLoginIn = false;

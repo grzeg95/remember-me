@@ -15,11 +15,11 @@ const userRoutes: Routes = [
     canActivateChild: [AuthGuardUserService],
     component: UserComponent,
     children: [
-      {path: RouterDict['today'], component: TodayComponent},
-      {path: RouterDict['tasks'], component: TasksComponent},
-      {path: RouterDict['task'] + '/:id', component: TaskComponent},
-      {path: RouterDict['task'], component: TaskComponent},
-      {path: RouterDict['times-of-day-order'], component: TimesOfDayOrderComponent}
+      {path: RouterDict.today, component: TodayComponent},
+      {path: RouterDict.tasks, component: TasksComponent},
+      {path: RouterDict.task + '/:id', component: TaskComponent},
+      {path: RouterDict.task, component: TaskComponent},
+      {path: RouterDict.timesOfDayOrder, component: TimesOfDayOrderComponent}
     ]
   }
 ];

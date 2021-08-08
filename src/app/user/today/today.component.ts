@@ -139,6 +139,6 @@ export class TodayComponent implements OnInit, OnDestroy {
 
   addNewTask(): void {
     this.taskService.dayToApply = this.todayName$.getValue() as Day;
-    this.router.navigate(['/', RouterDict['user'], RouterDict['task']]);
+    this.router.navigate(['/', RouterDict.user, RouterDict.task]);
   }
 }

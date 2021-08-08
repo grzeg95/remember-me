@@ -237,7 +237,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.userService.getTaskById$(this.id).subscribe((iTask) => {
         if (typeof iTask === 'undefined') {
           this.resetId();
-          this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
+          this.location.go('/' + RouterDict.user + '/' + RouterDict.task);
           this.taskForm.enable();
         } else if (iTask) {
           this.setAll(iTask);
@@ -284,7 +284,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     }).subscribe((success: HTTPSuccess) => {
       this.zone.run(() => {
         if (success.created) {
-          this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task'] + '/' + success.taskId);
+          this.location.go('/' + RouterDict.user + '/' + RouterDict.task + '/' + success.taskId);
         }
 
         this.id = success.taskId;
@@ -310,7 +310,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.taskForm.disable();
     this.resetId();
     this.restartForm();
-    this.location.go('/' + RouterDict['user'] + '/' + RouterDict['task']);
+    this.location.go('/' + RouterDict.user + '/' + RouterDict.task);
     this.taskForm.enable();
   }
 
