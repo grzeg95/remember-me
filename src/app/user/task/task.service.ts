@@ -18,10 +18,6 @@ export class TaskService {
     return (this.dayMap[day] & number) !== 0;
   };
 
-  numberToDayArray = (number: number): Day[] => {
-    return (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[]).filter(day => this.dayIsInNumber(number, day));
-  };
-
   dayArrayToNumber = (days: Day[]): number => {
     return days.reduce((acc, cur) => acc + this.dayMap[cur], 0);
   };

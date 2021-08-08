@@ -1,5 +1,5 @@
 import {Component, ElementRef, HostListener, ViewChild} from '@angular/core';
-import {faListUl, faSignOutAlt, faTasks, faUser, faUserCircle} from '@fortawesome/free-solid-svg-icons';
+import {faTasks, faUser, faUserCircle} from '@fortawesome/free-solid-svg-icons';
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
@@ -39,8 +39,6 @@ export class NavComponent {
 
   faUserCircle = faUserCircle;
   faTasks = faTasks;
-  faListUl = faListUl;
-  faSignOutAlt = faSignOutAlt;
   faUser = faUser;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
