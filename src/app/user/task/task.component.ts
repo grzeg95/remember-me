@@ -8,7 +8,7 @@ import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
-import {BehaviorSubject, Observable, Subscription} from 'rxjs';
+import {asapScheduler, BehaviorSubject, Observable, Subscription} from 'rxjs';
 import '../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {AppService} from '../../app-service';
@@ -247,9 +247,11 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     } else {
       if (this.taskService.dayToApply) {
-        this.taskForm.get('daysOfTheWeek').get(this.taskService.dayToApply).setValue(true);
+        asapScheduler.schedule(() => {
+          this.taskForm.get('daysOfTheWeek').get(this.taskService.dayToApply).setValue(true);
+          this.taskService.dayToApply = null;
+        });
       }
-      this.taskService.dayToApply = null;
 
       this.savingInProgress = false;
       this.taskForm.enable();
