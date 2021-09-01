@@ -22,7 +22,8 @@ export const environment = {
     },
     auth: {
       host: null,
-      port: null
+      port: null,
+      protocol: null
     }
   }
 };

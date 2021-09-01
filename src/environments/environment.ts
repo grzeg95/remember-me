@@ -25,7 +25,8 @@ export const environment = {
     },
     auth: {
       host,
-      port: 9099
+      port: 9099,
+      protocol
     }
   }
 };

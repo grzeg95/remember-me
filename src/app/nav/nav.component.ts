@@ -33,10 +33,6 @@ export class NavComponent {
     return this.authService.whileLoginIn;
   }
 
-  set whileLoginIn(whileLoginIn: boolean) {
-    this.authService.whileLoginIn = whileLoginIn;
-  }
-
   faUserCircle = faUserCircle;
   faTasks = faTasks;
   faUser = faUser;
@@ -47,10 +43,9 @@ export class NavComponent {
               private googleAnalyticsService: GoogleAnalyticsService) {
   }
 
-  auth(): void {
-    this.whileLoginIn = true;
+  async auth(): Promise<void> {
     this.googleAnalyticsService.eventEmitter('login_button', 'guest', 'click');
-    this.authService.auth();
+    await this.authService.auth();
   }
 
   signOut(): Promise<boolean> {
@@ -76,5 +71,4 @@ export class NavComponent {
       }
     }
   }
-
 }

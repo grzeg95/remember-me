@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/firestore';
-import {AngularFireFunctions} from '@angular/fire/functions';
+import {AngularFirestore} from '@angular/fire/compat/firestore';
+import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AppService} from '../app-service';
@@ -173,11 +173,11 @@ export class UserService {
     this.subs.push(this.tasksSub);
   }
 
-  getTaskById$(id: string): Observable<ITask> {
+  getTaskById$(id: string): Observable<ITask | undefined> {
     return this.afs.doc<ITaskFirestore>(`users/${this.authService.userData.uid}/task/${id}`).get().pipe(
       map((taskDocSnap) => {
         const iTaskFirestore = taskDocSnap.data();
-        return !iTaskFirestore ? undefined : {
+        return !iTaskFirestore ? null : {
           description: iTaskFirestore.description,
           daysOfTheWeek: this.taskService.numberToDaysBooleanMap(iTaskFirestore.daysOfTheWeek),
           timesOfDay: [...iTaskFirestore.timesOfDay]
@@ -189,5 +189,4 @@ export class UserService {
   updateTimesOfDayOrder(timeOfDay: string, moveBy: number): Observable<{[key: string]: string}> {
     return this.fns.httpsCallable('setTimesOfDayOrder')([timeOfDay, moveBy]);
   }
-
 }

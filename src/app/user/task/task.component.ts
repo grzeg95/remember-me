@@ -1,7 +1,7 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
 import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {AngularFireFunctions} from '@angular/fire/functions';
+import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatChipInputEvent} from '@angular/material/chips';

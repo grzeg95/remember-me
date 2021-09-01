@@ -1,43 +1,49 @@
-import {Injectable, NgZone} from '@angular/core';
-import {AngularFireAuth} from '@angular/fire/auth';
-import {AngularFirestore} from '@angular/fire/firestore';
+import {Injectable} from '@angular/core';
+import {AngularFireAuth} from '@angular/fire/compat/auth';
+import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {Router} from '@angular/router';
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import {BehaviorSubject, interval, Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
-import {RouterDict} from '../app.constants';
 import {HTTPError} from '../user/models';
 import {User, UserData} from './user-data.model';
+import { GoogleAuthProvider } from 'firebase/auth';
 
 @Injectable()
 export class AuthService {
 
   userData: UserData;
-  firebaseUser$: Observable<firebase.User>;
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(null);
-  userDoc$: Subscription;
+  userDocSub: Subscription;
   whileLoginIn = false;
   firstLoginChecking = true;
+  userIntervalReloadSub: Subscription;
 
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
-    private ngZone: NgZone,
     private afs: AngularFirestore
   ) {
 
-    this.firebaseUser$ = this.afAuth.authState;
+    this.afAuth.authState.subscribe((user) => {
 
-    this.firebaseUser$.subscribe((user: firebase.User) => {
+      this.unsubscribeUserIntervalReloadSub();
+      this.unsubscribeUserDocSub();
 
       if (user) {
 
-        if (this.userDoc$ && !this.userDoc$.closed) {
-          this.userDoc$.unsubscribe();
+        this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
+          this.afAuth.currentUser.then((user) => {
+            if (user) {
+              user.reload();
+            }
+          });
+        });
+
+        if (this.userDocSub && !this.userDocSub.closed) {
+          this.userDocSub.unsubscribe();
         }
 
-        this.userDoc$ = this.afs.doc<User>(`users/${user.uid}`).snapshotChanges().pipe(
+        this.userDocSub = this.afs.doc<User>(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
             if (error.code === 'permission-denied') {
               this.signOut();
@@ -57,65 +63,47 @@ export class AuthService {
           photoURL: user.photoURL,
           emailVerified: user.emailVerified
         };
-      } else if (!this.whileLoginIn) {
+      } else {
         this.userData = null;
         this.router.navigate(['/']);
       }
 
       this.firstLoginChecking = false;
-
     });
-
-    interval(1000 * 60 * 10).subscribe(() => {
-      this.afAuth.currentUser.then((user) => {
-        if (user) {
-          user.reload();
-        }
-      });
-    });
-
   }
 
   get isLoggedIn(): boolean | null {
 
-    const emailVerified = (this.userData && this.userData.emailVerified !== false);
-
-    if (typeof emailVerified === 'undefined') {
+    if (this.firstLoginChecking && !this.userData) {
       return null;
     }
 
-    if (!this.firstLoginChecking && typeof emailVerified === 'object') {
-      return false;
-    }
-
-    return !this.firstLoginChecking && emailVerified;
-
+    return !this.firstLoginChecking && !!this.userData;
   }
 
-  auth(): void {
-    this.googleAuth();
-  }
-
-  googleAuth(): void {
+  async auth(): Promise<void> {
     this.whileLoginIn = true;
+    await this.afAuth.signInWithRedirect(new GoogleAuthProvider());
+  }
 
-    this.afAuth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).then(() => {
-      return this.ngZone.run(() => {
-        this.whileLoginIn = false;
-        this.router.navigate(['/', RouterDict.user, RouterDict.today]);
-      });
-    }).catch(() => {
-      this.whileLoginIn = false;
-    });
+  unsubscribeUserDocSub(): void {
+    if (this.userDocSub && !this.userDocSub.closed) {
+      this.userDocSub.unsubscribe();
+    }
+  }
 
+  unsubscribeUserIntervalReloadSub(): void {
+    if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
+      this.userIntervalReloadSub.unsubscribe();
+    }
   }
 
   signOut(): Promise<boolean> {
-    this.userDoc$.unsubscribe();
+    this.unsubscribeUserIntervalReloadSub();
+    this.unsubscribeUserDocSub();
     return this.afAuth.signOut().then(() => {
       this.userData = null;
       return this.router.navigate(['/']);
     });
   }
-
 }
