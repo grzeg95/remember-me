@@ -14,7 +14,7 @@
       <ng-template #onOneExists>
         <div class="row message" *ngIf="isConnected$ | async">
           <div class="col">
-            <span>Add some tasks and change times of day order</span>
+            <span>Add some tasks and change the order of the times of day</span>
           </div>
           <div class="col">
             <div class="add-task">
@@ -35,7 +35,7 @@
     <ng-template #showItems>
       <div class="row">
         <div class="drag-container">
-          <div class="drag-container-header mat-header-cell">Change times of day order</div>
+          <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
 
           <div [cdkDropListDisabled]="!(isConnected$ | async)" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
             <div cdkDrag class="drag-item mat-cell" [class.disabled]="!(isConnected$ | async)" *ngFor="let item of (timesOfDay$ | async); let i = index">
