@@ -31,8 +31,9 @@ export const handler = async (data: any, context: CallableContext) => {
     const moveBy = data[1];
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
 
-    const timesOfDay: string[] = userDocSnap.data()?.timesOfDay || [];
-    const timesOfDayCardinality: number[] = userDocSnap.data()?.timesOfDayCardinality || [];
+    const userDocSnapData = userDocSnap.data();
+    const timesOfDay: string[] = userDocSnapData?.timesOfDay || [];
+    const timesOfDayCardinality: number[] = userDocSnapData?.timesOfDayCardinality || [];
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
 
     testRequirement(toMoveIndex === -1);

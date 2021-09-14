@@ -36,9 +36,10 @@ export const handler = (taskId: any, context: CallableContext): Promise<{[key: s
     * */
 
     const task: Task = taskDocSnap.data() as Task;
-    const currentTaskSize = userDocSnap.data()?.taskSize;
-    const timesOfDay: string[] = userDocSnap.data()?.timesOfDay || [];
-    const timesOfDayCardinality: number[] = userDocSnap.data()?.timesOfDayCardinality || [];
+    const userDocSnapData = userDocSnap.data();
+    const currentTaskSize = userDocSnapData?.taskSize;
+    const timesOfDay: string[] = userDocSnapData?.timesOfDay || [];
+    const timesOfDayCardinality: number[] = userDocSnapData?.timesOfDayCardinality || [];
 
     // read all task for user/{userId}/today/{day}/task/{taskId}
     const todayTaskDocSnapsToUpdatePromises = [];
@@ -93,5 +94,4 @@ export const handler = (taskId: any, context: CallableContext): Promise<{[key: s
   }).then(() => ({
     details: 'Your task has been deleted 🤭'
   }));
-
 };

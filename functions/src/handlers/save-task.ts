@@ -272,9 +272,10 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
     const task = data.task as Task;
     task.description = task.description.trim();
-    let currentTaskSize = userDocSnap.data()?.taskSize || 0;
-    const timesOfDay = userDocSnap.data()?.timesOfDay || [];
-    const timesOfDayCardinality = userDocSnap.data()?.timesOfDayCardinality || [];
+    const userDocSnapData = userDocSnap.data();
+    let currentTaskSize = userDocSnapData?.taskSize || 0;
+    const timesOfDay = userDocSnapData?.timesOfDay || [];
+    const timesOfDayCardinality = userDocSnapData?.timesOfDayCardinality || [];
 
     /*
     * Read all data
@@ -352,7 +353,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     }
 
     // read current currentTimesOfDaySize
-    const currentTimesOfDaySize = userDocSnap.data()?.timesOfDaySize || 0;
+    const currentTimesOfDaySize = userDocSnapData?.timesOfDaySize || 0;
     const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, userDocSnap, taskDocSnap.data()?.timesOfDay || [], data.task.timesOfDay, currentTimesOfDaySize, timesOfDay, timesOfDayCardinality);
 
     await proceedTodayTasks(transaction, task, taskDocSnap, userDocSnap);
