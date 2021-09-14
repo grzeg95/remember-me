@@ -43,9 +43,9 @@ export class NavComponent {
               private googleAnalyticsService: GoogleAnalyticsService) {
   }
 
-  async auth(): Promise<void> {
+  auth(): void {
     this.googleAnalyticsService.eventEmitter('login_button', 'guest', 'click');
-    await this.authService.auth();
+    this.authService.auth();
   }
 
   signOut(): Promise<boolean> {

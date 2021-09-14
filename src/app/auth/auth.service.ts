@@ -7,6 +7,7 @@ import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
 import {User, UserData} from './user-data.model';
 import { GoogleAuthProvider } from 'firebase/auth';
+import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Injectable()
 export class AuthService {
@@ -21,9 +22,9 @@ export class AuthService {
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
-    private afs: AngularFirestore
+    private afs: AngularFirestore,
+    private snackBar: MatSnackBar
   ) {
-
     this.afAuth.authState.subscribe((user) => {
 
       this.unsubscribeUserIntervalReloadSub();
@@ -81,9 +82,14 @@ export class AuthService {
     return !this.firstLoginChecking && !!this.userData;
   }
 
-  async auth(): Promise<void> {
+  auth(): void {
     this.whileLoginIn = true;
-    await this.afAuth.signInWithRedirect(new GoogleAuthProvider());
+
+    this.afAuth.signInWithRedirect(new GoogleAuthProvider()).catch(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    }).finally(() => {
+      this.whileLoginIn = false;
+    });
   }
 
   unsubscribeUserDocSub(): void {
