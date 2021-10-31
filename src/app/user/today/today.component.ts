@@ -111,7 +111,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     this.changeDayIntervalSub = interval(toNextDay).subscribe(() => this.changeDay());
   }
 
-  setProgress(checkbox: HTMLInputElement, event: Event, taskId: string, timeOfDay: string): void {
+  setProgress(checkbox: TodayItem, event: Event, taskId: string, timeOfDay: string): void {
 
     event.preventDefault();
 
@@ -121,7 +121,7 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     checkbox.disabled = true;
 
-    const toMerge = JSON.parse(`{"timesOfDay": {"${timeOfDay}": ${!checkbox.checked}}}`);
+    const toMerge = JSON.parse(`{"timesOfDay": {"${timeOfDay}": ${!checkbox.done}}}`);
 
     this.afs.doc(`/users/${this.authService.userData.uid}/today/${this.userService.todayName$.getValue()}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
       checkbox.disabled = false;

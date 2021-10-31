@@ -121,7 +121,8 @@ export class UserService {
               todayTasksByTimeOfDay[timeOfDay].push({
                 description: task.description,
                 done: task.timesOfDay[timeOfDay],
-                id: documentChangeAction.payload.doc.id
+                id: documentChangeAction.payload.doc.id,
+                disabled: false
               });
             });
 
