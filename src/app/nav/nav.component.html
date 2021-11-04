@@ -10,9 +10,11 @@
           <div *ngIf="isLoggedIn !== null">
 
             <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
-              <button [disabled]="!(isConnected$ | async) || whileLoginIn" class="btn btn-primary" type="button" (click)="auth()">
-                <fa-icon [icon]="faUserCircle"></fa-icon>
-                <span> Log In</span>
+              <button mat-flat-button
+                      color="primary"
+                      [disabled]="!(isConnected$ | async) || whileLoginIn"
+                      (click)="auth()">
+                <span>Log In</span>
               </button>
             </div>
 
