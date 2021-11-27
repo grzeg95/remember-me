@@ -10,10 +10,18 @@
           <div *ngIf="isLoggedIn !== null">
 
             <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
+              <button mat-stroked-button
+                      color="secondary"
+                      [disabled]="!(isConnected$ | async) || whileLoginIn"
+                      (click)="anonymouslyLogin()"
+              [ngStyle]="{marginRight: '0.3rem'}">
+                <span>Log In <fa-icon [icon]="faEyeSlash"></fa-icon></span>
+              </button>
+
               <button mat-flat-button
                       color="primary"
                       [disabled]="!(isConnected$ | async) || whileLoginIn"
-                      (click)="auth()">
+                      (click)="googleLogin()">
                 <span>Log In</span>
               </button>
             </div>

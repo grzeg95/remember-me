@@ -8,6 +8,7 @@ import {HTTPError} from '../user/models';
 import {User, UserData} from './user-data.model';
 import { GoogleAuthProvider } from 'firebase/auth';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {RouterDict} from '../app.constants';
 
 @Injectable()
 export class AuthService {
@@ -82,13 +83,24 @@ export class AuthService {
     return !this.firstLoginChecking && !!this.userData;
   }
 
-  auth(): void {
+  googleLogin(): void {
     this.whileLoginIn = true;
 
     this.afAuth.signInWithRedirect(new GoogleAuthProvider()).catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
     }).finally(() => {
       this.whileLoginIn = false;
+    });
+  }
+
+  anonymouslyLogin(): void {
+    this.whileLoginIn = true;
+
+    this.afAuth.signInAnonymously().catch(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    }).finally(() => {
+      this.whileLoginIn = false;
+      this.router.navigate(['/', RouterDict.user, RouterDict.today]);
     });
   }
 

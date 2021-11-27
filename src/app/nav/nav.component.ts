@@ -1,5 +1,6 @@
 import {Component, ElementRef, HostListener, ViewChild} from '@angular/core';
 import {faTasks, faUser} from '@fortawesome/free-solid-svg-icons';
+import {faEyeSlash} from '@fortawesome/free-regular-svg-icons';
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
@@ -35,6 +36,7 @@ export class NavComponent {
 
   faTasks = faTasks;
   faUser = faUser;
+  faEyeSlash = faEyeSlash;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(private authService: AuthService,
@@ -42,9 +44,14 @@ export class NavComponent {
               private googleAnalyticsService: GoogleAnalyticsService) {
   }
 
-  auth(): void {
+  googleLogin(): void {
+    this.googleAnalyticsService.eventEmitter('login_button', 'google', 'click');
+    this.authService.googleLogin();
+  }
+
+  anonymouslyLogin(): void {
     this.googleAnalyticsService.eventEmitter('login_button', 'guest', 'click');
-    this.authService.auth();
+    this.authService.anonymouslyLogin();
   }
 
   signOut(): Promise<boolean> {
