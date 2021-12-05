@@ -1,5 +1,5 @@
 import {initializeApp} from 'firebase-admin';
-import {runWith, auth} from 'firebase-functions';
+import {runWith} from 'firebase-functions';
 
 initializeApp();
 
@@ -22,10 +22,3 @@ export const setTimesOfDayOrder = runWith({
   memory: '256MB',
   maxInstances: 2
 }).region(region).https.onCall(require('./handlers/set-times-of-day-order').handler);
-
-exports.userOnCreate = auth._userWithOptions({
-  regions: [region],
-  timeoutSeconds: 30,
-  memory: '128MB',
-  maxInstances: 1
-}).onCreate(require('./handlers/user-on-create').handler);
