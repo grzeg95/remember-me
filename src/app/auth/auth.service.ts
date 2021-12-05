@@ -98,9 +98,10 @@ export class AuthService {
 
     this.afAuth.signInAnonymously().catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    }).then(() => {
+      this.router.navigate(['/', RouterDict.user, RouterDict.today]);
     }).finally(() => {
       this.whileLoginIn = false;
-      this.router.navigate(['/', RouterDict.user, RouterDict.today]);
     });
   }
 
