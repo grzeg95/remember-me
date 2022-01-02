@@ -1,0 +1,128 @@
+{
+  "invalid": [
+    {
+      "name": "data is not an object and null",
+      "cases": [
+        null,
+        [],
+        "",
+        0,
+        "0",
+        true
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data has not 2 keys",
+      "cases": [
+        {},
+        {
+          "key1": "value"
+        },
+        {
+          "key1": "value",
+          "key2": "value",
+          "key3": "value"
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data has not 'taskId', 'timesOfDayId'",
+      "cases": [
+        {
+          "key1": "value",
+          "taskId": "value"
+        },
+        {
+          "key1": "value",
+          "timesOfDayId": "value"
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data.taskId is not string",
+      "cases": [
+        {
+          "timesOfDayId": "value",
+          "taskId": []
+        },
+        {
+          "timesOfDayId": "value",
+          "taskId": null
+        },
+        {
+          "timesOfDayId": "value",
+          "taskId": {}
+        },
+        {
+          "timesOfDayId": "value",
+          "taskId": 0
+        },
+        {
+          "timesOfDayId": "value",
+          "taskId": true
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data.timesOfDayId is not string",
+      "cases": [
+        {
+          "timesOfDayId": [],
+          "taskId": "value"
+        },
+        {
+          "timesOfDayId": null,
+          "taskId": "value"
+        },
+        {
+          "timesOfDayId": {},
+          "taskId": "value"
+        },
+        {
+          "timesOfDayId": 0,
+          "taskId": "value"
+        },
+        {
+          "timesOfDayId": true,
+          "taskId": "value"
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "interrupt if user has not this task",
+      "cases": [
+        "task"
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    }
+  ]
+}

@@ -1,4 +1,3 @@
-<app-nav-second></app-nav-second>
 <router-outlet></router-outlet>
 
 <div class="nude-user" *ngIf="isNudeUser">
@@ -26,4 +25,10 @@
     </g>
   </svg>
   <span>418 I'm a teapot</span>
+  <div style="margin: auto;">
+    <button mat-flat-button
+            color="primary"
+            [routerLink]="['/u/rounds']">Go To Rounds
+    </button>
+  </div>
 </div>

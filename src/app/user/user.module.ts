@@ -2,26 +2,16 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {SharedModule} from '../shared.module';
-import {TaskDialogConfirmDeleteComponent} from './task/task-dialog-confirm-delete/task-dialog-confirm-delete.component';
-import {TaskComponent} from './task/task.component';
-import {TaskService} from './task/task.service';
-import {TasksComponent} from './tasks/tasks.component';
-import {TimesOfDayOrderComponent} from './times-of-day-order/times-of-day-order.component';
-import {TodayComponent} from './today/today.component';
-import {UserNavComponent} from './user-nav/user-nav.component';
+import {TaskService} from './views/rounds/round/tasks/task/task.service';
 import {UserRoutingModule} from './user-routing.module';
 import {UserComponent} from './user.component';
 import {UserService} from './user.service';
+import {RoundService} from './views/rounds/round/round.service';
+import {RoundsService} from './views/rounds/rounds.service';
 
 @NgModule({
   declarations: [
-    UserComponent,
-    TasksComponent,
-    TaskComponent,
-    TodayComponent,
-    UserNavComponent,
-    TimesOfDayOrderComponent,
-    TaskDialogConfirmDeleteComponent
+    UserComponent
   ],
   imports: [
     RouterModule,
@@ -31,10 +21,9 @@ import {UserService} from './user.service';
   ],
   providers: [
     UserService,
-    TaskService
-  ],
-  entryComponents: [
-    TaskDialogConfirmDeleteComponent
+    TaskService,
+    RoundService,
+    RoundsService
   ]
 })
 export class UserModule {

@@ -54,7 +54,7 @@ export class AuthService {
           })
         ).subscribe((userDoc) => {
           this.user$.next({
-            timesOfDay: userDoc.payload.data()?.timesOfDay || []
+            rounds: userDoc.payload.data()?.rounds || []
           });
         });
 
@@ -99,7 +99,7 @@ export class AuthService {
     this.afAuth.signInAnonymously().catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
     }).then(() => {
-      this.router.navigate(['/', RouterDict.user, RouterDict.today]);
+      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
     }).finally(() => {
       this.whileLoginIn = false;
     });

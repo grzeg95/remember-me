@@ -13,8 +13,8 @@ import {GoogleAnalyticsService} from '../google-analytics.service';
 })
 export class NavComponent {
 
-  get isConnected$(): Observable<boolean> {
-    return this.appService.isConnected$;
+  get isOnline$(): Observable<boolean> {
+    return this.appService.isOnline$;
   }
 
   get isLoggedIn(): boolean | null {

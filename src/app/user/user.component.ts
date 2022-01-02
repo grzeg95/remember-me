@@ -1,7 +1,8 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Router} from '@angular/router';
 import {RouterDict} from '../app.constants';
-import {UserService} from './user.service';
+import {RoundService} from './views/rounds/round/round.service';
+import {RoundsService} from './views/rounds/rounds.service';
 
 @Component({
   selector: 'app-user',
@@ -15,16 +16,19 @@ export class UserComponent implements OnInit, OnDestroy {
   }
 
   constructor(
-    private userService: UserService,
+    private roundService: RoundService,
+    private roundsService: RoundsService,
     private router: Router
-  ) {}
+  ) {
+  }
 
   ngOnInit(): void {
-    this.userService.init();
+    this.roundsService.init();
+    this.roundService.init();
   }
 
   ngOnDestroy(): void {
-    this.userService.clearCache();
+    this.roundsService.clearCache();
+    this.roundService.clearCache();
   }
-
 }

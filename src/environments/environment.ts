@@ -12,11 +12,12 @@ export const environment = {
     apiKey: 'AIzaSyAJDxhsiwiggRaJ6NI0rNqyXEW_L_qBdxw',
     authDomain: 'dev.rem.grzeg.pl'
   },
+  recaptcha: '6LdUQeUdAAAAAGRDJgswQTcGGnyVOtW39O2riMZj',
   dev: true,
   emulators: {
     firestore: {
       host,
-      port: 8080
+      port: 9090
     },
     functions: {
       host,

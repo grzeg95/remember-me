@@ -5,7 +5,7 @@ import {NgModule} from '@angular/core';
 import {RouterDict} from './app.constants';
 import {GuestComponent} from './guest/guest.component';
 
-const redirectLoggedInToUserEnterView = () => redirectLoggedInTo(['/', RouterDict.user, RouterDict.today]);
+const redirectLoggedInToUserEnterView = () => redirectLoggedInTo(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
 
 const appRoutes: Routes = [
   {path: '', canActivate: [AngularFireAuthGuard], data: { authGuardPipe: redirectLoggedInToUserEnterView }, component: GuestComponent, pathMatch: 'full'},

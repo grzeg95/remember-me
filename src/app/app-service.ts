@@ -5,15 +5,15 @@ import {BehaviorSubject, Observable} from 'rxjs';
 @Injectable()
 export class AppService {
 
-  get isConnected$(): Observable<boolean> {
-    return this.isConnected.asObservable();
+  get isOnline$(): Observable<boolean> {
+    return this._isOnline$.asObservable();
   }
 
-  isConnected: BehaviorSubject<boolean> = new BehaviorSubject(true);
+  _isOnline$: BehaviorSubject<boolean> = new BehaviorSubject(true);
 
   constructor(private connectionService: ConnectionService) {
-    this.connectionService.stateChange$.subscribe((isConnected) =>
-      this.isConnected.next(isConnected)
+    this.connectionService.stateChange$.subscribe((isOnline) =>
+      this._isOnline$.next(isOnline)
     );
   }
 }

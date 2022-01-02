@@ -9,6 +9,7 @@ export const environment = {
     apiKey: 'AIzaSyDGXnFNJ--PlLiuwNLjyEqdJBcFawejhfE',
     authDomain: 'rem.grzeg.pl'
   },
+  recaptcha: '6LcjFNMbAAAAALXfc2Ou2VURMC9XJl1-HA_oRgUN',
   dev: false,
   emulators: {
     firestore: {

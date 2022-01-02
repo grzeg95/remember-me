@@ -1,4 +1,5 @@
 import {APP_INITIALIZER, NgModule} from '@angular/core';
+import {initializeAppCheck, ReCaptchaV3Provider} from '@angular/fire/app-check';
 import {AngularFireFunctions, REGION} from '@angular/fire/compat/functions';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {environment} from '../environments/environment';
@@ -23,6 +24,17 @@ export function initializeEmulators(afAuth: AngularFireAuth, fns: AngularFireFun
   };
 }
 
+export function initializeAppCheckPrivate(afAuth: AngularFireAuth): () => Promise<void> {
+  return () => {
+    return afAuth.app.then((app) => {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(environment.recaptcha),
+        isTokenAutoRefreshEnabled: true,
+      });
+    });
+  };
+}
+
 @NgModule({
   providers: [
     {
@@ -31,10 +43,19 @@ export function initializeEmulators(afAuth: AngularFireAuth, fns: AngularFireFun
       deps: [AngularFireAuth, AngularFireFunctions],
       useFactory: initializeEmulators
     },
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [AngularFireAuth],
+      useFactory: initializeAppCheckPrivate
+    },
     {provide: REGION, useValue: environment.firebase.locationId},
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
     {provide: Window, useValue: window},
-    {provide: USE_FIRESTORE_EMULATOR, useValue: !environment.production && environment.dev ? [environment.emulators.firestore.host, environment.emulators.firestore.port] : undefined},
+    {
+      provide: USE_FIRESTORE_EMULATOR,
+      useValue: !environment.production && environment.dev ? [environment.emulators.firestore.host, environment.emulators.firestore.port] : undefined
+    },
     AppService,
     AuthService,
     ConnectionService,

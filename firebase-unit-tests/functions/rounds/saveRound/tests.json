@@ -1,0 +1,117 @@
+{
+  "invalid": [
+    {
+      "name": "data is not an object and null",
+      "cases": [
+        null,
+        [],
+        "",
+        0,
+        "0",
+        true
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data has not 2 keys",
+      "cases": [
+        {},
+        {
+          "key1": "value"
+        },
+        {
+          "key1": "value",
+          "key2": "value",
+          "key3": "value"
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data has not 'name', 'timesOfDayId'",
+      "cases": [
+        {
+          "key1": "value",
+          "name": "value"
+        },
+        {
+          "key1": "value",
+          "timesOfDayId": "value"
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data.name is not string",
+      "cases": [
+        {
+          "timesOfDayId": "value",
+          "name": []
+        },
+        {
+          "timesOfDayId": "value",
+          "name": null
+        },
+        {
+          "timesOfDayId": "value",
+          "name": {}
+        },
+        {
+          "timesOfDayId": "value",
+          "name": 0
+        },
+        {
+          "timesOfDayId": "value",
+          "name": true
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    },
+    {
+      "name": "data.timesOfDayId is not string",
+      "cases": [
+        {
+          "timesOfDayId": [],
+          "name": "value"
+        },
+        {
+          "timesOfDayId": null,
+          "name": "value"
+        },
+        {
+          "timesOfDayId": {},
+          "name": "value"
+        },
+        {
+          "timesOfDayId": 0,
+          "name": "value"
+        },
+        {
+          "timesOfDayId": true,
+          "name": "value"
+        }
+      ],
+      "excepted": {
+        "code": "invalid-argument",
+        "message": "Bad Request",
+        "details": "Some went wrong 🤫 Try again 🙂"
+      }
+    }
+  ]
+}

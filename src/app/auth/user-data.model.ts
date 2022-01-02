@@ -7,5 +7,5 @@ export interface UserData {
 }
 
 export interface User {
-  timesOfDay: string[];
+  rounds: string[];
 }

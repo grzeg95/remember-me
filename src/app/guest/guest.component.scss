@@ -2,8 +2,28 @@
   margin-top: 2rem;
 }
 
-.icon.cookiebot {
-  height: 40px;
+.icon {
+  height: 50px;
+
+  &.cookiebot {
+    height: 40px;
+    width: auto;
+  }
+
+  &.firebaseAuthentication {
+    height: 55px;
+    width: 50px;
+  }
+
+  &.googleAnalytics {
+    height: 45px;
+    width: auto;
+  }
+
+  &.firebase {
+    height: 55px;
+    width: 50px;
+  }
 }
 
 a.cookiebot-renew {

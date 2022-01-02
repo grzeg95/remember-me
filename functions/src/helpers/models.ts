@@ -9,11 +9,15 @@ export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export interface Task {
   description: string;
   timesOfDay: string[];
-  daysOfTheWeek: number
+  daysOfTheWeek: number;
+}
+
+export interface TimesOfDay {
+  taskSize?: number;
+  timesOfDay?: string[];
+  timesOfDayCardinality?: number[];
 }
 
 export interface User {
-  taskSize?: number;
-  timesOfDay?: string[],
-  timesOfDayCardinality?: number[],
+  rounds?: string[];
 }

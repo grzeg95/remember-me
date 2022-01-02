@@ -1,0 +1,23 @@
+tr.mat-row:hover {
+  background: whitesmoke;
+  cursor: pointer;
+  user-select: none;
+}
+
+.add-task {
+  width: 100%;
+  text-align: right;
+}
+
+.rounds-list {
+  width: 100%;
+}
+
+.container {
+  .col {
+    .row {
+      max-width: 45rem !important;
+      margin: 0 auto 1rem;
+    }
+  }
+}

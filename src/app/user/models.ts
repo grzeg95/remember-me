@@ -71,3 +71,10 @@ export interface HTTPError {
   message: string;
   details: string;
 }
+
+export interface Round {
+  id: string;
+  name: string;
+  timesOfDay: string[];
+  taskSize: number;
+}

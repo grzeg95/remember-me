@@ -24,7 +24,7 @@ import {SharedModule} from './shared.module';
     SharedModule,
     CoreModule,
     HttpClientModule,
-    AngularFireModule.initializeApp(environment.firebase)
+    AngularFireModule.initializeApp(environment.firebase),
   ],
   bootstrap: [AppComponent]
 })

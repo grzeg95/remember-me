@@ -15,8 +15,8 @@ export class AppComponent {
     return this.authService.isLoggedIn;
   }
 
-  get isConnected$(): Observable<boolean> {
-    return this.appService.isConnected$;
+  get isOnline$(): Observable<boolean> {
+    return this.appService.isOnline$;
   }
 
   constructor(private appService: AppService,
