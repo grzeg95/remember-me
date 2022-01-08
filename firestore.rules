@@ -1,22 +1,6 @@
 rules_version = '2';
 
 service cloud.firestore {
-
-    match /databases/{database}/documents/fbclid/{fbclidId} {
-
-        allow list: if request.query.limit == 1;
-
-        allow create: if request.resource.data.keys().hasOnly(['entered', 'id'])
-                         && request.resource.data.entered is int
-                         && int(request.resource.data.entered) == 1
-                         && request.resource.data.id is string
-                         && request.resource.data.id.size() > 0;
-
-        allow update: if request.resource.data.keys().hasOnly(['entered', 'id'])
-                         && resource.data.id == request.resource.data.id
-                         && resource.data.entered + 1 == request.resource.data.entered;
-    }
-
     match /databases/{database}/documents/users/{userId} {
 
         // https://firebase.google.com/docs/firestore/pricing#firestore-rules

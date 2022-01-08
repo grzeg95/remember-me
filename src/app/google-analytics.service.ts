@@ -10,9 +10,9 @@ export class GoogleAnalyticsService {
   eventEmitter(
      eventName: string,
      eventCategory: string,
-     eventAction: string,
+     eventAction: string = null,
      eventLabel: string = null,
-     eventValue: number = null
+     eventValue: any = null
   ): void {
     gtag('event', eventName, {
       eventCategory,
