@@ -14,7 +14,7 @@ export class ExtraParametersGuard implements CanActivate {
         const queryParams = {...route.queryParams};
 
         for (const queryParam of Object.getOwnPropertyNames(queryParams)) {
-            this.googleAnalyticsService.eventEmitter('entered via ref link', 'enter', null, null, {[queryParam]: queryParams[queryParam]});
+            this.googleAnalyticsService.eventEmitter('entered via ref link', {[queryParam]: queryParams[queryParam]});
         }
 
         return true;
