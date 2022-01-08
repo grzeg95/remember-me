@@ -10,28 +10,36 @@
           <div *ngIf="isLoggedIn !== null">
 
             <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
-              <button mat-stroked-button
-                      color="secondary"
-                      [disabled]="!(isOnline$ | async) || whileLoginIn"
-                      (click)="anonymouslyLogin()"
-              [ngStyle]="{marginRight: '0.3rem'}">
-                <span>Log In <fa-icon [icon]="faEyeSlash"></fa-icon></span>
-              </button>
 
               <button mat-flat-button
                       color="primary"
+                      [matMenuTriggerFor]="menu"
                       [disabled]="!(isOnline$ | async) || whileLoginIn"
-                      (click)="googleLogin()">
-                <span>Log In</span>
+                      aria-label="Log in">
+                <span class="loginButton">Log in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
               </button>
+
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item
+                        [disabled]="!(isOnline$ | async) || whileLoginIn"
+                        (click)="googleLogin()">
+                  <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
+                </button>
+
+                <button mat-menu-item
+                        [disabled]="!(isOnline$ | async) || whileLoginIn"
+                        (click)="anonymouslyLogin()">
+                  <span><fa-icon [icon]="faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Incognito</span>
+                </button>
+              </mat-menu>
             </div>
 
             <div *ngIf="isLoggedIn" class="d-flex align-items-center right">
               <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
-              <mat-menu #menu="matMenu">
-                <button mat-menu-item (click)="signOut()"> Log out</button>
-                <button mat-menu-item onclick="Cookiebot.renew();"> Cookiebot</button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="signOut()">Log out</button>
+                <button mat-menu-item onclick="Cookiebot.renew();">Cookiebot</button>
               </mat-menu>
             </div>
 

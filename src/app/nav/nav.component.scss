@@ -50,3 +50,9 @@ img {
   font: inherit;
   letter-spacing: inherit;
 }
+
+.loginButton {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
