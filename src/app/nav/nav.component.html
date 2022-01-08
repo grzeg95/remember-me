@@ -15,6 +15,7 @@
                       color="primary"
                       [matMenuTriggerFor]="menu"
                       [disabled]="!(isOnline$ | async) || whileLoginIn"
+                      (click)="clickLoginButton()"
                       aria-label="Log in">
                 <span class="loginButton">Log in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
               </button>

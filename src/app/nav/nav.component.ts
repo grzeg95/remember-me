@@ -47,13 +47,16 @@ export class NavComponent {
               private googleAnalyticsService: GoogleAnalyticsService) {
   }
 
+  clickLoginButton(): void {
+    this.googleAnalyticsService.eventEmitter('login_button', 'login', 'click');
+  }
+
   googleLogin(): void {
-    this.googleAnalyticsService.eventEmitter('login_button', 'google', 'click');
     this.authService.googleLogin();
   }
 
   anonymouslyLogin(): void {
-    this.googleAnalyticsService.eventEmitter('login_button', 'guest', 'click');
+    this.googleAnalyticsService.eventEmitter('login_button', 'login', 'guest');
     this.authService.anonymouslyLogin();
   }
 
