@@ -4,17 +4,17 @@ service cloud.firestore {
 
     match /databases/{database}/documents/fbclid/{fbclidId} {
 
-      allow list: if request.query.limit == 1;
+        allow list: if request.query.limit == 1;
 
-      allow update: if request.resource.data.keys().hasOnly(['entered', 'id'])
-                       && resource.data.id == request.resource.data.id
-                       && resource.data.entered + 1 == request.resource.data.entered;
+        allow create: if request.resource.data.keys().hasOnly(['entered', 'id'])
+                         && request.resource.data.entered is int
+                         && int(request.resource.data.entered) == 1
+                         && request.resource.data.id is string
+                         && request.resource.data.id.size() > 0;
 
-      allow create: if request.resource.data.keys().hasOnly(['entered', 'id'])
-                       && request.resource.data.entered is int
-                       && int(request.resource.data.entered) > 0
-                       && request.resource.data.id is string
-                       && request.resource.data.id.size() > 0;
+        allow update: if request.resource.data.keys().hasOnly(['entered', 'id'])
+                         && resource.data.id == request.resource.data.id
+                         && resource.data.entered + 1 == request.resource.data.entered;
     }
 
     match /databases/{database}/documents/users/{userId} {
@@ -22,11 +22,11 @@ service cloud.firestore {
         // https://firebase.google.com/docs/firestore/pricing#firestore-rules
         // You are only charged one read per dependent document even if your rules refer to that document more than once
         function userIsOk() {
-          return userId == request.auth.uid
-          && !(
-              exists(/databases/$(database)/documents/users/$(request.auth.uid))
-              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
-          );
+            return userId == request.auth.uid
+            && !(
+                exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
+            );
         }
 
         allow get: if userIsOk();
