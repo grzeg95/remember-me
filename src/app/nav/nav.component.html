@@ -10,28 +10,12 @@
           <div *ngIf="isLoggedIn !== null">
 
             <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
-
               <button mat-flat-button
                       color="primary"
-                      [matMenuTriggerFor]="menu"
                       [disabled]="!(isOnline$ | async) || whileLoginIn"
-                      aria-label="Log in">
-                <span class="loginButton">Log in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
+                      (click)="googleLogin()">
+                <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google Log In</span>
               </button>
-
-              <mat-menu #menu="matMenu" xPosition="before">
-                <button mat-menu-item
-                        [disabled]="!(isOnline$ | async) || whileLoginIn"
-                        (click)="googleLogin()">
-                  <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
-                </button>
-
-                <button mat-menu-item
-                        [disabled]="!(isOnline$ | async) || whileLoginIn"
-                        (click)="anonymouslyLogin()">
-                  <span><fa-icon [icon]="faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Incognito</span>
-                </button>
-              </mat-menu>
             </div>
 
             <div *ngIf="isLoggedIn" class="d-flex align-items-center right">
