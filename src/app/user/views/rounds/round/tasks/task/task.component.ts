@@ -192,8 +192,8 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     if ((this.taskForm.get('timesOfDay').value as string[]).includes(timeOfDay)) {
       this.snackBar.open('Enter new one');
-    } else if (timeOfDay.length > 100 || timeOfDay.length === 0) {
-      this.snackBar.open('Enter time of day length from 1 to 100');
+    } else if (timeOfDay.length > 256 || timeOfDay.length === 0) {
+      this.snackBar.open('Enter time of day length from 1 to 256');
       this.basicInput.nativeElement.value = '';
     } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length >= 10) {
       this.snackBar.open('Up to 10 times of day per task');
@@ -500,7 +500,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       g.setValue(trimLeft);
     }
 
-    return (typeof g.value === 'string') && (g.value.trim().length > 0) && (g.value.trim().length <= 100) ? null : {required: true};
+    return (typeof g.value === 'string') && (g.value.trim().length > 0) && (g.value.trim().length <= 256) ? null : {required: true};
   }
 
   static timesOfDayValidator(g: FormArray): { required: boolean } {

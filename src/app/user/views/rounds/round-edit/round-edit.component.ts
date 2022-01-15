@@ -29,7 +29,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   }
 
   roundForm: FormGroup = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.max(100)])
+    name: new FormControl('', [Validators.required, Validators.max(256)])
   });
 
   savingInProgress = false;
