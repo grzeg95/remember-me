@@ -1,10 +1,9 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {faEllipsisV, faTasks, faUser} from '@fortawesome/free-solid-svg-icons';
-import {faEyeSlash} from '@fortawesome/free-regular-svg-icons';
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
-import {faGoogle} from '@fortawesome/free-brands-svg-icons';
+import {faGoogle, faFacebook} from '@fortawesome/free-brands-svg-icons';
 
 @Component({
   selector: 'app-nav',
@@ -36,21 +35,22 @@ export class NavComponent {
 
   faTasks = faTasks;
   faUser = faUser;
-  faEyeSlash = faEyeSlash;
+  faFacebook = faFacebook;
   faGoogle = faGoogle;
   faEllipsisV = faEllipsisV;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
-  constructor(private authService: AuthService,
-              private appService: AppService) {
-  }
+  constructor(
+    private authService: AuthService,
+    private appService: AppService
+  ) {}
 
   googleLogin(): void {
     this.authService.googleLogin();
   }
 
-  anonymouslyLogin(): void {
-    this.authService.anonymouslyLogin();
+  facebookLogin(): void {
+    this.authService.facebookLogin();
   }
 
   signOut(): Promise<boolean> {

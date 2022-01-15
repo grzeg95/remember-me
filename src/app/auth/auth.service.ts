@@ -6,7 +6,7 @@ import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
 import {User, UserData} from './user-data.model';
-import { GoogleAuthProvider } from 'firebase/auth';
+import {GoogleAuthProvider, FacebookAuthProvider} from 'firebase/auth';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 
@@ -93,10 +93,10 @@ export class AuthService {
     });
   }
 
-  anonymouslyLogin(): void {
+  facebookLogin(): void {
     this.whileLoginIn = true;
 
-    this.afAuth.signInAnonymously().catch(() => {
+    this.afAuth.signInWithRedirect(new FacebookAuthProvider()).catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
     }).then(() => {
       this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
