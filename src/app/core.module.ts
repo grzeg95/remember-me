@@ -9,7 +9,6 @@ import {ConnectionService} from './connection.service';
 import {AngularFireAuth} from '@angular/fire/compat/auth';
 import {USE_EMULATOR as USE_FIRESTORE_EMULATOR} from '@angular/fire/compat/firestore';
 import {ExtraParametersGuard} from './extra-parameters-guard.service';
-import {GoogleAnalyticsService} from './google-analytics.service';
 
 export function initializeEmulators(afAuth: AngularFireAuth, fns: AngularFireFunctions): () => Promise<void> {
   return () => {
@@ -60,7 +59,6 @@ export function initializeAppCheckPrivate(afAuth: AngularFireAuth): () => Promis
     AppService,
     AuthService,
     ConnectionService,
-    GoogleAnalyticsService,
     ExtraParametersGuard
   ]
 })

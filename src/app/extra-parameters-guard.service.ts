@@ -1,22 +1,23 @@
 import {Injectable} from '@angular/core';
+import {AngularFireAnalytics} from '@angular/fire/compat/analytics';
 import {ActivatedRouteSnapshot, CanActivate} from '@angular/router';
-import {GoogleAnalyticsService} from './google-analytics.service';
 
 @Injectable()
 export class ExtraParametersGuard implements CanActivate {
 
     constructor(
-        private googleAnalyticsService: GoogleAnalyticsService
+        private analytics: AngularFireAnalytics
     ) {}
 
-    canActivate(route: ActivatedRouteSnapshot): boolean {
+    canActivate(route: ActivatedRouteSnapshot): Promise<boolean> {
 
         const queryParams = {...route.queryParams};
+        const promises = [];
 
         for (const queryParam of Object.getOwnPropertyNames(queryParams)) {
-            this.googleAnalyticsService.eventEmitter('entered via ref link', {[queryParam]: queryParams[queryParam]});
+          promises.push(this.analytics.logEvent('entered via ref link', {[queryParam]: queryParams[queryParam]}));
         }
 
-        return true;
+        return Promise.all(promises).then(() => true).catch(() => true);
     }
 }
