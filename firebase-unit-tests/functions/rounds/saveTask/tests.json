@@ -361,7 +361,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": []
         },
         "taskId": "id"
@@ -369,7 +371,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             0,
             1,
@@ -392,7 +396,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             null
           ]
@@ -402,7 +408,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             []
           ]
@@ -412,7 +420,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             {}
           ]
@@ -422,7 +432,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             0
           ]
@@ -432,7 +444,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             true
           ]
@@ -444,7 +458,9 @@
       {
         "task": {
           "description": " ",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             " "
           ]
@@ -454,7 +470,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             " qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcv"
           ]
@@ -466,7 +484,9 @@
       {
         "task": {
           "description": "qwer",
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "timesOfDay": [
             "a",
             "a",
@@ -485,7 +505,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -498,7 +520,9 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           }
         },
         "timesOfDay": [
@@ -529,7 +553,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -543,7 +569,9 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           }
         },
         "timesOfDay": [
@@ -578,7 +606,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -593,7 +623,9 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           }
         },
         "timesOfDay": [
@@ -631,7 +663,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -641,7 +675,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -654,10 +690,14 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a"
@@ -701,7 +741,9 @@
           "timesOfDay": [
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -711,7 +753,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -724,10 +768,14 @@
             "timesOfDay": [
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a"
@@ -774,7 +822,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -784,7 +834,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -798,10 +850,14 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a"
@@ -849,7 +905,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -859,7 +917,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -873,10 +933,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a"
@@ -927,7 +991,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -937,7 +1003,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -952,10 +1020,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a"
@@ -1006,7 +1078,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1016,7 +1090,9 @@
           "timesOfDay": [
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1030,10 +1106,14 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "b"
@@ -1082,7 +1162,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1092,7 +1174,9 @@
           "timesOfDay": [
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1107,10 +1191,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "b"
@@ -1162,7 +1250,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1172,7 +1262,9 @@
           "timesOfDay": [
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1187,10 +1279,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "c"
@@ -1240,7 +1336,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1251,7 +1349,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1264,10 +1364,14 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1315,7 +1419,9 @@
           "timesOfDay": [
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1326,7 +1432,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1339,10 +1447,14 @@
             "timesOfDay": [
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1390,7 +1502,9 @@
           "timesOfDay": [
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1401,7 +1515,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1414,10 +1530,14 @@
             "timesOfDay": [
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1468,7 +1588,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1479,7 +1601,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1493,10 +1617,14 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1546,7 +1674,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1557,7 +1687,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1571,10 +1703,14 @@
               "b",
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1624,7 +1760,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1635,7 +1773,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1649,10 +1789,14 @@
               "a",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1704,7 +1848,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1715,7 +1861,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1729,10 +1877,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1785,7 +1937,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1796,7 +1950,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1811,10 +1967,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1868,7 +2028,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1879,7 +2041,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1894,10 +2058,14 @@
               "b",
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -1951,7 +2119,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -1962,7 +2132,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -1977,10 +2149,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "b",
@@ -2033,7 +2209,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2044,7 +2222,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2058,10 +2238,14 @@
               "b",
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2113,7 +2297,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2124,7 +2310,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2138,10 +2326,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2194,7 +2386,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2205,7 +2399,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2220,10 +2416,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2277,7 +2477,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2288,7 +2490,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2303,10 +2507,14 @@
               "b",
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2360,7 +2568,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2371,7 +2581,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2386,10 +2598,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "b",
@@ -2441,7 +2657,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2453,7 +2671,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2466,10 +2686,14 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2521,7 +2745,9 @@
           "timesOfDay": [
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2533,7 +2759,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2546,10 +2774,14 @@
             "timesOfDay": [
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2601,7 +2833,9 @@
           "timesOfDay": [
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2613,7 +2847,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2626,10 +2862,14 @@
             "timesOfDay": [
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2682,7 +2922,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2694,7 +2936,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2708,10 +2952,14 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2765,7 +3013,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2777,7 +3027,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2791,10 +3043,14 @@
               "b",
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2848,7 +3104,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2860,7 +3118,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2874,10 +3134,14 @@
               "a",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -2931,7 +3195,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -2943,7 +3209,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -2957,10 +3225,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -3015,7 +3287,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3027,7 +3301,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -3042,10 +3318,14 @@
               "b",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -3101,7 +3381,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3113,7 +3395,9 @@
             "b",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -3128,10 +3412,14 @@
               "b",
               "a"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "a",
@@ -3186,7 +3474,9 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3198,7 +3488,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -3212,10 +3504,14 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "c",
@@ -3269,7 +3565,9 @@
             "a",
             "c"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3281,7 +3579,9 @@
             "b",
             "a"
           ],
-          "daysOfTheWeek": 64,
+          "daysOfTheWeek": [
+            "mon"
+          ],
           "description": "0002"
         },
         "taskId": "null"
@@ -3295,10 +3595,14 @@
               "a",
               "c"
             ],
-            "daysOfTheWeek": 64
+            "daysOfTheWeek": [
+              "mon"
+            ]
           },
           "{y}": {
-            "daysOfTheWeek": 64,
+            "daysOfTheWeek": [
+              "mon"
+            ],
             "description": "0002",
             "timesOfDay": [
               "c",
@@ -3352,7 +3656,9 @@
         "timesOfDay": [
           "a"
         ],
-        "daysOfTheWeek": 1,
+        "daysOfTheWeek": [
+          "sun"
+        ],
         "description": "0001"
       },
       "taskId": "null"
@@ -3362,7 +3668,9 @@
         "timesOfDay": [
           "a"
         ],
-        "daysOfTheWeek": 1,
+        "daysOfTheWeek": [
+          "sun"
+        ],
         "description": "0001"
       },
       "taskId": "{from}"
@@ -3376,7 +3684,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 1,
+          "daysOfTheWeek": [
+            "sun"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3386,7 +3696,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 1,
+          "daysOfTheWeek": [
+            "sun"
+          ],
           "description": "0002"
         },
         "taskId": "{from}"
@@ -3399,7 +3711,9 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 1
+            "daysOfTheWeek": [
+              "sun"
+            ]
           }
         },
         "timesOfDay": [
@@ -3429,7 +3743,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 1,
+          "daysOfTheWeek": [
+            "sun"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3439,7 +3755,10 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 3,
+          "daysOfTheWeek": [
+            "sat",
+            "sun"
+          ],
           "description": "0001"
         },
         "taskId": "{from}"
@@ -3452,7 +3771,10 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 3
+            "daysOfTheWeek": [
+              "sat",
+              "sun"
+            ]
           }
         },
         "timesOfDay": [
@@ -3492,7 +3814,15 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 127,
+          "daysOfTheWeek": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3502,7 +3832,14 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 126,
+          "daysOfTheWeek": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat"
+          ],
           "description": "0001"
         },
         "taskId": "{from}"
@@ -3515,7 +3852,14 @@
             "timesOfDay": [
               "a"
             ],
-            "daysOfTheWeek": 126
+            "daysOfTheWeek": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri",
+              "sat"
+            ]
           }
         },
         "timesOfDay": [
@@ -3595,7 +3939,9 @@
           "timesOfDay": [
             "a"
           ],
-          "daysOfTheWeek": 1,
+          "daysOfTheWeek": [
+            "sun"
+          ],
           "description": "0001"
         },
         "taskId": "null"
@@ -3606,7 +3952,10 @@
             "a",
             "b"
           ],
-          "daysOfTheWeek": 3,
+          "daysOfTheWeek": [
+            "sat",
+            "sun"
+          ],
           "description": "0002"
         },
         "taskId": "{from}"
@@ -3620,7 +3969,10 @@
               "a",
               "b"
             ],
-            "daysOfTheWeek": 3
+            "daysOfTheWeek": [
+              "sat",
+              "sun"
+            ]
           }
         },
         "timesOfDay": [

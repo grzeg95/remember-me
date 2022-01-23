@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {RouterDict} from '../../../../app.constants';
-import {Day, ITask, ITaskFirestore, Round, Task, TasksListItem, TodayItem} from '../../../models';
+import {ITask, ITaskFirestore, Round, Task, TasksListItem, TodayItem} from '../../../models';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AuthService} from '../../../../auth/auth.service';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
@@ -179,13 +179,11 @@ export class RoundService {
           documentChangeActionArr.map((documentChangeAction) => {
 
             const task = documentChangeAction.payload.doc.data() as ITaskFirestore;
-            const daysOfTheWeek: string[] = (['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[])
-              .filter((dayOfTheWeek) => this.taskService.dayIsInNumber(task.daysOfTheWeek, dayOfTheWeek));
 
             return {
               description: task.description,
               timesOfDay: task.timesOfDay,
-              daysOfTheWeek: daysOfTheWeek.length === 7 ? 'Every day' : daysOfTheWeek.join(', '),
+              daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
               id: documentChangeAction.payload.doc.id
             } as TasksListItem;
           })
@@ -205,7 +203,7 @@ export class RoundService {
         const iTaskFirestore = taskDocSnap.data();
         return !iTaskFirestore ? null : {
           description: iTaskFirestore.description,
-          daysOfTheWeek: this.taskService.numberToDaysBooleanMap(iTaskFirestore.daysOfTheWeek),
+          daysOfTheWeek: this.taskService.dayArrayToDaysBooleanMap(iTaskFirestore.daysOfTheWeek),
           timesOfDay: [...iTaskFirestore.timesOfDay]
         } as ITask;
       })

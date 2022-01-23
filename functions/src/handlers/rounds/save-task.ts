@@ -1,16 +1,14 @@
+// tslint:disable-next-line:no-import-side-effect
+import '../../../../global.prototype';
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Day, Task} from '../../helpers/models';
+import {Task} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
-// tslint:disable-next-line:no-import-side-effect
-import '../../../../global.prototype';
-import {dayIsInNumber, numberToDayArray} from '../../helpers/times-of-days';
 import {getUser} from '../../helpers/user';
 
 const app = firestore();
-const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as Day[];
 
 /**
  * @interface TaskDiff
@@ -48,7 +46,7 @@ const getTaskChange = (a: Task, b: Task): TaskDiff => {
   return {
     description: a.description !== b.description,
     timesOfDay: !aTimesOfDay.hasOnly(bTimesOfDay),
-    daysOfTheWeek: a.daysOfTheWeek !== b.daysOfTheWeek
+    daysOfTheWeek: !a.daysOfTheWeek.toSet().hasOnly(b.daysOfTheWeek.toSet())
   };
 };
 
@@ -105,75 +103,113 @@ const prepareTimesOfDay = (
   };
 };
 
-const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, timesOfDayDocSnap: DocumentSnapshot) => {
+const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, roundDocSnap: DocumentSnapshot) => {
 
-  // read all task for user/{userId}/today/{day}/task/{taskId}
-  // Promise<{ docSnap: DocumentSnapshot, day: Day }[]> = [];
+  // read all daysOfTheWeek from taskDocSnap
+  // Promise<DocumentSnapshot[]> = [];
   const todayTaskDocSnapsDayPackPromise = [];
 
-  for (const day of days) {
+  for (const day of taskDocSnap.data()?.daysOfTheWeek || []) {
     todayTaskDocSnapsDayPackPromise.push(
-      transaction.get(timesOfDayDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
-        .then((docSnap) => ({docSnap, day}))
-    );
+      transaction.get(roundDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
+        .then((docSnap) => ({day, docSnap})));
+  }
+
+  const toUpdate: Set<string> = new Set();
+  const toRemove: Set<string> = new Set();
+  const toCreate: Set<string> = new Set();
+  const taskDocSnapDaysOfTheWeek = (taskDocSnap.data()?.daysOfTheWeek || []).toSet();
+  const taskDaysOfTheWeek = (task.daysOfTheWeek || []).toSet();
+
+  for (const day of task.daysOfTheWeek || []) {
+    if (taskDocSnapDaysOfTheWeek.has(day)) {
+      toUpdate.add(day);
+    } else {
+      toCreate.add(day);
+    }
+  }
+
+  for (const day of taskDocSnap.data()?.daysOfTheWeek || []) {
+    if (taskDaysOfTheWeek.has(day)) {
+      toUpdate.add(day);
+    } else {
+      toRemove.add(day);
+    }
+  }
+
+  const newDaysPromises: Promise<{dayToCreate: string, docSnap: DocumentSnapshot}>[] = [];
+  for (const dayToCreate of toCreate) {
+    newDaysPromises.push(transaction.get(roundDocSnap.ref.collection(`today/${dayToCreate}/task`).doc(taskDocSnap.id)).then((docSnap) =>
+      ({dayToCreate, docSnap})
+    ));
   }
 
   const todayTaskDocSnapsDayPack = await Promise.all(todayTaskDocSnapsDayPackPromise);
+  const todayTaskDocSnapsMap: {[key in string]: DocumentSnapshot} = {};
 
-  // proceedTodayTask
-  for (const todayTaskDocSnapDayPack of todayTaskDocSnapsDayPack) {
-    const dayIsActive = dayIsInNumber(task.daysOfTheWeek, todayTaskDocSnapDayPack.day);
+  for (const docSnap of todayTaskDocSnapsDayPack) {
+    todayTaskDocSnapsMap[docSnap.day] = docSnap.docSnap;
+  }
 
-    if (!todayTaskDocSnapDayPack.docSnap.exists && dayIsActive) { // set
-      // add task timesOfDay
-      const timesOfDay: TodayTaskTimesOfDay = {};
+  // create
+  const newDays = await Promise.all(newDaysPromises);
+  const newDaysMap: {[key in string]: DocumentSnapshot} = {};
 
-      for (const timeOfDay of task.timesOfDay) {
-        timesOfDay[timeOfDay] = false;
-      }
+  for (const newDay of newDays) {
+    newDaysMap[newDay.dayToCreate] = newDay.docSnap;
+  }
 
-      transaction.set(todayTaskDocSnapDayPack.docSnap.ref, {
-        description: task.description,
-        timesOfDay: timesOfDay
-      });
-    } else if (todayTaskDocSnapDayPack.docSnap.exists && !dayIsActive) { // delete
-      transaction.delete(todayTaskDocSnapDayPack.docSnap.ref);
-    } else if (todayTaskDocSnapDayPack.docSnap.exists && dayIsActive) { // update
+  for (const dayToCreate of toCreate) {
 
-      // add task timesOfDay to newTimesOfDay
-      const newTimesOfDay: TodayTaskTimesOfDay = {};
+    // add task timesOfDay
+    const timesOfDay: TodayTaskTimesOfDay = {};
 
-      // select inserted task timesOfDay to newTimesOfDay
-      const taskTimesOdDaySet = task.timesOfDay;
-      for (const timeOfDay of taskTimesOdDaySet) {
-        newTimesOfDay[timeOfDay] = false;
-      }
-
-      // select current stored task timesOfDay to oldTimesOfDay
-      // there can be selected true value
-      let oldTimesOfDay: TodayTaskTimesOfDay = {};
-
-      const docData = todayTaskDocSnapDayPack.docSnap.data() as TodayTask;
-      if (docData) {
-        oldTimesOfDay = docData.timesOfDay;
-      }
-
-      // maybe there exist selected timesOfDay
-      for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
-        if (oldTimesOfDay[newTimeOfDay]) {
-          newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
-        }
-      }
-
-      transaction.update(todayTaskDocSnapDayPack.docSnap.ref, {
-        description: task.description,
-        timesOfDay: newTimesOfDay
-      });
-
-    } else { // remove
-      transaction.delete(todayTaskDocSnapDayPack.docSnap.ref);
+    for (const timeOfDay of task.timesOfDay) {
+      timesOfDay[timeOfDay] = false;
     }
 
+    transaction.create(newDaysMap[dayToCreate].ref, {
+      description: task.description,
+      timesOfDay: timesOfDay
+    });
+  }
+
+  // remove
+  for (const dayToRemove of toRemove) {
+    transaction.delete(todayTaskDocSnapsMap[dayToRemove].ref);
+  }
+
+  // update
+  for (const dayToUpdate of toUpdate) {
+    // add task timesOfDay to newTimesOfDay
+    const newTimesOfDay: TodayTaskTimesOfDay = {};
+
+    // select inserted task timesOfDay to newTimesOfDay
+    const taskTimesOdDaySet = task.timesOfDay;
+    for (const timeOfDay of taskTimesOdDaySet) {
+      newTimesOfDay[timeOfDay] = false;
+    }
+
+    // select current stored task timesOfDay to oldTimesOfDay
+    // there can be selected true value
+    let oldTimesOfDay: TodayTaskTimesOfDay = {};
+    
+    const docData = todayTaskDocSnapsMap[dayToUpdate].data() as TodayTask;
+    if (docData) {
+      oldTimesOfDay = docData.timesOfDay;
+    }
+
+    // maybe there exist selected timesOfDay
+    for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
+      if (oldTimesOfDay[newTimeOfDay]) {
+        newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
+      }
+    }
+
+    transaction.update(todayTaskDocSnapsMap[dayToUpdate].ref, {
+      description: task.description,
+      timesOfDay: newTimesOfDay
+    });
   }
 };
 
@@ -183,7 +219,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
  * @param data {
     task: {
       timesOfDay: string[],
-      daysOfTheWeek: number,
+      daysOfTheWeek: not null like ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
       description: string
     },
     taskId: string,
@@ -236,8 +272,13 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data.task.description is not a string in [1, 100]
   testRequirement(data.task.description.length < 1 || data.task.description.length > 100);
 
-  // data.task.daysOfTheWeek is not number between 1 and 128
-  testRequirement(!Number.isInteger(data.task.daysOfTheWeek) || data.task.daysOfTheWeek < 0 || data.task.daysOfTheWeek > 128);
+  // data.task.daysOfTheWeek is not in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+  testRequirement(
+    !Array.isArray(data.task.daysOfTheWeek) ||
+    data.task.daysOfTheWeek.length === 0 ||
+    data.task.daysOfTheWeek.length > 7 ||
+    !((new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).hasAll(new Set(data.task.daysOfTheWeek)))
+  );
 
   // data.task.timesOfDay is not an array
   testRequirement(!Array.isArray(data.task.timesOfDay));
@@ -318,7 +359,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTaskDocSnapsToUpdatePromises = [];
 
-        for (const day of numberToDayArray(task.daysOfTheWeek)) {
+        for (const day of task.daysOfTheWeek) {
           todayTaskDocSnapsToUpdatePromises.push(
             transaction.get(roundDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
           );

@@ -246,7 +246,10 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.isConnectedSub.unsubscribe();
+
+    if (this.isConnectedSub && !this.isConnectedSub.closed) {
+      this.isConnectedSub.unsubscribe();
+    }
 
     if (this.getTaskByIdSub && !this.getTaskByIdSub.closed) {
       this.getTaskByIdSub.unsubscribe();
@@ -260,7 +263,9 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.timeOfDayValueChanges.unsubscribe();
     }
 
-    this.roundSelectedSub.unsubscribe();
+    if (this.roundSelectedSub && !this.roundSelectedSub.closed) {
+      this.roundSelectedSub.unsubscribe();
+    }
 
     if (this.asapSchedulerForDayToApplySub && !this.asapSchedulerForDayToApplySub.closed) {
       this.asapSchedulerForDayToApplySub.unsubscribe();
@@ -351,7 +356,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     const iTaskFirestore: ITaskFirestore = {
       description: iTask.description,
-      daysOfTheWeek: this.taskService.daysBooleanMapToNumber(iTask.daysOfTheWeek),
+      daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(iTask.daysOfTheWeek),
       timesOfDay: iTask.timesOfDay
     };
 

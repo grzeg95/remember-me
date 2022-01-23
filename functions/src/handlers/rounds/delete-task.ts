@@ -2,7 +2,6 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {Task, TimesOfDay} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
-import {numberToDayArray} from '../../helpers/times-of-days';
 import {getUser} from '../../helpers/user';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
@@ -34,7 +33,7 @@ export const proceedTaskRemoving = async (roundId: string, taskId: string, trans
   // read all task for user/{userId}/today/{day}/task/{taskId}
   const todayTaskDocSnapsToUpdatePromises = [];
 
-  for (const day of numberToDayArray(task.daysOfTheWeek)) {
+  for (const day of task.daysOfTheWeek) {
     todayTaskDocSnapsToUpdatePromises.push(
       transaction.get(timesOfDayDocSnap.ref.collection('today').doc(`${day}/task/${taskDocSnap.id}`))
     );

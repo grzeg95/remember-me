@@ -150,7 +150,7 @@ describe(`deleteRound`, async () => {
       const saveTaskRes = await getResult(saveTask, {
         task: {
           timesOfDay: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-          daysOfTheWeek: 127,
+          daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
           description: `task_${i}`
         },
         taskId: 'null',
@@ -209,7 +209,7 @@ describe(`deleteRound`, async () => {
       const saveTaskRes = await getResult(saveTask, {
         task: {
           timesOfDay: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-          daysOfTheWeek: 127,
+          daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
           description: `task_${i}`
         },
         taskId: 'null',

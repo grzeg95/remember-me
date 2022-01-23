@@ -6,7 +6,7 @@ export type DaysOfTheWeek = {
 
 export interface ITaskFirestore {
   description: string;
-  daysOfTheWeek: number;
+  daysOfTheWeek: Day[];
   timesOfDay: string[];
 }
 
@@ -36,7 +36,7 @@ export class Task {
       this.daysOfTheWeek.thu === otherITask.daysOfTheWeek.thu &&
       this.daysOfTheWeek.fri === otherITask.daysOfTheWeek.fri &&
       this.daysOfTheWeek.sat === otherITask.daysOfTheWeek.sat &&
-      this.daysOfTheWeek.sun === otherITask.daysOfTheWeek.sun;
+      this.daysOfTheWeek.sun === otherITask.daysOfTheWeek.sun
   }
 }
 
