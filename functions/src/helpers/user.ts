@@ -1,6 +1,5 @@
 import {firestore} from 'firebase-admin';
 import {HttpsError} from 'firebase-functions/lib/providers/https';
-import {User} from './models';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Firestore = firestore.Firestore;
@@ -22,7 +21,7 @@ export const getUser = async (app: Firestore, transaction: Transaction, uid: str
   return userDocSnap;
 };
 
-export const writeUser = (transaction: Transaction, userDocSnap: DocumentSnapshot, userDataToWrite: User): void => {
+export const writeUser = (transaction: Transaction, userDocSnap: DocumentSnapshot, userDataToWrite: any): void => {
   if (userDocSnap.exists) {
     transaction.update(userDocSnap.ref, userDataToWrite);
   } else {

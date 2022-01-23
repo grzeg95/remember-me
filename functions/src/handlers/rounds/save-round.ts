@@ -2,6 +2,10 @@ import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
 import {firestore} from 'firebase-admin';
 import {getUser, writeUser} from '../../helpers/user';
+import {decrypt} from '../../security/decrypt';
+import {decryptPrivateKey} from '../../security/decrypt-private-key';
+import {decryptRound} from '../../security/decrypt-round';
+import {encrypt} from '../../security/encrypt';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
@@ -54,9 +58,12 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
 
+    // get private key
+    const privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
+
     const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
     const userDocSnapData = userDocSnap.data();
-    const rounds = userDocSnapData?.rounds || [];
+    const rounds = userDocSnapData?.rounds ? JSON.parse(decrypt(userDocSnap.data()?.rounds, privateKey)) as string[] : [];
 
     let roundDocSnap: DocumentSnapshot;
 
@@ -68,10 +75,10 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
 
       roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
       transaction.create(roundDocSnap.ref, {
-        taskSize: 0,
-        timesOfDay: [],
-        timesOfDayCardinality: [],
-        name: data.name
+        taskSize: encrypt(0, privateKey),
+        timesOfDay: encrypt([], privateKey),
+        timesOfDayCardinality: encrypt([], privateKey),
+        name: encrypt(data.name, privateKey)
       });
 
       roundId = roundDocSnap.id;
@@ -82,21 +89,20 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     } else {
 
       roundDocSnap = roundDocSnapTmp;
-
+      const roundDocSnapData = decryptRound(roundDocSnap.data(), privateKey);
       /*
       * Check if name was changed
       * */
-      testRequirement(roundDocSnap.data()?.name === data.name);
+      testRequirement(roundDocSnapData.name === data.name);
 
       transaction.update(roundDocSnap.ref, {
-        name: data.name
+        name: encrypt(data.name, privateKey)
       });
-
     }
 
     // update user
     const userDataToWrite = {
-      rounds
+      rounds: encrypt(rounds, privateKey)
     };
     writeUser(transaction, userDocSnap, userDataToWrite);
 
