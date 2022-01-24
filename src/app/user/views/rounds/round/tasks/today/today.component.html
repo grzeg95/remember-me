@@ -54,14 +54,14 @@
                         mat-flat-button
                         [color]="'primary'"
                         [disabled]="false"
-                        (click)="setProgress(button, $event, button.id, todayItem.timeOfDay)">
+                        (click)="setProgress(button, $event)">
                   {{ button.description }}
                 </button>
 
                 <button *ngIf="!button.done"
                         mat-stroked-button
                         [disabled]="false"
-                        (click)="setProgress(button, $event, button.id, todayItem.timeOfDay)">
+                        (click)="setProgress(button, $event)">
                   {{ button.description }}
                 </button>
               </div>

@@ -144,14 +144,20 @@ describe(`deleteTask`, () => {
         regex = new RegExp(`${yId}`, 'gm');
         mustBe = mustBe.replace(regex, y.taskId);
         mustBe = JSON.parse(mustBe);
-        expect(mustBe).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
+
+        const user = simplifyUserResult(await getUserJson(myId), roundId);
+        const idToReplaceFromUser = Object.getOwnPropertyNames(user.today)[0];
+        mustBe.today[idToReplaceFromUser] = {...mustBe.today[Object.getOwnPropertyNames(mustBe.today)[0]]};
+        delete mustBe.today[Object.getOwnPropertyNames(mustBe.today)[0]];
+
+        expect(mustBe).to.eql(user);
 
         deletedResult = await getResult(deleteTask, {taskId: y.taskId, roundId}, myAuth);
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
         expect(emptyUser).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
-      });
+      }).timeout(50000);
 
       // remove y then x
       it(`remove y then x`, async () => {
@@ -172,16 +178,21 @@ describe(`deleteTask`, () => {
         regex = new RegExp(`${xId}`, 'gm');
         mustBe = mustBe.replace(regex, x.taskId);
         mustBe = JSON.parse(mustBe);
-        expect(mustBe).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
+        const user = simplifyUserResult(await getUserJson(myId), roundId);
+        const idToReplaceFromUser = Object.getOwnPropertyNames(user.today)[0];
+        mustBe.today[idToReplaceFromUser] = {...mustBe.today[Object.getOwnPropertyNames(mustBe.today)[0]]};
+        delete mustBe.today[Object.getOwnPropertyNames(mustBe.today)[0]];
+
+        expect(mustBe).to.eql(user);
 
         deletedResult = await getResult(deleteTask, {taskId: x.taskId, roundId}, myAuth);
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
         expect(emptyUser).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
-      });
+      }).timeout(50000);
 
-    }));
+    }).timeout(50000));
 
-  });
+  }).timeout(50000);
 });

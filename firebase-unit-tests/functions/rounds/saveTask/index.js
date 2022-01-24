@@ -69,8 +69,15 @@ describe(`saveTask`, async () => {
       mustBe = mustBe.replace(/{x}/gm, x.taskId);
       mustBe = JSON.parse(mustBe);
 
-      expect(mustBe).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
-    }));
+      const user = simplifyUserResult(await getUserJson(myId), roundId);
+      for (const key of Object.getOwnPropertyNames(user['today'])) {
+        const name = user['today'][key]['name'];
+        mustBe['today'][key] = {...user['today'][key]};
+        delete mustBe['today'][name];
+      }
+
+      expect(mustBe).to.eql(user);
+    }).timeout(10000));
   });
 
   describe(`add`, async () => {
@@ -104,8 +111,15 @@ describe(`saveTask`, async () => {
       mustBe = mustBe.replace(/{y}/gm, y.taskId);
       mustBe = JSON.parse(mustBe);
 
-      expect(mustBe).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
-    }));
+      const user = simplifyUserResult(await getUserJson(myId), roundId);
+      for (const key of Object.getOwnPropertyNames(user['today'])) {
+        const name = user['today'][key]['name'];
+        mustBe['today'][key] = {...user['today'][key]};
+        delete mustBe['today'][name];
+      }
+
+      expect(mustBe).to.eql(user);
+    }).timeout(10000));
   });
 
   describe(`edit`, async () => {
@@ -136,7 +150,7 @@ describe(`saveTask`, async () => {
         details: 'Some went wrong 🤫 Try again 🙂',
         message: 'Bad Request'
       }).to.eql(to);
-    });
+    }).timeout(10000);
 
     tests['edit'].forEach((test) => it(test.name, async () => {
 
@@ -162,8 +176,15 @@ describe(`saveTask`, async () => {
       mustBe = mustBe.replace(/{from}/gm, from.taskId);
       mustBe = JSON.parse(mustBe);
 
-      expect(mustBe).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
-    }));
+      const user = simplifyUserResult(await getUserJson(myId), roundId);
+      for (const key of Object.getOwnPropertyNames(user['today'])) {
+        const name = user['today'][key]['name'];
+        mustBe['today'][key] = {...user['today'][key]};
+        delete mustBe['today'][name];
+      }
+
+      expect(mustBe).to.eql(user);
+    }).timeout(10000));
   });
 
 });

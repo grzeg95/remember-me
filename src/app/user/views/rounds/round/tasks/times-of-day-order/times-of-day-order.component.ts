@@ -5,6 +5,7 @@ import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../../../../../app-service';
+import {Round} from '../../../../../models';
 import {RoundService} from '../../round.service';
 import {RoundsService} from '../../../rounds.service';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -32,8 +33,8 @@ export class TimesOfDayOrderComponent {
     return this.appService.isOnline$;
   }
 
-  get timesOfDay(): string[] {
-    return this.roundsService.roundSelected$.value?.timesOfDay;
+  get roundSelected(): Round {
+    return this.roundsService.roundSelected$.value;
   }
 
   faGripLines = faGripLines;
@@ -53,11 +54,14 @@ export class TimesOfDayOrderComponent {
       return;
     }
 
-    const timesOfDayOrder = this.timesOfDay;
-    const timeOfDay = timesOfDayOrder[event.previousIndex];
+    const roundSelected = this.roundSelected;
+
+    const timesOfDayEncrypted = roundSelected.timesOfDayEncrypted;
+    const timeOfDay = roundSelected.timesOfDay[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
-    moveItemInArray(timesOfDayOrder, event.previousIndex, event.currentIndex);
+    moveItemInArray(timesOfDayEncrypted, event.previousIndex, event.currentIndex);
+    moveItemInArray(roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
 
     this.setTimesOfDayOrderSub = this.roundService.updateTimesOfDayOrder({timeOfDay, moveBy, roundId: this.roundsService.roundSelected$.value.id}).subscribe((success) => {
       this.zone.run(() => {
@@ -66,7 +70,8 @@ export class TimesOfDayOrderComponent {
     }, (error) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(timesOfDayOrder, event.currentIndex, event.previousIndex);
+        moveItemInArray(timesOfDayEncrypted, event.currentIndex, event.previousIndex);
+        moveItemInArray(roundSelected.timesOfDay, event.currentIndex, event.previousIndex);
       });
     });
 

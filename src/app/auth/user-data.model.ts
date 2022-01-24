@@ -4,8 +4,13 @@ export interface UserData {
   displayName: string;
   photoURL: string;
   emailVerified: boolean;
+  privateKey: string;
 }
 
 export interface User {
   rounds: string[];
+}
+
+export interface EncryptedUser {
+  rounds: string;
 }

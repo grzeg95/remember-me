@@ -1,50 +1,12 @@
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
-export type DaysOfTheWeek = {
-  [key in Day]: boolean;
-};
-
-export interface ITaskFirestore {
-  description: string;
-  daysOfTheWeek: Day[];
-  timesOfDay: string[];
-}
-
-export interface ITask {
-  description: string;
-  daysOfTheWeek: DaysOfTheWeek;
-  timesOfDay: string[];
-}
-
-export class Task {
-  description: string;
-  daysOfTheWeek: DaysOfTheWeek;
-  timesOfDay: string[];
-
-  constructor(iTask: ITask) {
-    this.description = iTask.description;
-    this.daysOfTheWeek = iTask.daysOfTheWeek;
-    this.timesOfDay = iTask.timesOfDay;
-  }
-
-  isEquals(otherITask: ITask): boolean {
-    return this.description.trim() === otherITask.description.trim() &&
-      this.timesOfDay.toSet().hasOnly(otherITask.timesOfDay.toSet()) &&
-      this.daysOfTheWeek.mon === otherITask.daysOfTheWeek.mon &&
-      this.daysOfTheWeek.tue === otherITask.daysOfTheWeek.tue &&
-      this.daysOfTheWeek.wed === otherITask.daysOfTheWeek.wed &&
-      this.daysOfTheWeek.thu === otherITask.daysOfTheWeek.thu &&
-      this.daysOfTheWeek.fri === otherITask.daysOfTheWeek.fri &&
-      this.daysOfTheWeek.sat === otherITask.daysOfTheWeek.sat &&
-      this.daysOfTheWeek.sun === otherITask.daysOfTheWeek.sun
-  }
-}
-
 export interface TodayItem {
   description: string;
   done: boolean;
   id: string;
   disabled: boolean;
+  dayOfTheWeekId: string;
+  timeOfDayEncrypted: string;
 }
 
 export interface TasksListItem {
@@ -52,12 +14,6 @@ export interface TasksListItem {
   timesOfDay: string[] | string;
   daysOfTheWeek: string;
   id: string;
-}
-
-export interface TimeOfDayFirestore {
-  prev?: string;
-  next?: string;
-  counter: number;
 }
 
 export interface HTTPSuccess {
@@ -72,9 +28,57 @@ export interface HTTPError {
   details: string;
 }
 
-export interface Round {
-  id: string;
-  name: string;
+export interface TaskForm {
+  description: string;
+  daysOfTheWeek: {[key in Day]: boolean};
   timesOfDay: string[];
+}
+
+export interface Task {
+  description: string;
+  timesOfDay: string[];
+  daysOfTheWeek: Day[];
+}
+
+export interface EncryptedTask {
+  description: string;
+  timesOfDay: string;
+  daysOfTheWeek: string;
+}
+
+export interface Round {
+  timesOfDayEncrypted?: string[];
+  id?: string;
   taskSize: number;
+  timesOfDay: string[];
+  timesOfDayCardinality: number[];
+  name: string;
+}
+
+export interface EncryptedRound {
+  taskSize: string;
+  timesOfDay: string[];
+  timesOfDayCardinality: string;
+  name: string;
+}
+
+export interface TimesOfDay {
+  taskSize?: number;
+  timesOfDay?: string[];
+  timesOfDayCardinality?: number[];
+}
+
+export interface User {
+  rounds?: string[];
+}
+
+export interface TodayTask {
+  description: string;
+  timesOfDay: {[key in string]: boolean};
+  timesOfDayEncryptedMap: {[key in string]: string}
+}
+
+export interface EncryptedTodayTask {
+  description: string;
+  timesOfDay: {[key in string]: boolean};
 }

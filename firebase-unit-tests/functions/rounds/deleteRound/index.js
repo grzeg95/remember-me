@@ -176,7 +176,7 @@ describe(`deleteRound`, async () => {
     expect(emptyRounds['rounds']).to.eql(user[myId]['fields']['rounds']);
     expect(emptyRounds['collections']).to.eql(user[myId]['collections']['rounds']);
 
-  }).timeout(10000);
+  }).timeout(50000);
 
   it(`create two, fill first with 25 tasks then remove`, async () => {
 
@@ -235,5 +235,5 @@ describe(`deleteRound`, async () => {
     expect(emptyRounds['rounds']).to.eql(user[myId]['fields']['rounds']);
     expect(emptyRounds['collections']).to.eql(user[myId]['collections']['rounds']);
 
-  }).timeout(10000);
+  }).timeout(50000);
 });

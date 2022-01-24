@@ -163,24 +163,24 @@ export class TodayComponent implements OnInit, OnDestroy {
     });
   }
 
-  setProgress(checkbox: TodayItem, event: Event, taskId: string, timeOfDay: string): void {
+  setProgress(todayItem: TodayItem, event: Event): void {
 
     event.preventDefault();
 
-    if (checkbox.disabled) {
+    if (todayItem.disabled) {
       return;
     }
 
-    checkbox.disabled = true;
+    todayItem.disabled = true;
 
-    const toMerge = JSON.parse(`{"timesOfDay": {"${timeOfDay}": ${!checkbox.done}}}`);
+    const toMerge = JSON.parse(`{"timesOfDay": {"${todayItem.timeOfDayEncrypted}": ${!todayItem.done}}}`);
 
-    this.afs.doc(`/users/${this.authService.userData.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${this.roundsService.todayName$.value}/task/${taskId}`).set(toMerge, {merge: true}).then(() => {
-      checkbox.disabled = false;
+    this.afs.doc(`/users/${this.authService.userData.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`).set(toMerge, {merge: true}).then(() => {
+      todayItem.disabled = false;
     }).catch(() => {
       this.zone.run(() => {
         if (!this.destroyed) {
-          checkbox.disabled = false;
+          todayItem.disabled = false;
           this.snackBar.open('Some went wrong 🤫 Try again 🙂');
           this.changeDay();
         }

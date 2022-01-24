@@ -16,6 +16,8 @@
   },
   "private": true,
   "dependencies": {
+    "crypto-js": "^4.1.1",
+    "fast-crc32c": "^2.0.0",
     "@angular/animations": "~12.2.4",
     "@angular/cdk": "~12.2.4",
     "@angular/common": "~12.2.4",
@@ -49,6 +51,7 @@
     "zone.js": "~0.11.4"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.1.0",
     "@angular-devkit/build-angular": "~12.2.4",
     "@angular/cli": "~12.2.4",
     "@angular/compiler-cli": "~12.2.4",

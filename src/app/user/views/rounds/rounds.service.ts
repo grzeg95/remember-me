@@ -2,9 +2,10 @@ import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AuthService} from '../../../auth/auth.service';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {filter, map, switchMap, take} from 'rxjs/operators';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
-import {Round} from '../../models';
+import {decryptRound} from '../../../security';
+import {EncryptedRound, Round} from '../../models';
 import {ActivatedRoute} from '@angular/router';
 import {TaskService} from './round/tasks/task/task.service';
 
@@ -81,45 +82,61 @@ export class RoundsService {
 
   protected runRoundsList(): void {
 
-    this.roundsListSub = this.afs.collection<Round>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.orderBy('name', 'asc').limit(5)).snapshotChanges().pipe(
-      map((e) => {
-        return e.filter((q) => q.type !== 'removed').reduce((previousValue, currentValue) => {
-          return {
-            ...previousValue,
-            [currentValue.payload.doc.id]: {...currentValue.payload.doc.data(), id: currentValue.payload.doc.id}
-          };
-        }, {});
-      })
-    ).subscribe((roundsList) => {
-      const roundsOrder = this.roundsOrder$.value;
-      if (roundsOrder.length) {
-        this.roundsList$.next(roundsOrder.map((orderId) => roundsList[orderId]));
-      } else {
-        this.roundsList$.next(Object.values(roundsList));
-      }
-      this.roundsListFirstLoad$.next(false);
-      this.checkSelectedRound(this.roundsList$.value);
-    });
+    this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
+      this.roundsListSub = this.afs.collection<EncryptedRound>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.orderBy('name', 'asc').limit(5)).snapshotChanges().pipe(
+        map((e) => {
+          return e.filter((q) => q.type !== 'removed').reduce((previousValue, currentValue) => {
+            return {
+              ...previousValue,
+              [currentValue.payload.doc.id]: {...currentValue.payload.doc.data(), id: currentValue.payload.doc.id}
+            };
+          }, {});
+        }),
+        map((roundsEncrypted: {[ken in string]: EncryptedRound}) => {
+          const rounds: {[ken in string]: Round} = {};
+          for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
+            rounds[id] = decryptRound(roundsEncrypted[id], this.authService.userData.privateKey);
+            rounds[id].id = id;
+            rounds[id].timesOfDayEncrypted = roundsEncrypted[id].timesOfDay;
+          }
+          return rounds;
+        })
+      ).subscribe((roundsList) => {
 
-    this.roundsOrderSub = this.authService.user$.subscribe((user) => {
-      if (user?.rounds) {
+        console.log(roundsList);
 
-        const roundsList = this.roundsList$.value;
-
-        if (roundsList.length) {
-          this.roundsList$.next(roundsList);
+        const roundsOrder = this.roundsOrder$.value;
+        if (roundsOrder.length) {
+          this.roundsList$.next(roundsOrder.map((orderId) => roundsList[orderId]));
+        } else {
+          this.roundsList$.next(Object.values(roundsList));
         }
+        this.roundsListFirstLoad$.next(false);
+        this.checkSelectedRound(this.roundsList$.value);
+      });
 
-        this.roundsOrder$.next(user.rounds);
-        this.checkSelectedRound(roundsList);
-      }
-      this.roundsOrderFirstLoading$.next(false);
+      this.roundsOrderSub = this.authService.user$.subscribe((user) => {
+        if (user?.rounds) {
+
+          const roundsList = this.roundsList$.value;
+
+          if (roundsList.length) {
+            this.roundsList$.next(roundsList);
+          }
+
+          this.roundsOrder$.next(user.rounds);
+          this.checkSelectedRound(roundsList);
+        }
+        this.roundsOrderFirstLoading$.next(false);
+      });
     });
   }
 
   protected runParamRoundIdSelected(): void {
-    this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.subscribe((roundParamIdSelected) => {
-      this.checkSelectedRound(this.roundsList$.value, roundParamIdSelected);
+    this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
+      this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.subscribe((roundParamIdSelected) => {
+        this.checkSelectedRound(this.roundsList$.value, roundParamIdSelected);
+      });
     });
   }
 
@@ -178,15 +195,21 @@ export class RoundsService {
     });
   }
 
-  getRoundById$(roundId: string): Observable<Round | undefined> {
+  getRoundById$(roundId: string): Observable<Round | null> {
 
-    return this.afs.doc<Round>(`users/${this.authService.userData.uid}/rounds/${roundId}`).get().pipe(
-      map((docSnap) => {
-        const round = docSnap.data();
-        if (round) {
-          return round;
-        }
-        return null;
+    return this.authService.userIsReady$.pipe(
+      filter((isReady) => isReady),
+      take(1),
+      switchMap(() => {
+        return this.afs.doc<EncryptedRound>(`users/${this.authService.userData.uid}/rounds/${roundId}`).get().pipe(
+          map((docSnap) => {
+            const round = docSnap.data();
+            if (round) {
+              return decryptRound(round, this.authService.userData.privateKey);
+            }
+            return null;
+          })
+        );
       })
     );
   }

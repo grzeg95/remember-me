@@ -1,8 +1,22 @@
 import {Day} from '../../../../../../../../functions/src/helpers/models';
 
 export class TaskService {
+  dayMap: {[key in Day]: number} = {
+    mon: 64,
+    tue: 32,
+    wed: 16,
+    thu: 8,
+    fri: 4,
+    sat: 2,
+    sun: 1
+  };
 
   dayToApply: Day;
+
+  dayIsInNumber = (number: number, day: Day): boolean => {
+    // tslint:disable-next-line:no-bitwise
+    return (this.dayMap[day] & number) !== 0;
+  };
 
   daysBooleanMapToDayArray = (map: {[day in Day]: boolean}): Day[] => {
 
@@ -16,6 +30,18 @@ export class TaskService {
 
     return dayArray;
   }
+
+  numberToDaysBooleanMap = (number: number): {[day in Day]: boolean} => {
+    return {
+      mon: this.dayIsInNumber(number, 'mon'),
+      tue: this.dayIsInNumber(number, 'tue'),
+      wed: this.dayIsInNumber(number, 'wed'),
+      thu: this.dayIsInNumber(number, 'thu'),
+      fri: this.dayIsInNumber(number, 'fri'),
+      sat: this.dayIsInNumber(number, 'sat'),
+      sun: this.dayIsInNumber(number, 'sun')
+    };
+  };
 
   dayArrayToDaysBooleanMap = (array: Day[]): {[day in Day]: boolean} => {
 

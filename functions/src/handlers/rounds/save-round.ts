@@ -1,11 +1,9 @@
 import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {EncryptedRound} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {firestore} from 'firebase-admin';
 import {getUser, writeUser} from '../../helpers/user';
-import {decrypt} from '../../security/decrypt';
-import {decryptPrivateKey} from '../../security/decrypt-private-key';
-import {decryptRound} from '../../security/decrypt-round';
-import {encrypt} from '../../security/encrypt';
+import {decrypt, decryptPrivateKey, decryptRound, encrypt, encryptRound} from '../../security/security';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
@@ -59,7 +57,13 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
 
     // get private key
-    const privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
+    // TODO
+    let privateKey: string;
+    if (context.auth?.token.decryptedPrivateKey) {
+      privateKey = context.auth?.token.decryptedPrivateKey;
+    } else {
+      privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
+    }
 
     const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
     const userDocSnapData = userDocSnap.data();
@@ -74,12 +78,12 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
       testRequirement(rounds.length >= 5, `You can own 5 rounds 🤔`);
 
       roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
-      transaction.create(roundDocSnap.ref, {
-        taskSize: encrypt(0, privateKey),
-        timesOfDay: encrypt([], privateKey),
-        timesOfDayCardinality: encrypt([], privateKey),
-        name: encrypt(data.name, privateKey)
-      });
+      transaction.create(roundDocSnap.ref, encryptRound({
+        taskSize: 0,
+        timesOfDay: [],
+        timesOfDayCardinality: [],
+        name: data.name
+      }, privateKey));
 
       roundId = roundDocSnap.id;
       rounds.push(roundId);
@@ -89,7 +93,7 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     } else {
 
       roundDocSnap = roundDocSnapTmp;
-      const roundDocSnapData = decryptRound(roundDocSnap.data(), privateKey);
+      const roundDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, privateKey);
       /*
       * Check if name was changed
       * */

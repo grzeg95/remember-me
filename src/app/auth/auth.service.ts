@@ -1,11 +1,13 @@
 import {Injectable} from '@angular/core';
 import {AngularFireAuth} from '@angular/fire/compat/auth';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
+import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
+import * as CryptoJS from 'crypto-js';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {HTTPError} from '../user/models';
-import {User, UserData} from './user-data.model';
+import {User, UserData, EncryptedUser} from './user-data.model';
 import {GoogleAuthProvider, FacebookAuthProvider} from 'firebase/auth';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
@@ -19,12 +21,14 @@ export class AuthService {
   whileLoginIn = false;
   firstLoginChecking = true;
   userIntervalReloadSub: Subscription;
+  userIsReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
     private afs: AngularFirestore,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private fns: AngularFireFunctions
   ) {
     this.afAuth.authState.subscribe((user) => {
 
@@ -32,6 +36,20 @@ export class AuthService {
       this.unsubscribeUserDocSub();
 
       if (user) {
+
+        user.getIdTokenResult(true).then((token) => {
+          if (!token.claims.privateKey) {
+            console.log('user.reload()');
+            user.reload().then(() => {});
+          } else {
+            console.log(token.claims.privateKey);
+            this.fns.httpsCallable('decryptAsymmetricByPrivateKey')(null).subscribe((success) => {
+              console.log(success);
+              this.userData.privateKey = success;
+              this.userIsReady$.next(true);
+            });
+          }
+        });
 
         this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
           this.afAuth.currentUser.then((user) => {
@@ -45,7 +63,7 @@ export class AuthService {
           this.userDocSub.unsubscribe();
         }
 
-        this.userDocSub = this.afs.doc<User>(`users/${user.uid}`).snapshotChanges().pipe(
+        this.userDocSub = this.afs.doc<EncryptedUser>(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
             if (error.code === 'permission-denied') {
               this.signOut();
@@ -53,9 +71,19 @@ export class AuthService {
             throw error;
           })
         ).subscribe((userDoc) => {
+
+          let rounds = [];
+
+          if (userDoc.payload.data()?.rounds) {
+            rounds = JSON.parse(
+              CryptoJS.AES.decrypt(userDoc.payload.data()?.rounds, this.userData.privateKey).toString(CryptoJS.enc.Utf8)
+            )
+          }
+
           this.user$.next({
-            rounds: userDoc.payload.data()?.rounds || []
+            rounds
           });
+
         });
 
         this.userData = {
@@ -63,7 +91,8 @@ export class AuthService {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          emailVerified: user.emailVerified
+          emailVerified: user.emailVerified,
+          privateKey: null
         };
       } else {
         this.userData = null;

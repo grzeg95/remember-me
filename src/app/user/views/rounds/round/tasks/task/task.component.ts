@@ -13,7 +13,7 @@ import '../../../../../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {AppService} from '../../../../../../app-service';
 import {RouterDict} from '../../../../../../app.constants';
-import {HTTPError, HTTPSuccess, ITask, ITaskFirestore, Round, Task} from '../../../../../models';
+import {HTTPError, HTTPSuccess, Round, TaskForm, Task} from '../../../../../models';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskService} from './task.service';
 import {RoundService} from '../../round.service';
@@ -44,7 +44,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     return this.appService.isOnline$;
   }
 
-  initValues: Task = new Task({
+  initValues: TaskForm = {
     daysOfTheWeek: {
       mon: false,
       tue: false,
@@ -56,7 +56,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     },
     description: '',
     timesOfDay: []
-  });
+  };
   id = 'null';
   taskForm: FormGroup = new FormGroup({
     description: new FormControl('', TaskComponent.descriptionValidator),
@@ -90,18 +90,18 @@ export class TaskComponent implements OnInit, OnDestroy {
   saveTaskSub: Subscription;
 
   constructor(
-      private activeRoute: ActivatedRoute,
-      private location: Location,
-      private fns: AngularFireFunctions,
-      public dialog: MatDialog,
-      private snackBar: MatSnackBar,
-      private appService: AppService,
-      private roundService: RoundService,
-      private zone: NgZone,
-      private taskService: TaskService,
-      private roundsService: RoundsService,
-      private router: Router,
-      private route: ActivatedRoute
+    private activeRoute: ActivatedRoute,
+    private location: Location,
+    private fns: AngularFireFunctions,
+    public dialog: MatDialog,
+    private snackBar: MatSnackBar,
+    private appService: AppService,
+    private roundService: RoundService,
+    private zone: NgZone,
+    private taskService: TaskService,
+    private roundsService: RoundsService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -246,10 +246,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-
-    if (this.isConnectedSub && !this.isConnectedSub.closed) {
-      this.isConnectedSub.unsubscribe();
-    }
+    this.isConnectedSub.unsubscribe();
 
     if (this.getTaskByIdSub && !this.getTaskByIdSub.closed) {
       this.getTaskByIdSub.unsubscribe();
@@ -263,9 +260,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.timeOfDayValueChanges.unsubscribe();
     }
 
-    if (this.roundSelectedSub && !this.roundSelectedSub.closed) {
-      this.roundSelectedSub.unsubscribe();
-    }
+    this.roundSelectedSub.unsubscribe();
 
     if (this.asapSchedulerForDayToApplySub && !this.asapSchedulerForDayToApplySub.closed) {
       this.asapSchedulerForDayToApplySub.unsubscribe();
@@ -303,11 +298,11 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.getTaskByIdSub.unsubscribe();
       }
 
-      this.getTaskByIdSub = this.roundService.getTaskById$(this.id, this.round.id).subscribe((iTask) => {
-        if (typeof iTask === 'undefined') {
+      this.getTaskByIdSub = this.roundService.getTaskById$(this.id, this.round.id).subscribe((task) => {
+        if (typeof task === 'undefined') {
           this.deepResetForm();
-        } else if (iTask) {
-          this.setAll(iTask);
+        } else if (task) {
+          this.setAll(task);
         }
         this.savingInProgress = false;
       });
@@ -348,20 +343,17 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.taskForm.disable();
     this.savingInProgress = true;
 
-    const iTask = this.taskForm.getRawValue() as ITask;
-    const trimDescription = iTask.description.trim();
-    iTask.description = trimDescription;
+    const task = this.taskForm.getRawValue() as TaskForm;
+    const trimDescription = task.description.trim();
+    task.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
-    delete iTask['timeOfDay'];
-
-    const iTaskFirestore: ITaskFirestore = {
-      description: iTask.description,
-      daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(iTask.daysOfTheWeek),
-      timesOfDay: iTask.timesOfDay
-    };
 
     this.saveTaskSub = this.fns.httpsCallable('saveTask')({
-      task: iTaskFirestore,
+      task: {
+        description: task.description,
+        daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
+        timesOfDay: task.timesOfDay
+      },
       taskId: this.id,
       roundId: this.roundsService.roundSelected$.value.id
     }).subscribe((success: HTTPSuccess) => {
@@ -372,7 +364,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
         this.id = success.taskId;
         this.savingInProgress = false;
-        this.initValues = new Task(iTask);
+        this.initValues = this.taskForm.getRawValue();
         this.taskForm.enable();
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
@@ -385,7 +377,18 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   nothingChanged(): boolean {
-    return this.initValues.isEquals(this.taskForm.getRawValue() as ITask);
+
+    const raw = this.taskForm.getRawValue();
+
+    return this.initValues.description.trim() === raw.description.trim() &&
+      this.initValues.timesOfDay.toSet().hasOnly(raw.timesOfDay.toSet()) &&
+      this.initValues.daysOfTheWeek.mon === raw.daysOfTheWeek.mon &&
+      this.initValues.daysOfTheWeek.tue === raw.daysOfTheWeek.tue &&
+      this.initValues.daysOfTheWeek.wed === raw.daysOfTheWeek.wed &&
+      this.initValues.daysOfTheWeek.thu === raw.daysOfTheWeek.thu &&
+      this.initValues.daysOfTheWeek.fri === raw.daysOfTheWeek.fri &&
+      this.initValues.daysOfTheWeek.sat === raw.daysOfTheWeek.sat &&
+      this.initValues.daysOfTheWeek.sun === raw.daysOfTheWeek.sun
   }
 
   deepResetForm(): void {
@@ -422,7 +425,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     (this.taskForm.get('timesOfDay') as FormArray).clear();
 
-    this.initValues = new Task({
+    this.initValues = {
       daysOfTheWeek: {
         mon: false,
         tue: false,
@@ -434,7 +437,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       },
       description: '',
       timesOfDay: []
-    });
+    };
   }
 
   deleteTask(): void {
@@ -468,15 +471,27 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   }
 
-  setAll(iTask: ITask): void {
+  setAll(task: Task): void {
 
     this.restartForm();
     this.taskForm.disable();
-    this.initValues = new Task(iTask);
-    this.taskForm.get('description').setValue(iTask.description);
-    this.taskForm.get('daysOfTheWeek').setValue(iTask.daysOfTheWeek);
+    this.initValues = {
+      daysOfTheWeek: {
+        mon: false,
+        tue: false,
+        wed: false,
+        thu: false,
+        fri: false,
+        sat: false,
+        sun: false
+      },
+      description: '',
+      timesOfDay: []
+    };
+    this.taskForm.get('description').setValue(task.description);
+    this.taskForm.get('daysOfTheWeek').setValue(this.taskService.dayArrayToDaysBooleanMap(task.daysOfTheWeek));
 
-    (iTask.timesOfDay as string[]).forEach((timeOfDay) => {
+    (task.timesOfDay as string[]).forEach((timeOfDay) => {
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
     });
 

@@ -2,9 +2,7 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser, writeUser} from '../../helpers/user';
-import {decrypt} from '../../security/decrypt';
-import {decryptPrivateKey} from '../../security/decrypt-private-key';
-import {encrypt} from '../../security/encrypt';
+import {decrypt, decryptPrivateKey, encrypt} from '../../security/security';
 
 const app = firestore();
 
@@ -24,8 +22,13 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
   return app.runTransaction(async (transaction) => {
 
     // get private key
-    const privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
-    testRequirement(typeof privateKey !== 'string' || privateKey.length === 0)
+    // TODO
+    let privateKey: string;
+    if (context.auth?.token.decryptedPrivateKey) {
+      privateKey = context.auth?.token.decryptedPrivateKey;
+    } else {
+      privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
+    }
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));

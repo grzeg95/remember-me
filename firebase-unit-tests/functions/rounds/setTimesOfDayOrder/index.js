@@ -3,6 +3,7 @@ const {chai, test, myFunctions, myAuth, myId, firestore, removeUser, getResult} 
 
 const expect = chai.expect;
 const tests = require('./tests.json');
+const {encryptRound, decryptRound} = require("../../../../functions/lib/functions/src/security/security");
 const setTimesOfDayOrder = test.wrap(myFunctions.setTimesOfDayOrder);
 const saveRound = test.wrap(myFunctions.saveRound);
 
@@ -60,25 +61,26 @@ describe(`setTimesOfDayOrder`, () => {
         const startTimesOfDay = test.from.split('');
         const startTimesOfDayCardinality = [...Array(startTimesOfDay.length).keys()].map(e => e+1);
 
-        await firestore.collection('users').doc(myId).collection('rounds').doc(roundId).set({
+        await firestore.collection('users').doc(myId).collection('rounds').doc(roundId).set(encryptRound({
           timesOfDay: startTimesOfDay,
-          timesOfDayCardinality: startTimesOfDayCardinality
-        });
+          timesOfDayCardinality: startTimesOfDayCardinality,
+          taskSize: 1,
+          name: 'lol'
+        }, myAuth.auth.token.decryptedPrivateKey));
 
         const result = await getResult(setTimesOfDayOrder, {timeOfDay: test.args[0], moveBy: test.args[1], roundId}, myAuth);
         expect(result).to.eql(test.expected);
 
         const roundDocSnap = await firestore.collection('users').doc(myId).collection('rounds').doc(roundId).get();
-        const toCompare = {
-          timesOfDay: roundDocSnap.data().timesOfDay,
-          timesOfDayCardinality: roundDocSnap.data().timesOfDayCardinality
-        };
+        const toCompare = decryptRound(roundDocSnap.data(), myAuth.auth.token.decryptedPrivateKey);
 
         const endTimesOfDayCardinality = test.to.split('').map((e) => startTimesOfDayCardinality[startTimesOfDay.indexOf(e)]);
 
         expect({
           timesOfDay: test.to.split(''),
-          timesOfDayCardinality: endTimesOfDayCardinality
+          timesOfDayCardinality: endTimesOfDayCardinality,
+          name: 'lol',
+          taskSize: 1
         }).to.eql(toCompare);
       }));
     });

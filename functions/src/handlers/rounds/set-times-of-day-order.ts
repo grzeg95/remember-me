@@ -1,7 +1,9 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {EncryptedRound} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
+import {decryptPrivateKey, decryptRound, encryptRound} from '../../security/security';
 
 const app = firestore();
 
@@ -52,14 +54,23 @@ export const handler = async (data: any, context: CallableContext) => {
     const roundId = data.roundId;
     const moveBy = data.moveBy;
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
-    const timesOfDayDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
     // check if timeOfDay exists
-    testRequirement(!timesOfDayDocSnap.exists);
+    testRequirement(!roundDocSnap.exists);
 
-    const timesOfDayDocSnapData = timesOfDayDocSnap.data();
-    const timesOfDay: string[] = timesOfDayDocSnapData?.timesOfDay || [];
-    const timesOfDayCardinality: number[] = timesOfDayDocSnapData?.timesOfDayCardinality || [];
+    // get private key
+    // TODO
+    let privateKey: string;
+    if (context.auth?.token.decryptedPrivateKey) {
+      privateKey = context.auth?.token.decryptedPrivateKey;
+    } else {
+      privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
+    }
+
+    const timesOfDayDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, privateKey);
+    const timesOfDay = timesOfDayDocSnapData.timesOfDay;
+    const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
 
     testRequirement(toMoveIndex === -1);
@@ -70,8 +81,14 @@ export const handler = async (data: any, context: CallableContext) => {
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
     // update user
-    const timesOfDayDataToWrite = {timesOfDay, timesOfDayCardinality};
-    transaction.update(timesOfDayDocSnap.ref, timesOfDayDataToWrite);
+    const timesOfDayDataToWrite = encryptRound({
+      name: timesOfDayDocSnapData.name,
+      taskSize: timesOfDayDocSnapData.taskSize,
+      timesOfDay,
+      timesOfDayCardinality
+    }, privateKey);
+
+    transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);
 
     return transaction;
 

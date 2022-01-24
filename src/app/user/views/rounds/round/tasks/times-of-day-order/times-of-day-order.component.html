@@ -2,10 +2,10 @@
 
   <div class="col" [ngClass]="{'disabled': setTimesOfDayOrderSub && !setTimesOfDayOrderSub.closed}">
 
-    <ng-template *ngIf="!timesOfDay || (timesOfDay && timesOfDay.length === 0); then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="!roundSelected || (roundSelected && roundSelected.timesOfDay && roundSelected.timesOfDay.length === 0); then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div *ngIf="!timesOfDay || (roundsOrderFirstLoading$ | async) && (isOnline$ | async); else onOneExists" class="row message">
+      <div *ngIf="!roundSelected || !roundSelected.timesOfDay || (roundsOrderFirstLoading$ | async) && (isOnline$ | async); else onOneExists" class="row message">
         <div class="col">
           <app-loading-text></app-loading-text>
         </div>
@@ -38,7 +38,7 @@
           <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
 
           <div [cdkDropListDisabled]="!(isOnline$ | async)" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
-            <div cdkDrag class="drag-item mat-cell" [class.disabled]="!(isOnline$ | async)" *ngFor="let item of timesOfDay; let i = index">
+            <div cdkDrag class="drag-item mat-cell" [class.disabled]="!(isOnline$ | async)" *ngFor="let item of roundSelected.timesOfDay; let i = index">
               <span class="drag-span">{{ item }}</span>
               <fa-icon class="drag-icon" [icon]="faGripLines"></fa-icon>
             </div>

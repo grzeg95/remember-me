@@ -1,49 +1,54 @@
 rules_version = '2';
 
 service cloud.firestore {
-    match /databases/{database}/documents/users/{userId} {
+  match /databases/{database}/documents/users/{userId} {
 
-        // https://firebase.google.com/docs/firestore/pricing#firestore-rules
-        // You are only charged one read per dependent document even if your rules refer to that document more than once
-        function userIsOk() {
-            return userId == request.auth.uid
-            && !(
-                exists(/databases/$(database)/documents/users/$(request.auth.uid))
-                && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
-            );
-        }
-
-        allow get: if userIsOk();
-
-        match /rounds/{roundId} {
-
-            allow list: if userIsOk()
-                           && request.query.orderBy.name == 'ASC'
-                           && request.query.limit == 5;
-
-            allow get: if userIsOk();
-
-            match /today/{day}/task/{taskId} {
-                allow list: if userIsOk()
-                               && day in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-                               && request.query.orderBy.description == 'ASC'
-                               && request.query.limit == 25;
-
-                // set progress
-                allow update: if userIsOk()
-                                 && exists(/databases/$(database)/documents/users/$(userId)/rounds/$(roundId)/task/$(taskId))
-                                 && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
-                                 && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
-                                 && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
-                                 && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false]);
-            }
-
-            match /task/{taskId} {
-                allow get: if userIsOk();
-                allow list: if userIsOk()
-                               && request.query.orderBy.description == 'ASC'
-                               && request.query.limit == 25;
-            }
-        }
+    // https://firebase.google.com/docs/firestore/pricing#firestore-rules
+    // You are only charged one read per dependent document even if your rules refer to that document more than once
+    function userIsOk() {
+      return userId == request.auth.uid
+             && !(
+        exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false)
+      );
     }
+
+    allow get: if userIsOk();
+
+    match /rounds/{roundId} {
+
+      allow list: if userIsOk()
+                     && request.query.orderBy.name == 'ASC'
+                     && request.query.limit == 5;
+
+      allow get: if userIsOk();
+
+      match /today/{day} {
+
+        allow list: if userIsOk();
+
+        match /task/{taskId} {
+          allow list: if userIsOk()
+                         && request.query.limit == 25;
+
+          // set progress
+          allow update: if userIsOk()
+                           && exists(/databases/$(database)/documents/users/$(userId)/rounds/$(roundId)/task/$(taskId))
+                           && request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet()
+                           && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1
+                           && request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1
+                           && request.resource.data.timesOfDay.values().toSet().hasOnly([true, false]);
+        }
+      }
+
+
+
+      match /task/{taskId} {
+        allow get: if userIsOk();
+        allow list: if userIsOk()
+                       && request.query.orderBy.description == 'ASC'
+                       && request.query.limit == 25;
+      }
+    }
+  }
 }

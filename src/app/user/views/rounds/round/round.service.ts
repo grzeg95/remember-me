@@ -2,13 +2,13 @@ import {Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {RouterDict} from '../../../../app.constants';
-import {ITask, ITaskFirestore, Round, Task, TasksListItem, TodayItem} from '../../../models';
+import {decrypt, decryptTask, decryptTodayTask} from '../../../../security';
+import {EncryptedTask, Round, TasksListItem, TodayItem, Task, EncryptedTodayTask} from '../../../models';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AuthService} from '../../../../auth/auth.service';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {AppService} from '../../../../app-service';
-import {TaskService} from './tasks/task/task.service';
-import {filter, map, skip, take} from 'rxjs/operators';
+import {filter, map, skip, switchMap, take} from 'rxjs/operators';
 import {RoundsService} from '../rounds.service';
 
 @Injectable()
@@ -42,8 +42,11 @@ export class RoundService {
   private todaySub: Subscription;
   private tasksListSub: Subscription;
   private lastRound: Round;
+  todayDocsSub: Subscription;
 
   clearCache(): void {
+
+    console.log('clear cache');
 
     this.today$.next({});
     this.tasks$.next([]);
@@ -61,6 +64,10 @@ export class RoundService {
     if (this.tasksListSub && !this.tasksListSub.closed) {
       this.tasksListSub.unsubscribe();
     }
+
+    if (this.todayDocsSub && !this.todayDocsSub.closed) {
+      this.todayDocsSub.unsubscribe();
+    }
   }
 
   constructor(
@@ -68,7 +75,6 @@ export class RoundService {
     private authService: AuthService,
     private fns: AngularFireFunctions,
     private appService: AppService,
-    private taskService: TaskService,
     private roundsService: RoundsService,
     private router: Router
   ) {
@@ -119,98 +125,148 @@ export class RoundService {
 
   runToday(round: Round): void {
 
-    if (this.roundsService.lastTodayName !== this.roundsService.todayName$.getValue() && this.todaySub && !this.todaySub.closed) {
-      this.todaySub.unsubscribe();
-    }
+    this.authService.userIsReady$.pipe(
+      filter((isReady) => isReady),
+      take(1)
+    ).subscribe(() => {
+      if (this.roundsService.lastTodayName !== this.roundsService.todayName$.getValue() && this.todaySub && !this.todaySub.closed) {
+        this.todaySub.unsubscribe();
+      }
 
-    this.roundsService.lastTodayName = this.roundsService.todayName$.getValue();
-    this.roundsService.now$.next(new Date());
+      this.roundsService.lastTodayName = this.roundsService.todayName$.getValue();
+      this.roundsService.now$.next(new Date());
 
-    if (this.todaySub && !this.todaySub.closed || !round) {
-      return;
-    }
+      if (this.todaySub && !this.todaySub.closed || !round) {
+        return;
+      }
 
-    this.todaySub = this.afs.doc(`users/${this.authService.userData.uid}/rounds/${round.id}/today/${this.roundsService.todayName$.value}`)
-      .collection<Task>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
-      .snapshotChanges().pipe(
-        map((documentChangeActionArr) => {
+      if (this.todayDocsSub && !this.todayDocsSub.closed) {
+        this.todayDocsSub.unsubscribe();
+      }
 
-          const todayTasksByTimeOfDay: { [timeOfDay: string]: TodayItem[] } = {};
+      this.todayDocsSub = this.afs.collection(`/users/${this.authService.userData.uid}/rounds/${round.id}/today`).snapshotChanges().subscribe((some) => {
 
-          documentChangeActionArr.forEach((documentChangeAction) => {
+        const todayName = this.roundsService.todayName$.value;
 
-            const task: Task = documentChangeAction.payload.doc.data() as Task;
+        const documentChangeActionToday = some.find((doc) => {
+          const name = decrypt((doc.payload.doc.data() as {name: string})?.name, this.authService.userData.privateKey);
+          return name.substring(1, name.length-1) === todayName;
+        });
 
-            Object.keys(task.timesOfDay).forEach((timeOfDay) => {
-              if (!todayTasksByTimeOfDay[timeOfDay]) {
-                todayTasksByTimeOfDay[timeOfDay] = [];
-              }
-              todayTasksByTimeOfDay[timeOfDay].push({
-                description: task.description,
-                done: task.timesOfDay[timeOfDay],
-                id: documentChangeAction.payload.doc.id,
-                disabled: false
-              });
-            });
-
-          });
-
-          return todayTasksByTimeOfDay;
-
-        })
-      ).subscribe((today) => {
-        if (today) {
-          this.today$.next(today);
+        if (this.todaySub && !this.todaySub.closed) {
+          this.todaySub.unsubscribe();
         }
-        this.todayFirstLoading$.next(false);
+
+        if (!documentChangeActionToday) {
+          this.today$.next({});
+          this.todayFirstLoading$.next(false);
+          return;
+        }
+
+        this.todaySub = this.afs.doc(documentChangeActionToday.payload.doc.ref.path).collection<EncryptedTodayTask>('task', (ref) => ref.limit(25))
+          .snapshotChanges().pipe(
+            map((documentChangeActionArr) => {
+
+              const todayTasksByTimeOfDay: { [timeOfDay: string]: any[] } = {};
+
+              documentChangeActionArr.forEach((documentChangeAction) => {
+
+                const task = decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.privateKey);
+
+                Object.keys(task.timesOfDay).forEach((timeOfDay) => {
+                  if (!todayTasksByTimeOfDay[timeOfDay]) {
+                    todayTasksByTimeOfDay[timeOfDay] = [];
+                  }
+                  todayTasksByTimeOfDay[timeOfDay].push({
+                    description: task.description,
+                    done: task.timesOfDay[timeOfDay],
+                    id: documentChangeAction.payload.doc.id,
+                    disabled: false,
+                    dayOfTheWeekId: documentChangeActionToday.payload.doc.id,
+                    timeOfDayEncrypted: task.timesOfDayEncryptedMap[timeOfDay]
+                  });
+                });
+
+              });
+
+              return todayTasksByTimeOfDay;
+
+            })
+          ).subscribe((today) => {
+            if (today) {
+              this.today$.next(today);
+            }
+            this.todayFirstLoading$.next(false);
+          });
       });
+    });
   }
 
   runTasksList(round: Round): void {
 
-    if (this.tasksListSub && !this.tasksListSub.closed || !round) {
-      return;
-    }
+    this.authService.userIsReady$.pipe(
+      filter((isReady) => isReady),
+      take(1)
+    ).subscribe(() => {
+      if (this.tasksListSub && !this.tasksListSub.closed || !round) {
+        return;
+      }
 
-    this.tasksListSub = this.afs.doc(`users/${this.authService.userData.uid}/rounds/${round.id}`)
-      .collection<ITaskFirestore>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
-      .snapshotChanges().pipe(
-        map((documentChangeActionArr) =>
-          documentChangeActionArr.map((documentChangeAction) => {
+      this.tasksListSub = this.afs.doc(`users/${this.authService.userData.uid}/rounds/${round.id}`)
+        .collection<EncryptedTask>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
+        .snapshotChanges().pipe(
+          map((documentChangeActionArr) =>
+            documentChangeActionArr.map((documentChangeAction) => {
 
-            const task = documentChangeAction.payload.doc.data() as ITaskFirestore;
+              const task = decryptTask(documentChangeAction.payload.doc.data() as EncryptedTask, this.authService.userData.privateKey);
 
-            return {
-              description: task.description,
-              timesOfDay: task.timesOfDay,
-              daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
-              id: documentChangeAction.payload.doc.id
-            } as TasksListItem;
-          })
-        )
-      ).subscribe((tasks) => {
-        if (tasks) {
-          this.tasks$.next(tasks);
-          this.tasksFirstLoading$.next(false);
-        }
-      });
+              console.log(task.timesOfDay);
+
+              return {
+                description: task.description,
+                timesOfDay: task.timesOfDay,
+                daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
+                id: documentChangeAction.payload.doc.id
+              } as TasksListItem;
+            })
+          )
+        ).subscribe((tasks) => {
+          if (tasks) {
+            this.tasks$.next(tasks);
+            this.tasksFirstLoading$.next(false);
+          }
+        });
+    });
   }
 
-  getTaskById$(id: string, roundId: string): Observable<ITask | undefined> {
+  getTaskById$(id: string, roundId: string): Observable<Task | null> {
 
-    return this.afs.doc<ITaskFirestore>(`users/${this.authService.userData.uid}/rounds/${roundId}/task/${id}`).get().pipe(
-      map((taskDocSnap) => {
-        const iTaskFirestore = taskDocSnap.data();
-        return !iTaskFirestore ? null : {
-          description: iTaskFirestore.description,
-          daysOfTheWeek: this.taskService.dayArrayToDaysBooleanMap(iTaskFirestore.daysOfTheWeek),
-          timesOfDay: [...iTaskFirestore.timesOfDay]
-        } as ITask;
-      })
-    );
+    return this.authService.userIsReady$.pipe(
+      filter((isReady) => isReady),
+      take(1),
+      switchMap(() => {
+        return this.afs.doc<EncryptedTask>(`users/${this.authService.userData.uid}/rounds/${roundId}/task/${id}`).get().pipe(
+          map((taskDocSnap) => {
+            const encryptedTask = taskDocSnap.data();
+
+            if (encryptedTask) {
+              return decryptTask(encryptedTask, this.authService.userData.privateKey);
+            }
+
+            return null;
+          })
+        );
+      }));
   }
 
   updateTimesOfDayOrder(data: { timeOfDay: string, moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
-    return this.fns.httpsCallable('setTimesOfDayOrder')(data);
+
+    return this.authService.userIsReady$.pipe(
+      filter((isReady) => isReady),
+      take(1),
+      switchMap(() => {
+        return this.fns.httpsCallable('setTimesOfDayOrder')(data);
+      })
+    );
   }
 }
