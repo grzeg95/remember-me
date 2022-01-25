@@ -3,7 +3,7 @@ import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {EncryptedRound} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
-import {decryptPrivateKey, decryptRound, encryptRound} from '../../security/security';
+import {decryptRound, decryptRsaKey, encryptRound, RsaKey} from '../../security/security';
 
 const app = firestore();
 
@@ -59,16 +59,16 @@ export const handler = async (data: any, context: CallableContext) => {
     // check if timeOfDay exists
     testRequirement(!roundDocSnap.exists);
 
-    // get private key
+    // get rsa key
     // TODO
-    let privateKey: string;
-    if (context.auth?.token.decryptedPrivateKey) {
-      privateKey = context.auth?.token.decryptedPrivateKey;
+    let rsaKey: RsaKey;
+    if (context.auth?.token.decryptedRsaKey) {
+      rsaKey = context.auth?.token.decryptedRsaKey;
     } else {
-      privateKey = await decryptPrivateKey(context.auth?.token.privateKey);
+      rsaKey = await decryptRsaKey(context.auth?.token.encryptedRsaKey);
     }
 
-    const timesOfDayDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, privateKey);
+    const timesOfDayDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, rsaKey);
     const timesOfDay = timesOfDayDocSnapData.timesOfDay;
     const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
@@ -86,7 +86,7 @@ export const handler = async (data: any, context: CallableContext) => {
       taskSize: timesOfDayDocSnapData.taskSize,
       timesOfDay,
       timesOfDayCardinality
-    }, privateKey);
+    }, rsaKey);
 
     transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);
 

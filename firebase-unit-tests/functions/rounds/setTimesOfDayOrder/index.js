@@ -66,13 +66,13 @@ describe(`setTimesOfDayOrder`, () => {
           timesOfDayCardinality: startTimesOfDayCardinality,
           taskSize: 1,
           name: 'lol'
-        }, myAuth.auth.token.decryptedPrivateKey));
+        }, myAuth.auth.token.decryptedRsaKey));
 
         const result = await getResult(setTimesOfDayOrder, {timeOfDay: test.args[0], moveBy: test.args[1], roundId}, myAuth);
         expect(result).to.eql(test.expected);
 
         const roundDocSnap = await firestore.collection('users').doc(myId).collection('rounds').doc(roundId).get();
-        const toCompare = decryptRound(roundDocSnap.data(), myAuth.auth.token.decryptedPrivateKey);
+        const toCompare = decryptRound(roundDocSnap.data(), myAuth.auth.token.decryptedRsaKey);
 
         const endTimesOfDayCardinality = test.to.split('').map((e) => startTimesOfDayCardinality[startTimesOfDay.indexOf(e)]);
 

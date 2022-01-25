@@ -1,4 +1,3 @@
-import * as CryptoJS from 'crypto-js';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {
   EncryptedRound,
@@ -12,11 +11,17 @@ import {
 } from '../helpers/models';
 import {testRequirement} from '../helpers/test-requirement';
 const crc32c = require('fast-crc32c');
+const crypto = require('crypto');
 
-export const decryptPrivateKey = async (encryptedPrivateKey: string): Promise<string> => {
+export interface RsaKey {
+  public: string,
+  private: string
+}
+
+export const decryptRsaKey = async (encryptedRsaKey: string): Promise<RsaKey> => {
 
   // @ts-ignore
-  const ciphertext = new Uint8Array(encryptedPrivateKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(encryptedRsaKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
   const ciphertextCrc32c = crc32c.calculate(ciphertext);
 
@@ -38,10 +43,10 @@ export const decryptPrivateKey = async (encryptedPrivateKey: string): Promise<st
   const privateKey = (decryptResponse.plaintext || '').toString()
   testRequirement(privateKey.length === 0);
 
-  return privateKey;
+  return JSON.parse(privateKey);
 }
 
-export const encrypt = (data: any, privateKey: string): string => {
+export const encrypt = (data: any, rsaKey: RsaKey): string => {
 
   let dataString = '';
 
@@ -51,43 +56,47 @@ export const encrypt = (data: any, privateKey: string): string => {
     dataString = e + '';
   }
 
-  // console.log(CryptoJS.AES.encrypt(dataString, privateKey).toString());
-  return CryptoJS.AES.encrypt(dataString, privateKey).toString();
+  return crypto.publicEncrypt({
+    key: rsaKey.public,
+    oaepHash: 'sha256',
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+  }, Buffer.from(dataString)).toString('base64');
 }
 
-export const decrypt = (data: string, privateKey: string): string => {
-  // console.log(CryptoJS.AES.decrypt(data, privateKey).toString(CryptoJS.enc.Utf8));
-  return CryptoJS.AES.decrypt(data, privateKey).toString(CryptoJS.enc.Utf8);
+export const decrypt = (data: string, rsaKey: RsaKey): string => {
+  return crypto.privateDecrypt({
+    key: rsaKey.private,
+    oaepHash: 'sha256',
+    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+  }, Buffer.from(data, 'base64')).toString('utf-8');
 }
 
-export const encryptTask = (task: Task, privateKey: string): EncryptedTask => {
+export const encryptTask = (task: Task, rsaKey: RsaKey): EncryptedTask => {
   return {
-    description: encrypt(task.description, privateKey),
-    timesOfDay: encrypt(task.timesOfDay, privateKey),
-    daysOfTheWeek: encrypt(task.daysOfTheWeek, privateKey)
+    description: encrypt(task.description, rsaKey),
+    timesOfDay: encrypt(task.timesOfDay, rsaKey),
+    daysOfTheWeek: encrypt(task.daysOfTheWeek, rsaKey)
   };
 }
 
-export const decryptTask = (encryptedTask: EncryptedTask, privateKey: string): Task => {
+export const decryptTask = (encryptedTask: EncryptedTask, rsaKey: RsaKey): Task => {
 
   let daysOfTheWeek = [];
   try {
-    daysOfTheWeek = JSON.parse(CryptoJS.AES.decrypt(encryptedTask.daysOfTheWeek, privateKey).toString(CryptoJS.enc.Utf8))
+    daysOfTheWeek = JSON.parse(decrypt(encryptedTask.daysOfTheWeek, rsaKey))
   } catch (e) {}
 
   let timesOfDay = [];
   try {
-    timesOfDay = JSON.parse(CryptoJS.AES.decrypt(encryptedTask.timesOfDay, privateKey).toString(CryptoJS.enc.Utf8))
+    timesOfDay = JSON.parse(decrypt(encryptedTask.timesOfDay, rsaKey))
   } catch (e) {}
 
   let description = '';
 
   try {
-    description = decrypt(encryptedTask.description, privateKey);
+    description = decrypt(encryptedTask.description, rsaKey);
     description = description.substr(1, description.length-2);
   } catch (e) {}
-
-  // console.log({description});
 
   return {
     description,
@@ -96,82 +105,76 @@ export const decryptTask = (encryptedTask: EncryptedTask, privateKey: string): T
   };
 }
 
-export const encryptRound = (round: Round, privateKey: string): EncryptedRound => {
+export const encryptRound = (round: Round, rsaKey: RsaKey): EncryptedRound => {
   return {
-    name: encrypt(round.name, privateKey),
-    taskSize: encrypt(round.taskSize, privateKey),
-    timesOfDayCardinality: encrypt(round.timesOfDayCardinality, privateKey),
-    timesOfDay: round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, privateKey))
+    name: encrypt(round.name, rsaKey),
+    taskSize: encrypt(round.taskSize, rsaKey),
+    timesOfDayCardinality: encrypt(round.timesOfDayCardinality, rsaKey),
+    timesOfDay: round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
   };
 }
 
-export const decryptRound = (encryptedRound: EncryptedRound, privateKey: string): Round => {
+export const decryptRound = (encryptedRound: EncryptedRound, rsaKey: RsaKey): Round => {
 
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(CryptoJS.AES.decrypt(encryptedRound.timesOfDayCardinality, privateKey).toString(CryptoJS.enc.Utf8))
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey))
   } catch (e) {}
 
-  let name = decrypt(encryptedRound.name, privateKey);
+  let name = decrypt(encryptedRound.name, rsaKey);
   name = name.substr(1, name.length-2);
 
-  const round = {
+  return {
     name,
-    taskSize: +(decrypt(encryptedRound.taskSize, privateKey) || 0),
+    taskSize: +(decrypt(encryptedRound.taskSize, rsaKey) || 0),
     timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => {
-      let timeOfDayDecrypted = decrypt(timeOfDay, privateKey);
+      const timeOfDayDecrypted = decrypt(timeOfDay, rsaKey);
       return timeOfDayDecrypted.substr(1, timeOfDayDecrypted.length-2);
     }),
     timesOfDayCardinality
   };
-
-  return round;
 }
 
-export const encryptTodayTask = (todayTask: TodayTask, privateKey: string): EncryptedTodayTask => {
+export const encryptTodayTask = (todayTask: TodayTask, rsaKey: RsaKey): EncryptedTodayTask => {
 
-  const timesOfDay: {[key in string]: boolean} = {};
+  const timesOfDay: {[k in string]: boolean} = {};
   for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
-    timesOfDay[encrypt(timeOfDay, privateKey)] = todayTask.timesOfDay[timeOfDay];
+    timesOfDay[encrypt(timeOfDay, rsaKey)] = todayTask.timesOfDay[timeOfDay];
   }
 
   return {
-    description: CryptoJS.AES.encrypt(todayTask.description, privateKey).toString(),
+    description: encrypt(todayTask.description, rsaKey),
     timesOfDay,
   };
 }
 
-export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, privateKey: string): TodayTask => {
+export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, rsaKey: RsaKey): TodayTask => {
 
-  const timesOfDay: {[key in string]: boolean} = {};
+  const timesOfDay: {[k in string]: boolean} = {};
   for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
-    timesOfDay[decrypt(encryptedTimeOfDayName, privateKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
+    timesOfDay[decrypt(encryptedTimeOfDayName, rsaKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
   }
 
   return {
-    description: decrypt(encryptedTodayTask.description, privateKey),
+    description: decrypt(encryptedTodayTask.description, rsaKey),
     timesOfDay,
   };
 }
 
-export const hexToString = (hex: string): string => {
-  return ((hex || '').match(/.{1,2}/g) || []).map((a) => String.fromCharCode(parseInt(a, 16))).join('');
-}
-
-export const encryptToday = (today: Today, privateKey: string): EncryptedToday => {
+export const encryptToday = (today: Today, rsaKey: RsaKey): EncryptedToday => {
   return {
-    name: encrypt(today.name, privateKey),
-    taskSize: encrypt(today.taskSize, privateKey)
+    name: encrypt(today.name, rsaKey),
+    taskSize: encrypt(today.taskSize, rsaKey)
   };
 }
 
-export const decryptToday = (encryptedToday: EncryptedToday, privateKey: string): Today => {
+export const decryptToday = (encryptedToday: EncryptedToday, rsaKey: RsaKey): Today => {
 
-  let name = decrypt(encryptedToday.name, privateKey);
+  let name = decrypt(encryptedToday.name, rsaKey);
   name = name.substr(1, name.length - 2);
 
   return {
     name,
-    taskSize: +decrypt(encryptedToday.taskSize, privateKey)
+    taskSize: +decrypt(encryptedToday.taskSize, rsaKey)
   };
 }

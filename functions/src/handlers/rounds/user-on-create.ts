@@ -7,10 +7,9 @@ import {testRequirement} from '../../helpers/test-requirement';
 const crypto = require('crypto');
 const { getAuth } = require('firebase-admin/auth');
 const crc32c = require('fast-crc32c');
+const NodeRSA = require('node-rsa');
 
 export const handler = async (user: UserRecord, context: EventContext): Promise<void> => {
-
-  const symmetricKey = crypto.randomBytes(16).toString('hex');
 
   const [publicKey] = await keyManagementServiceClient.getPublicKey({
     name: cryptoKeyVersionPath
@@ -22,13 +21,18 @@ export const handler = async (user: UserRecord, context: EventContext): Promise<
     'GetPublicKey: request corrupted in-transit'
   );
 
+  const key = new NodeRSA({b: 3072});
+
   const symmetricKeyEncryptedByPublicKey = crypto.publicEncrypt(
     {
       key: publicKey.pem,
       oaepHash: 'sha256',
       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
     },
-    Buffer.from(symmetricKey)
+    Buffer.from(JSON.stringify({
+      public: key.exportKey('public'),
+      private: key.exportKey('private')
+    }))
   ).toString('hex');
 
   const customUserClaims = {
