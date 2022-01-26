@@ -4,29 +4,29 @@
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 export interface Task {
-  description: string;
-  timesOfDay: string[];
-  daysOfTheWeek: Day[];
+  description?: string;
+  timesOfDay?: string[];
+  daysOfTheWeek?: Day[];
 }
 
 export interface EncryptedTask {
-  description: string;
-  timesOfDay: string;
-  daysOfTheWeek: string;
+  description?: string;
+  timesOfDay?: string;
+  daysOfTheWeek?: string;
 }
 
 export interface Round {
-  taskSize: number;
-  timesOfDay: string[];
-  timesOfDayCardinality: number[];
-  name: string;
+  taskSize?: number;
+  timesOfDay?: string[];
+  timesOfDayCardinality?: number[];
+  name?: string;
 }
 
 export interface EncryptedRound {
-  taskSize: string;
-  timesOfDay: string[];
-  timesOfDayCardinality: string;
-  name: string;
+  taskSize?: string;
+  timesOfDay?: string[];
+  timesOfDayCardinality?: string;
+  name?: string;
 }
 
 export interface TimesOfDay {
@@ -40,21 +40,21 @@ export interface User {
 }
 
 export interface TodayTask {
-  description: string;
-  timesOfDay: {[key in string]: boolean};
+  description?: string;
+  timesOfDay?: {[key in string]: boolean};
 }
 
 export interface EncryptedTodayTask {
-  description: string;
-  timesOfDay: {[key in string]: boolean};
+  description?: string;
+  timesOfDay?: {[key in string]: boolean};
 }
 
 export interface Today {
-  name: string;
-  taskSize: number;
+  name?: string;
+  taskSize?: number;
 }
 
 export interface EncryptedToday {
-  name: string;
-  taskSize: string;
+  name?: string;
+  taskSize?: string;
 }
