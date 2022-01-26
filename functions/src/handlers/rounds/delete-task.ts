@@ -1,13 +1,13 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {EncryptedRound, EncryptedTask, EncryptedToday, Task} from '../../helpers/models';
+import {EncryptedRound, EncryptedTask, EncryptedToday} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
-  decryptRound, decryptRsaKey,
-  decryptTask,
+  decryptRoundWithoutName, decryptRsaKey,
+  decryptTaskTimesOfDay,
   decryptToday,
-  encryptRound,
+  encryptRoundWithoutName,
   encryptToday, RsaKey
 } from '../../security/security';
 import Transaction = firestore.Transaction;
@@ -40,22 +40,26 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   * Read all data
   * */
 
-  const task: Task = decryptTask(taskDocSnap.data() as EncryptedTask, rsaKey);
-  const timesOfDayDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, rsaKey);
+  const taskTimesOfDay: string[] = decryptTaskTimesOfDay(taskDocSnap.data() as EncryptedTask, rsaKey);
+  const timesOfDayDocSnapData = decryptRoundWithoutName(roundDocSnap.data() as EncryptedRound, rsaKey);
   const currentTaskSize = timesOfDayDocSnapData.taskSize;
   const timesOfDay = timesOfDayDocSnapData.timesOfDay;
   const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
-  const name = timesOfDayDocSnapData.name;
 
   // read all task for user/{userId}/today/{day}/task/{taskId}
   const todayTaskDocSnapsToUpdatePromises = [];
 
-  const todayMapDocuments: {[key in string]: DocumentSnapshot} = {};
+  const todayMapDocumentsPromise: { [key in string]: Promise<DocumentSnapshot> } = {};
   await roundDocSnap.ref.collection('today').listDocuments().then(async (docRefs) => {
     for (const docRef of docRefs) {
-      todayMapDocuments[docRef.id] = (await transaction.get(docRef));
+      todayMapDocumentsPromise[docRef.id] = transaction.get(docRef);
     }
   });
+
+  const todayMapDocuments: { [key in string]: DocumentSnapshot } = {};
+  for (const docRefId of Object.getOwnPropertyNames(todayMapDocumentsPromise)) {
+    todayMapDocuments[docRefId] = await todayMapDocumentsPromise[docRefId];
+  }
 
   const todaySnapsToCheckToRemove: DocumentSnapshot[] = [];
 
@@ -75,7 +79,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   const todayTasksPromise = Promise.all(todayTaskDocSnapsToUpdatePromises);
 
   // prepare timesOfDay and timesOfDayCardinality
-  for (const timeOfDay of task.timesOfDay) {
+  for (const timeOfDay of taskTimesOfDay) {
     const indexToRemove = timesOfDay.indexOf(timeOfDay);
     if (indexToRemove > -1) {
       if (timesOfDayCardinality[indexToRemove] - 1 === 0) {
@@ -119,11 +123,10 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
     transaction.delete(todayTaskDocSnap.ref);
   }
 
-  const roundDataToWrite = encryptRound({
+  const roundDataToWrite = encryptRoundWithoutName({
     timesOfDayCardinality,
     taskSize: currentTaskSize - 1,
-    timesOfDay,
-    name
+    timesOfDay
   }, rsaKey);
 
   transaction.update(roundDocSnap.ref, roundDataToWrite);

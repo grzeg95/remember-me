@@ -1,6 +1,8 @@
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {testRequirement} from '../helpers/test-requirement';
+import {RsaKey} from './security';
+
 const crc32c = require('fast-crc32c');
 
 export const handler = async (
@@ -28,5 +30,5 @@ export const handler = async (
     'AsymmetricDecrypt: request corrupted in-transit'
   );
 
-  return (decryptResponse.plaintext || '' ).toString();
-}
+  return (JSON.parse((decryptResponse.plaintext || '').toString()) as RsaKey).private;
+};

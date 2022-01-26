@@ -1,10 +1,10 @@
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {
-  EncryptedRound,
+  EncryptedRound, EncryptedRoundWithoutName, EncryptedRoundWithoutNameAndTaskSize,
   EncryptedTask,
   EncryptedToday,
   EncryptedTodayTask,
-  Round,
+  Round, RoundWithoutName, RoundWithoutNameAndTaskSize,
   Task,
   Today,
   TodayTask
@@ -41,20 +41,20 @@ export const decryptRsaKey = async (encryptedRsaKey: string): Promise<RsaKey> =>
     'AsymmetricDecrypt: request corrupted in-transit'
   );
 
-  const privateKey = (decryptResponse.plaintext || '').toString();
-  testRequirement(privateKey.length === 0);
+  const rsaKey = (decryptResponse.plaintext || '').toString();
+  testRequirement(rsaKey.length === 0);
 
-  return JSON.parse(privateKey);
+  return JSON.parse(rsaKey);
 };
 
 export const encrypt = (data: any, rsaKey: RsaKey): string => {
 
   let dataString = '';
 
-  try {
+  if (typeof data === 'string') {
+    dataString = data;
+  } else {
     dataString = JSON.stringify(data);
-  } catch (e) {
-    dataString = e + '';
   }
 
   return crypto.publicEncrypt({
@@ -73,163 +73,159 @@ export const decrypt = (data: string, rsaKey: RsaKey): string => {
 };
 
 export const encryptTask = (task: Task, rsaKey: RsaKey): EncryptedTask => {
-
-  const encryptedTask: EncryptedTask = {};
-
-  if (task.description) {
-    encryptedTask.description = encrypt(task.description, rsaKey);
-  }
-
-  if (task.timesOfDay) {
-    encryptedTask.timesOfDay = encrypt(task.timesOfDay, rsaKey);
-  }
-
-  if (task.daysOfTheWeek) {
-    encryptedTask.daysOfTheWeek = encrypt(task.daysOfTheWeek, rsaKey);
-  }
-
-  return encryptedTask;
+  return {
+    description: encrypt(task.description, rsaKey),
+    timesOfDay: encrypt(task.timesOfDay, rsaKey),
+    daysOfTheWeek: encrypt(task.daysOfTheWeek, rsaKey)
+  };
 };
 
 export const decryptTask = (encryptedTask: EncryptedTask, rsaKey: RsaKey): Task => {
 
-  const task: Task = {};
-
-  if (encryptedTask.daysOfTheWeek) {
-    task.daysOfTheWeek = JSON.parse(decrypt(encryptedTask.daysOfTheWeek, rsaKey));
+  let daysOfTheWeek = [];
+  try {
+    daysOfTheWeek = JSON.parse(decrypt(encryptedTask.daysOfTheWeek, rsaKey));
+  } catch (e) {
   }
 
-  if (encryptedTask.timesOfDay) {
-    task.timesOfDay = JSON.parse(decrypt(encryptedTask.timesOfDay, rsaKey));
+  let timesOfDay = [];
+  try {
+    timesOfDay = JSON.parse(decrypt(encryptedTask.timesOfDay, rsaKey));
+  } catch (e) {
   }
 
-  if (encryptedTask.description) {
-    let description = '';
+  let description = '';
+
+  try {
     description = decrypt(encryptedTask.description, rsaKey);
-    description = description.substr(1, description.length - 2);
-    task.description = description;
+  } catch (e) {
   }
 
-  return task;
+  return {
+    description,
+    daysOfTheWeek,
+    timesOfDay,
+  };
+};
+
+export const decryptTaskTimesOfDay = (encryptedTask: EncryptedTask, rsaKey: RsaKey): string[] => {
+
+  try {
+    return JSON.parse(decrypt(encryptedTask.timesOfDay, rsaKey));
+  } catch (e) {
+    return [];
+  }
 };
 
 export const encryptRound = (round: Round, rsaKey: RsaKey): EncryptedRound => {
-
-  const encryptedRound: EncryptedRound = {};
-
-  if (round.name) {
-    encryptedRound.name = encrypt(round.name, rsaKey);
-  }
-
-  if (round.taskSize) {
-    encryptedRound.taskSize = encrypt(round.taskSize, rsaKey);
-  }
-
-  if (round.timesOfDayCardinality) {
-    encryptedRound.timesOfDayCardinality = encrypt(round.timesOfDayCardinality, rsaKey);
-  }
-
-  if (round.timesOfDay) {
-    encryptedRound.timesOfDay = round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey));
-  }
-
-  return encryptedRound;
+  return {
+    name: encrypt(round.name, rsaKey),
+    taskSize: encrypt(round.taskSize, rsaKey),
+    timesOfDayCardinality: encrypt(round.timesOfDayCardinality, rsaKey),
+    timesOfDay: round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
+  };
 };
 
+export const encryptRoundWithoutName = (roundWithoutName: RoundWithoutName, rsaKey: RsaKey): EncryptedRoundWithoutName => {
+  return {
+    taskSize: encrypt(roundWithoutName.taskSize, rsaKey),
+    timesOfDayCardinality: encrypt(roundWithoutName.timesOfDayCardinality, rsaKey),
+    timesOfDay: roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
+  };
+};
+
+export const encryptRoundWithoutNameAndTaskSize = (roundWithoutName: RoundWithoutNameAndTaskSize, rsaKey: RsaKey): EncryptedRoundWithoutNameAndTaskSize => {
+  return {
+    timesOfDayCardinality: encrypt(roundWithoutName.timesOfDayCardinality, rsaKey),
+    timesOfDay: roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
+  };
+};
+
+// for unit tests
 export const decryptRound = (encryptedRound: EncryptedRound, rsaKey: RsaKey): Round => {
 
-  const round: Round = {};
+  let timesOfDayCardinality = [];
+  try {
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey))
+  } catch (e) {}
 
-  if (encryptedRound.name) {
-    let name = decrypt(encryptedRound.name, rsaKey);
-    name = name.substr(1, name.length - 2);
-    round.name = name;
+  return {
+    name: decrypt(encryptedRound.name, rsaKey),
+    taskSize: +(decrypt(encryptedRound.taskSize, rsaKey) || 0),
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, rsaKey)),
+    timesOfDayCardinality
+  };
+}
+
+export const decryptRoundName = (encryptedRound: EncryptedRound, rsaKey: RsaKey): string => {
+  return decrypt(encryptedRound.name, rsaKey);
+};
+
+export const decryptRoundWithoutName = (encryptedRound: EncryptedRound, rsaKey: RsaKey): RoundWithoutName => {
+
+  let timesOfDayCardinality = [];
+  try {
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey));
+  } catch (e) {
   }
 
-  if (encryptedRound.timesOfDayCardinality) {
-    round.timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey));
+  return {
+    taskSize: +(decrypt(encryptedRound.taskSize, rsaKey) || 0),
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, rsaKey)),
+    timesOfDayCardinality
+  };
+};
+
+export const decryptRoundWithoutNameAndTaskSize = (encryptedRound: EncryptedRound, rsaKey: RsaKey): RoundWithoutNameAndTaskSize => {
+
+  let timesOfDayCardinality = [];
+  try {
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey));
+  } catch (e) {
   }
 
-  if (encryptedRound.timesOfDay) {
-    round.timesOfDay = encryptedRound.timesOfDay.map((timeOfDay) => {
-      const timeOfDayDecrypted = decrypt(timeOfDay, rsaKey);
-      return timeOfDayDecrypted.substr(1, timeOfDayDecrypted.length - 2);
-    });
-  }
-
-  if (encryptedRound.taskSize) {
-    round.taskSize = +(decrypt(encryptedRound.taskSize, rsaKey) || 0);
-  }
-
-  return round;
+  return {
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, rsaKey)),
+    timesOfDayCardinality
+  };
 };
 
 export const encryptTodayTask = (todayTask: TodayTask, rsaKey: RsaKey): EncryptedTodayTask => {
 
-  const encryptedTodayTask: EncryptedTodayTask = {};
-
-  if (todayTask.timesOfDay) {
-    const timesOfDay: { [k in string]: boolean } = {};
-    for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
-      timesOfDay[encrypt(timeOfDay, rsaKey)] = todayTask.timesOfDay[timeOfDay];
-    }
-    encryptedTodayTask.timesOfDay = timesOfDay;
+  const timesOfDay: { [k in string]: boolean } = {};
+  for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
+    timesOfDay[encrypt(timeOfDay, rsaKey)] = todayTask.timesOfDay[timeOfDay];
   }
 
-  if (todayTask.description) {
-    todayTask.description = encrypt(todayTask.description, rsaKey);
-  }
-
-  return todayTask;
+  return {
+    description: encrypt(todayTask.description, rsaKey),
+    timesOfDay,
+  };
 };
 
 export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, rsaKey: RsaKey): TodayTask => {
 
-  const todayTask: TodayTask = {};
-
-  if (encryptedTodayTask.timesOfDay) {
-    const timesOfDay: { [k in string]: boolean } = {};
-    for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
-      timesOfDay[decrypt(encryptedTimeOfDayName, rsaKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
-    }
-    todayTask.timesOfDay = timesOfDay;
+  const timesOfDay: { [k in string]: boolean } = {};
+  for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
+    timesOfDay[decrypt(encryptedTimeOfDayName, rsaKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
   }
 
-  if (encryptedTodayTask.description) {
-    todayTask.description = encrypt(encryptedTodayTask.description, rsaKey);
-  }
-
-  return todayTask;
+  return {
+    description: decrypt(encryptedTodayTask.description, rsaKey),
+    timesOfDay,
+  };
 };
 
 export const encryptToday = (today: Today, rsaKey: RsaKey): EncryptedToday => {
-
-  const encryptedToday: EncryptedToday = {};
-
-  if (today.name) {
-    encryptedToday.name = encrypt(today.name, rsaKey);
-  }
-
-  if (today.taskSize) {
-    encryptedToday.taskSize = encrypt(today.taskSize, rsaKey);
-  }
-
-  return encryptedToday;
+  return {
+    name: encrypt(today.name, rsaKey),
+    taskSize: encrypt(today.taskSize, rsaKey)
+  };
 };
 
 export const decryptToday = (encryptedToday: EncryptedToday, rsaKey: RsaKey): Today => {
-
-  const today: Today = {};
-
-  if (encryptedToday.name) {
-    let name = decrypt(encryptedToday.name, rsaKey);
-    name = name.substr(1, name.length - 2);
-    today.name = name;
-  }
-
-  if (encryptedToday.taskSize) {
-    today.taskSize = +encrypt(encryptedToday.taskSize, rsaKey);
-  }
-
-  return today;
+  return {
+    name: decrypt(encryptedToday.name, rsaKey),
+    taskSize: +decrypt(encryptedToday.taskSize, rsaKey)
+  };
 };

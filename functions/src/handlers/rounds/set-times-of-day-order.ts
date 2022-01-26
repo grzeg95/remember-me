@@ -3,7 +3,12 @@ import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {EncryptedRound} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
-import {decryptRound, decryptRsaKey, encryptRound, RsaKey} from '../../security/security';
+import {
+  decryptRoundWithoutNameAndTaskSize,
+  decryptRsaKey,
+  encryptRoundWithoutNameAndTaskSize,
+  RsaKey
+} from '../../security/security';
 
 const app = firestore();
 
@@ -68,7 +73,7 @@ export const handler = async (data: any, context: CallableContext) => {
       rsaKey = await decryptRsaKey(context.auth?.token.encryptedRsaKey);
     }
 
-    const timesOfDayDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, rsaKey);
+    const timesOfDayDocSnapData = decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, rsaKey);
     const timesOfDay = timesOfDayDocSnapData.timesOfDay;
     const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
@@ -81,9 +86,7 @@ export const handler = async (data: any, context: CallableContext) => {
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
     // update user
-    const timesOfDayDataToWrite = encryptRound({
-      name: timesOfDayDocSnapData.name,
-      taskSize: timesOfDayDocSnapData.taskSize,
+    const timesOfDayDataToWrite = encryptRoundWithoutNameAndTaskSize({
       timesOfDay,
       timesOfDayCardinality
     }, rsaKey);

@@ -105,14 +105,10 @@ module.exports._getDoc = async (documentRef, obj) => {
       obj[documentRef.id]['fields']['rounds'] = JSON.parse(decrypt(obj[documentRef.id]['fields']['rounds'], module.exports.myAuth.auth.token.decryptedRsaKey));
     }
     if (key === 'name') {
-      let name = decrypt(obj[documentRef.id]['fields']['name'], module.exports.myAuth.auth.token.decryptedRsaKey);
-      name = name.substr(1, name.length - 2);
-      obj[documentRef.id]['fields']['name'] = name;
+      obj[documentRef.id]['fields']['name'] = decrypt(obj[documentRef.id]['fields']['name'], module.exports.myAuth.auth.token.decryptedRsaKey);
     }
     if (key === 'description') {
-      let description = decrypt(obj[documentRef.id]['fields']['description'], module.exports.myAuth.auth.token.decryptedRsaKey);
-      description = description.split(/^"(.*)"$/gm)[1] || description;
-      obj[documentRef.id]['fields']['description'] = description;
+      obj[documentRef.id]['fields']['description'] = decrypt(obj[documentRef.id]['fields']['description'], module.exports.myAuth.auth.token.decryptedRsaKey);
     }
     if (key === 'taskSize') {
       obj[documentRef.id]['fields']['taskSize'] = +decrypt(obj[documentRef.id]['fields']['taskSize'], module.exports.myAuth.auth.token.decryptedRsaKey);
@@ -127,21 +123,13 @@ module.exports._getDoc = async (documentRef, obj) => {
 
       if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'string') {
         obj[documentRef.id]['fields']['timesOfDay'] = JSON.parse(decrypt(obj[documentRef.id]['fields']['timesOfDay'], module.exports.myAuth.auth.token.decryptedRsaKey));
-        obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'].map((timeOfDay) => {
-          return timeOfDay.split(/^"(.*)"$/gm)[1] || timeOfDay;
-        });
+        obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'];
       } else if (Array.isArray(obj[documentRef.id]['fields']['timesOfDay'])) {
-        obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'].map((e) => {
-          let timeOfDay = decrypt(e, module.exports.myAuth.auth.token.decryptedRsaKey);
-          return timeOfDay.split(/^"(.*)"$/gm)[1] || timeOfDay;
-        });
+        obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'].map((e) => decrypt(e, module.exports.myAuth.auth.token.decryptedRsaKey));
       } else if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'object') {
         const timesOfDay = {};
         for (const key of Object.getOwnPropertyNames(obj[documentRef.id]['fields']['timesOfDay'])) {
-          let keyUnwrapped = decrypt(key, module.exports.myAuth.auth.token.decryptedRsaKey);
-          keyUnwrapped = keyUnwrapped.split(/^"(.*)"$/gm)[1] || keyUnwrapped;
-          // console.log({keyUnwrapped});
-          timesOfDay[keyUnwrapped] = obj[documentRef.id]['fields']['timesOfDay'][key];
+          timesOfDay[decrypt(key, module.exports.myAuth.auth.token.decryptedRsaKey)] = obj[documentRef.id]['fields']['timesOfDay'][key];
         }
         obj[documentRef.id]['fields']['timesOfDay'] = timesOfDay;
       }

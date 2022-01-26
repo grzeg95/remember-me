@@ -2,10 +2,11 @@ import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
 // @ts-ignore
 import * as cryptoJS from 'crypto-js';
-import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {testRequirement} from '../../helpers/test-requirement';
+import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
+import {testRequirement} from '../helpers/test-requirement';
+
 const crypto = require('crypto');
-const { getAuth } = require('firebase-admin/auth');
+const {getAuth} = require('firebase-admin/auth');
 const crc32c = require('fast-crc32c');
 const NodeRSA = require('node-rsa');
 
@@ -36,8 +37,8 @@ export const handler = async (user: UserRecord, context: EventContext): Promise<
   ).toString('hex');
 
   const customUserClaims = {
-    privateKey: symmetricKeyEncryptedByPublicKey
+    encryptedRsaKey: symmetricKeyEncryptedByPublicKey
   };
 
   return getAuth().setCustomUserClaims(user.uid, customUserClaims);
-}
+};

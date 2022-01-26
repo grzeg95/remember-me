@@ -5,7 +5,7 @@ import {firestore} from 'firebase-admin';
 import {getUser, writeUser} from '../../helpers/user';
 import {
   decrypt,
-  decryptRound,
+  decryptRoundName,
   decryptRsaKey,
   encrypt,
   encryptRound,
@@ -100,11 +100,11 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     } else {
 
       roundDocSnap = roundDocSnapTmp;
-      const roundDocSnapData = decryptRound(roundDocSnap.data() as EncryptedRound, rsaKey);
+      const roundName = decryptRoundName(roundDocSnap.data() as EncryptedRound, rsaKey);
       /*
       * Check if name was changed
       * */
-      testRequirement(roundDocSnapData.name === data.name);
+      testRequirement(roundName === data.name);
 
       transaction.update(roundDocSnap.ref, {
         name: encrypt(data.name, rsaKey)
