@@ -5,9 +5,8 @@ import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
   decryptRoundWithoutNameAndTaskSize,
-  decryptRsaKey,
-  encryptRoundWithoutNameAndTaskSize,
-  RsaKey
+  decryptSymmetricKey,
+  encryptRoundWithoutNameAndTaskSize
 } from '../../security/security';
 
 const app = firestore();
@@ -64,16 +63,16 @@ export const handler = async (data: any, context: CallableContext) => {
     // check if timeOfDay exists
     testRequirement(!roundDocSnap.exists);
 
-    // get rsa key
+    // get symmetric key
     // TODO
-    let rsaKey: RsaKey;
-    if (context.auth?.token.decryptedRsaKey) {
-      rsaKey = context.auth?.token.decryptedRsaKey;
+    let symmetricKey: string;
+    if (context.auth?.token.decryptedSymmetricKey) {
+      symmetricKey = context.auth?.token.decryptedSymmetricKey;
     } else {
-      rsaKey = await decryptRsaKey(context.auth?.token.encryptedRsaKey);
+      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedEncryptedKey);
     }
 
-    const timesOfDayDocSnapData = decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, rsaKey);
+    const timesOfDayDocSnapData = decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, symmetricKey);
     const timesOfDay = timesOfDayDocSnapData.timesOfDay;
     const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
@@ -89,7 +88,7 @@ export const handler = async (data: any, context: CallableContext) => {
     const timesOfDayDataToWrite = encryptRoundWithoutNameAndTaskSize({
       timesOfDay,
       timesOfDayCardinality
-    }, rsaKey);
+    }, symmetricKey);
 
     transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);
 

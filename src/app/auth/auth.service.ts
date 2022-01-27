@@ -3,9 +3,9 @@ import {AngularFireAuth} from '@angular/fire/compat/auth';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
-import * as CryptoJS from 'crypto-js';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
+import {decrypt} from '../security';
 import {HTTPError} from '../user/models';
 import {User, UserData, EncryptedUser} from './user-data.model';
 import {GoogleAuthProvider, FacebookAuthProvider} from 'firebase/auth';
@@ -37,32 +37,19 @@ export class AuthService {
 
       if (user) {
 
-        user.getIdTokenResult(true).then((token) => {
-          if (!token.claims.privateKey) {
-            console.log('user.reload()');
-            user.reload().then(() => {});
-          } else {
-            console.log(token.claims.privateKey);
-            this.fns.httpsCallable('decryptAsymmetricByPrivateKey')(null).subscribe((success) => {
-              console.log(success);
-              this.userData.privateKey = success;
-              this.userIsReady$.next(true);
-            });
-          }
-        });
-
-        this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
-          this.afAuth.currentUser.then((user) => {
-            if (user) {
-              user.reload();
-            }
-          });
-        });
+        this.userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified
+        };
 
         if (this.userDocSub && !this.userDocSub.closed) {
           this.userDocSub.unsubscribe();
         }
 
+        // wait until user has rsa private key
         this.userDocSub = this.afs.doc<EncryptedUser>(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
             if (error.code === 'permission-denied') {
@@ -70,30 +57,49 @@ export class AuthService {
             }
             throw error;
           })
-        ).subscribe((userDoc) => {
+        ).subscribe((actionUserDocSnap) => {
 
-          let rounds = [];
+          console.log(actionUserDocSnap.payload.data()?.hasSymmetricKey);
 
-          if (userDoc.payload.data()?.rounds) {
-            rounds = JSON.parse(
-              CryptoJS.AES.decrypt(userDoc.payload.data()?.rounds, this.userData.privateKey).toString(CryptoJS.enc.Utf8)
-            )
+          if (!this.userIsReady$.value) {
+            const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
+            if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
+              user.getIdTokenResult(true).then((token) => {
+                if (!token.claims.encryptedEncryptedKey) {
+                  console.log('should reload');
+                } else {
+                  this.fns.httpsCallable('getSymmetricKey')(null).subscribe((success) => {
+                    this.userData.symmetricKey = success;
+                    this.userIsReady$.next(true);
+                  });
+                }
+              });
+            }
+          } else {
+
+            if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
+              this.userIntervalReloadSub.unsubscribe();
+            }
+
+            this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
+              this.afAuth.currentUser.then((user) => {
+                if (user) {
+                  user.reload();
+                }
+              });
+            });
+
+            let rounds = [];
+
+            if (actionUserDocSnap.payload.data()?.rounds) {
+              rounds = JSON.parse(decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.symmetricKey))
+            }
+
+            this.user$.next({
+              rounds
+            });
           }
-
-          this.user$.next({
-            rounds
-          });
-
         });
-
-        this.userData = {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          emailVerified: user.emailVerified,
-          privateKey: null
-        };
       } else {
         this.userData = null;
         this.router.navigate(['/']);

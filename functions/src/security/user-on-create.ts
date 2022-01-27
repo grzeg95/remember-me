@@ -1,16 +1,17 @@
+import {firestore} from 'firebase-admin';
 import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
 // @ts-ignore
-import * as cryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-js';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {testRequirement} from '../helpers/test-requirement';
+import {getUser} from '../helpers/user';
 
 const crypto = require('crypto');
 const {getAuth} = require('firebase-admin/auth');
 const crc32c = require('fast-crc32c');
-const NodeRSA = require('node-rsa');
 
-export const handler = async (user: UserRecord, context: EventContext): Promise<void> => {
+export const handler = async (user: UserRecord, context: EventContext) => {
 
   const [publicKey] = await keyManagementServiceClient.getPublicKey({
     name: cryptoKeyVersionPath
@@ -22,23 +23,34 @@ export const handler = async (user: UserRecord, context: EventContext): Promise<
     'GetPublicKey: request corrupted in-transit'
   );
 
-  const key = new NodeRSA({b: 3072});
+  const symmetricKey = crypto.randomBytes(32).toString('hex');
 
-  const symmetricKeyEncryptedByPublicKey = crypto.publicEncrypt(
+  const encryptedEncryptedKey = crypto.publicEncrypt(
     {
       key: publicKey.pem,
       oaepHash: 'sha256',
       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
     },
-    Buffer.from(JSON.stringify({
-      public: key.exportKey('public'),
-      private: key.exportKey('private')
-    }))
+    Buffer.from(symmetricKey)
   ).toString('hex');
 
   const customUserClaims = {
-    encryptedRsaKey: symmetricKeyEncryptedByPublicKey
+    encryptedEncryptedKey
   };
 
-  return getAuth().setCustomUserClaims(user.uid, customUserClaims);
+  return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
+    const app = firestore();
+
+    return app.runTransaction(async (transaction) => {
+      const userDocSnap = await getUser(app, transaction, user.uid as string);
+
+      transaction.set(userDocSnap.ref, {
+        hasSymmetricKey: true
+      });
+
+      return transaction;
+    }).catch(() => {
+      console.error(`user ${user.uid} rsa key creation`);
+    });
+  });
 };

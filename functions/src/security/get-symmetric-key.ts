@@ -1,7 +1,6 @@
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {testRequirement} from '../helpers/test-requirement';
-import {RsaKey} from './security';
 
 const crc32c = require('fast-crc32c');
 
@@ -11,7 +10,7 @@ export const handler = async (
 ): Promise<string> => {
 
   // @ts-ignore
-  const ciphertext = new Uint8Array(context.auth?.token.privateKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(context.auth?.token.encryptedEncryptedKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
   const ciphertextCrc32c = crc32c.calculate(ciphertext);
 
@@ -30,5 +29,5 @@ export const handler = async (
     'AsymmetricDecrypt: request corrupted in-transit'
   );
 
-  return (JSON.parse((decryptResponse.plaintext || '').toString()) as RsaKey).private;
+  return (decryptResponse.plaintext || '').toString();
 };

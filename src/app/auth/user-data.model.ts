@@ -4,7 +4,7 @@ export interface UserData {
   displayName: string;
   photoURL: string;
   emailVerified: boolean;
-  privateKey: string;
+  symmetricKey?: string;
 }
 
 export interface User {
@@ -13,4 +13,5 @@ export interface User {
 
 export interface EncryptedUser {
   rounds: string;
+  hasSymmetricKey: boolean;
 }

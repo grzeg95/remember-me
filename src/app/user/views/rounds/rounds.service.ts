@@ -95,7 +95,7 @@ export class RoundsService {
         map((roundsEncrypted: {[ken in string]: EncryptedRound}) => {
           const rounds: {[ken in string]: Round} = {};
           for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
-            rounds[id] = decryptRound(roundsEncrypted[id], this.authService.userData.privateKey);
+            rounds[id] = decryptRound(roundsEncrypted[id], this.authService.userData.symmetricKey);
             rounds[id].id = id;
             rounds[id].timesOfDayEncrypted = roundsEncrypted[id].timesOfDay;
           }
@@ -205,7 +205,7 @@ export class RoundsService {
           map((docSnap) => {
             const round = docSnap.data();
             if (round) {
-              return decryptRound(round, this.authService.userData.privateKey);
+              return decryptRound(round, this.authService.userData.symmetricKey);
             }
             return null;
           })

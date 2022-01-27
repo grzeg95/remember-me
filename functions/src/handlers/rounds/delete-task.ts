@@ -4,11 +4,11 @@ import {EncryptedRound, EncryptedTask, EncryptedToday} from '../../helpers/model
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
-  decryptRoundWithoutName, decryptRsaKey,
+  decryptRoundWithoutName, decryptSymmetricKey,
   decryptTaskTimesOfDay,
   decryptToday,
   encryptRoundWithoutName,
-  encryptToday, RsaKey
+  encryptToday
 } from '../../security/security';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
@@ -27,21 +27,21 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   // interrupt if user has not this task
   testRequirement(!taskDocSnap.exists);
 
-  // get rsa key
+  // get symmetric key
   // TODO
-  let rsaKey: RsaKey;
-  if (context.auth?.token.decryptedRsaKey) {
-    rsaKey = context.auth?.token.decryptedRsaKey;
+  let symmetricKey: string;
+  if (context.auth?.token.decryptedSymmetricKey) {
+    symmetricKey = context.auth?.token.decryptedSymmetricKey;
   } else {
-    rsaKey = await decryptRsaKey(context.auth?.token.encryptedRsaKey);
+    symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedEncryptedKey);
   }
 
   /*
   * Read all data
   * */
 
-  const taskTimesOfDay: string[] = decryptTaskTimesOfDay(taskDocSnap.data() as EncryptedTask, rsaKey);
-  const timesOfDayDocSnapData = decryptRoundWithoutName(roundDocSnap.data() as EncryptedRound, rsaKey);
+  const taskTimesOfDay: string[] = decryptTaskTimesOfDay(taskDocSnap.data() as EncryptedTask, symmetricKey);
+  const timesOfDayDocSnapData = decryptRoundWithoutName(roundDocSnap.data() as EncryptedRound, symmetricKey);
   const currentTaskSize = timesOfDayDocSnapData.taskSize;
   const timesOfDay = timesOfDayDocSnapData.timesOfDay;
   const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
@@ -99,7 +99,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   // just read one field: size of tasks lol
   for (const todayDocSnap of todaySnapsToCheckToRemove) {
 
-    const today = decryptToday(todayDocSnap.data() as EncryptedToday, rsaKey);
+    const today = decryptToday(todayDocSnap.data() as EncryptedToday, symmetricKey);
 
     if (today.taskSize === 1) {
       transaction.delete(todayDocSnap.ref);
@@ -107,7 +107,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
       transaction.update(todayDocSnap.ref, encryptToday({
         name: today.name,
         taskSize: today.taskSize - 1
-      }, rsaKey));
+      }, symmetricKey));
     }
   }
 
@@ -127,7 +127,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
     timesOfDayCardinality,
     taskSize: currentTaskSize - 1,
     timesOfDay
-  }, rsaKey);
+  }, symmetricKey);
 
   transaction.update(roundDocSnap.ref, roundDataToWrite);
 

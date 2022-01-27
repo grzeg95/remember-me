@@ -12,17 +12,12 @@ import {
 import {testRequirement} from '../helpers/test-requirement';
 
 const crc32c = require('fast-crc32c');
-const crypto = require('crypto');
+import * as CryptoJS from 'crypto-js';
 
-export interface RsaKey {
-  public: string,
-  private: string
-}
-
-export const decryptRsaKey = async (encryptedRsaKey: string): Promise<RsaKey> => {
+export const decryptSymmetricKey = async (encryptedSymmetricKey: string): Promise<string> => {
 
   // @ts-ignore
-  const ciphertext = new Uint8Array(encryptedRsaKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
   const ciphertextCrc32c = crc32c.calculate(ciphertext);
 
@@ -41,13 +36,10 @@ export const decryptRsaKey = async (encryptedRsaKey: string): Promise<RsaKey> =>
     'AsymmetricDecrypt: request corrupted in-transit'
   );
 
-  const rsaKey = (decryptResponse.plaintext || '').toString();
-  testRequirement(rsaKey.length === 0);
-
-  return JSON.parse(rsaKey);
+  return (decryptResponse.plaintext || '').toString();
 };
 
-export const encrypt = (data: any, rsaKey: RsaKey): string => {
+export const encrypt = (data: any, symmetricKey: string): string => {
 
   let dataString = '';
 
@@ -57,47 +49,39 @@ export const encrypt = (data: any, rsaKey: RsaKey): string => {
     dataString = JSON.stringify(data);
   }
 
-  return crypto.publicEncrypt({
-    key: rsaKey.public,
-    oaepHash: 'sha256',
-    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
-  }, Buffer.from(dataString)).toString('base64');
+  return CryptoJS.AES.encrypt(dataString, symmetricKey).toString();
 };
 
-export const decrypt = (data: string, rsaKey: RsaKey): string => {
-  return crypto.privateDecrypt({
-    key: rsaKey.private,
-    oaepHash: 'sha256',
-    padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
-  }, Buffer.from(data, 'base64')).toString('utf-8');
+export const decrypt = (data: string, symmetricKey: string): string => {
+  return CryptoJS.AES.decrypt(data, symmetricKey).toString(CryptoJS.enc.Utf8);
 };
 
-export const encryptTask = (task: Task, rsaKey: RsaKey): EncryptedTask => {
+export const encryptTask = (task: Task, symmetricKey: string): EncryptedTask => {
   return {
-    description: encrypt(task.description, rsaKey),
-    timesOfDay: encrypt(task.timesOfDay, rsaKey),
-    daysOfTheWeek: encrypt(task.daysOfTheWeek, rsaKey)
+    description: encrypt(task.description, symmetricKey),
+    timesOfDay: encrypt(task.timesOfDay, symmetricKey),
+    daysOfTheWeek: encrypt(task.daysOfTheWeek, symmetricKey)
   };
 };
 
-export const decryptTask = (encryptedTask: EncryptedTask, rsaKey: RsaKey): Task => {
+export const decryptTask = (encryptedTask: EncryptedTask, symmetricKey: string): Task => {
 
   let daysOfTheWeek = [];
   try {
-    daysOfTheWeek = JSON.parse(decrypt(encryptedTask.daysOfTheWeek, rsaKey));
+    daysOfTheWeek = JSON.parse(decrypt(encryptedTask.daysOfTheWeek, symmetricKey));
   } catch (e) {
   }
 
   let timesOfDay = [];
   try {
-    timesOfDay = JSON.parse(decrypt(encryptedTask.timesOfDay, rsaKey));
+    timesOfDay = JSON.parse(decrypt(encryptedTask.timesOfDay, symmetricKey));
   } catch (e) {
   }
 
   let description = '';
 
   try {
-    description = decrypt(encryptedTask.description, rsaKey);
+    description = decrypt(encryptedTask.description, symmetricKey);
   } catch (e) {
   }
 
@@ -108,124 +92,124 @@ export const decryptTask = (encryptedTask: EncryptedTask, rsaKey: RsaKey): Task 
   };
 };
 
-export const decryptTaskTimesOfDay = (encryptedTask: EncryptedTask, rsaKey: RsaKey): string[] => {
+export const decryptTaskTimesOfDay = (encryptedTask: EncryptedTask, symmetricKey: string): string[] => {
 
   try {
-    return JSON.parse(decrypt(encryptedTask.timesOfDay, rsaKey));
+    return JSON.parse(decrypt(encryptedTask.timesOfDay, symmetricKey));
   } catch (e) {
     return [];
   }
 };
 
-export const encryptRound = (round: Round, rsaKey: RsaKey): EncryptedRound => {
+export const encryptRound = (round: Round, symmetricKey: string): EncryptedRound => {
   return {
-    name: encrypt(round.name, rsaKey),
-    taskSize: encrypt(round.taskSize, rsaKey),
-    timesOfDayCardinality: encrypt(round.timesOfDayCardinality, rsaKey),
-    timesOfDay: round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
+    name: encrypt(round.name, symmetricKey),
+    taskSize: encrypt(round.taskSize, symmetricKey),
+    timesOfDayCardinality: encrypt(round.timesOfDayCardinality, symmetricKey),
+    timesOfDay: round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, symmetricKey))
   };
 };
 
-export const encryptRoundWithoutName = (roundWithoutName: RoundWithoutName, rsaKey: RsaKey): EncryptedRoundWithoutName => {
+export const encryptRoundWithoutName = (roundWithoutName: RoundWithoutName, symmetricKey: string): EncryptedRoundWithoutName => {
   return {
-    taskSize: encrypt(roundWithoutName.taskSize, rsaKey),
-    timesOfDayCardinality: encrypt(roundWithoutName.timesOfDayCardinality, rsaKey),
-    timesOfDay: roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
+    taskSize: encrypt(roundWithoutName.taskSize, symmetricKey),
+    timesOfDayCardinality: encrypt(roundWithoutName.timesOfDayCardinality, symmetricKey),
+    timesOfDay: roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, symmetricKey))
   };
 };
 
-export const encryptRoundWithoutNameAndTaskSize = (roundWithoutName: RoundWithoutNameAndTaskSize, rsaKey: RsaKey): EncryptedRoundWithoutNameAndTaskSize => {
+export const encryptRoundWithoutNameAndTaskSize = (roundWithoutName: RoundWithoutNameAndTaskSize, symmetricKey: string): EncryptedRoundWithoutNameAndTaskSize => {
   return {
-    timesOfDayCardinality: encrypt(roundWithoutName.timesOfDayCardinality, rsaKey),
-    timesOfDay: roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, rsaKey))
+    timesOfDayCardinality: encrypt(roundWithoutName.timesOfDayCardinality, symmetricKey),
+    timesOfDay: roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, symmetricKey))
   };
 };
 
 // for unit tests
-export const decryptRound = (encryptedRound: EncryptedRound, rsaKey: RsaKey): Round => {
+export const decryptRound = (encryptedRound: EncryptedRound, symmetricKey: string): Round => {
 
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey))
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, symmetricKey))
   } catch (e) {}
 
   return {
-    name: decrypt(encryptedRound.name, rsaKey),
-    taskSize: +(decrypt(encryptedRound.taskSize, rsaKey) || 0),
-    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, rsaKey)),
+    name: decrypt(encryptedRound.name, symmetricKey),
+    taskSize: +(decrypt(encryptedRound.taskSize, symmetricKey) || 0),
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, symmetricKey)),
     timesOfDayCardinality
   };
 }
 
-export const decryptRoundName = (encryptedRound: EncryptedRound, rsaKey: RsaKey): string => {
-  return decrypt(encryptedRound.name, rsaKey);
+export const decryptRoundName = (encryptedRound: EncryptedRound, symmetricKey: string): string => {
+  return decrypt(encryptedRound.name, symmetricKey);
 };
 
-export const decryptRoundWithoutName = (encryptedRound: EncryptedRound, rsaKey: RsaKey): RoundWithoutName => {
+export const decryptRoundWithoutName = (encryptedRound: EncryptedRound, symmetricKey: string): RoundWithoutName => {
 
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey));
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, symmetricKey));
   } catch (e) {
   }
 
   return {
-    taskSize: +(decrypt(encryptedRound.taskSize, rsaKey) || 0),
-    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, rsaKey)),
+    taskSize: +(decrypt(encryptedRound.taskSize, symmetricKey) || 0),
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, symmetricKey)),
     timesOfDayCardinality
   };
 };
 
-export const decryptRoundWithoutNameAndTaskSize = (encryptedRound: EncryptedRound, rsaKey: RsaKey): RoundWithoutNameAndTaskSize => {
+export const decryptRoundWithoutNameAndTaskSize = (encryptedRound: EncryptedRound, symmetricKey: string): RoundWithoutNameAndTaskSize => {
 
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, rsaKey));
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, symmetricKey));
   } catch (e) {
   }
 
   return {
-    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, rsaKey)),
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, symmetricKey)),
     timesOfDayCardinality
   };
 };
 
-export const encryptTodayTask = (todayTask: TodayTask, rsaKey: RsaKey): EncryptedTodayTask => {
+export const encryptTodayTask = (todayTask: TodayTask, symmetricKey: string): EncryptedTodayTask => {
 
   const timesOfDay: { [k in string]: boolean } = {};
   for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
-    timesOfDay[encrypt(timeOfDay, rsaKey)] = todayTask.timesOfDay[timeOfDay];
+    timesOfDay[encrypt(timeOfDay, symmetricKey)] = todayTask.timesOfDay[timeOfDay];
   }
 
   return {
-    description: encrypt(todayTask.description, rsaKey),
+    description: encrypt(todayTask.description, symmetricKey),
     timesOfDay,
   };
 };
 
-export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, rsaKey: RsaKey): TodayTask => {
+export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, symmetricKey: string): TodayTask => {
 
   const timesOfDay: { [k in string]: boolean } = {};
   for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
-    timesOfDay[decrypt(encryptedTimeOfDayName, rsaKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
+    timesOfDay[decrypt(encryptedTimeOfDayName, symmetricKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
   }
 
   return {
-    description: decrypt(encryptedTodayTask.description, rsaKey),
+    description: decrypt(encryptedTodayTask.description, symmetricKey),
     timesOfDay,
   };
 };
 
-export const encryptToday = (today: Today, rsaKey: RsaKey): EncryptedToday => {
+export const encryptToday = (today: Today, symmetricKey: string): EncryptedToday => {
   return {
-    name: encrypt(today.name, rsaKey),
-    taskSize: encrypt(today.taskSize, rsaKey)
+    name: encrypt(today.name, symmetricKey),
+    taskSize: encrypt(today.taskSize, symmetricKey)
   };
 };
 
-export const decryptToday = (encryptedToday: EncryptedToday, rsaKey: RsaKey): Today => {
+export const decryptToday = (encryptedToday: EncryptedToday, symmetricKey: string): Today => {
   return {
-    name: decrypt(encryptedToday.name, rsaKey),
-    taskSize: +decrypt(encryptedToday.taskSize, rsaKey)
+    name: decrypt(encryptedToday.name, symmetricKey),
+    taskSize: +decrypt(encryptedToday.taskSize, symmetricKey)
   };
 };

@@ -149,8 +149,8 @@ export class RoundService {
         const todayName = this.roundsService.todayName$.value;
 
         const documentChangeActionToday = some.find((doc) => {
-          const name = decrypt((doc.payload.doc.data() as {name: string})?.name, this.authService.userData.privateKey);
-          return name.substring(1, name.length-1) === todayName;
+          const name = decrypt((doc.payload.doc.data() as {name: string})?.name, this.authService.userData.symmetricKey);
+          return name === todayName;
         });
 
         if (this.todaySub && !this.todaySub.closed) {
@@ -171,7 +171,7 @@ export class RoundService {
 
               documentChangeActionArr.forEach((documentChangeAction) => {
 
-                const task = decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.privateKey);
+                const task = decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.symmetricKey);
 
                 Object.keys(task.timesOfDay).forEach((timeOfDay) => {
                   if (!todayTasksByTimeOfDay[timeOfDay]) {
@@ -218,7 +218,7 @@ export class RoundService {
           map((documentChangeActionArr) =>
             documentChangeActionArr.map((documentChangeAction) => {
 
-              const task = decryptTask(documentChangeAction.payload.doc.data() as EncryptedTask, this.authService.userData.privateKey);
+              const task = decryptTask(documentChangeAction.payload.doc.data() as EncryptedTask, this.authService.userData.symmetricKey);
 
               console.log(task.timesOfDay);
 
@@ -250,7 +250,7 @@ export class RoundService {
             const encryptedTask = taskDocSnap.data();
 
             if (encryptedTask) {
-              return decryptTask(encryptedTask, this.authService.userData.privateKey);
+              return decryptTask(encryptedTask, this.authService.userData.symmetricKey);
             }
 
             return null;

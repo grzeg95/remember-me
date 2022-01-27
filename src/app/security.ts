@@ -1,118 +1,94 @@
 import * as CryptoJS from 'crypto-js';
+import {EncryptedToday, Today} from '../../functions/src/helpers/models';
 import {EncryptedRound, EncryptedTask, EncryptedTodayTask, Round, TodayTask, Task} from './user/models';
 
-export const encrypt = (data: any, privateKey: string): string => {
+export const encrypt = (data: any, symmetricKey: string): string => {
 
   let dataString = '';
 
-  try {
+  if (typeof data === 'string') {
+    dataString = data;
+  } else {
     dataString = JSON.stringify(data);
-  } catch (e) {
-    dataString = e + '';
   }
 
-  return CryptoJS.AES.encrypt(dataString, privateKey).toString();
-}
+  return CryptoJS.AES.encrypt(dataString, symmetricKey).toString();
+};
 
-export const decrypt = (data: string, privateKey: string): string => {
-  return CryptoJS.AES.decrypt(data, privateKey).toString(CryptoJS.enc.Utf8);
-}
+export const decrypt = (data: string, symmetricKey: string): string => {
+  return CryptoJS.AES.decrypt(data, symmetricKey).toString(CryptoJS.enc.Utf8);
+};
 
-export const encryptTask = (task: Task, privateKey: string): EncryptedTask => {
-  return {
-    description: encrypt(task.description, privateKey),
-    timesOfDay: encrypt(task.timesOfDay, privateKey),
-    daysOfTheWeek: encrypt(task.daysOfTheWeek, privateKey)
-  };
-}
-
-export const decryptTask = (encryptedTask: EncryptedTask, privateKey: string): Task => {
+export const decryptTask = (encryptedTask: EncryptedTask, symmetricKey: string): Task => {
 
   let daysOfTheWeek = [];
   try {
-    daysOfTheWeek = JSON.parse(CryptoJS.AES.decrypt(encryptedTask.daysOfTheWeek, privateKey).toString(CryptoJS.enc.Utf8))
-  } catch (e) {}
+    daysOfTheWeek = JSON.parse(decrypt(encryptedTask.daysOfTheWeek, symmetricKey));
+  } catch (e) {
+  }
 
   let timesOfDay = [];
   try {
-    timesOfDay = JSON.parse(CryptoJS.AES.decrypt(encryptedTask.timesOfDay, privateKey).toString(CryptoJS.enc.Utf8))
-  } catch (e) {}
-  console.log(timesOfDay);
+    timesOfDay = JSON.parse(decrypt(encryptedTask.timesOfDay, symmetricKey));
+  } catch (e) {
+  }
 
   let description = '';
+
   try {
-    description = CryptoJS.AES.decrypt(encryptedTask.description, privateKey).toString(CryptoJS.enc.Utf8);
-    console.log(description);
-    description = description.substring(1, description.length-1);
-  } catch (e) {}
+    description = decrypt(encryptedTask.description, symmetricKey);
+  } catch (e) {
+  }
 
   return {
     description,
     daysOfTheWeek,
     timesOfDay,
   };
-}
+};
 
-export const encryptRound = (round: Round, privateKey: string): EncryptedRound => {
-  return {
-    name: encrypt(round.name, privateKey),
-    taskSize: encrypt(round.taskSize, privateKey),
-    timesOfDayCardinality: encrypt(round.timesOfDayCardinality, privateKey),
-    timesOfDay: round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, privateKey))
-  };
-}
+export const decryptTaskTimesOfDay = (encryptedTask: EncryptedTask, symmetricKey: string): string[] => {
 
-export const decryptRound = (encryptedRound: EncryptedRound, privateKey: string): Round => {
+  try {
+    return JSON.parse(decrypt(encryptedTask.timesOfDay, symmetricKey));
+  } catch (e) {
+    return [];
+  }
+};
+
+// for unit tests
+export const decryptRound = (encryptedRound: EncryptedRound, symmetricKey: string): Round => {
 
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(CryptoJS.AES.decrypt(encryptedRound.timesOfDayCardinality, privateKey).toString(CryptoJS.enc.Utf8))
+    timesOfDayCardinality = JSON.parse(decrypt(encryptedRound.timesOfDayCardinality, symmetricKey))
   } catch (e) {}
 
-  let name = decrypt(encryptedRound.name, privateKey);
-  name = name.substring(1, name.length-1);
-
   return {
-    name,
-    taskSize: +(decrypt(encryptedRound.taskSize, privateKey) || 0),
-    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => {
-      const decryptedTimeOfDay = decrypt(timeOfDay, privateKey);
-      return decryptedTimeOfDay.substring(1, decryptedTimeOfDay.length-1)
-    }),
+    name: decrypt(encryptedRound.name, symmetricKey),
+    taskSize: +(decrypt(encryptedRound.taskSize, symmetricKey) || 0),
+    timesOfDay: encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, symmetricKey)),
     timesOfDayCardinality
   };
 }
 
-export const encryptTodayTask = (todayTask: TodayTask, privateKey: string): EncryptedTodayTask => {
+export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, symmetricKey: string): TodayTask => {
 
-  const timesOfDay: {[key in string]: boolean} = {};
-  for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
-    timesOfDay[encrypt(timeOfDay, privateKey)] = todayTask.timesOfDay[timeOfDay];
-  }
-
-  return {
-    description: CryptoJS.AES.encrypt(todayTask.description, privateKey).toString(),
-    timesOfDay,
-  };
-}
-
-export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, privateKey: string): TodayTask => {
-
-  const timesOfDay: {[key in string]: boolean} = {};
-  const timesOfDayEncryptedMap: {[key in string]: string} = {};
+  const timesOfDay: { [k in string]: boolean } = {};
   for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
-    let name = decrypt(encryptedTimeOfDayName, privateKey);
-    console.log(name);
-    name = name.substring(1, name.length-1);
-    timesOfDay[name] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
-    timesOfDayEncryptedMap[name] = encryptedTimeOfDayName;
+    timesOfDay[decrypt(encryptedTimeOfDayName, symmetricKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
   }
 
-  let description = CryptoJS.AES.decrypt(encryptedTodayTask.description, privateKey).toString(CryptoJS.enc.Utf8)
-
   return {
-    description,
-    timesOfDay,
-    timesOfDayEncryptedMap
+    timesOfDayEncryptedMap: undefined,
+    description: decrypt(encryptedTodayTask.description, symmetricKey),
+    timesOfDay
   };
-}
+};
+
+export const decryptToday = (encryptedToday: EncryptedToday, symmetricKey: string): Today => {
+  return {
+    name: decrypt(encryptedToday.name, symmetricKey),
+    taskSize: +decrypt(encryptedToday.taskSize, symmetricKey)
+  };
+};

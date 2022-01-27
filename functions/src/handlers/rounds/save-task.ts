@@ -9,10 +9,10 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 import {getUser} from '../../helpers/user';
 import {
   decrypt,
-  decryptRoundWithoutName, decryptRsaKey,
+  decryptRoundWithoutName, decryptSymmetricKey,
   decryptTask, encrypt, encryptRoundWithoutName,
   encryptTask, encryptToday,
-  encryptTodayTask, RsaKey
+  encryptTodayTask
 } from '../../security/security';
 
 const app = firestore();
@@ -92,7 +92,7 @@ const prepareTimesOfDay = (
   };
 };
 
-const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, rsaKey: RsaKey) => {
+const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, symmetricKey: string) => {
 
   // get all days from round
   const todayDocRefsMap: { [key in string]: DocumentSnapshot } = {};
@@ -108,7 +108,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     const docsSnaps = await Promise.all(docsSnapsPromises);
 
     for (const docSnap of docsSnaps) {
-      todayDocRefsMap[decrypt(docSnap.data()?.name, rsaKey)] = docSnap;
+      todayDocRefsMap[decrypt(docSnap.data()?.name, symmetricKey)] = docSnap;
     }
   });
 
@@ -203,7 +203,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     transaction.create(dayToCreate.docSnap.ref, encryptToday({
       name: dayToCreate.dayToCreate,
       taskSize: 1
-    }, rsaKey));
+    }, symmetricKey));
   }
 
   const newTaskForDays: { dayToCreate: string, docSnap: DocumentSnapshot }[] = await Promise.all(newTaskForDaysPromises);
@@ -211,9 +211,9 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
   // increment taskSize if new task is in today
   for (const dayToCreate of toCreate) {
     if (todayDocRefsMap[dayToCreate]) {
-      const todayTaskSize = +decrypt((todayDocRefsMap[dayToCreate].data() as EncryptedToday).taskSize, rsaKey);
+      const todayTaskSize = +decrypt((todayDocRefsMap[dayToCreate].data() as EncryptedToday).taskSize, symmetricKey);
       transaction.update(todayDocRefsMap[dayToCreate].ref, {
-        taskSize: encrypt(todayTaskSize + 1, rsaKey)
+        taskSize: encrypt(todayTaskSize + 1, symmetricKey)
       });
     }
   }
@@ -231,7 +231,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     transaction.create(item.docSnap.ref, encryptTodayTask({
       description: task.description,
       timesOfDay
-    }, rsaKey));
+    }, symmetricKey));
   }
 
   // remove
@@ -242,7 +242,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
 
   for (const day of taskDocSnapData.daysOfTheWeek || []) {
     if (!taskDaysOfTheWeek.has(day)) {
-      const todayTaskSize = +decrypt((todayDocRefsMap[day].data() as EncryptedToday).taskSize, rsaKey);
+      const todayTaskSize = +decrypt((todayDocRefsMap[day].data() as EncryptedToday).taskSize, symmetricKey);
 
       if (todayTaskSize === 1) {
         transaction.delete(todayDocRefsMap[day].ref);
@@ -269,7 +269,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     if (docData) {
 
       for (const timeOfDay of Object.keys(docData.timesOfDay)) {
-        oldTimesOfDay[decrypt(timeOfDay, rsaKey)] = docData.timesOfDay[timeOfDay];
+        oldTimesOfDay[decrypt(timeOfDay, symmetricKey)] = docData.timesOfDay[timeOfDay];
       }
     }
 
@@ -283,7 +283,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     transaction.update(todayTaskDocSnapsMap[dayToUpdate].ref, encryptTodayTask({
       description: task.description,
       timesOfDay: newTimesOfDay
-    }, rsaKey));
+    }, symmetricKey));
   }
 };
 
@@ -391,13 +391,13 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // roundSnap must exists
     testRequirement(!roundDocSnap.exists);
 
-    // get rsa key
+    // get symmetric key
     // TODO
-    let rsaKey: RsaKey;
-    if (context.auth?.token.decryptedRsaKey) {
-      rsaKey = context.auth?.token.decryptedRsaKey;
+    let symmetricKey: string;
+    if (context.auth?.token.decryptedSymmetricKey) {
+      symmetricKey = context.auth?.token.decryptedSymmetricKey;
     } else {
-      rsaKey = await decryptRsaKey(context.auth?.token.encryptedRsaKey);
+      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedEncryptedKey);
     }
 
     const taskDocSnapTmp = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));
@@ -405,7 +405,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     const task = data.task as Task;
     task.description = task.description.trim();
 
-    const roundDocSnapData = decryptRoundWithoutName(roundDocSnap.data() as EncryptedRound, rsaKey);
+    const roundDocSnapData = decryptRoundWithoutName(roundDocSnap.data() as EncryptedRound, symmetricKey);
     let currentTaskSize = roundDocSnapData?.taskSize || 0;
     const timesOfDay = roundDocSnapData?.timesOfDay || [];
     const timesOfDayCardinality = roundDocSnapData?.timesOfDayCardinality || [];
@@ -424,7 +424,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       currentTaskSize++;
     } else {
       taskDocSnap = taskDocSnapTmp;
-      const taskDocSnapData = decryptTask(taskDocSnap.data() as EncryptedTask, rsaKey) as Task;
+      const taskDocSnapData = decryptTask(taskDocSnap.data() as EncryptedTask, symmetricKey) as Task;
 
       /*
       * Check if nothing changed or only description was changed
@@ -449,7 +449,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
           for (const docRef of docRefs) {
 
             const docSnap = await transaction.get(docRef);
-            docRefsMap[decrypt(docSnap.data()?.name, rsaKey)] = docSnap;
+            docRefsMap[decrypt(docSnap.data()?.name, symmetricKey)] = docSnap;
           }
         });
 
@@ -468,12 +468,12 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         for (const todayTask of todayTaskDocSnapsToUpdate) {
           testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
           transaction.update(todayTask.ref, {
-            description: encrypt(task.description, rsaKey)
+            description: encrypt(task.description, symmetricKey)
           });
         }
 
         transaction.update(taskDocSnap.ref, {
-          description: encrypt(task.description, rsaKey)
+          description: encrypt(task.description, symmetricKey)
         });
 
         return transaction;
@@ -484,22 +484,22 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       * */
       if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-        await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, rsaKey);
+        await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, symmetricKey);
 
         // update task
-        transaction.set(taskDocSnap.ref, encryptTask(task, rsaKey));
+        transaction.set(taskDocSnap.ref, encryptTask(task, symmetricKey));
 
         return transaction;
       }
 
     }
 
-    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptTask(taskDocSnap.data() as EncryptedTask, rsaKey).timesOfDay || [], data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
+    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptTask(taskDocSnap.data() as EncryptedTask, symmetricKey).timesOfDay || [], data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
 
-    await proceedTodayTasks(transaction, task, taskDocSnap, decryptTask(taskDocSnap.data() as EncryptedTask, rsaKey), roundDocSnap, rsaKey);
+    await proceedTodayTasks(transaction, task, taskDocSnap, decryptTask(taskDocSnap.data() as EncryptedTask, symmetricKey), roundDocSnap, symmetricKey);
 
     // update task
-    transaction.set(taskDocSnap.ref, encryptTask(task, rsaKey));
+    transaction.set(taskDocSnap.ref, encryptTask(task, symmetricKey));
 
     // delete taskDocSnapTmp if created
     if (created) {
@@ -511,7 +511,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       taskSize: currentTaskSize,
       timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
       timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality
-    }, rsaKey);
+    }, symmetricKey);
 
     transaction.update(userDocSnap.ref.collection('rounds').doc(roundId), timesOfDayDataToWrite);
 
