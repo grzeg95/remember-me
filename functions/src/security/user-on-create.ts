@@ -24,6 +24,7 @@ export const handler = async (user: UserRecord, context: EventContext) => {
   );
 
   const symmetricKey = crypto.randomBytes(32).toString('hex');
+  console.log(symmetricKey);
 
   const encryptedEncryptedKey = crypto.publicEncrypt(
     {
