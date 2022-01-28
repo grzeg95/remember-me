@@ -12,7 +12,7 @@ module.exports.myAuth = {
   auth: {
     uid: module.exports.myId,
     token: {
-      decryptedSymmetricKey: 'UUo7Nj8g0QHmvP5FmQEbSTHaq1A9ivy7UUo7Nj8g0QHmvP5FmQEbSTHaq1A9ivy7'
+      decryptedSymmetricKey: 'UUo7Nj8g0QHmvP5FmQEbSTHaq1A9ivy7'
     }
   },
   app: {

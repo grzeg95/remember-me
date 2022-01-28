@@ -68,7 +68,7 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     if (context.auth?.token.decryptedSymmetricKey) {
       symmetricKey = context.auth?.token.decryptedSymmetricKey;
     } else {
-      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedEncryptedKey);
+      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
     }
 
     const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));

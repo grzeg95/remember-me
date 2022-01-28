@@ -397,7 +397,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     if (context.auth?.token.decryptedSymmetricKey) {
       symmetricKey = context.auth?.token.decryptedSymmetricKey;
     } else {
-      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedEncryptedKey);
+      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
     }
 
     const taskDocSnapTmp = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));

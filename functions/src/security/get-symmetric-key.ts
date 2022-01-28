@@ -10,7 +10,7 @@ export const handler = async (
 ): Promise<string> => {
 
   // @ts-ignore
-  const ciphertext = new Uint8Array(context.auth?.token.encryptedEncryptedKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(context.auth?.token.encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
   const ciphertextCrc32c = crc32c.calculate(ciphertext);
 

@@ -27,7 +27,7 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     if (context.auth?.token.decryptedSymmetricKey) {
       symmetricKey = context.auth?.token.decryptedSymmetricKey;
     } else {
-      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedEncryptedKey);
+      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
     }
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
