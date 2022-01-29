@@ -58,15 +58,17 @@ export class AuthService {
             throw error;
           })
         ).subscribe((actionUserDocSnap) => {
-
-          console.log(actionUserDocSnap.payload.data()?.hasSymmetricKey);
-
           if (!this.userIsReady$.value) {
             const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
             if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
               user.getIdTokenResult(true).then((token) => {
-                if (!token.claims.encryptedEncryptedKey) {
+                if (!token.claims.encryptedSymmetricKey) {
                   console.log('should reload');
+
+                  user.reload().then(() => {
+                    console.log('user reloaded');
+                  })
+
                 } else {
                   this.fns.httpsCallable('getSymmetricKey')(null).subscribe((success) => {
                     this.userData.symmetricKey = success;

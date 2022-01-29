@@ -74,17 +74,20 @@ export const decryptRound = (encryptedRound: EncryptedRound, symmetricKey: strin
 
 export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, symmetricKey: string): TodayTask => {
 
-  const timesOfDay: { [k in string]: boolean } = {};
+  const timesOfDay: {[key in string]: boolean} = {};
+  const timesOfDayEncryptedMap: {[key in string]: string} = {};
   for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
-    timesOfDay[decrypt(encryptedTimeOfDayName, symmetricKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
+    const name = decrypt(encryptedTimeOfDayName, symmetricKey);
+    timesOfDay[name] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
+    timesOfDayEncryptedMap[name] = encryptedTimeOfDayName;
   }
 
   return {
-    timesOfDayEncryptedMap: undefined,
     description: decrypt(encryptedTodayTask.description, symmetricKey),
-    timesOfDay
+    timesOfDay,
+    timesOfDayEncryptedMap
   };
-};
+}
 
 export const decryptToday = (encryptedToday: EncryptedToday, symmetricKey: string): Today => {
   return {
