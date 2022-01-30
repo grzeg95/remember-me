@@ -2,7 +2,7 @@
   "name": "functions",
   "scripts": {
     "lint": "tslint --project tsconfig.json",
-    "build": "echo removing old generated lib && (if exist lib rmdir /s /q lib) && echo removed && echo tsc: start && tsc && echo tsc: done && python minify.py",
+    "build": "echo removing old generated lib && (if exist lib rmdir /s /q lib) && echo removed && echo tsc: start && tsc && echo tsc: done",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
@@ -11,7 +11,7 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "14"
+    "node": "15"
   },
   "main": "lib/functions/src/index.js",
   "dependencies": {

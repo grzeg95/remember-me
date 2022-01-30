@@ -181,7 +181,8 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.getRoundByIdSub.unsubscribe();
       }
 
-      this.getRoundByIdSub = this.roundsService.getRoundById$(roundId).subscribe((round) => {
+      this.getRoundByIdSub = this.roundsService.getRoundById$(roundId).subscribe(async (roundPromise) => {
+        const round = await roundPromise;
         if (round) {
           this.roundForm.get('name').setValue(round.name);
           this.initValues.name = round.name;

@@ -6,7 +6,7 @@ import {getUser} from '../../helpers/user';
 import {
   decryptRoundWithoutNameAndTaskSize,
   decryptSymmetricKey,
-  encryptRoundWithoutNameAndTaskSize
+  encryptRoundWithoutNameAndTaskSize, getCryptoKey
 } from '../../security/security';
 
 const app = firestore();
@@ -65,14 +65,14 @@ export const handler = async (data: any, context: CallableContext) => {
 
     // get symmetric key
     // TODO
-    let symmetricKey: string;
+    let cryptoKey: CryptoKey;
     if (context.auth?.token.decryptedSymmetricKey) {
-      symmetricKey = context.auth?.token.decryptedSymmetricKey;
+      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey);
     } else {
-      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
+      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
     }
 
-    const timesOfDayDocSnapData = decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, symmetricKey);
+    const timesOfDayDocSnapData = await decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, cryptoKey);
     const timesOfDay = timesOfDayDocSnapData.timesOfDay;
     const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
@@ -85,10 +85,10 @@ export const handler = async (data: any, context: CallableContext) => {
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
     // update user
-    const timesOfDayDataToWrite = encryptRoundWithoutNameAndTaskSize({
+    const timesOfDayDataToWrite = await encryptRoundWithoutNameAndTaskSize({
       timesOfDay,
       timesOfDayCardinality
-    }, symmetricKey);
+    }, cryptoKey);
 
     transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);
 

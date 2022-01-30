@@ -92,17 +92,19 @@ export class RoundsService {
             };
           }, {});
         }),
-        map((roundsEncrypted: {[ken in string]: EncryptedRound}) => {
-          const rounds: {[ken in string]: Round} = {};
+        map(async (roundsEncrypted: { [ken in string]: EncryptedRound }) => {
+          const rounds: { [ken in string]: Round } = {};
           for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
-            rounds[id] = decryptRound(roundsEncrypted[id], this.authService.userData.symmetricKey);
+            rounds[id] = await decryptRound(roundsEncrypted[id], this.authService.userData.symmetricKey);
             rounds[id].id = id;
             rounds[id].timesOfDayEncrypted = roundsEncrypted[id].timesOfDay;
           }
+          console.log(rounds);
           return rounds;
         })
-      ).subscribe((roundsList) => {
+      ).subscribe(async(roundsListPromise) => {
 
+        const roundsList = await roundsListPromise;
         console.log(roundsList);
 
         const roundsOrder = this.roundsOrder$.value;
@@ -195,17 +197,17 @@ export class RoundsService {
     });
   }
 
-  getRoundById$(roundId: string): Observable<Round | null> {
+  getRoundById$(roundId: string): Observable<Promise<Round | null>> {
 
     return this.authService.userIsReady$.pipe(
       filter((isReady) => isReady),
       take(1),
       switchMap(() => {
         return this.afs.doc<EncryptedRound>(`users/${this.authService.userData.uid}/rounds/${roundId}`).get().pipe(
-          map((docSnap) => {
+          map(async (docSnap) => {
             const round = docSnap.data();
             if (round) {
-              return decryptRound(round, this.authService.userData.symmetricKey);
+              return await decryptRound(round, this.authService.userData.symmetricKey);
             }
             return null;
           })

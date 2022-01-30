@@ -8,7 +8,7 @@ import {
   decryptRoundName,
   decryptSymmetricKey,
   encrypt,
-  encryptRound
+  encryptRound, getCryptoKey
 } from '../../security/security';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
@@ -64,16 +64,16 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
 
     // get symmetric key
     // TODO
-    let symmetricKey: string;
+    let cryptoKey: CryptoKey;
     if (context.auth?.token.decryptedSymmetricKey) {
-      symmetricKey = context.auth?.token.decryptedSymmetricKey;
+      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey);
     } else {
-      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
+      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
     }
 
     const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
     const userDocSnapData = userDocSnap.data();
-    const rounds = userDocSnapData?.rounds ? JSON.parse(decrypt(userDocSnap.data()?.rounds, symmetricKey)) as string[] : [];
+    const rounds = userDocSnapData?.rounds ? JSON.parse(await decrypt(userDocSnap.data()?.rounds, cryptoKey)) as string[] : [];
 
     let roundDocSnap: DocumentSnapshot;
 
@@ -84,12 +84,12 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
       testRequirement(rounds.length >= 5, `You can own 5 rounds 🤔`);
 
       roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
-      transaction.create(roundDocSnap.ref, encryptRound({
+      transaction.create(roundDocSnap.ref, await encryptRound({
         taskSize: 0,
         timesOfDay: [],
         timesOfDayCardinality: [],
         name: data.name
-      }, symmetricKey));
+      }, cryptoKey));
 
       roundId = roundDocSnap.id;
       rounds.push(roundId);
@@ -99,20 +99,20 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     } else {
 
       roundDocSnap = roundDocSnapTmp;
-      const roundName = decryptRoundName(roundDocSnap.data() as EncryptedRound, symmetricKey);
+      const roundName = await decryptRoundName(roundDocSnap.data() as EncryptedRound, cryptoKey);
       /*
       * Check if name was changed
       * */
       testRequirement(roundName === data.name);
 
       transaction.update(roundDocSnap.ref, {
-        name: encrypt(data.name, symmetricKey)
+        name: await encrypt(data.name, cryptoKey)
       });
     }
 
     // update user
     const userDataToWrite = {
-      rounds: encrypt(rounds, symmetricKey)
+      rounds: await encrypt(rounds, cryptoKey)
     };
     writeUser(transaction, userDocSnap, userDataToWrite);
 

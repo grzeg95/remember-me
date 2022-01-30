@@ -23,16 +23,13 @@ export const handler = async (user: UserRecord, context: EventContext) => {
     'GetPublicKey: request corrupted in-transit'
   );
 
-  const symmetricKey = crypto.randomBytes(16).toString('hex');
-  console.log(symmetricKey);
-
   const encryptedSymmetricKey = crypto.publicEncrypt(
     {
       key: publicKey.pem,
       oaepHash: 'sha256',
       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
     },
-    Buffer.from(symmetricKey)
+    Buffer.from(crypto.randomBytes(8).toString('hex'))
   ).toString('hex');
 
   const customUserClaims = {

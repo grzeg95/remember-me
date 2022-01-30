@@ -298,11 +298,11 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.getTaskByIdSub.unsubscribe();
       }
 
-      this.getTaskByIdSub = this.roundService.getTaskById$(this.id, this.round.id).subscribe((task) => {
+      this.getTaskByIdSub = this.roundService.getTaskById$(this.id, this.round.id).subscribe(async (task) => {
         if (typeof task === 'undefined') {
           this.deepResetForm();
         } else if (task) {
-          this.setAll(task);
+          this.setAll(await task);
         }
         this.savingInProgress = false;
       });

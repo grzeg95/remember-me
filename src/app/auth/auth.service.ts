@@ -4,13 +4,15 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
-import {catchError} from 'rxjs/operators';
+import {catchError, filter, take} from 'rxjs/operators';
+import {AppService} from '../app-service';
 import {decrypt} from '../security';
 import {HTTPError} from '../user/models';
 import {User, UserData, EncryptedUser} from './user-data.model';
 import {GoogleAuthProvider, FacebookAuthProvider} from 'firebase/auth';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
+import {Buffer} from 'buffer';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +30,8 @@ export class AuthService {
     private router: Router,
     private afs: AngularFirestore,
     private snackBar: MatSnackBar,
-    private fns: AngularFireFunctions
+    private fns: AngularFireFunctions,
+    private appService: AppService
   ) {
     this.afAuth.authState.subscribe((user) => {
 
@@ -42,7 +45,11 @@ export class AuthService {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          emailVerified: user.emailVerified
+          emailVerified: user.emailVerified,
+          symmetricKey: {
+            cryptoKey: null,
+            string: null
+          }
         };
 
         if (this.userDocSub && !this.userDocSub.closed) {
@@ -57,26 +64,62 @@ export class AuthService {
             }
             throw error;
           })
-        ).subscribe((actionUserDocSnap) => {
+        ).subscribe(async (actionUserDocSnap) => {
           if (!this.userIsReady$.value) {
-            const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
-            if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
-              user.getIdTokenResult(true).then((token) => {
-                if (!token.claims.encryptedSymmetricKey) {
-                  console.log('should reload');
+            this.appService.dbIsReady$
+              .pipe(
+                filter((isReady) => isReady === 'will not' || isReady),
+                take(1)
+              ).subscribe(async (isReady) => {
 
-                  user.reload().then(() => {
-                    console.log('user reloaded');
-                  })
+              // get key if tre is no db or key in db
 
+              if (isReady === 'will not') {
+                // get key to string from request
+                // request
+                await this.getSymmetricKey(user, actionUserDocSnap).then((key) => {
+                  if (key) {
+                    this.userData.symmetricKey.string = key;
+                    this.userIsReady$.next(true);
+                  }
+                });
+              } else if (isReady) {
+
+                // get key from db or request
+                const key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
+
+                if (key) {
+                  this.userData.symmetricKey.cryptoKey = key;
+                  this.userIsReady$.next(true);
                 } else {
-                  this.fns.httpsCallable('getSymmetricKey')(null).subscribe((success) => {
-                    this.userData.symmetricKey = success;
+                  // request
+                  await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
+                    try {
+
+                      console.log(key);
+
+                      this.userData.symmetricKey.cryptoKey = await crypto.subtle.importKey(
+                        'raw',
+                        Buffer.from(key),
+                        {
+                          name: 'AES-CBC'
+                        },
+                        false,
+                        ['decrypt']
+                      );
+
+                      console.log(this.userData.symmetricKey.cryptoKey);
+                      await this.appService.addToDb('remember-me-database-keys', user.uid, this.userData.symmetricKey.cryptoKey);
+                    } catch (e) {
+                      console.error(e);
+                      this.userData.symmetricKey.string = key;
+                    }
+
                     this.userIsReady$.next(true);
                   });
                 }
-              });
-            }
+              }
+            });
           } else {
 
             if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
@@ -94,7 +137,7 @@ export class AuthService {
             let rounds = [];
 
             if (actionUserDocSnap.payload.data()?.rounds) {
-              rounds = JSON.parse(decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.symmetricKey))
+              rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.symmetricKey));
             }
 
             this.user$.next({
@@ -109,6 +152,26 @@ export class AuthService {
 
       this.firstLoginChecking = false;
     });
+  }
+
+  async getSymmetricKey(user, actionUserDocSnap): Promise<string> {
+    const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
+    if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
+
+      return await user.getIdTokenResult(true).then((token) => {
+        if (!token.claims.encryptedSymmetricKey) {
+          console.log('should reload');
+
+          user.reload().then(() => {
+            console.log('user reloaded');
+          });
+
+          return undefined;
+        } else {
+          return this.fns.httpsCallable('getSymmetricKey')(null).toPromise();
+        }
+      });
+    }
   }
 
   get isLoggedIn(): boolean | null {

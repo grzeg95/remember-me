@@ -148,8 +148,8 @@ export class RoundService {
 
         const todayName = this.roundsService.todayName$.value;
 
-        const documentChangeActionToday = some.find((doc) => {
-          const name = decrypt((doc.payload.doc.data() as {name: string})?.name, this.authService.userData.symmetricKey);
+        const documentChangeActionToday = some.find(async (doc) => {
+          const name = await decrypt((doc.payload.doc.data() as { name: string })?.name, this.authService.userData.symmetricKey);
           return name === todayName;
         });
 
@@ -169,9 +169,10 @@ export class RoundService {
 
               const todayTasksByTimeOfDay: { [timeOfDay: string]: any[] } = {};
 
-              documentChangeActionArr.forEach((documentChangeAction) => {
+              documentChangeActionArr.forEach(async (documentChangeAction) => {
 
-                const task = decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.symmetricKey);
+                const task = await decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.symmetricKey);
+                console.log(task);
 
                 Object.keys(task.timesOfDay).forEach((timeOfDay) => {
                   if (!todayTasksByTimeOfDay[timeOfDay]) {
@@ -193,6 +194,7 @@ export class RoundService {
 
             })
           ).subscribe((today) => {
+            console.log(today);
             if (today) {
               this.today$.next(today);
             }
@@ -216,11 +218,9 @@ export class RoundService {
         .collection<EncryptedTask>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
         .snapshotChanges().pipe(
           map((documentChangeActionArr) =>
-            documentChangeActionArr.map((documentChangeAction) => {
+            documentChangeActionArr.map(async (documentChangeAction) => {
 
-              const task = decryptTask(documentChangeAction.payload.doc.data() as EncryptedTask, this.authService.userData.symmetricKey);
-
-              console.log(task.timesOfDay);
+              const task = await decryptTask(documentChangeAction.payload.doc.data() as EncryptedTask, this.authService.userData.symmetricKey);
 
               return {
                 description: task.description,
@@ -230,27 +230,27 @@ export class RoundService {
               } as TasksListItem;
             })
           )
-        ).subscribe((tasks) => {
+        ).subscribe(async (tasks) => {
           if (tasks) {
-            this.tasks$.next(tasks);
+            this.tasks$.next(await Promise.all(tasks));
             this.tasksFirstLoading$.next(false);
           }
         });
     });
   }
 
-  getTaskById$(id: string, roundId: string): Observable<Task | null> {
+  getTaskById$(id: string, roundId: string): Observable<Promise<Task | null>> {
 
     return this.authService.userIsReady$.pipe(
       filter((isReady) => isReady),
       take(1),
       switchMap(() => {
         return this.afs.doc<EncryptedTask>(`users/${this.authService.userData.uid}/rounds/${roundId}/task/${id}`).get().pipe(
-          map((taskDocSnap) => {
+          map(async (taskDocSnap) => {
             const encryptedTask = taskDocSnap.data();
 
             if (encryptedTask) {
-              return decryptTask(encryptedTask, this.authService.userData.symmetricKey);
+              return await decryptTask(encryptedTask, this.authService.userData.symmetricKey);
             }
 
             return null;

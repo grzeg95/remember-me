@@ -2,7 +2,7 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser, writeUser} from '../../helpers/user';
-import {decrypt, decryptSymmetricKey, encrypt} from '../../security/security';
+import {decrypt, decryptSymmetricKey, encrypt, getCryptoKey} from '../../security/security';
 
 const app = firestore();
 
@@ -23,11 +23,11 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
 
     // get symmetric key
     // TODO
-    let symmetricKey: string;
+    let cryptoKey: CryptoKey;
     if (context.auth?.token.decryptedSymmetricKey) {
-      symmetricKey = context.auth?.token.decryptedSymmetricKey;
+      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey);
     } else {
-      symmetricKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
+      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
     }
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
@@ -67,14 +67,14 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     transaction.delete(roundDocSnap.ref);
 
     // update user
-    const roundsInUser: string[] = userDocSnap.data()?.rounds ? JSON.parse(decrypt(userDocSnap.data()?.rounds, symmetricKey)) as string[] : [];
+    const roundsInUser: string[] = userDocSnap.data()?.rounds ? JSON.parse(await decrypt(userDocSnap.data()?.rounds, cryptoKey)) as string[] : [];
     const roundIndexInUser = roundsInUser.indexOf(roundId);
 
     testRequirement(roundIndexInUser === -1);
     roundsInUser.splice(roundIndexInUser, 1);
 
     const userDataToWrite = {
-      rounds: encrypt(roundsInUser, symmetricKey)
+      rounds: await encrypt(roundsInUser, cryptoKey)
     };
     writeUser(transaction, userDocSnap, userDataToWrite);
 
