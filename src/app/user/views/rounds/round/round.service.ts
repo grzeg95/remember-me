@@ -46,8 +46,6 @@ export class RoundService {
 
   clearCache(): void {
 
-    console.log('clear cache');
-
     this.today$.next({});
     this.tasks$.next([]);
     this.todayFirstLoading$.next(true);
@@ -165,14 +163,12 @@ export class RoundService {
 
         this.todaySub = this.afs.doc(documentChangeActionToday.payload.doc.ref.path).collection<EncryptedTodayTask>('task', (ref) => ref.limit(25))
           .snapshotChanges().pipe(
-            map((documentChangeActionArr) => {
+            map(async (documentChangeActionArr) => {
 
               const todayTasksByTimeOfDay: { [timeOfDay: string]: any[] } = {};
 
-              documentChangeActionArr.forEach(async (documentChangeAction) => {
-
+              for (const documentChangeAction of documentChangeActionArr) {
                 const task = await decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.symmetricKey);
-                console.log(task);
 
                 Object.keys(task.timesOfDay).forEach((timeOfDay) => {
                   if (!todayTasksByTimeOfDay[timeOfDay]) {
@@ -187,14 +183,13 @@ export class RoundService {
                     timeOfDayEncrypted: task.timesOfDayEncryptedMap[timeOfDay]
                   });
                 });
-
-              });
+              }
 
               return todayTasksByTimeOfDay;
 
             })
-          ).subscribe((today) => {
-            console.log(today);
+          ).subscribe(async (todayPromise) => {
+            const today = await todayPromise;
             if (today) {
               this.today$.next(today);
             }

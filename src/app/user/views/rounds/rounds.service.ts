@@ -99,13 +99,11 @@ export class RoundsService {
             rounds[id].id = id;
             rounds[id].timesOfDayEncrypted = roundsEncrypted[id].timesOfDay;
           }
-          console.log(rounds);
           return rounds;
         })
       ).subscribe(async(roundsListPromise) => {
 
         const roundsList = await roundsListPromise;
-        console.log(roundsList);
 
         const roundsOrder = this.roundsOrder$.value;
         if (roundsOrder.length) {
