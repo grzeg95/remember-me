@@ -1,17 +1,38 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="(tasks$ | async).length === 0; then waitForItems; else showItems"></ng-template>
+    <!--
 
-    <ng-template #waitForItems>
-      <div class="row message" *ngIf="((tasksFirstLoading$ | async) || (roundsOrderFirstLoading$ | async)) && (isOnline$ | async); else onOneExists">
-        <div class="col">
-          <app-loading-text></app-loading-text>
-        </div>
+      !isOnline ? wait for connection but I also can have items before I went offline then show them but only when I loaded then before
+
+      check if I loaded items
+      false ? show loading...
+      true ? check if there is anybody
+        true ? show them
+        false ? show loading...
+
+      -->
+
+    <div class="row message" *ngIf="!(isOnline$ | async) && (tasks$ | async) === null">
+      <div class="col">
+        <span>You are offline. Waiting for connection...</span>
       </div>
+    </div>
 
-      <ng-template #onOneExists>
-        <div class="row message" *ngIf="isOnline$ | async">
+    <ng-template *ngIf="!(isOnline$ | async) && (tasks$ | async) !== null && (tasks$ | async).length > 0; then showItems"></ng-template>
+
+    <ng-container *ngIf="(isOnline$ | async)">
+
+      <ng-container *ngIf="(tasksFirstLoading$ | async) || (roundsOrderFirstLoading$ | async) || (tasks$ | async) === null">
+        <div class="row message">
+          <div class="col">
+            <app-loading-text></app-loading-text>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!(tasksFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (tasks$ | async) !== null && (tasks$ | async).length === 0">
+        <div class="row message">
           <div class="col">
             <span>Add some tasks to this empty list</span>
           </div>
@@ -19,17 +40,16 @@
             <div class="add-task">
               <button mat-flat-button
                       color="primary"
-                      (click)="goToTask()">Add new task</button>
+                      (click)="goToTask()">Add new task
+              </button>
             </div>
           </div>
         </div>
-        <div class="row message" *ngIf="!(isOnline$ | async)">
-          <div class="col">
-            <span>You are offline. Waiting for connection...</span>
-          </div>
-        </div>
-      </ng-template>
-    </ng-template>
+      </ng-container>
+
+      <ng-template *ngIf="!(tasksFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (tasks$ | async) !== null && (tasks$ | async).length > 0; then showItems"></ng-template>
+
+    </ng-container>
 
     <ng-template #showItems>
       <div class="row">

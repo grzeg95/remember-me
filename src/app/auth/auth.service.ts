@@ -40,16 +40,19 @@ export class AuthService {
 
       if (user) {
 
+        if (!crypto.subtle) {
+          this.signOut();
+          this.snackBar.open('Stop using IE lol');
+          return;
+        }
+
         this.userData = {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
           emailVerified: user.emailVerified,
-          symmetricKey: {
-            cryptoKey: null,
-            string: null
-          }
+          cryptoKey: null
         };
 
         if (this.userDocSub && !this.userDocSub.closed) {
@@ -70,54 +73,44 @@ export class AuthService {
               .pipe(
                 filter((isReady) => isReady === 'will not' || isReady),
                 take(1)
-              ).subscribe(async (isReady) => {
+              ).subscribe(async () => {
 
               // get key if tre is no db or key in db
 
-              if (isReady === 'will not') {
-                // get key to string from request
+              // get key from db or request
+              let key;
+              try {
+                key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
+              } catch (e) {
+              }
+
+              if (key) {
+                this.userData.cryptoKey = key;
+                this.userIsReady$.next(true);
+              } else {
                 // request
-                await this.getSymmetricKey(user, actionUserDocSnap).then((key) => {
-                  if (key) {
-                    this.userData.symmetricKey.string = key;
-                    this.userIsReady$.next(true);
+                await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
+
+                  // create crypto key
+
+                  this.userData.cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    Buffer.from(key),
+                    {
+                      name: 'AES-CBC'
+                    },
+                    false,
+                    ['decrypt']
+                  );
+
+                  // try to store user crypto key to indexedDB
+                  try {
+                    await this.appService.addToDb('remember-me-database-keys', user.uid, this.userData.cryptoKey);
+                  } catch (e) {
                   }
-                });
-              } else if (isReady) {
 
-                // get key from db or request
-                const key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
-
-                if (key) {
-                  this.userData.symmetricKey.cryptoKey = key;
                   this.userIsReady$.next(true);
-                } else {
-                  // request
-                  await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
-                    try {
-
-                      console.log(key);
-
-                      this.userData.symmetricKey.cryptoKey = await crypto.subtle.importKey(
-                        'raw',
-                        Buffer.from(key),
-                        {
-                          name: 'AES-CBC'
-                        },
-                        false,
-                        ['decrypt']
-                      );
-
-                      console.log(this.userData.symmetricKey.cryptoKey);
-                      await this.appService.addToDb('remember-me-database-keys', user.uid, this.userData.symmetricKey.cryptoKey);
-                    } catch (e) {
-                      console.error(e);
-                      this.userData.symmetricKey.string = key;
-                    }
-
-                    this.userIsReady$.next(true);
-                  });
-                }
+                });
               }
             });
           } else {
@@ -137,7 +130,7 @@ export class AuthService {
             let rounds = [];
 
             if (actionUserDocSnap.payload.data()?.rounds) {
-              rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.symmetricKey));
+              rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
             }
 
             this.user$.next({

@@ -73,11 +73,6 @@ export const encrypt = async (data: any, cryptoKey: CryptoKey): Promise<string> 
     iv
   }, cryptoKey, dataBuffer);
 
-  console.log({
-    iv: iv.toString('base64'),
-    encrypted: toBuffer(encrypted).toString('base64')
-  });
-
   return Buffer.concat([iv, toBuffer(encrypted)]).toString('base64')
 }
 
@@ -101,8 +96,6 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
     name: 'AES-CBC',
     iv
   }, cryptoKey, encrypted)).toString('utf-8');
-
-  console.log(decrypted);
 
   return decrypted;
 }
@@ -135,7 +128,6 @@ export const encrypt_1 = (data: any, symmetricKey: string): string => {
     concatenned: Buffer.concat([salt, iv, encrypted]).toString('base64')
   };
 
-  console.log(encryptedData);
   return encryptedData.concatenned;
 };
 
@@ -154,10 +146,7 @@ export const decrypt_1 = (data: string, symmetricKey: string): string => {
   decipher.write(encrypted.slice(salt_len+iv_len));
   decipher.end();
 
-  const decrypted = decipher.read().toString();
-  console.log(decrypted);
-
-  return decrypted;
+  return decipher.read().toString();
 };
 
 export const encryptTask = async (task: Task, cryptoKey: CryptoKey): Promise<EncryptedTask> => {

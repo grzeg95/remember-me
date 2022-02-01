@@ -4,10 +4,7 @@ export interface UserData {
   displayName: string;
   photoURL: string;
   emailVerified: boolean;
-  symmetricKey?: {
-    string?: string;
-    cryptoKey?: CryptoKey;
-  };
+  cryptoKey?: CryptoKey;
 }
 
 export interface User {

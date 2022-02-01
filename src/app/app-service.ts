@@ -1,12 +1,12 @@
 import {Injectable} from '@angular/core';
 import {ConnectionService} from './connection.service';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {BehaviorSubject} from 'rxjs';
 
 @Injectable()
 export class AppService {
 
-  get isOnline$(): Observable<boolean> {
-    return this._isOnline$.asObservable();
+  get isOnline$(): BehaviorSubject<boolean> {
+    return this._isOnline$;
   }
 
   private _isOnline$: BehaviorSubject<boolean> = new BehaviorSubject(true);
@@ -27,13 +27,11 @@ export class AppService {
       reqOpenDb.onerror = () => this.dbIsReady$.next('will not');
 
       reqOpenDb.onsuccess = () => {
-        console.log('onsuccess');
         this.db = reqOpenDb.result;
         this.dbIsReady$.next(true);
       };
 
       reqOpenDb.onupgradeneeded = () => {
-        console.log('onupgradeneeded');
         this.db = reqOpenDb.result;
         this.db.createObjectStore('remember-me-database-keys');
       };

@@ -36,8 +36,8 @@ export class RoundService {
 
   private _setTimesOfDayOrderSub: Subscription;
 
-  today$ = new BehaviorSubject<{ [p: string]: TodayItem[] }>({});
-  tasks$ = new BehaviorSubject<TasksListItem[]>([]);
+  today$ = new BehaviorSubject<{ [p: string]: TodayItem[] }>(null);
+  tasks$ = new BehaviorSubject<TasksListItem[]>(null);
 
   private todaySub: Subscription;
   private tasksListSub: Subscription;
@@ -46,8 +46,8 @@ export class RoundService {
 
   clearCache(): void {
 
-    this.today$.next({});
-    this.tasks$.next([]);
+    this.today$.next(null);
+    this.tasks$.next(null);
     this.todayFirstLoading$.next(true);
     this.tasksFirstLoading$.next(true);
 
@@ -104,12 +104,7 @@ export class RoundService {
 
         if (round) {
           if (this.lastRound?.id !== round.id) {
-            if (this.lastRound) {
-              this.clearCache();
-            } else {
-              this.tasksFirstLoading$.next(true);
-              this.todayFirstLoading$.next(true);
-            }
+            this.clearCache();
           }
         } else {
           this.clearCache();
@@ -142,45 +137,49 @@ export class RoundService {
         this.todayDocsSub.unsubscribe();
       }
 
-      this.todayDocsSub = this.afs.collection(`/users/${this.authService.userData.uid}/rounds/${round.id}/today`).snapshotChanges().subscribe((some) => {
+      this.todayDocsSub = this.afs.collection<{name: string, taskSize: string}>(`/users/${this.authService.userData.uid}/rounds/${round.id}/today`).valueChanges({idField: 'id'}).subscribe((some) => {
 
         const todayName = this.roundsService.todayName$.value;
 
-        const documentChangeActionToday = some.find(async (doc) => {
-          const name = await decrypt((doc.payload.doc.data() as { name: string })?.name, this.authService.userData.symmetricKey);
+        const today = some.find(async (doc) => {
+          const name = await decrypt(doc.name, this.authService.userData.cryptoKey);
           return name === todayName;
         });
+
+        if (!today) {
+          this.today$.next({});
+          return;
+        }
+
+        if (!this.appService.isOnline$.value) {
+          return;
+        }
 
         if (this.todaySub && !this.todaySub.closed) {
           this.todaySub.unsubscribe();
         }
 
-        if (!documentChangeActionToday) {
-          this.today$.next({});
-          this.todayFirstLoading$.next(false);
-          return;
-        }
-
-        this.todaySub = this.afs.doc(documentChangeActionToday.payload.doc.ref.path).collection<EncryptedTodayTask>('task', (ref) => ref.limit(25))
-          .snapshotChanges().pipe(
-            map(async (documentChangeActionArr) => {
+        this.todaySub = this.afs.doc(`/users/${this.authService.userData.uid}/rounds/${round.id}/today/${today.id}`).collection<EncryptedTodayTask>('task', (ref) => ref.limit(25))
+          .valueChanges({idField: 'id'}).pipe(
+            map(async (encryptedTodayTaskArr) => {
 
               const todayTasksByTimeOfDay: { [timeOfDay: string]: any[] } = {};
+              const todayTaskArrPromise = encryptedTodayTaskArr.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask, this.authService.userData.cryptoKey));
+              const todayTaskArr = await Promise.all(todayTaskArrPromise);
 
-              for (const documentChangeAction of documentChangeActionArr) {
-                const task = await decryptTodayTask(documentChangeAction.payload.doc.data(), this.authService.userData.symmetricKey);
+              for (const [i, todayTask] of todayTaskArr.entries()) {
 
-                Object.keys(task.timesOfDay).forEach((timeOfDay) => {
+                Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
                   if (!todayTasksByTimeOfDay[timeOfDay]) {
                     todayTasksByTimeOfDay[timeOfDay] = [];
                   }
                   todayTasksByTimeOfDay[timeOfDay].push({
-                    description: task.description,
-                    done: task.timesOfDay[timeOfDay],
-                    id: documentChangeAction.payload.doc.id,
+                    description: todayTask.description,
+                    done: todayTask.timesOfDay[timeOfDay],
+                    id: encryptedTodayTaskArr[i].id,
                     disabled: false,
-                    dayOfTheWeekId: documentChangeActionToday.payload.doc.id,
-                    timeOfDayEncrypted: task.timesOfDayEncryptedMap[timeOfDay]
+                    dayOfTheWeekId: today.id,
+                    timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
                   });
                 });
               }
@@ -211,25 +210,28 @@ export class RoundService {
 
       this.tasksListSub = this.afs.doc(`users/${this.authService.userData.uid}/rounds/${round.id}`)
         .collection<EncryptedTask>('task', (ref) => ref.orderBy('description', 'asc').limit(25))
-        .snapshotChanges().pipe(
-          map((documentChangeActionArr) =>
-            documentChangeActionArr.map(async (documentChangeAction) => {
+        .valueChanges({idField: 'id'}).pipe(
+          map(async (encryptedTaskArr) => {
 
-              const task = await decryptTask(documentChangeAction.payload.doc.data() as EncryptedTask, this.authService.userData.symmetricKey);
+            const taskArrPromise = encryptedTaskArr.map((encryptTask) => decryptTask(encryptTask, this.authService.userData.cryptoKey));
+            const taskArr = await Promise.all(taskArrPromise);
+
+            return taskArr.map((task, index) => {
 
               return {
                 description: task.description,
                 timesOfDay: task.timesOfDay,
                 daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
-                id: documentChangeAction.payload.doc.id
+                id: encryptedTaskArr[index].id
               } as TasksListItem;
             })
-          )
-        ).subscribe(async (tasks) => {
+          })
+        ).subscribe(async (tasksPromise) => {
+          const tasks = await tasksPromise;
           if (tasks) {
-            this.tasks$.next(await Promise.all(tasks));
-            this.tasksFirstLoading$.next(false);
+            this.tasks$.next(tasks);
           }
+          this.tasksFirstLoading$.next(false);
         });
     });
   }
@@ -245,7 +247,7 @@ export class RoundService {
             const encryptedTask = taskDocSnap.data();
 
             if (encryptedTask) {
-              return await decryptTask(encryptedTask, this.authService.userData.symmetricKey);
+              return await decryptTask(encryptedTask, this.authService.userData.cryptoKey);
             }
 
             return null;

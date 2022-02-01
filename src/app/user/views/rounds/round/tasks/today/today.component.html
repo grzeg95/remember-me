@@ -2,18 +2,38 @@
   <div class="row">
     <div class="col">
 
-      <ng-template *ngIf="(todayItemsView$ | async)?.length === 0; then waitForItems; else showItems"></ng-template>
+      <!--
 
-      <ng-template #waitForItems>
-        <div class="row message"
-             *ngIf="((todayFirstLoading$ | async) || (roundsOrderFirstLoading$ | async)) && (isOnline$ | async); else onOneExists">
-          <div class="col">
-            <app-loading-text></app-loading-text>
-          </div>
+      !isOnline ? wait for connection but I also can have items before I went offline then show them but only when I loaded then before
+
+      check if I loaded items
+      false ? show loading...
+      true ? check if there is anybody
+        true ? show them
+        false ? show loading...
+
+      -->
+
+      <div class="row message" *ngIf="!(isOnline$ | async) && (todayItemsView$ | async) === null">
+        <div class="col">
+          <span>You are offline. Waiting for connection...</span>
         </div>
+      </div>
 
-        <ng-template #onOneExists>
-          <div class="row message" *ngIf="isOnline$ | async">
+      <ng-template *ngIf="!(isOnline$ | async) && (todayItemsView$ | async) !== null && (todayItemsView$ | async).length > 0; then showItems"></ng-template>
+
+      <ng-container *ngIf="(isOnline$ | async)">
+
+        <ng-container *ngIf="(todayFirstLoading$ | async) || (roundsOrderFirstLoading$ | async) || (todayItemsView$ | async) === null">
+          <div class="row message">
+            <div class="col">
+              <app-loading-text></app-loading-text>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="!(todayFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (todayItemsView$ | async) !== null && (todayItemsView$ | async).length === 0">
+          <div class="row message">
             <div class="col">
               <span>Add some tasks for {{todayFullName$ | async}}</span>
             </div>
@@ -26,13 +46,11 @@
               </div>
             </div>
           </div>
-          <div class="row message" *ngIf="!(isOnline$ | async)">
-            <div class="col">
-              <span>You are offline. Waiting for connection...</span>
-            </div>
-          </div>
-        </ng-template>
-      </ng-template>
+        </ng-container>
+
+        <ng-template *ngIf="!(todayFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (todayItemsView$ | async) !== null && (todayItemsView$ | async).length > 0; then showItems"></ng-template>
+
+      </ng-container>
 
       <ng-template #showItems>
 

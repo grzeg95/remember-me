@@ -43,7 +43,7 @@ export class TodayComponent implements OnInit, OnDestroy {
   RouterDict = RouterDict;
   faCheckCircle = faCheckCircle;
   destroyed = false;
-  todayItemsView$: BehaviorSubject<{ timeOfDay: string, tasks: TodayItem[] }[]> = new BehaviorSubject([]);
+  todayItemsView$: BehaviorSubject<{ timeOfDay: string, tasks: TodayItem[] }[]> = new BehaviorSubject(null);
   changeDayIntervalSub: Subscription;
   todayItemsViewSub: Subscription;
   isConnectedSub: Subscription;
@@ -91,7 +91,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     const order = round.timesOfDay;
     const today = this.roundService.today$.getValue();
 
-    if (!Object.getOwnPropertyNames(today).length) {
+    if (!today) {
       return;
     }
 
@@ -99,7 +99,6 @@ export class TodayComponent implements OnInit, OnDestroy {
       timeOfDay,
       tasks: today[timeOfDay]
     })));
-
   }
 
   clearCache(): void {

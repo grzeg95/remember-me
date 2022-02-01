@@ -2,7 +2,6 @@ import {firestore} from 'firebase-admin';
 import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
 // @ts-ignore
-import * as CryptoJS from 'crypto-js';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {testRequirement} from '../helpers/test-requirement';
 import {getUser} from '../helpers/user';

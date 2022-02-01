@@ -95,7 +95,7 @@ export class RoundsService {
         map(async (roundsEncrypted: { [ken in string]: EncryptedRound }) => {
           const rounds: { [ken in string]: Round } = {};
           for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
-            rounds[id] = await decryptRound(roundsEncrypted[id], this.authService.userData.symmetricKey);
+            rounds[id] = await decryptRound(roundsEncrypted[id], this.authService.userData.cryptoKey);
             rounds[id].id = id;
             rounds[id].timesOfDayEncrypted = roundsEncrypted[id].timesOfDay;
           }
@@ -178,12 +178,8 @@ export class RoundsService {
     }
 
     if (roundsList && selectedRoundRoundsList) {
-      this.todayFirstLoading$.next(false);
-      this.tasksFirstLoading$.next(false);
       this.roundSelected$.next(selectedRoundRoundsList);
     } else {
-      this.todayFirstLoading$.next(true);
-      this.tasksFirstLoading$.next(true);
       this.roundSelected$.next(null);
     }
   }
@@ -205,7 +201,7 @@ export class RoundsService {
           map(async (docSnap) => {
             const round = docSnap.data();
             if (round) {
-              return await decryptRound(round, this.authService.userData.symmetricKey);
+              return await decryptRound(round, this.authService.userData.cryptoKey);
             }
             return null;
           })
