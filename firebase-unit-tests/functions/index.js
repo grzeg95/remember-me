@@ -1,4 +1,6 @@
 const {decrypt} = require("../../functions/lib/functions/src/security/security");
+const {Buffer} = require("buffer");
+const { subtle } = require('crypto').webcrypto;
 
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 module.exports.admin = require('firebase-admin');
@@ -21,6 +23,8 @@ module.exports.myAuth = {
   }
 };
 
+module.exports.cryptoKey = null;
+
 module.exports.getResult = async (fn, ...args) => {
   try {
     return await fn(...args);
@@ -41,6 +45,18 @@ module.exports.removeUser = async (userId) => {
 
 module.exports._getDoc = async (documentRef, obj) => {
 
+  if (!module.exports.cryptoKey) {
+    module.exports.cryptoKey = await subtle.importKey(
+      'raw',
+      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey),
+      {
+        name: 'AES-CBC'
+      },
+      false,
+      ['decrypt']
+    );
+  }
+
   const firestore = module.exports.firestore;
 
   const docSnap = await documentRef.get();
@@ -50,34 +66,41 @@ module.exports._getDoc = async (documentRef, obj) => {
 
   for (const key of Object.getOwnPropertyNames(obj[documentRef.id]['fields'])) {
     if (key === 'rounds') {
-      obj[documentRef.id]['fields']['rounds'] = JSON.parse(decrypt(obj[documentRef.id]['fields']['rounds'], module.exports.myAuth.auth.token.decryptedSymmetricKey));
+      obj[documentRef.id]['fields']['rounds'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['rounds'], module.exports.cryptoKey));
     }
     if (key === 'name') {
-      obj[documentRef.id]['fields']['name'] = decrypt(obj[documentRef.id]['fields']['name'], module.exports.myAuth.auth.token.decryptedSymmetricKey);
+      obj[documentRef.id]['fields']['name'] = await decrypt(obj[documentRef.id]['fields']['name'], module.exports.cryptoKey);
     }
     if (key === 'description') {
-      obj[documentRef.id]['fields']['description'] = decrypt(obj[documentRef.id]['fields']['description'], module.exports.myAuth.auth.token.decryptedSymmetricKey);
+      obj[documentRef.id]['fields']['description'] = await decrypt(obj[documentRef.id]['fields']['description'], module.exports.cryptoKey);
     }
     if (key === 'taskSize') {
-      obj[documentRef.id]['fields']['taskSize'] = +decrypt(obj[documentRef.id]['fields']['taskSize'], module.exports.myAuth.auth.token.decryptedSymmetricKey);
+      obj[documentRef.id]['fields']['taskSize'] = +(await decrypt(obj[documentRef.id]['fields']['taskSize'], module.exports.cryptoKey));
     }
     if (key === 'timesOfDayCardinality') {
-      obj[documentRef.id]['fields']['timesOfDayCardinality'] = JSON.parse(decrypt(obj[documentRef.id]['fields']['timesOfDayCardinality'], module.exports.myAuth.auth.token.decryptedSymmetricKey));
+      obj[documentRef.id]['fields']['timesOfDayCardinality'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['timesOfDayCardinality'], module.exports.cryptoKey));
     }
     if (key === 'daysOfTheWeek') {
-      obj[documentRef.id]['fields']['daysOfTheWeek'] = JSON.parse(decrypt(obj[documentRef.id]['fields']['daysOfTheWeek'], module.exports.myAuth.auth.token.decryptedSymmetricKey));
+      obj[documentRef.id]['fields']['daysOfTheWeek'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['daysOfTheWeek'], module.exports.cryptoKey));
     }
     if (key === 'timesOfDay') {
 
       if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'string') {
-        obj[documentRef.id]['fields']['timesOfDay'] = JSON.parse(decrypt(obj[documentRef.id]['fields']['timesOfDay'], module.exports.myAuth.auth.token.decryptedSymmetricKey));
+        obj[documentRef.id]['fields']['timesOfDay'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['timesOfDay'], module.exports.cryptoKey));
         obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'];
       } else if (Array.isArray(obj[documentRef.id]['fields']['timesOfDay'])) {
-        obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'].map((e) => decrypt(e, module.exports.myAuth.auth.token.decryptedSymmetricKey));
+
+        const encryptedTimesOfDayArr = [...obj[documentRef.id]['fields']['timesOfDay']];
+        obj[documentRef.id]['fields']['timesOfDay'] = [];
+
+        for (const encryptedTimesOfDay of encryptedTimesOfDayArr) {
+          obj[documentRef.id]['fields']['timesOfDay'].push(await decrypt(encryptedTimesOfDay, module.exports.cryptoKey));
+        }
+
       } else if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'object') {
         const timesOfDay = {};
         for (const key of Object.getOwnPropertyNames(obj[documentRef.id]['fields']['timesOfDay'])) {
-          timesOfDay[decrypt(key, module.exports.myAuth.auth.token.decryptedSymmetricKey)] = obj[documentRef.id]['fields']['timesOfDay'][key];
+          timesOfDay[await decrypt(key, module.exports.cryptoKey)] = obj[documentRef.id]['fields']['timesOfDay'][key];
         }
         obj[documentRef.id]['fields']['timesOfDay'] = timesOfDay;
       }

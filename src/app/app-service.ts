@@ -36,7 +36,6 @@ export class AppService {
         this.db.createObjectStore('remember-me-database-keys');
       };
     }
-
   }
 
   addToDb(objectStore: string, key: string, value: any): Promise<boolean> {
@@ -48,7 +47,8 @@ export class AppService {
         request.objectStore(objectStore).put(value, key);
 
         request.onerror = () => reject(false);
-        request['onsuccess'] = () => resolve(true);
+        request.onabort = () => reject(false);
+        request.oncomplete = () => resolve(true);
       } else {
         reject(false);
       }

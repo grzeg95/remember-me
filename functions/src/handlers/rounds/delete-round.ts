@@ -21,13 +21,13 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
 
   return app.runTransaction(async (transaction) => {
 
-    // get symmetric key
+    // get crypto key
     // TODO
     let cryptoKey: CryptoKey;
     if (context.auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey);
+      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
     } else {
-      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
+      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
     }
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);

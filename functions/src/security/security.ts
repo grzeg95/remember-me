@@ -16,19 +16,38 @@ const crc32c = require('fast-crc32c');
 const crypto = require('crypto');
 const { subtle } = require('crypto').webcrypto;
 
-export const getCryptoKey = async (key: string): Promise<CryptoKey> => {
-  return await subtle.importKey(
-    'raw',
-    Buffer.from(key),
-    {
-      name: 'AES-CBC'
-    },
-    false,
-    ['decrypt', 'encrypt']
-  );
+const cryptoKeyBuffer: {
+  [key in string]: CryptoKey
+} = {};
+
+export const getCryptoKey = async (key: string, uid: string | undefined): Promise<CryptoKey> => {
+
+  if (uid && cryptoKeyBuffer[uid]) {
+    return cryptoKeyBuffer[uid];
+  } else {
+    const cryptoKey = await subtle.importKey(
+      'raw',
+      Buffer.from(key),
+      {
+        name: 'AES-CBC'
+      },
+      false,
+      ['decrypt', 'encrypt']
+    );
+
+    if (uid) {
+      cryptoKeyBuffer[uid] = cryptoKey;
+    }
+
+    return cryptoKey;
+  }
 };
 
-export const decryptSymmetricKey = async (encryptedSymmetricKey: string): Promise<CryptoKey> => {
+export const decryptSymmetricKey = async (encryptedSymmetricKey: string, uid: string | undefined): Promise<CryptoKey> => {
+
+  if (uid && cryptoKeyBuffer[uid]) {
+    return cryptoKeyBuffer[uid];
+  }
 
   // @ts-ignore
   const ciphertext = new Uint8Array(encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
@@ -52,7 +71,7 @@ export const decryptSymmetricKey = async (encryptedSymmetricKey: string): Promis
 
   const key = (decryptResponse.plaintext || '').toString();
 
-  return await getCryptoKey(key);
+  return await getCryptoKey(key, uid);
 };
 
 export const encrypt = async (data: any, cryptoKey: CryptoKey): Promise<string> => {
@@ -73,7 +92,7 @@ export const encrypt = async (data: any, cryptoKey: CryptoKey): Promise<string> 
     iv
   }, cryptoKey, dataBuffer);
 
-  return Buffer.concat([iv, toBuffer(encrypted)]).toString('base64')
+  return Buffer.concat([iv, toBuffer(encrypted)]).toString('base64');
 }
 
 export const toBuffer = (ab: ArrayBuffer): Buffer => {
@@ -100,89 +119,54 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
   return decrypted;
 }
 
-export const encrypt_1 = (data: any, symmetricKey: string): string => {
-
-  let dataString = '';
-
-  if (typeof data === 'string') {
-    dataString = data;
-  } else {
-    dataString = JSON.stringify(data);
-  }
-
-  const salt = crypto.randomBytes(16);
-  const iv = crypto.randomBytes(16);
-  const key = crypto.pbkdf2Sync(symmetricKey, salt, 100000, 256/8, 'sha256');
-
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-  cipher.write(dataString);
-  cipher.end()
-
-  const encrypted = cipher.read();
-
-  const encryptedData = {
-    iv: iv.toString('base64'),
-    salt: salt.toString('base64'),
-    encrypted: encrypted.toString('base64'),
-    concatenned: Buffer.concat([salt, iv, encrypted]).toString('base64')
-  };
-
-  return encryptedData.concatenned;
-};
-
-export const decrypt_1 = (data: string, symmetricKey: string): string => {
-
-  const encrypted = Buffer.from(data, 'base64');
-  const salt_len = 16;
-  const iv_len = 16;
-
-  const salt = encrypted.slice(0, salt_len);
-  const iv = encrypted.slice(salt_len, salt_len+iv_len);
-  const key = crypto.pbkdf2Sync(symmetricKey, salt, 100000, 256/8, 'sha256');
-
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-
-  decipher.write(encrypted.slice(salt_len+iv_len));
-  decipher.end();
-
-  return decipher.read().toString();
-};
-
 export const encryptTask = async (task: Task, cryptoKey: CryptoKey): Promise<EncryptedTask> => {
+
+  const descriptionEncryptPromise = encrypt(task.description, cryptoKey);
+  const timesOfDayEncryptPromise = encrypt(task.timesOfDay, cryptoKey);
+  const daysOfTheWeekEncryptPromise = encrypt(task.daysOfTheWeek, cryptoKey);
+
   return {
-    description: await encrypt(task.description, cryptoKey),
-    timesOfDay: await encrypt(task.timesOfDay, cryptoKey),
-    daysOfTheWeek: await encrypt(task.daysOfTheWeek, cryptoKey)
+    description: await descriptionEncryptPromise,
+    timesOfDay: await timesOfDayEncryptPromise,
+    daysOfTheWeek: await daysOfTheWeekEncryptPromise
   };
 };
 
 export const decryptTask = async (encryptedTask: EncryptedTask, cryptoKey: CryptoKey): Promise<Task> => {
 
-  let daysOfTheWeek = [];
-  try {
-    daysOfTheWeek = JSON.parse(await decrypt(encryptedTask.daysOfTheWeek, cryptoKey));
-  } catch (e) {
+  if (encryptedTask) {
+    const daysOfTheWeekDecryptPromise = decrypt(encryptedTask.daysOfTheWeek, cryptoKey);
+    const timesOfDayDecryptPromise = decrypt(encryptedTask.timesOfDay, cryptoKey);
+    const descriptionDecryptPromise = decrypt(encryptedTask.description, cryptoKey);
+
+    let daysOfTheWeek = [];
+    try {
+      daysOfTheWeek = JSON.parse(await daysOfTheWeekDecryptPromise);
+    } catch (e) {
+    }
+
+    let timesOfDay = [];
+    try {
+      timesOfDay = JSON.parse(await timesOfDayDecryptPromise);
+    } catch (e) {
+    }
+
+    const description = await descriptionDecryptPromise;
+
+    return {
+      description,
+      daysOfTheWeek,
+      timesOfDay,
+    };
+  } else {
+    return {
+      description: '',
+      daysOfTheWeek: [],
+      timesOfDay: [],
+    };
   }
 
-  let timesOfDay = [];
-  try {
-    timesOfDay = JSON.parse(await decrypt(encryptedTask.timesOfDay, cryptoKey));
-  } catch (e) {
-  }
 
-  let description = '';
-
-  try {
-    description = await decrypt(encryptedTask.description, cryptoKey);
-  } catch (e) {
-  }
-
-  return {
-    description,
-    daysOfTheWeek,
-    timesOfDay,
-  };
 };
 
 export const decryptTaskTimesOfDay = async (encryptedTask: EncryptedTask, cryptoKey: CryptoKey): Promise<string[]> => {
@@ -195,42 +179,62 @@ export const decryptTaskTimesOfDay = async (encryptedTask: EncryptedTask, crypto
 };
 
 export const encryptRound = async (round: Round, cryptoKey: CryptoKey): Promise<EncryptedRound> => {
+
+  const nameEncryptPromise = encrypt(round.name, cryptoKey);
+  const taskSizeEncryptPromise = encrypt(round.taskSize, cryptoKey);
+  const timesOfDayCardinalityEncryptPromise = encrypt(round.timesOfDayCardinality, cryptoKey);
+  const timesOfDayEncryptPromise = round.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, cryptoKey));
+
   return {
-    name: await encrypt(round.name, cryptoKey),
-    taskSize: await encrypt(round.taskSize, cryptoKey),
-    timesOfDayCardinality: await encrypt(round.timesOfDayCardinality, cryptoKey),
-    timesOfDay: await Promise.all(round.timesOfDay.map(async (timeOfDay) => await encrypt(timeOfDay, cryptoKey)))
+    name: await nameEncryptPromise,
+    taskSize: await taskSizeEncryptPromise,
+    timesOfDayCardinality: await timesOfDayCardinalityEncryptPromise,
+    timesOfDay: await Promise.all(timesOfDayEncryptPromise)
   };
 };
 
 export const encryptRoundWithoutName = async (roundWithoutName: RoundWithoutName, cryptoKey: CryptoKey): Promise<EncryptedRoundWithoutName> => {
+
+  const taskSizeEncryptPromise = encrypt(roundWithoutName.taskSize, cryptoKey);
+  const timesOfDayCardinalityEncryptPromise = encrypt(roundWithoutName.timesOfDayCardinality, cryptoKey);
+  const timesOfDayEncryptPromise = roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, cryptoKey));
+
   return {
-    taskSize: await encrypt(roundWithoutName.taskSize, cryptoKey),
-    timesOfDayCardinality: await encrypt(roundWithoutName.timesOfDayCardinality, cryptoKey),
-    timesOfDay: await Promise.all(roundWithoutName.timesOfDay.map(async (timeOfDay) => await encrypt(timeOfDay, cryptoKey)))
+    taskSize: await taskSizeEncryptPromise,
+    timesOfDayCardinality: await timesOfDayCardinalityEncryptPromise,
+    timesOfDay: await Promise.all(timesOfDayEncryptPromise)
   };
 };
 
 export const encryptRoundWithoutNameAndTaskSize = async (roundWithoutName: RoundWithoutNameAndTaskSize, cryptoKey: CryptoKey): Promise<EncryptedRoundWithoutNameAndTaskSize> => {
+
+  const timesOfDayCardinalityEncryptPromise = encrypt(roundWithoutName.timesOfDayCardinality, cryptoKey);
+  const timesOfDayEncryptPromise = roundWithoutName.timesOfDay.map((timeOfDay) => encrypt(timeOfDay, cryptoKey));
+
   return {
-    timesOfDayCardinality: await encrypt(roundWithoutName.timesOfDayCardinality, cryptoKey),
-    timesOfDay: await Promise.all(roundWithoutName.timesOfDay.map(async (timeOfDay) => await encrypt(timeOfDay, cryptoKey)))
+    timesOfDayCardinality: await timesOfDayCardinalityEncryptPromise,
+    timesOfDay: await Promise.all(timesOfDayEncryptPromise)
   };
 };
 
 // for unit tests
 export const decryptRound = async (encryptedRound: EncryptedRound, cryptoKey: CryptoKey): Promise<Round> => {
 
+  const nameDecryptPromise = decrypt(encryptedRound.name, cryptoKey);
+  const taskSizeDecryptPromise = decrypt(encryptedRound.taskSize, cryptoKey);
+  const timesOfDayCardinalityDecryptPromise = decrypt(encryptedRound.timesOfDayCardinality, cryptoKey);
+  const timesOfDayDecryptPromise = encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, cryptoKey))
+
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(await decrypt(encryptedRound.timesOfDayCardinality, cryptoKey))
+    timesOfDayCardinality = JSON.parse(await timesOfDayCardinalityDecryptPromise);
   } catch (e) {
   }
 
   return {
-    name: await decrypt(encryptedRound.name, cryptoKey),
-    taskSize: +(await decrypt(encryptedRound.taskSize, cryptoKey) || 0),
-    timesOfDay: await Promise.all(encryptedRound.timesOfDay.map(async (timeOfDay) => await decrypt(timeOfDay, cryptoKey))),
+    name: await nameDecryptPromise,
+    taskSize: +(await taskSizeDecryptPromise || 0),
+    timesOfDay: await Promise.all(timesOfDayDecryptPromise),
     timesOfDayCardinality
   };
 }
@@ -241,69 +245,107 @@ export const decryptRoundName = async (encryptedRound: EncryptedRound, cryptoKey
 
 export const decryptRoundWithoutName = async (encryptedRound: EncryptedRound, cryptoKey: CryptoKey): Promise<RoundWithoutName> => {
 
+  const taskSizeDecryptPromise = decrypt(encryptedRound.taskSize, cryptoKey);
+  const timesOfDayCardinalityDecryptPromise = decrypt(encryptedRound.timesOfDayCardinality, cryptoKey);
+  const timesOfDayDecryptPromise = encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, cryptoKey))
+
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(await decrypt(encryptedRound.timesOfDayCardinality, cryptoKey));
+    timesOfDayCardinality = JSON.parse(await timesOfDayCardinalityDecryptPromise);
   } catch (e) {
   }
 
   return {
-    taskSize: +(await decrypt(encryptedRound.taskSize, cryptoKey) || 0),
-    timesOfDay: await Promise.all(encryptedRound.timesOfDay.map(async (timeOfDay) => await decrypt(timeOfDay, cryptoKey))),
+    taskSize: +(await taskSizeDecryptPromise || 0),
+    timesOfDay: await Promise.all(timesOfDayDecryptPromise),
     timesOfDayCardinality
   };
 };
 
 export const decryptRoundWithoutNameAndTaskSize = async (encryptedRound: EncryptedRound, cryptoKey: CryptoKey): Promise<RoundWithoutNameAndTaskSize> => {
 
+  const timesOfDayCardinalityDecryptPromise = decrypt(encryptedRound.timesOfDayCardinality, cryptoKey);
+  const timesOfDayDecryptPromise = encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, cryptoKey))
+
   let timesOfDayCardinality = [];
   try {
-    timesOfDayCardinality = JSON.parse(await decrypt(encryptedRound.timesOfDayCardinality, cryptoKey));
+    timesOfDayCardinality = JSON.parse(await timesOfDayCardinalityDecryptPromise);
   } catch (e) {
   }
 
   return {
-    timesOfDay: await Promise.all(encryptedRound.timesOfDay.map(async (timeOfDay) => await decrypt(timeOfDay, cryptoKey))),
+    timesOfDay: await Promise.all(timesOfDayDecryptPromise),
     timesOfDayCardinality
   };
 };
 
 export const encryptTodayTask = async (todayTask: TodayTask, cryptoKey: CryptoKey): Promise<EncryptedTodayTask> => {
 
+  const descriptionEncryptPromise = encrypt(todayTask.description, cryptoKey);
+
   const timesOfDay: { [k in string]: boolean } = {};
+
+  const timeOfDayEncryptArrPromise = [];
+  const timeOfDayArr = [];
   for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
-    timesOfDay[await encrypt(timeOfDay, cryptoKey)] = todayTask.timesOfDay[timeOfDay];
+    timeOfDayEncryptArrPromise.push(encrypt(timeOfDay, cryptoKey));
+    timeOfDayArr.push(timeOfDay);
+  }
+
+  const timeOfDayEncryptArr = await Promise.all(timeOfDayEncryptArrPromise);
+
+  for (const [i, encryptedTimeOfDay] of timeOfDayEncryptArr.entries()) {
+    timesOfDay[encryptedTimeOfDay] = todayTask.timesOfDay[timeOfDayArr[i]];
   }
 
   return {
-    description: await encrypt(todayTask.description, cryptoKey),
+    description: await descriptionEncryptPromise,
     timesOfDay,
   };
 };
 
 export const decryptTodayTask = async (encryptedTodayTask: EncryptedTodayTask, cryptoKey: CryptoKey): Promise<TodayTask> => {
 
-  const timesOfDay: { [k in string]: boolean } = {};
+  const descriptionDecryptPromise = decrypt(encryptedTodayTask.description, cryptoKey);
+
+  const timesOfDay: { [key in string]: boolean } = {};
+
+  const timeOfDayNamesDecryptPromise = [];
+  const encryptedTimeOfDayNames = [];
   for (const encryptedTimeOfDayName of Object.keys(encryptedTodayTask.timesOfDay)) {
-    timesOfDay[await decrypt(encryptedTimeOfDayName, cryptoKey)] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayName];
+    timeOfDayNamesDecryptPromise.push(decrypt(encryptedTimeOfDayName, cryptoKey));
+    encryptedTimeOfDayNames.push(encryptedTimeOfDayName);
+  }
+  const timeOfDayNames = await Promise.all(timeOfDayNamesDecryptPromise);
+
+  for (const [i, timeOfDayName] of timeOfDayNames.entries()) {
+    timesOfDay[timeOfDayName] = encryptedTodayTask.timesOfDay[encryptedTimeOfDayNames[i]];
   }
 
   return {
-    description: await decrypt(encryptedTodayTask.description, cryptoKey),
-    timesOfDay,
+    description: await descriptionDecryptPromise,
+    timesOfDay
   };
 };
 
 export const encryptToday = async (today: Today, cryptoKey: CryptoKey): Promise<EncryptedToday> => {
+
+  const nameEncryptPromise = encrypt(today.name, cryptoKey);
+  const taskSizeEncryptPromise = encrypt(today.taskSize, cryptoKey);
+
   return {
-    name: await encrypt(today.name, cryptoKey),
-    taskSize: await encrypt(today.taskSize, cryptoKey)
+    name: await nameEncryptPromise,
+    taskSize: await taskSizeEncryptPromise
   };
 };
 
 export const decryptToday = async (encryptedToday: EncryptedToday, cryptoKey: CryptoKey): Promise<Today> => {
+
+  const nameDecryptPromise = decrypt(encryptedToday.name, cryptoKey);
+  const taskSizeDecryptPromise = await decrypt(encryptedToday.taskSize, cryptoKey);
+
   return {
-    name: await decrypt(encryptedToday.name, cryptoKey),
-    taskSize: +(await decrypt(encryptedToday.taskSize, cryptoKey))
+    name: await nameDecryptPromise,
+    taskSize: +taskSizeDecryptPromise
   };
 };

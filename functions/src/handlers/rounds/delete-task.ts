@@ -27,13 +27,13 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   // interrupt if user has not this task
   testRequirement(!taskDocSnap.exists);
 
-  // get symmetric key
+  // get crypto key
   // TODO
   let cryptoKey: CryptoKey;
   if (context.auth?.token.decryptedSymmetricKey) {
-    cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey);
+    cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
   } else {
-    cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
+    cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
   }
 
   /*

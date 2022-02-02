@@ -63,13 +63,13 @@ export const handler = async (data: any, context: CallableContext) => {
     // check if timeOfDay exists
     testRequirement(!roundDocSnap.exists);
 
-    // get symmetric key
+    // get crypto key
     // TODO
     let cryptoKey: CryptoKey;
     if (context.auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey);
+      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
     } else {
-      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey);
+      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
     }
 
     const timesOfDayDocSnapData = await decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, cryptoKey);

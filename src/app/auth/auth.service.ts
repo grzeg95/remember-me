@@ -68,75 +68,76 @@ export class AuthService {
             throw error;
           })
         ).subscribe(async (actionUserDocSnap) => {
-          if (!this.userIsReady$.value) {
-            this.appService.dbIsReady$
-              .pipe(
-                filter((isReady) => isReady === 'will not' || isReady),
-                take(1)
-              ).subscribe(async () => {
 
-              // get key if tre is no db or key in db
+          this.appService.dbIsReady$
+            .pipe(
+              filter((isReady) => isReady === 'will not' || isReady),
+              take(1)
+            ).subscribe(async () => {
 
-              // get key from db or request
-              let key;
-              try {
-                key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
-              } catch (e) {
-              }
+            // get key if tre is no db or key in db
 
-              if (key) {
-                this.userData.cryptoKey = key;
-                this.userIsReady$.next(true);
-              } else {
-                // request
-                await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
-
-                  // create crypto key
-
-                  this.userData.cryptoKey = await crypto.subtle.importKey(
-                    'raw',
-                    Buffer.from(key),
-                    {
-                      name: 'AES-CBC'
-                    },
-                    false,
-                    ['decrypt']
-                  );
-
-                  // try to store user crypto key to indexedDB
-                  try {
-                    await this.appService.addToDb('remember-me-database-keys', user.uid, this.userData.cryptoKey);
-                  } catch (e) {
-                  }
-
-                  this.userIsReady$.next(true);
-                });
-              }
-            });
-          } else {
-
-            if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
-              this.userIntervalReloadSub.unsubscribe();
+            // get key from db or request
+            let key;
+            try {
+              key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
+            } catch (e) {
             }
 
-            this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
-              this.afAuth.currentUser.then((user) => {
-                if (user) {
-                  user.reload();
+            if (key) {
+              this.userData.cryptoKey = key;
+              this.userIsReady$.next(true);
+            } else {
+              // request
+              await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
+
+                // create crypto key
+
+                this.userData.cryptoKey = await crypto.subtle.importKey(
+                  'raw',
+                  Buffer.from(key),
+                  {
+                    name: 'AES-CBC'
+                  },
+                  false,
+                  ['decrypt']
+                );
+
+                // try to store user crypto key to indexedDB
+                try {
+                  await this.appService.addToDb('remember-me-database-keys', user.uid, this.userData.cryptoKey);
+                } catch (e) {
                 }
+
+                if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
+                  this.userIntervalReloadSub.unsubscribe();
+                }
+
+                this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
+                  this.afAuth.currentUser.then((user) => {
+                    if (user) {
+                      user.reload();
+                    }
+                  });
+                });
+
+                let rounds = [];
+
+                if (actionUserDocSnap.payload.data()?.rounds) {
+                  rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
+                }
+
+                this.user$.next({
+                  rounds
+                });
+                this.userIsReady$.next(true);
+              }).catch(() => {
+                user.reload().then(() => {
+                  console.log('user reloaded');
+                });
               });
-            });
-
-            let rounds = [];
-
-            if (actionUserDocSnap.payload.data()?.rounds) {
-              rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
             }
-
-            this.user$.next({
-              rounds
-            });
-          }
+          });
         });
       } else {
         this.userData = null;
@@ -153,17 +154,13 @@ export class AuthService {
 
       return await user.getIdTokenResult(true).then((token) => {
         if (!token.claims.encryptedSymmetricKey) {
-          console.log('should reload');
-
-          user.reload().then(() => {
-            console.log('user reloaded');
-          });
-
-          return undefined;
+          throw new Error('user without symmetric key');
         } else {
           return this.fns.httpsCallable('getSymmetricKey')(null).toPromise();
         }
       });
+    } else {
+      throw new Error('user without symmetric key');
     }
   }
 
