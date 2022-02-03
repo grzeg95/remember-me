@@ -148,6 +148,7 @@ export class RoundService {
 
         if (!today) {
           this.today$.next({});
+          this.todayFirstLoading$.next(false);
           return;
         }
 
