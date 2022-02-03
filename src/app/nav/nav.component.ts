@@ -16,8 +16,8 @@ export class NavComponent {
     return this.appService.isOnline$;
   }
 
-  get isLoggedIn(): boolean | null {
-    return this.authService.isLoggedIn;
+  get isUserLoggedIn$(): Observable<boolean | null> {
+    return this.authService.isUserLoggedIn$;
   }
 
   get userPhoto(): string {

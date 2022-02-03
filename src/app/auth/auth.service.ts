@@ -21,8 +21,8 @@ export class AuthService {
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(null);
   userDocSub: Subscription;
   whileLoginIn = false;
-  firstLoginChecking = true;
   userIntervalReloadSub: Subscription;
+  isUserLoggedIn$: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
   userIsReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   constructor(
@@ -39,6 +39,8 @@ export class AuthService {
       this.unsubscribeUserDocSub();
 
       if (user) {
+
+        this.isUserLoggedIn$.next(true);
 
         if (!crypto.subtle) {
           this.signOut();
@@ -141,10 +143,9 @@ export class AuthService {
         });
       } else {
         this.userData = null;
+        this.isUserLoggedIn$.next(false);
         this.router.navigate(['/']);
       }
-
-      this.firstLoginChecking = false;
     });
   }
 
@@ -162,15 +163,6 @@ export class AuthService {
     } else {
       throw new Error('user without symmetric key');
     }
-  }
-
-  get isLoggedIn(): boolean | null {
-
-    if (this.firstLoginChecking && !this.userData) {
-      return null;
-    }
-
-    return !this.firstLoginChecking && !!this.userData;
   }
 
   googleLogin(): void {

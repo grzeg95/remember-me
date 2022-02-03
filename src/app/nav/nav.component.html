@@ -7,9 +7,9 @@
           <fa-icon [icon]="faTasks" class="d-block logo"></fa-icon>
           <span class="example-spacer"></span>
 
-          <div *ngIf="isLoggedIn !== null">
+          <div *ngIf="(isUserLoggedIn$ | async) !== null">
 
-            <div *ngIf="!isLoggedIn" class="d-flex align-items-center right">
+            <div *ngIf="!(isUserLoggedIn$ | async)" class="d-flex align-items-center right">
 
               <button mat-flat-button
                       color="primary"
@@ -34,7 +34,7 @@
               </mat-menu>
             </div>
 
-            <div *ngIf="isLoggedIn" class="d-flex align-items-center right">
+            <div *ngIf="(isUserLoggedIn$ | async)" class="d-flex align-items-center right">
               <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">

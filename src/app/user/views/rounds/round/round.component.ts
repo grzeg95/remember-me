@@ -1,5 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
+import {Observable} from 'rxjs';
+import {AuthService} from '../../../../auth/auth.service';
 import {RoundsService} from '../rounds.service';
 
 @Component({
@@ -8,9 +10,14 @@ import {RoundsService} from '../rounds.service';
 })
 export class RoundComponent implements OnInit {
 
+  get userIsReady$(): Observable<boolean> {
+    return this.authService.userIsReady$;
+  }
+
   constructor(
       private route: ActivatedRoute,
-      private roundsService: RoundsService
+      private roundsService: RoundsService,
+      private authService: AuthService
   ) {
   }
 

@@ -11,8 +11,12 @@ import {AuthService} from './auth/auth.service';
 })
 export class AppComponent {
 
-  get isLoggedIn(): boolean | null {
-    return this.authService.isLoggedIn;
+  get userIsReady$(): Observable<boolean> {
+    return this.authService.userIsReady$;
+  }
+
+  get isUserLoggedIn$(): Observable<boolean | null> {
+    return this.authService.isUserLoggedIn$;
   }
 
   get isOnline$(): Observable<boolean> {

@@ -1,5 +1,9 @@
 <app-nav></app-nav>
-<mat-spinner *ngIf="isLoggedIn === null" [strokeWidth]="5"></mat-spinner>
+
+<mat-spinner *ngIf="((isUserLoggedIn$ | async) === null) || ((isUserLoggedIn$ | async) && !(userIsReady$ | async))"
+             [strokeWidth]="((isUserLoggedIn$ | async) && !(userIsReady$ | async)) ? 8 : 5"
+             [color]="((isUserLoggedIn$ | async) && !(userIsReady$ | async)) ? 'accent' : 'primary'"
+></mat-spinner>
 <router-outlet></router-outlet>
 
 <div [class.active]="!(isOnline$ | async)" class="offline">

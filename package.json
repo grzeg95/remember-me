@@ -2,7 +2,7 @@
   "name": "remember-me-angular",
   "version": "0.0.0",
   "scripts": {
-    "serve:emulators": "python closeEmulator.py && firebase use dev && firebase emulators:start --import=./emulators-backup --export-on-exit",
+    "serve:emulators": "python closeEmulator.py && firebase use dev && firebase emulators:start",
     "ng": "ng",
     "start": "ng serve",
     "build-dev": "ng build --configuration=dev",

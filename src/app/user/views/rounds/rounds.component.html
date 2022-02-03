@@ -1,36 +1,39 @@
-<div class="container">
-  <div class="row">
-    <div class="col">
-      <div class="vertical-links">
+<ng-container *ngIf="(userIsReady$ | async)">
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <div class="vertical-links">
 
-        <!--
-        Rounds | Round edit | Round name
-        Rounds | Round name
-        -->
-        <img src="assets/img/icons8-hexagon-synchronize.svg" class="rounds-icon">
-        <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]">Rounds</a>
+          <!--
+          Rounds | Round edit | Round name
+          Rounds | Round name
+          -->
+          <img src="assets/img/icons8-hexagon-synchronize.svg" class="rounds-icon">
+          <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]">Rounds</a>
 
-        <input type="hidden" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]" routerLinkActive #roundEdit="routerLinkActive" />
+          <input type="hidden" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]" routerLinkActive #roundEdit="routerLinkActive" />
 
-        <ng-container *ngIf="roundEdit.isActive">
-          <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]">Round edit</a>
-          <ng-container *ngIf="(editedRound$ | async) as editedRound">
+          <ng-container *ngIf="roundEdit.isActive">
             <span> | </span>
-            <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, editedRound.id]">{{ editedRound.name }}</a>
+            <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]">Round edit</a>
+            <ng-container *ngIf="(editedRound$ | async) as editedRound">
+              <span> | </span>
+              <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, editedRound.id]">{{ editedRound.name }}</a>
+            </ng-container>
           </ng-container>
-        </ng-container>
 
-        <ng-container *ngIf="!roundEdit.isActive">
-          <ng-container *ngIf="roundSelected">
-            <span> | </span>
-            <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, roundSelected.id, RouterDict.todayTasks]">
-              {{ roundSelected.name }}</a>
+          <ng-container *ngIf="!roundEdit.isActive">
+            <ng-container *ngIf="roundSelected">
+              <span> | </span>
+              <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, roundSelected.id, RouterDict.todayTasks]">
+                {{ roundSelected.name }}</a>
+            </ng-container>
           </ng-container>
-        </ng-container>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<router-outlet></router-outlet>
+  <router-outlet></router-outlet>
+
+</ng-container>
