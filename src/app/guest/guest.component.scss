@@ -10,18 +10,13 @@
     width: auto;
   }
 
-  &.firebaseAuthentication {
+  &.firebase {
     height: 55px;
     width: 50px;
   }
 
-  &.googleAnalytics {
-    height: 45px;
-    width: auto;
-  }
-
-  &.firebase {
-    height: 55px;
+  &.kms {
+    height: 50px;
     width: 50px;
   }
 }
