@@ -97,7 +97,7 @@ export class AuthService {
 
                 this.userData.cryptoKey = await crypto.subtle.importKey(
                   'raw',
-                  Buffer.from(key),
+                  Buffer.from(key, 'hex'),
                   {
                     name: 'AES-GCM'
                   },
