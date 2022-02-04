@@ -1,7 +1,7 @@
 <div class="container">
   <h1>Hello there.</h1>
   <h3>Do you remember?</h3>
-  <p>Encrypted.</p>
+  <h6><a (click)="openGuestAboutSecurityDialog('ksm-feature')">User data is encrypted 🤐</a></h6>
 </div>
 
 <div class="features-clean">
@@ -57,7 +57,8 @@
         <h3 class="name">Cloud Key Management</h3>
         <p class="description">
           Encrypted by <a href="https://cloud.google.com/security-key-management">Cloud Key Management</a>.<br/>
-          <a href="https://www.w3.org/TR/WebCryptoAPI/#cryptokey-interface">CryptoKey</a> securely stored in browser.
+          <a href="https://www.w3.org/TR/WebCryptoAPI/#cryptokey-interface">CryptoKey</a> securely stored in browser.<br/>
+          <a (click)="openGuestAboutSecurityDialog('ksm-feature')">Learn more</a>.
         </p>
       </div>
       <div class="col-sm-6 col-lg-4 item">

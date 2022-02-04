@@ -1,0 +1,18 @@
+<h1 mat-dialog-title>User data is encrypted 🤐</h1>
+
+<ol>
+  <li>There are two projects one for Firebase and second one for asymmetric key.</li>
+  <li>User can read own data from database.</li>
+  <li>User data is encrypted.</li>
+  <li>There is no possibility to read raw user data from the database in the logic form.</li>
+  <li>User has encrypted by asymmetric key individual symmetric key stored in the JWT token.</li>
+  <li>If there is no CryptoKey stored in the IndexedDB associated with user then user will send request for symmetric
+  key and then store it as a CryptoKey.
+  </li>
+  <li>CryptoKey is stored only for decrypting without option to extractable key from it.</li>
+  <li>No user data from database is stored in the browser.</li>
+</ol>
+
+<div mat-dialog-actions style="justify-content: flex-end;">
+  <button mat-flat-button color="primary" (click)="dialogRef.close()">Ok... 🙄</button>
+</div>

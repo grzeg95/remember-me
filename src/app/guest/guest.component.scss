@@ -21,17 +21,6 @@
   }
 }
 
-a.cookiebot-renew {
-  color: #007bff;
-  text-decoration: none;
-  background-color: transparent;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 footer {
   padding: 0 0 1rem;
 
@@ -40,5 +29,16 @@ footer {
     font-size: .9rem;
     margin-bottom: 0;
     color: #7d8285;
+  }
+}
+
+a, a:not([href]):not([class]) {
+  color: #007bff;
+  text-decoration: none;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
