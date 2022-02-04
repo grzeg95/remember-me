@@ -19,7 +19,7 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
 
   try {
     return toBuffer(await crypto.subtle.decrypt({
-      name: 'AES-CBC',
+      name: 'AES-GCM',
       iv
     }, cryptoKey, encrypted)).toString('utf-8');
   } catch (e) {}

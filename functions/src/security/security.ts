@@ -29,7 +29,7 @@ export const getCryptoKey = async (key: string, uid: string | undefined): Promis
       'raw',
       Buffer.from(key),
       {
-        name: 'AES-CBC'
+        name: 'AES-GCM'
       },
       false,
       ['decrypt', 'encrypt']
@@ -88,7 +88,7 @@ export const encrypt = async (data: any, cryptoKey: CryptoKey): Promise<string> 
   const dataBuffer = Buffer.from(dataString);
 
   const encrypted = await subtle.encrypt({
-    name: 'AES-CBC',
+    name: 'AES-GCM',
     iv
   }, cryptoKey, dataBuffer);
 
@@ -111,12 +111,10 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
   const iv = encryptedBase64.slice(0, iv_len);
   const encrypted = encryptedBase64.slice(iv_len);
 
-  const decrypted = toBuffer(await subtle.decrypt({
-    name: 'AES-CBC',
+  return toBuffer(await subtle.decrypt({
+    name: 'AES-GCM',
     iv
   }, cryptoKey, encrypted)).toString('utf-8');
-
-  return decrypted;
 }
 
 export const encryptTask = async (task: Task, cryptoKey: CryptoKey): Promise<EncryptedTask> => {

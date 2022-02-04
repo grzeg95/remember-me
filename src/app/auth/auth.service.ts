@@ -99,7 +99,7 @@ export class AuthService {
                   'raw',
                   Buffer.from(key),
                   {
-                    name: 'AES-CBC'
+                    name: 'AES-GCM'
                   },
                   false,
                   ['decrypt']

@@ -1,3 +1,4 @@
+import {KeyObject} from 'crypto';
 import {firestore} from 'firebase-admin';
 import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
@@ -22,32 +23,43 @@ export const handler = async (user: UserRecord, context: EventContext) => {
     'GetPublicKey: request corrupted in-transit'
   );
 
-  const encryptedSymmetricKey = crypto.publicEncrypt(
-    {
-      key: publicKey.pem,
-      oaepHash: 'sha256',
-      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
-    },
-    crypto.randomBytes(16)
-  ).toString('hex');
+  try {
+    crypto.generateKey('aes',{length: 128}, ((err: Error | null, key: KeyObject) => {
 
-  const customUserClaims = {
-    encryptedSymmetricKey
-  };
+      if (err) {
+        throw err;
+      }
 
-  return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
-    const app = firestore();
+      const encryptedSymmetricKey = crypto.publicEncrypt(
+        {
+          key: publicKey.pem,
+          oaepHash: 'sha256',
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+        },
+        Buffer.from(key.export().toString('hex'))
+      ).toString('hex');
 
-    return app.runTransaction(async (transaction) => {
-      const userDocSnap = await getUser(app, transaction, user.uid as string);
+      const customUserClaims = {
+        encryptedSymmetricKey
+      };
 
-      transaction.set(userDocSnap.ref, {
-        hasSymmetricKey: true
+      return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
+        const app = firestore();
+
+        return app.runTransaction(async (transaction) => {
+          const userDocSnap = await getUser(app, transaction, user.uid as string);
+
+          transaction.set(userDocSnap.ref, {
+            hasSymmetricKey: true
+          });
+
+          return transaction;
+        }).catch(() => {
+          throw new Error(`user ${user.uid} rsa key creation`);
+        });
       });
-
-      return transaction;
-    }).catch(() => {
-      console.error(`user ${user.uid} rsa key creation`);
-    });
-  });
+    }));
+  } catch (e) {
+    console.error(e);
+  }
 };
