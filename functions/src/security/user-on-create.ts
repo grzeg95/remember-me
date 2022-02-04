@@ -28,7 +28,7 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       oaepHash: 'sha256',
       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
     },
-    Buffer.from(crypto.randomBytes(8).toString('hex'))
+    crypto.randomBytes(16)
   ).toString('hex');
 
   const customUserClaims = {
