@@ -27,7 +27,7 @@ export const getCryptoKey = async (key: string, uid: string | undefined): Promis
   } else {
     const cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(key),
+      Buffer.from(key, 'hex'),
       {
         name: 'AES-GCM'
       },
