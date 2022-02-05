@@ -4,6 +4,7 @@ import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 import {faGoogle, faFacebook} from '@fortawesome/free-brands-svg-icons';
+import {faEyeSlash} from '@fortawesome/free-regular-svg-icons';
 
 @Component({
   selector: 'app-nav',
@@ -38,6 +39,7 @@ export class NavComponent {
   faFacebook = faFacebook;
   faGoogle = faGoogle;
   faEllipsisV = faEllipsisV;
+  faEyeSlash = faEyeSlash;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(
@@ -51,6 +53,10 @@ export class NavComponent {
 
   facebookLogin(): void {
     this.authService.facebookLogin();
+  }
+
+  anonymouslyLogin(): void {
+    this.authService.anonymouslyLogin();
   }
 
   signOut(): Promise<boolean> {

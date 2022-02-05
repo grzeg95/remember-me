@@ -187,6 +187,18 @@ export class AuthService {
     });
   }
 
+  anonymouslyLogin(): void {
+    this.whileLoginIn = true;
+
+    this.afAuth.signInAnonymously().catch(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    }).then(() => {
+      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
+    }).finally(() => {
+      this.whileLoginIn = false;
+    });
+  }
+
   unsubscribeUserDocSub(): void {
     if (this.userDocSub && !this.userDocSub.closed) {
       this.userDocSub.unsubscribe();
