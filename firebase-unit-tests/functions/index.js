@@ -1,6 +1,7 @@
 const {decrypt} = require("../../functions/lib/functions/src/security/security");
 const {Buffer} = require("buffer");
-const { subtle } = require('crypto').webcrypto;
+const crypto = require('crypto');
+const {subtle} = crypto.webcrypto;
 
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 module.exports.admin = require('firebase-admin');
@@ -14,7 +15,7 @@ module.exports.myAuth = {
   auth: {
     uid: module.exports.myId,
     token: {
-      decryptedSymmetricKey: 'UUo7Nj8g0QHmvP5FmQEbSTHaq1A9ivy7'
+      decryptedSymmetricKey: crypto.randomBytes(32).toString('hex')
     }
   },
   app: {
@@ -25,9 +26,81 @@ module.exports.myAuth = {
 
 module.exports.cryptoKey = null;
 
+module.exports.saveRound = {
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.saveRound),
+  name: 'saveRound'
+};
+module.exports.deleteRound = {
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.deleteRound),
+  name: 'deleteRound'
+};
+module.exports.saveTask = {
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.saveTask),
+  name: 'saveTask'
+};
+module.exports.deleteTask = {
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.deleteTask),
+  name: 'deleteTask'
+};
+module.exports.setTimesOfDayOrder = {
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.setTimesOfDayOrder),
+  name: 'setTimesOfDayOrder'
+};
+
+class RunTime {
+
+  constructor() {
+    this.runTimes = [];
+    this.timeStart = 0;
+  }
+
+  resetTimeStart = () => {
+    this.timeStart = Date.now();
+  }
+
+  addToRunTime = () => {
+    this.runTimes.push((Date.now() - this.timeStart));
+  }
+
+  valueOf = () => {
+    return this.runTimes;
+  }
+}
+
+module.exports.decryptRound = async (encryptedRound, cryptoKey) => {
+
+  const nameDecryptPromise = decrypt(encryptedRound.name, cryptoKey);
+  const taskSizeDecryptPromise = decrypt(encryptedRound.taskSize, cryptoKey);
+  const timesOfDayCardinalityDecryptPromise = decrypt(encryptedRound.timesOfDayCardinality, cryptoKey);
+  const timesOfDayDecryptPromise = encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, cryptoKey));
+
+  let timesOfDayCardinality = [];
+  try {
+    timesOfDayCardinality = JSON.parse(await timesOfDayCardinalityDecryptPromise);
+  } catch (e) {
+  }
+
+  return {
+    name: await nameDecryptPromise,
+    taskSize: +(await taskSizeDecryptPromise || 0),
+    timesOfDay: await Promise.all(timesOfDayDecryptPromise),
+    timesOfDayCardinality
+  };
+};
+
+module.exports.runTimes = {};
+
 module.exports.getResult = async (fn, ...args) => {
   try {
-    return await fn(...args);
+    if (!module.exports.runTimes[fn.name]) {
+      module.exports.runTimes[fn.name] = new RunTime();
+    }
+
+    module.exports.runTimes[fn.name].resetTimeStart();
+    const result = await fn.wrapped(...args);
+    module.exports.runTimes[fn.name].addToRunTime();
+    return result;
+
   } catch (error) {
     return {
       code: error.code,
@@ -48,9 +121,9 @@ module.exports._getDoc = async (documentRef, obj) => {
   if (!module.exports.cryptoKey) {
     module.exports.cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey),
+      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey, 'hex'),
       {
-        name: 'AES-CBC'
+        name: 'AES-GCM'
       },
       false,
       ['decrypt']
@@ -219,10 +292,42 @@ module.exports.simplifyUserResult = (user, timesOfDayId) => {
   return {};
 };
 
+const avg = (values) => {
+  if (values.length === 0) throw new Error("No inputs");
+
+  const sum = values.reduce((a, b) => a + b, 0);
+  return (sum / values.length) || 0;
+}
+
+const median = (values) => {
+  if (values.length === 0) throw new Error("No inputs");
+
+  values.sort(function (a, b) {
+    return a - b;
+  });
+
+  const half = Math.floor(values.length / 2);
+
+  if (values.length % 2)
+    return values[half];
+
+  return (values[half - 1] + values[half]) / 2.0;
+}
+
 describe(`My functions tests`, () => {
   require('./rounds/saveRound');
   require('./rounds/saveTask');
   require('./rounds/deleteTask');
   require('./rounds/deleteRound');
   require('./rounds/setTimesOfDayOrder');
+
+  after(() => {
+    for (const functionName of Object.getOwnPropertyNames(module.exports.runTimes)) {
+      const runTimes = module.exports.runTimes[functionName].runTimes;
+      console.log(`${functionName}`);
+      console.log(`median: ${median(runTimes)}`);
+      console.log(`avg:    ${avg(runTimes)}`);
+      console.log('---------------------------');
+    }
+  });
 });

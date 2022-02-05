@@ -1,13 +1,13 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
-const {chai, test, myFunctions, myAuth, myId, firestore, removeUser, getResult} = require('../../index');
+const {
+  chai, myAuth, myId, firestore, removeUser, getResult, decryptRound, setTimesOfDayOrder, saveRound
+} = require('../../index');
 
 const expect = chai.expect;
 const tests = require('./tests.json');
-const {encryptRound, decryptRound} = require("../../../../functions/lib/functions/src/security/security");
+const {encryptRound} = require("../../../../functions/lib/functions/src/security/security");
 const {Buffer} = require("buffer");
-const setTimesOfDayOrder = test.wrap(myFunctions.setTimesOfDayOrder);
-const saveRound = test.wrap(myFunctions.saveRound);
-const { subtle } = require('crypto').webcrypto;
+const {subtle} = require('crypto').webcrypto;
 
 describe(`setTimesOfDayOrder`, async () => {
 
@@ -17,9 +17,9 @@ describe(`setTimesOfDayOrder`, async () => {
   before(async () => {
     cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(myAuth.auth.token.decryptedSymmetricKey),
+      Buffer.from(myAuth.auth.token.decryptedSymmetricKey, 'hex'),
       {
-        name: 'AES-CBC'
+        name: 'AES-GCM'
       },
       false,
       ['decrypt', 'encrypt']

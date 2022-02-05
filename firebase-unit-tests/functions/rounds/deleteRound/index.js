@@ -5,16 +5,12 @@ const {
   removeUser,
   myId,
   getResult,
-  myFunctions,
-  test,
   myAuth,
-  getKEmptyRounds
+  getKEmptyRounds,
+  deleteRound, saveRound, saveTask
 } = require('../../index');
 
 const expect = chai.expect;
-const deleteRound = test.wrap(myFunctions.deleteRound);
-const saveRound = test.wrap(myFunctions.saveRound);
-const saveTask = test.wrap(myFunctions.saveTask);
 
 describe(`deleteRound`, async () => {
 

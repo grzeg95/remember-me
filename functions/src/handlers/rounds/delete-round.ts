@@ -3,6 +3,7 @@ import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser, writeUser} from '../../helpers/user';
 import {decrypt, decryptSymmetricKey, encrypt, getCryptoKey} from '../../security/security';
+import DocumentReference = firestore.DocumentReference;
 
 const app = firestore();
 
@@ -31,6 +32,7 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     }
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
+    const roundsInUserDecryptPromise = decrypt(userDocSnap.data()?.rounds, cryptoKey);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
     // check if round exists
@@ -44,16 +46,17 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
       list.forEach((docRef) => docsToRemove.push(transaction.get(docRef)));
     });
 
+    const getAllTasksListOfDay: Promise<DocumentReference[]>[] = [];
+
     // get all today's
-    const getAllDaysPromise = roundDocSnap.ref.collection('today').listDocuments();
-
-    const getAllTasksListOfDay: Promise<firestore.DocumentReference<firestore.DocumentData>[]>[] = [];
-
-    (await getAllDaysPromise).forEach((day) => {
-      getAllTasksListOfDay.push(day.collection('task').listDocuments());
-      docsToRemove.push(transaction.get(day));
+    const getAllDaysPromise = roundDocSnap.ref.collection('today').listDocuments().then((list) => {
+      list.forEach((day) => {
+        getAllTasksListOfDay.push(day.collection('task').listDocuments());
+        docsToRemove.push(transaction.get(day));
+      });
     });
 
+    await getAllDaysPromise;
     (await Promise.all(getAllTasksListOfDay)).forEach((list) => {
       list.forEach((docRef) => docsToRemove.push(transaction.get(docRef)));
     });
@@ -67,7 +70,7 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     transaction.delete(roundDocSnap.ref);
 
     // update user
-    const roundsInUser: string[] = userDocSnap.data()?.rounds ? JSON.parse(await decrypt(userDocSnap.data()?.rounds, cryptoKey)) as string[] : [];
+    const roundsInUser: string[] = userDocSnap.data()?.rounds ? JSON.parse(await roundsInUserDecryptPromise) as string[] : [];
     const roundIndexInUser = roundsInUser.indexOf(roundId);
 
     testRequirement(roundIndexInUser === -1);

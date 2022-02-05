@@ -1,12 +1,12 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
-const {chai, test, myFunctions, getResult, myId, myAuth, getUserJson, removeUser, simplifyUserResult} = require('../../index');
+const {
+  chai, getResult, myId, myAuth, getUserJson, removeUser, simplifyUserResult, deleteTask,
+  saveTask, saveRound
+} = require('../../index');
 
 const expect = chai.expect;
-const deleteTask = test.wrap(myFunctions.deleteTask);
-const saveTask = test.wrap(myFunctions.saveTask);
 const tests = require('../saveTask/tests.json');
 const testsInvalid = require('./tests.json');
-const saveRound = test.wrap(myFunctions.saveRound);
 
 const emptyUser = {
   taskSize: 0,
@@ -75,7 +75,7 @@ describe(`deleteTask`, () => {
   // 34 * 2 = 68
   describe(`create (a then b) (remove a then b in two directions)`, async () => {
 
-    let x,y,userWithTaskX, userWithTaskY,deletedResult,xId,yId,mustBe,regex;
+    let x, y, userWithTaskX, userWithTaskY, deletedResult, xId, yId, mustBe, regex;
 
     tests['add'].forEach((test) => describe(test.name, async () => {
 
@@ -134,8 +134,8 @@ describe(`deleteTask`, () => {
         }).to.eql(deletedResult);
 
         const testRemoveX = test['remove']['x'].split(/(\d+)([^\d.]+)/gm).filter(e => !!e);
-        const timesOfDay = testRemoveX.filter((e, i) => i%2);
-        const timesOfDayCardinality = testRemoveX.filter((e, i) => !(i%2)).map(e => +e);
+        const timesOfDay = testRemoveX.filter((e, i) => i % 2);
+        const timesOfDayCardinality = testRemoveX.filter((e, i) => !(i % 2)).map(e => +e);
 
         userWithTaskY['timesOfDay'] = timesOfDay;
         userWithTaskY['timesOfDayCardinality'] = timesOfDayCardinality;
@@ -168,8 +168,8 @@ describe(`deleteTask`, () => {
         }).to.eql(deletedResult);
 
         const testRemoveY = test['remove']['y'].split(/(\d+)([^\d.]+)/gm).filter(e => !!e);
-        const timesOfDay = testRemoveY.filter((e, i) => i%2);
-        const timesOfDayCardinality = testRemoveY.filter((e, i) => !(i%2)).map(e => +e);
+        const timesOfDay = testRemoveY.filter((e, i) => i % 2);
+        const timesOfDayCardinality = testRemoveY.filter((e, i) => !(i % 2)).map(e => +e);
 
         userWithTaskX['timesOfDay'] = timesOfDay;
         userWithTaskX['timesOfDayCardinality'] = timesOfDayCardinality;

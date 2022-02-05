@@ -1,9 +1,10 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
-const {chai, test, myFunctions, getResult, myId, myAuth, removeUser, getUserJson, simplifyUserResult} = require('../../index');
+const {
+  chai, getResult, myId, myAuth, removeUser, getUserJson, saveTask, saveRound,
+  simplifyUserResult
+} = require('../../index');
 
 const expect = chai.expect;
-const saveTask = test.wrap(myFunctions.saveTask);
-const saveRound = test.wrap(myFunctions.saveRound);
 const tests = require('./tests.json');
 
 describe(`saveTask`, async () => {

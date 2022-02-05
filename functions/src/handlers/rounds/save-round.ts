@@ -76,6 +76,7 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     const rounds = userDocSnapData?.rounds ? JSON.parse(await decrypt(userDocSnap.data()?.rounds, cryptoKey)) as string[] : [];
 
     let roundDocSnap: DocumentSnapshot;
+    let roundsEncryptPromise;
 
     // create round
     if (!roundDocSnapTmp.exists) {
@@ -84,18 +85,26 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
       testRequirement(rounds.length >= 5, `You can own 5 rounds 🤔`);
 
       roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
-      transaction.create(roundDocSnap.ref, await encryptRound({
+      const roundEncryptPromise = encryptRound({
         taskSize: 0,
         timesOfDay: [],
         timesOfDayCardinality: [],
         name: data.name
-      }, cryptoKey));
+      }, cryptoKey);
 
       roundId = roundDocSnap.id;
       rounds.push(roundId);
+      roundsEncryptPromise = encrypt(rounds, cryptoKey);
       created = true;
       transaction.delete(roundDocSnapTmp.ref);
 
+      // update user
+      const userDataToWrite = {
+        rounds: await roundsEncryptPromise
+      };
+      writeUser(transaction, userDocSnap, userDataToWrite);
+
+      transaction.create(roundDocSnap.ref, await roundEncryptPromise);
     } else {
 
       roundDocSnap = roundDocSnapTmp;
@@ -109,12 +118,6 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
         name: await encrypt(data.name, cryptoKey)
       });
     }
-
-    // update user
-    const userDataToWrite = {
-      rounds: await encrypt(rounds, cryptoKey)
-    };
-    writeUser(transaction, userDocSnap, userDataToWrite);
 
     return transaction;
 
