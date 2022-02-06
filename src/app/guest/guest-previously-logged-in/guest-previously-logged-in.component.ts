@@ -1,5 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatDialogRef} from '@angular/material/dialog';
+import {faTimes} from '@fortawesome/free-solid-svg-icons';
 import {Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {AppService} from '../../app-service';
@@ -15,6 +16,7 @@ export class GuestPreviouslyLoggedInComponent implements OnInit, OnDestroy {
   dbIsReadySub: Subscription;
   storedUsers: UserRemembered[] = [];
   firstLoading = true;
+  faTimes = faTimes;
 
   constructor(
     public dialogRef: MatDialogRef<GuestPreviouslyLoggedInComponent>,
