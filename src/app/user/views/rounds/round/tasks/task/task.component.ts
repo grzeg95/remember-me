@@ -475,19 +475,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     this.restartForm();
     this.taskForm.disable();
-    this.initValues = {
-      daysOfTheWeek: {
-        mon: false,
-        tue: false,
-        wed: false,
-        thu: false,
-        fri: false,
-        sat: false,
-        sun: false
-      },
-      description: '',
-      timesOfDay: []
-    };
+
     this.taskForm.get('description').setValue(task.description);
     this.taskForm.get('daysOfTheWeek').setValue(this.taskService.dayArrayToDaysBooleanMap(task.daysOfTheWeek));
 
@@ -495,6 +483,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       (this.taskForm.get('timesOfDay') as FormArray).push(new FormControl(timeOfDay.trim()));
     });
 
+    this.initValues = this.initValues = this.taskForm.getRawValue();
     this.deletingInProgress = false;
     this.taskForm.enable();
   }
