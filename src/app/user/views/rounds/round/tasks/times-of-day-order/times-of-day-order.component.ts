@@ -56,11 +56,9 @@ export class TimesOfDayOrderComponent {
 
     const roundSelected = this.roundSelected;
 
-    const timesOfDayEncrypted = roundSelected.timesOfDayEncrypted;
     const timeOfDay = roundSelected.timesOfDay[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
-    moveItemInArray(timesOfDayEncrypted, event.previousIndex, event.currentIndex);
     moveItemInArray(roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
 
     this.setTimesOfDayOrderSub = this.roundService.updateTimesOfDayOrder({timeOfDay, moveBy, roundId: this.roundsService.roundSelected$.value.id}).subscribe((success) => {
@@ -70,7 +68,6 @@ export class TimesOfDayOrderComponent {
     }, (error) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(timesOfDayEncrypted, event.currentIndex, event.previousIndex);
         moveItemInArray(roundSelected.timesOfDay, event.currentIndex, event.previousIndex);
       });
     });

@@ -83,23 +83,23 @@ export class RoundsService {
   protected runRoundsList(): void {
 
     this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
-      this.roundsListSub = this.afs.collection<{ value: string }>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.limit(5)).snapshotChanges().pipe(
+      this.roundsListSub = this.afs.collection<{ value: string }>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
         map((e) => {
-          return e.filter((q) => q.type !== 'removed').reduce((previousValue, currentValue) => {
+          return e.reduce((previousValue, currentValue) => {
             return {
               ...previousValue,
-              [currentValue.payload.doc.id]: {...currentValue.payload.doc.data(), id: currentValue.payload.doc.id}
+              [currentValue.id]: currentValue
             };
           }, {});
         }),
         map(async (roundsEncrypted: { [ken in string]: { value: string } }) => {
           const rounds: { [ken in string]: Round } = {};
           for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
-            rounds[id] = await decryptRound(roundsEncrypted[id], this.authService.userData.cryptoKey);
+            const decryptedRound = await decryptRound(roundsEncrypted[id], this.authService.userData.cryptoKey);
             rounds[id] = {
               id,
-              ...rounds[id]
-            };
+              ...decryptedRound
+            }
           }
           return rounds;
         })
