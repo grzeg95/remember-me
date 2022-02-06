@@ -9,6 +9,6 @@ export const getSymmetricKey = runWith({
 
 export const userOnCreate = runWith({
   timeoutSeconds: 30,
-  memory: '1GB',
+  memory: '512MB',
   maxInstances: 2
 }).region(regionId).auth.user().onCreate(require('./user-on-create').handler);

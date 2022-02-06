@@ -424,7 +424,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       currentTaskSize++;
     } else {
       taskDocSnap = taskDocSnapTmp;
-      const taskDocSnapData = await decryptTask(taskDocSnap.data() as EncryptedTask, cryptoKey) as Task;
+      const taskDocSnapData = await decryptTask(taskDocSnap.data() as EncryptedTask, cryptoKey);
 
       /*
       * Check if nothing changed or only description was changed

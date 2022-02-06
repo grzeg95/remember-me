@@ -43,7 +43,7 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       const app = firestore();
 
       return app.runTransaction(async (transaction) => {
-        const userDocSnap = await getUser(app, transaction, user.uid as string);
+        const userDocSnap = await getUser(app, transaction, user.uid);
 
         transaction.set(userDocSnap.ref, {
           hasSymmetricKey: true
