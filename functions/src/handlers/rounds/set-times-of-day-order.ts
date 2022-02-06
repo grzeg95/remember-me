@@ -1,12 +1,11 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {EncryptedRound} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
-  decryptRoundWithoutNameAndTaskSize,
-  decryptSymmetricKey,
-  encryptRoundWithoutNameAndTaskSize, getCryptoKey
+  decryptRound,
+  decryptSymmetricKey, encryptRound,
+  getCryptoKey
 } from '../../security/security';
 
 const app = firestore();
@@ -72,9 +71,9 @@ export const handler = async (data: any, context: CallableContext) => {
       cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
     }
 
-    const timesOfDayDocSnapData = await decryptRoundWithoutNameAndTaskSize(roundDocSnap.data() as EncryptedRound, cryptoKey);
-    const timesOfDay = timesOfDayDocSnapData.timesOfDay;
-    const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
+    const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+    const timesOfDay = round.timesOfDay;
+    const timesOfDayCardinality = round.timesOfDayCardinality;
     const toMoveIndex = timesOfDay.indexOf(timeOfDay);
 
     testRequirement(toMoveIndex === -1);
@@ -85,9 +84,11 @@ export const handler = async (data: any, context: CallableContext) => {
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
     // update user
-    const timesOfDayDataToWrite = await encryptRoundWithoutNameAndTaskSize({
+    const timesOfDayDataToWrite = await encryptRound({
       timesOfDay,
-      timesOfDayCardinality
+      timesOfDayCardinality,
+      name: round.name,
+      taskSize: round.taskSize
     }, cryptoKey);
 
     transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);

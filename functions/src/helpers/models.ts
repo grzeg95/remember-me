@@ -9,50 +9,11 @@ export interface Task {
   daysOfTheWeek: Day[];
 }
 
-export interface EncryptedTask {
-  description: string;
-  timesOfDay: string;
-  daysOfTheWeek: string;
-}
-
 export interface Round {
   taskSize: number;
   timesOfDay: string[];
   timesOfDayCardinality: number[];
   name: string;
-}
-
-export interface RoundWithoutName {
-  taskSize: number;
-  timesOfDay: string[];
-  timesOfDayCardinality: number[];
-}
-
-export interface RoundWithoutNameAndTaskSize {
-  timesOfDay: string[];
-  timesOfDayCardinality: number[];
-}
-
-export interface EncryptedRound {
-  taskSize: string;
-  timesOfDay: string[];
-  timesOfDayCardinality: string;
-  name: string;
-}
-
-export interface EncryptedRoundWithoutName {
-  taskSize: string;
-  timesOfDay: string[];
-  timesOfDayCardinality: string;
-}
-
-export interface EncryptedRoundWithoutNameAndTaskSize {
-  timesOfDay: string[];
-  timesOfDayCardinality: string;
-}
-
-export interface User {
-  rounds: string[];
 }
 
 export interface TodayTask {
@@ -68,9 +29,4 @@ export interface EncryptedTodayTask {
 export interface Today {
   name: string;
   taskSize: number;
-}
-
-export interface EncryptedToday {
-  name: string;
-  taskSize: string;
 }

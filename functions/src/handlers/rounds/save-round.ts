@@ -1,11 +1,9 @@
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {EncryptedRound} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {firestore} from 'firebase-admin';
 import {getUser, writeUser} from '../../helpers/user';
 import {
-  decrypt,
-  decryptRoundName,
+  decrypt, decryptRound,
   decryptSymmetricKey,
   encrypt,
   encryptRound, getCryptoKey
@@ -108,15 +106,18 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
     } else {
 
       roundDocSnap = roundDocSnapTmp;
-      const roundName = await decryptRoundName(roundDocSnap.data() as EncryptedRound, cryptoKey);
+      const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
       /*
       * Check if name was changed
       * */
-      testRequirement(roundName === data.name);
+      testRequirement(round.name === data.name);
 
-      transaction.update(roundDocSnap.ref, {
-        name: await encrypt(data.name, cryptoKey)
-      });
+      transaction.update(roundDocSnap.ref, await encryptRound({
+        taskSize: round.taskSize,
+        name: data.name,
+        timesOfDay: round.timesOfDay,
+        timesOfDayCardinality: round.timesOfDayCardinality
+      }, cryptoKey));
     }
 
     return transaction;

@@ -18,7 +18,6 @@ service cloud.firestore {
     match /rounds/{roundId} {
 
       allow list: if userIsOk()
-                     && request.query.orderBy.name == 'ASC'
                      && request.query.limit == 5;
 
       allow get: if userIsOk();
@@ -46,7 +45,6 @@ service cloud.firestore {
       match /task/{taskId} {
         allow get: if userIsOk();
         allow list: if userIsOk()
-                       && request.query.orderBy.description == 'ASC'
                        && request.query.limit == 25;
       }
     }

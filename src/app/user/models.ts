@@ -40,25 +40,12 @@ export interface Task {
   daysOfTheWeek: Day[];
 }
 
-export interface EncryptedTask {
-  description: string;
-  timesOfDay: string;
-  daysOfTheWeek: string;
-}
-
 export interface Round {
   timesOfDayEncrypted?: string[];
   id?: string;
   taskSize: number;
   timesOfDay: string[];
   timesOfDayCardinality: number[];
-  name: string;
-}
-
-export interface EncryptedRound {
-  taskSize: string;
-  timesOfDay: string[];
-  timesOfDayCardinality: string;
   name: string;
 }
 
@@ -81,4 +68,9 @@ export interface TodayTask {
 export interface EncryptedTodayTask {
   description: string;
   timesOfDay: {[key in string]: boolean};
+}
+
+export interface Today {
+  name: string;
+  taskSize: number;
 }

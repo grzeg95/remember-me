@@ -1,4 +1,4 @@
-const {decrypt} = require("../../functions/lib/functions/src/security/security");
+const {decrypt, decryptRound} = require("../../functions/lib/functions/src/security/security");
 const {Buffer} = require("buffer");
 const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
@@ -68,24 +68,7 @@ class RunTime {
 }
 
 module.exports.decryptRound = async (encryptedRound, cryptoKey) => {
-
-  const nameDecryptPromise = decrypt(encryptedRound.name, cryptoKey);
-  const taskSizeDecryptPromise = decrypt(encryptedRound.taskSize, cryptoKey);
-  const timesOfDayCardinalityDecryptPromise = decrypt(encryptedRound.timesOfDayCardinality, cryptoKey);
-  const timesOfDayDecryptPromise = encryptedRound.timesOfDay.map((timeOfDay) => decrypt(timeOfDay, cryptoKey));
-
-  let timesOfDayCardinality = [];
-  try {
-    timesOfDayCardinality = JSON.parse(await timesOfDayCardinalityDecryptPromise);
-  } catch (e) {
-  }
-
-  return {
-    name: await nameDecryptPromise,
-    taskSize: +(await taskSizeDecryptPromise || 0),
-    timesOfDay: await Promise.all(timesOfDayDecryptPromise),
-    timesOfDayCardinality
-  };
+  return await decryptRound(encryptedRound, cryptoKey);
 };
 
 module.exports.runTimes = {};
@@ -138,25 +121,18 @@ module.exports._getDoc = async (documentRef, obj) => {
   obj[documentRef.id]['fields'] = docSnap.data();
 
   for (const key of Object.getOwnPropertyNames(obj[documentRef.id]['fields'])) {
+
     if (key === 'rounds') {
       obj[documentRef.id]['fields']['rounds'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['rounds'], module.exports.cryptoKey));
-    }
-    if (key === 'name') {
-      obj[documentRef.id]['fields']['name'] = await decrypt(obj[documentRef.id]['fields']['name'], module.exports.cryptoKey);
-    }
-    if (key === 'description') {
-      obj[documentRef.id]['fields']['description'] = await decrypt(obj[documentRef.id]['fields']['description'], module.exports.cryptoKey);
-    }
-    if (key === 'taskSize') {
-      obj[documentRef.id]['fields']['taskSize'] = +(await decrypt(obj[documentRef.id]['fields']['taskSize'], module.exports.cryptoKey));
-    }
-    if (key === 'timesOfDayCardinality') {
-      obj[documentRef.id]['fields']['timesOfDayCardinality'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['timesOfDayCardinality'], module.exports.cryptoKey));
-    }
-    if (key === 'daysOfTheWeek') {
-      obj[documentRef.id]['fields']['daysOfTheWeek'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['daysOfTheWeek'], module.exports.cryptoKey));
-    }
-    if (key === 'timesOfDay') {
+    } else if (key === 'value') {
+      obj[documentRef.id]['fields'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['value'], module.exports.cryptoKey));
+    } else if (key === 'description') {
+      // maybe decrypted description
+      try {
+        obj[documentRef.id]['fields']['description'] = await decrypt(obj[documentRef.id]['fields']['description'], module.exports.cryptoKey);
+      } catch (e){}
+
+    } else if (key === 'timesOfDay') {
 
       if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'string') {
         obj[documentRef.id]['fields']['timesOfDay'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['timesOfDay'], module.exports.cryptoKey));
@@ -178,6 +154,25 @@ module.exports._getDoc = async (documentRef, obj) => {
         obj[documentRef.id]['fields']['timesOfDay'] = timesOfDay;
       }
     }
+
+    // todayTask
+    else {
+
+      // description
+      if (typeof obj[documentRef.id]['fields'][key] === 'string') {
+        obj[documentRef.id]['fields'][await decrypt(key, module.exports.cryptoKey)] = await decrypt(obj[documentRef.id]['fields'][key], module.exports.cryptoKey);
+        delete obj[documentRef.id]['fields'][key];
+      } else {
+        // timesOfDay
+        const timesOfDay = {};
+        for (const encryptedTimeOfDay of Object.getOwnPropertyNames(obj[documentRef.id]['fields'][key])) {
+          timesOfDay[await decrypt(encryptedTimeOfDay, module.exports.cryptoKey)] = obj[documentRef.id]['fields'][key][encryptedTimeOfDay];
+        }
+        delete obj[documentRef.id]['fields'][key];
+        obj[documentRef.id]['fields']['timesOfDay'] = timesOfDay;
+      }
+    }
+
   }
 
   await documentRef.listCollections().then(async (collections) => {
@@ -324,10 +319,11 @@ describe(`My functions tests`, () => {
   after(() => {
     for (const functionName of Object.getOwnPropertyNames(module.exports.runTimes)) {
       const runTimes = module.exports.runTimes[functionName].runTimes;
+      console.log('---------------------------');
       console.log(`${functionName}`);
       console.log(`median: ${median(runTimes)}`);
       console.log(`avg:    ${avg(runTimes)}`);
-      console.log('---------------------------');
+      console.log();
     }
   });
 });

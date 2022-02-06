@@ -1,13 +1,12 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {EncryptedRound, EncryptedTask, EncryptedToday} from '../../helpers/models';
+import { Task } from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
-  decryptRoundWithoutName, decryptSymmetricKey,
-  decryptTaskTimesOfDay,
-  decryptToday,
-  encryptRoundWithoutName,
+  decryptRound,
+  decryptSymmetricKey, decryptTask,
+  decryptToday, encryptRound,
   encryptToday, getCryptoKey
 } from '../../security/security';
 import Transaction = firestore.Transaction;
@@ -40,11 +39,11 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   * Read all data
   * */
 
-  const taskTimesOfDay: string[] = await decryptTaskTimesOfDay(taskDocSnap.data() as EncryptedTask, cryptoKey);
-  const timesOfDayDocSnapData = await decryptRoundWithoutName(roundDocSnap.data() as EncryptedRound, cryptoKey);
-  const currentTaskSize = timesOfDayDocSnapData.taskSize;
-  const timesOfDay = timesOfDayDocSnapData.timesOfDay;
-  const timesOfDayCardinality = timesOfDayDocSnapData.timesOfDayCardinality;
+  const task: Task = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+  const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+  const currentTaskSize = round.taskSize;
+  const timesOfDay = round.timesOfDay;
+  const timesOfDayCardinality = round.timesOfDayCardinality;
 
   // read all task for user/{userId}/today/{day}/task/{taskId}
   const todayTaskDocSnapsToUpdatePromises = [];
@@ -79,7 +78,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   const todayTasksPromise = Promise.all(todayTaskDocSnapsToUpdatePromises);
 
   // prepare timesOfDay and timesOfDayCardinality
-  for (const timeOfDay of taskTimesOfDay) {
+  for (const timeOfDay of task.timesOfDay) {
     const indexToRemove = timesOfDay.indexOf(timeOfDay);
     if (indexToRemove > -1) {
       if (timesOfDayCardinality[indexToRemove] - 1 === 0) {
@@ -99,7 +98,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   // just read one field: size of tasks lol
   for (const todayDocSnap of todaySnapsToCheckToRemove) {
 
-    const today = await decryptToday(todayDocSnap.data() as EncryptedToday, cryptoKey);
+    const today = await decryptToday(todayDocSnap.data() as {value: string}, cryptoKey);
 
     if (today.taskSize === 1) {
       transaction.delete(todayDocSnap.ref);
@@ -123,16 +122,16 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
     transaction.delete(todayTaskDocSnap.ref);
   }
 
-  const roundDataToWrite = await encryptRoundWithoutName({
+  const roundDataToWrite = await encryptRound({
     timesOfDayCardinality,
     taskSize: currentTaskSize - 1,
-    timesOfDay
+    timesOfDay,
+    name: round.name
   }, cryptoKey);
 
   transaction.update(roundDocSnap.ref, roundDataToWrite);
 
   return transaction;
-
 };
 
 /**

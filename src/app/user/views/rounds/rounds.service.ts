@@ -5,7 +5,7 @@ import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {filter, map, switchMap, take} from 'rxjs/operators';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {decryptRound} from '../../../security';
-import {EncryptedRound, Round} from '../../models';
+import {Round} from '../../models';
 import {ActivatedRoute} from '@angular/router';
 import {TaskService} from './round/tasks/task/task.service';
 
@@ -83,7 +83,7 @@ export class RoundsService {
   protected runRoundsList(): void {
 
     this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
-      this.roundsListSub = this.afs.collection<EncryptedRound>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.orderBy('name', 'asc').limit(5)).snapshotChanges().pipe(
+      this.roundsListSub = this.afs.collection<{ value: string }>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.limit(5)).snapshotChanges().pipe(
         map((e) => {
           return e.filter((q) => q.type !== 'removed').reduce((previousValue, currentValue) => {
             return {
@@ -92,12 +92,14 @@ export class RoundsService {
             };
           }, {});
         }),
-        map(async (roundsEncrypted: { [ken in string]: EncryptedRound }) => {
+        map(async (roundsEncrypted: { [ken in string]: { value: string } }) => {
           const rounds: { [ken in string]: Round } = {};
           for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
             rounds[id] = await decryptRound(roundsEncrypted[id], this.authService.userData.cryptoKey);
-            rounds[id].id = id;
-            rounds[id].timesOfDayEncrypted = roundsEncrypted[id].timesOfDay;
+            rounds[id] = {
+              id,
+              ...rounds[id]
+            };
           }
           return rounds;
         })
@@ -197,7 +199,7 @@ export class RoundsService {
       filter((isReady) => isReady),
       take(1),
       switchMap(() => {
-        return this.afs.doc<EncryptedRound>(`users/${this.authService.userData.uid}/rounds/${roundId}`).get().pipe(
+        return this.afs.doc<{ value: string }>(`users/${this.authService.userData.uid}/rounds/${roundId}`).get().pipe(
           map(async (docSnap) => {
             const round = docSnap.data();
             if (round) {
