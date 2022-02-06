@@ -34,8 +34,8 @@
 
                 <button mat-menu-item
                         [disabled]="!(isOnline$ | async) || whileLoginIn"
-                        (click)="anonymouslyLogin()">
-                  <span><fa-icon [icon]="faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Incognito</span>
+                        (click)="openGuestPreviouslyLoggedInComponent()">
+                  <span><fa-icon [icon]="faUserFriends" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Users</span>
                 </button>
               </mat-menu>
             </div>

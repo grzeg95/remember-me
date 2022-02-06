@@ -3,7 +3,7 @@ import {AngularFireAuth} from '@angular/fire/compat/auth';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
-import {BehaviorSubject, interval, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, Subscription, timer} from 'rxjs';
 import {catchError, filter, take} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {decrypt} from '../security';
@@ -22,6 +22,7 @@ export class AuthService {
   userDocSub: Subscription;
   whileLoginIn = false;
   userIntervalReloadSub: Subscription;
+  dbIsReadySub: Subscription;
   isUserLoggedIn$: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
   userIsReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
@@ -71,75 +72,92 @@ export class AuthService {
           })
         ).subscribe(async (actionUserDocSnap) => {
 
-          this.appService.dbIsReady$
+          if (this.dbIsReadySub && !this.dbIsReadySub.closed) {
+            this.dbIsReadySub.unsubscribe();
+          }
+
+          this.dbIsReadySub = this.appService.dbIsReady$
             .pipe(
               filter((isReady) => isReady === 'will not' || isReady),
               take(1)
             ).subscribe(async () => {
 
-            // get key if tre is no db or key in db
+              // get key if tre is no db or key in db
 
-            // get key from db or request
-            let key;
-            try {
-              key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
-            } catch (e) {
-            }
+              // get key from db or request
+              let key;
+              try {
+                key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
+              } catch (e) {
+              }
 
-            if (key) {
-              this.userData.cryptoKey = key;
-              this.userIsReady$.next(true);
-            } else {
-              // request
-              await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
+              if (key) {
+                this.userData.cryptoKey = key.cryptoKey;
+                this.userIsReady$.next(true);
+              } else {
+                // request
+                await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
 
-                // create crypto key
+                  // create crypto key
 
-                this.userData.cryptoKey = await crypto.subtle.importKey(
-                  'raw',
-                  Buffer.from(key, 'hex'),
-                  {
-                    name: 'AES-GCM'
-                  },
-                  false,
-                  ['decrypt']
-                );
+                  this.userData.cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    Buffer.from(key, 'hex'),
+                    {
+                      name: 'AES-GCM'
+                    },
+                    false,
+                    ['decrypt']
+                  );
 
-                // try to store user crypto key to indexedDB
-                try {
-                  await this.appService.addToDb('remember-me-database-keys', user.uid, this.userData.cryptoKey);
-                } catch (e) {
-                }
+                  // try to store user crypto key to indexedDB
+                  try {
+                    await this.appService.addToDb('remember-me-database-keys', user.uid, {
+                      user: {
+                        email: user.email,
+                        isAnonymous: user.isAnonymous,
+                        displayName: user.displayName,
+                        providerId: user.providerId,
+                        lastSignInTime: user.metadata.lastSignInTime
+                      },
+                      cryptoKey: this.userData.cryptoKey
+                    });
+                  } catch (e) {
+                  }
 
-                if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
-                  this.userIntervalReloadSub.unsubscribe();
-                }
+                  if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
+                    this.userIntervalReloadSub.unsubscribe();
+                  }
 
-                this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
-                  this.afAuth.currentUser.then((user) => {
-                    if (user) {
-                      user.reload();
-                    }
+                  this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
+                    this.afAuth.currentUser.then((user) => {
+                      if (user) {
+                        user.reload().then(() => {
+                          console.log('user reloaded');
+                        });
+                      }
+                    });
+                  });
+
+                  let rounds = [];
+
+                  if (actionUserDocSnap.payload.data()?.rounds) {
+                    rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
+                  }
+
+                  this.user$.next({
+                    rounds
+                  });
+                  this.userIsReady$.next(true);
+                }).catch(() => {
+                  timer(2000).pipe(take(1)).subscribe(() => {
+                    user.reload().then(() => {
+                      console.log('user reloaded');
+                    });
                   });
                 });
-
-                let rounds = [];
-
-                if (actionUserDocSnap.payload.data()?.rounds) {
-                  rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
-                }
-
-                this.user$.next({
-                  rounds
-                });
-                this.userIsReady$.next(true);
-              }).catch(() => {
-                user.reload().then(() => {
-                  console.log('user reloaded');
-                });
-              });
-            }
-          });
+              }
+            });
         });
       } else {
         this.userData = null;
@@ -179,18 +197,6 @@ export class AuthService {
     this.whileLoginIn = true;
 
     this.afAuth.signInWithRedirect(new FacebookAuthProvider()).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-    }).then(() => {
-      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
-    }).finally(() => {
-      this.whileLoginIn = false;
-    });
-  }
-
-  anonymouslyLogin(): void {
-    this.whileLoginIn = true;
-
-    this.afAuth.signInAnonymously().catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
     }).then(() => {
       this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);

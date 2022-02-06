@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import {ConnectionService} from './connection.service';
 import {BehaviorSubject} from 'rxjs';
+import {UserRememberedIndexedDB} from './models';
 
 @Injectable()
 export class AppService {
@@ -22,7 +23,7 @@ export class AppService {
     if (!this.indexedDB) {
       this.dbIsReady$.next('will not');
     } else {
-      const reqOpenDb = this.indexedDB.open('remember-me-database', 2);
+      const reqOpenDb = this.indexedDB.open('remember-me-database', 1);
 
       reqOpenDb.onerror = () => this.dbIsReady$.next('will not');
 
@@ -79,9 +80,41 @@ export class AppService {
         request.objectStore(objectStore).delete(key);
 
         request.onerror = () => reject(false);
-        request['onsuccess'] = () => resolve(true);
+        request.oncomplete = () => resolve(true);
       } else {
         reject(false);
+      }
+    });
+  }
+
+  async getMapOfUsersFromDb(): Promise<{
+    [key in string]: UserRememberedIndexedDB
+  }> {
+    const listOfUsersIds = await this.getListOfIdsUsersFromDb();
+    const usersCryptoKeys: {
+      [key in string]: UserRememberedIndexedDB
+    } = {};
+
+    for (const id of listOfUsersIds) {
+      usersCryptoKeys[id] = (await this.getFromDb('remember-me-database-keys', id)).user;
+    }
+
+    return usersCryptoKeys;
+  }
+
+  private getListOfIdsUsersFromDb(): Promise<string[]> {
+    return new Promise(async (resolve, reject) => {
+      const isReady = this.dbIsReady$.value;
+
+      if (typeof isReady === 'boolean' && isReady) {
+        const request = this.db.transaction(['remember-me-database-keys'], 'readonly').objectStore('remember-me-database-keys').getAllKeys();
+
+        request.onerror = () => {
+          reject(undefined);
+        };
+        request.onsuccess = (evt) => resolve(evt.target['result']);
+      } else {
+        reject(undefined);
       }
     });
   }

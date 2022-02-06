@@ -9,6 +9,7 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {CoreModule} from './core.module';
 import {GuestAboutSecurityComponent} from './guest/guest-about-security/guest-about-security.component';
+import {GuestPreviouslyLoggedInComponent} from './guest/guest-previously-logged-in/guest-previously-logged-in.component';
 import {GuestComponent} from './guest/guest.component';
 import {NavComponent} from './nav/nav.component';
 import {SharedModule} from './shared.module';
@@ -18,7 +19,8 @@ import {SharedModule} from './shared.module';
     AppComponent,
     NavComponent,
     GuestComponent,
-    GuestAboutSecurityComponent
+    GuestAboutSecurityComponent,
+    GuestPreviouslyLoggedInComponent
   ],
   imports: [
     BrowserModule,
@@ -30,7 +32,7 @@ import {SharedModule} from './shared.module';
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAnalyticsModule
   ],
-  entryComponents: [GuestAboutSecurityComponent],
+  entryComponents: [GuestAboutSecurityComponent, GuestPreviouslyLoggedInComponent],
   bootstrap: [AppComponent]
 })
 export class AppModule {

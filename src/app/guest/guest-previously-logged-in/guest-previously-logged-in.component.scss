@@ -1,0 +1,15 @@
+.users-list {
+  .user {
+    display: flex;
+
+    .user-data {
+      font-size: 0.8rem;
+      margin-right: 30px;
+    }
+
+    button.remove {
+      align-self: flex-start;
+      font-size: 0.8rem;
+    }
+  }
+}
