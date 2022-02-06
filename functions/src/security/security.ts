@@ -116,8 +116,6 @@ export const decryptTask = async (encryptedTask: { value: string } | undefined, 
     try {
       return JSON.parse(await decrypt(encryptedTask.value, cryptoKey));
     } catch (e) {
-      console.log('decryptTask');
-      throw e;
     }
   }
 
@@ -141,8 +139,6 @@ export const decryptRound = async (encryptedRound: { value: string } | undefined
     try {
       return JSON.parse(await decrypt(encryptedRound.value, cryptoKey));
     } catch (e) {
-      console.log('decryptRound');
-      throw e;
     }
   }
 
@@ -181,14 +177,23 @@ export const encryptTodayTask = async (todayTask: TodayTask, cryptoKey: CryptoKe
 
 export const decryptTodayTask = async (encryptedTodayTask: { description: string; timesOfDay: { [key in string]: boolean } }, cryptoKey: CryptoKey): Promise<TodayTask> => {
 
-  const timesOfDay: { [key in string]: boolean } = {};
+  const descriptionDecryptPromise = decrypt(encryptedTodayTask.description, cryptoKey);
 
-  for (const encryptedKey of Object.getOwnPropertyNames(encryptedTodayTask.timesOfDay)) {
-    timesOfDay[await decrypt(encryptedKey, cryptoKey)] = (encryptedTodayTask.timesOfDay as { [key in string]: boolean }) [encryptedKey];
+  const timesOfDay: { [key in string]: boolean } = {};
+  const timesOfDayKeysDecryptPromise = [];
+  const timesOfDayKeysEncrypted = Object.getOwnPropertyNames(encryptedTodayTask.timesOfDay);
+
+  for (const encryptedKey of timesOfDayKeysEncrypted) {
+    timesOfDayKeysDecryptPromise.push(decrypt(encryptedKey, cryptoKey));
+  }
+
+  const timesOfDayKeysDecrypted = await Promise.all(timesOfDayKeysDecryptPromise);
+  for (const [i, encryptedKey] of timesOfDayKeysEncrypted.entries()) {
+    timesOfDay[timesOfDayKeysDecrypted[i]] = (encryptedTodayTask.timesOfDay as { [key in string]: boolean }) [encryptedKey];
   }
 
   return {
-    description: await decrypt(encryptedTodayTask.description, cryptoKey),
+    description: await descriptionDecryptPromise,
     timesOfDay
   };
 };
@@ -202,7 +207,11 @@ export const encryptToday = async (today: Today, cryptoKey: CryptoKey): Promise<
 export const decryptToday = async (encryptedToday: { value: string }, cryptoKey: CryptoKey): Promise<Today> => {
 
   if (encryptedToday) {
-    return JSON.parse(await decrypt(encryptedToday.value, cryptoKey));
+
+    try {
+      return JSON.parse(await decrypt(encryptedToday.value, cryptoKey));
+    } catch (e) {
+    }
   }
 
   return {

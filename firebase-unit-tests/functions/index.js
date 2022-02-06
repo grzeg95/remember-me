@@ -61,10 +61,6 @@ class RunTime {
   addToRunTime = () => {
     this.runTimes.push((Date.now() - this.timeStart));
   }
-
-  valueOf = () => {
-    return this.runTimes;
-  }
 }
 
 module.exports.decryptRound = async (encryptedRound, cryptoKey) => {
@@ -321,9 +317,9 @@ describe(`My functions tests`, () => {
       const runTimes = module.exports.runTimes[functionName].runTimes;
       console.log('---------------------------');
       console.log(`${functionName}`);
+      console.log(`cnt   : ${runTimes.length}`);
       console.log(`median: ${median(runTimes)}`);
-      console.log(`avg:    ${avg(runTimes)}`);
-      console.log();
+      console.log(`avg   : ${avg(runTimes)}`);
     }
   });
 });
