@@ -95,14 +95,24 @@ export class AuthService {
               // get key if tre is no db or key in db
 
               // get key from db or request
-              let key;
+              let userFromIndexedDB;
               try {
-                key = await this.appService.getFromDb('remember-me-database-keys', user.uid);
+                userFromIndexedDB = await this.appService.getFromDb('remember-me-database-keys', user.uid);
+                await this.appService.addToDb('remember-me-database-keys', user.uid, {
+                  user: {
+                    email: user.email,
+                    isAnonymous: user.isAnonymous,
+                    displayName: user.displayName,
+                    providerId: user.providerId,
+                    lastSignInTime: user.metadata.lastSignInTime
+                  },
+                  cryptoKey: userFromIndexedDB.cryptoKey
+                });
               } catch (e) {
               }
 
-              if (key) {
-                this.userData.cryptoKey = key.cryptoKey;
+              if (userFromIndexedDB) {
+                this.userData.cryptoKey = userFromIndexedDB.cryptoKey;
                 await this.prepareUser(actionUserDocSnap);
               } else {
                 // request
