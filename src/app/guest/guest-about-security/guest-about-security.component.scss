@@ -1,0 +1,16 @@
+ol {
+  counter-reset: item;
+
+  li {
+    display: block;
+
+    &:before {
+      content: counters(item, ".") ". ";
+      counter-increment: item
+    }
+  }
+
+  &.start-position {
+    padding-left: 0;
+  }
+}
