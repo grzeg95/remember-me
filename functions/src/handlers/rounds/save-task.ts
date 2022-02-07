@@ -198,9 +198,11 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     }
   }
 
+  // prepare
   // create day if not exists
+  const todayDayToCreateEncryptPromise: Promise<{value: string}>[] = [];
   for (const dayToCreate of newTodayItemsForTaskToCreate) {
-    transaction.create(dayToCreate.docSnap.ref, await encryptToday({
+    todayDayToCreateEncryptPromise.push(encryptToday({
       name: dayToCreate.dayToCreate,
       taskSize: 1
     }, cryptoKey));
@@ -285,6 +287,13 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
       description: task.description,
       timesOfDay: newTimesOfDay
     }, cryptoKey));
+  }
+
+  // execute
+  // create day if not exists
+  const todayDayToCreateEncrypted = await Promise.all(todayDayToCreateEncryptPromise);
+  for (let i = 0; i < newTodayItemsForTaskToCreate.length; ++i) {
+    transaction.create(newTodayItemsForTaskToCreate[i].docSnap.ref, todayDayToCreateEncrypted[i]);
   }
 };
 
