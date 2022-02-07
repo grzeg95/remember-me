@@ -93,7 +93,7 @@ export class AuthService {
 
               if (key) {
                 this.userData.cryptoKey = key.cryptoKey;
-                this.userIsReady$.next(true);
+                await this.prepareUser(actionUserDocSnap);
               } else {
                 // request
                 await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
@@ -124,38 +124,13 @@ export class AuthService {
                     });
                   } catch (e) {
                   }
-
-                  if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
-                    this.userIntervalReloadSub.unsubscribe();
-                  }
-
-                  this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
-                    this.afAuth.currentUser.then((user) => {
-                      if (user) {
-                        user.reload().then(() => {
-                          console.log('user reloaded');
-                        });
-                      }
-                    });
-                  });
-
-                  let rounds = [];
-
-                  if (actionUserDocSnap.payload.data()?.rounds) {
-                    rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
-                  }
-
-                  this.user$.next({
-                    rounds
-                  });
-                  this.userIsReady$.next(true);
                 }).catch(() => {
                   timer(2000).pipe(take(1)).subscribe(() => {
                     user.reload().then(() => {
                       console.log('user reloaded');
                     });
                   });
-                });
+                }).then(async () => await this.prepareUser(actionUserDocSnap));
               }
             });
         });
@@ -165,6 +140,33 @@ export class AuthService {
         this.router.navigate(['/']);
       }
     });
+  }
+
+  async prepareUser(actionUserDocSnap): Promise<void> {
+    if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
+      this.userIntervalReloadSub.unsubscribe();
+    }
+
+    this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
+      this.afAuth.currentUser.then((user) => {
+        if (user) {
+          user.reload().then(() => {
+            console.log('user reloaded');
+          });
+        }
+      });
+    });
+
+    let rounds = [];
+
+    if (actionUserDocSnap.payload.data()?.rounds) {
+      rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, this.userData.cryptoKey));
+    }
+
+    this.user$.next({
+      rounds
+    });
+    this.userIsReady$.next(true);
   }
 
   async getSymmetricKey(user, actionUserDocSnap): Promise<string> {

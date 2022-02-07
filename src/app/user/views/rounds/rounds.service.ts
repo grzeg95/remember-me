@@ -7,7 +7,6 @@ import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {decryptRound} from '../../../security';
 import {Round} from '../../models';
 import {ActivatedRoute} from '@angular/router';
-import {TaskService} from './round/tasks/task/task.service';
 
 @Injectable()
 export class RoundsService {
@@ -36,8 +35,7 @@ export class RoundsService {
     protected afs: AngularFirestore,
     protected authService: AuthService,
     protected fns: AngularFireFunctions,
-    protected route: ActivatedRoute,
-    protected taskService: TaskService
+    protected route: ActivatedRoute
   ) {
   }
 
@@ -104,34 +102,61 @@ export class RoundsService {
           return rounds;
         })
       ).subscribe(async(roundsListPromise) => {
-
-        const roundsList = await roundsListPromise;
-
-        const roundsOrder = this.roundsOrder$.value;
-        if (roundsOrder.length) {
-          this.roundsList$.next(roundsOrder.map((orderId) => roundsList[orderId]));
-        } else {
-          this.roundsList$.next(Object.values(roundsList));
-        }
+        this.generateLists(await roundsListPromise, this.roundsOrder$.value);
         this.roundsListFirstLoad$.next(false);
-        this.checkSelectedRound(this.roundsList$.value);
       });
 
       this.roundsOrderSub = this.authService.user$.subscribe((user) => {
-        if (user?.rounds) {
 
-          const roundsList = this.roundsList$.value;
+        const roundsMap: {[key in string]: Round} = {}
+        const roundsList = this.roundsList$.value;
 
-          if (roundsList.length) {
-            this.roundsList$.next(roundsList);
-          }
-
-          this.roundsOrder$.next(user.rounds);
-          this.checkSelectedRound(roundsList);
+        for (const round of roundsList) {
+          roundsMap[round.id] = {...roundsList[round.id]};
         }
+
+        this.generateLists(roundsMap, user?.rounds);
         this.roundsOrderFirstLoading$.next(false);
       });
     });
+  }
+
+  protected generateLists(roundsList: {[p: string]: Round}, roundsOrder: string[]): void {
+
+    // if roundsOrder is empty
+    if (!roundsOrder || !roundsOrder.length) {
+      this.roundsList$.next([]);
+      this.roundsOrder$.next([]);
+    }
+
+    // if roundsOrder is not empty
+    if (roundsOrder && roundsOrder.length) {
+
+      // if roundsList is empty
+      if (!Object.getOwnPropertyNames(roundsList).length) {
+        this.roundsList$.next([]);
+        this.roundsOrder$.next(roundsOrder);
+      }
+
+      // if roundsList is not empty
+      if (Object.getOwnPropertyNames(roundsList).length) {
+
+        // if roundsList does not contain all keys from roundsOrder
+        if (!Object.getOwnPropertyNames(roundsList).toSet().hasOnly(roundsOrder.toSet())) {
+          this.roundsList$.next([]);
+          this.roundsOrder$.next(roundsOrder);
+        }
+
+        // if roundsList contains all keys from roundsOrder
+        if (Object.getOwnPropertyNames(roundsList).toSet().hasOnly(roundsOrder.toSet())) {
+          this.roundsList$.next(roundsOrder.map((orderId) => roundsList[orderId]));
+          this.roundsOrder$.next(roundsOrder);
+        }
+
+      }
+    }
+
+    this.checkSelectedRound(this.roundsList$.value);
   }
 
   protected runParamRoundIdSelected(): void {
