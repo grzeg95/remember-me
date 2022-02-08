@@ -82,81 +82,39 @@ export class RoundsService {
 
     this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
       this.roundsListSub = this.afs.collection<{ value: string }>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
-        map((e) => {
-          return e.reduce((previousValue, currentValue) => {
-            return {
-              ...previousValue,
-              [currentValue.id]: currentValue
-            };
-          }, {});
-        }),
-        map(async (roundsEncrypted: { [ken in string]: { value: string } }) => {
-          const rounds: { [ken in string]: Round } = {};
-          for (const id of Object.getOwnPropertyNames(roundsEncrypted)) {
-            const decryptedRound = await decryptRound(roundsEncrypted[id], this.authService.userData.cryptoKey);
-            rounds[id] = {
-              id,
-              ...decryptedRound
-            }
+        switchMap(async (docs) => {
+
+          // decrypt
+          const roundsDecryptPromise: Promise<Round>[] = [];
+
+          for (const doc of docs) {
+            roundsDecryptPromise.push(decryptRound(doc, this.authService.userData.cryptoKey));
           }
-          return rounds;
+
+          const decryptedRoundList = await Promise.all(roundsDecryptPromise);
+
+          for (const [i, doc] of docs.entries()) {
+            decryptedRoundList[i].id = doc.id;
+          }
+
+          return decryptedRoundList;
         })
-      ).subscribe(async(roundsListPromise) => {
-        this.generateLists(await roundsListPromise, this.roundsOrder$.value);
+      ).subscribe((roundsList) => {
+        this.generateLists(roundsList, this.roundsOrder$.value);
         this.roundsListFirstLoad$.next(false);
       });
 
       this.roundsOrderSub = this.authService.user$.subscribe((user) => {
-
-        const roundsMap: {[key in string]: Round} = {}
-        const roundsList = this.roundsList$.value;
-
-        for (const round of roundsList) {
-          roundsMap[round.id] = {...roundsList[round.id]};
-        }
-
-        this.generateLists(roundsMap, user?.rounds);
+        this.generateLists(this.roundsList$.value, user?.rounds);
         this.roundsOrderFirstLoading$.next(false);
       });
     });
   }
 
-  protected generateLists(roundsList: {[p: string]: Round}, roundsOrder: string[]): void {
-
-    // if roundsOrder is empty
-    if (!roundsOrder || !roundsOrder.length) {
-      this.roundsList$.next([]);
-      this.roundsOrder$.next([]);
-    }
-
-    // if roundsOrder is not empty
-    if (roundsOrder && roundsOrder.length) {
-
-      // if roundsList is empty
-      if (!Object.getOwnPropertyNames(roundsList).length) {
-        this.roundsList$.next([]);
-        this.roundsOrder$.next(roundsOrder);
-      }
-
-      // if roundsList is not empty
-      if (Object.getOwnPropertyNames(roundsList).length) {
-
-        // if roundsList does not contain all keys from roundsOrder
-        if (!Object.getOwnPropertyNames(roundsList).toSet().hasOnly(roundsOrder.toSet())) {
-          this.roundsList$.next([]);
-          this.roundsOrder$.next(roundsOrder);
-        }
-
-        // if roundsList contains all keys from roundsOrder
-        if (Object.getOwnPropertyNames(roundsList).toSet().hasOnly(roundsOrder.toSet())) {
-          this.roundsList$.next(roundsOrder.map((orderId) => roundsList[orderId]));
-          this.roundsOrder$.next(roundsOrder);
-        }
-
-      }
-    }
-
-    this.checkSelectedRound(this.roundsList$.value);
+  protected generateLists(roundsList: Round[], roundsOrder: string[]): void {
+    this.roundsList$.next(roundsList);
+    this.roundsOrder$.next(roundsOrder);
+    this.checkSelectedRound(roundsList);
   }
 
   protected runParamRoundIdSelected(): void {

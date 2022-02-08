@@ -23,11 +23,19 @@ export class RoundsListComponent {
     return this.roundsService.roundsListFirstLoad$;
   }
 
+  get roundsOrderFirstLoading$(): Observable<boolean> {
+    return this.roundsService.roundsOrderFirstLoading$;
+  }
+
   displayedColumns: string[] = ['roundName', 'taskSize', 'timesOfDay', 'edit'];
   faEdit = faEdit;
 
   get roundsList$(): Observable<Round[]> {
     return this.roundsService.roundsList$;
+  }
+
+  get roundsOrder$(): Observable<string[]> {
+    return this.roundsService.roundsOrder$;
   }
 
   constructor(
@@ -49,5 +57,16 @@ export class RoundsListComponent {
 
   goToRound(roundId: string): void {
     this.router.navigate(['../', roundId, RouterDict.todayTasks], {relativeTo: this.route});
+  }
+
+  sortRoundList(rounds: Round[], roundsOrder: string[]): Round[] {
+
+    const roundsMap: {[key in string]: Round} = {};
+
+    for (const round of rounds) {
+      roundsMap[round.id] = round;
+    }
+
+    return roundsOrder.map((roundId) => roundsMap[roundId]);
   }
 }
