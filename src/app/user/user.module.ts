@@ -8,10 +8,12 @@ import {UserComponent} from './user.component';
 import {UserService} from './user.service';
 import {RoundService} from './views/rounds/round/round.service';
 import {RoundsService} from './views/rounds/rounds.service';
+import {UserSettingsComponent} from './views/user-settings/user-settings.component';
 
 @NgModule({
   declarations: [
-    UserComponent
+    UserComponent,
+    UserSettingsComponent
   ],
   imports: [
     RouterModule,
@@ -24,7 +26,8 @@ import {RoundsService} from './views/rounds/rounds.service';
     TaskService,
     RoundService,
     RoundsService
-  ]
+  ],
+  entryComponents: [UserSettingsComponent]
 })
 export class UserModule {
 }

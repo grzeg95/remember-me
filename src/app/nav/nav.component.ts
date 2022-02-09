@@ -1,14 +1,11 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {faEllipsisV, faTasks, faUser, faUserFriends} from '@fortawesome/free-solid-svg-icons';
+import {faEllipsisV, faTasks, faUser} from '@fortawesome/free-solid-svg-icons';
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 import {faGoogle, faFacebook} from '@fortawesome/free-brands-svg-icons';
-import {faEyeSlash} from '@fortawesome/free-regular-svg-icons';
-import {
-  GuestPreviouslyLoggedInComponent
-} from '../guest/guest-previously-logged-in/guest-previously-logged-in.component';
+import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
@@ -43,8 +40,6 @@ export class NavComponent {
   faFacebook = faFacebook;
   faGoogle = faGoogle;
   faEllipsisV = faEllipsisV;
-  faEyeSlash = faEyeSlash;
-  faUserFriends = faUserFriends;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(
@@ -66,7 +61,13 @@ export class NavComponent {
     return this.authService.signOut();
   }
 
-  openGuestPreviouslyLoggedInComponent() {
-    this.dialog.open(GuestPreviouslyLoggedInComponent);
+  openUserSetting() {
+    this.dialog.open(UserSettingsComponent,{
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      height: '100%',
+      width: '100%',
+      panelClass: 'full-screen-modal'
+    });
   }
 }

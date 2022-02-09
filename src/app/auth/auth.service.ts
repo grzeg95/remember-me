@@ -97,17 +97,23 @@ export class AuthService {
               // get key from db or request
               let userFromIndexedDB;
               try {
-                userFromIndexedDB = await this.appService.getFromDb('remember-me-database-keys', user.uid);
-                await this.appService.addToDb('remember-me-database-keys', user.uid, {
-                  user: {
-                    email: user.email,
-                    isAnonymous: user.isAnonymous,
-                    displayName: user.displayName,
-                    providerId: user.providerId,
-                    lastSignInTime: user.metadata.lastSignInTime
-                  },
-                  cryptoKey: userFromIndexedDB.cryptoKey
-                });
+
+                // get all users and delete others
+                const usersFromDb = await this.appService.getMapOfUsersCryptoKeysFromDb();
+
+                if (usersFromDb[user.uid] && usersFromDb[user.uid]) {
+                  userFromIndexedDB = usersFromDb[user.uid];
+                }
+
+                const usersToRemovePromise = [];
+
+                for (const id of Object.getOwnPropertyNames(usersFromDb)) {
+                  if (id !== user.uid && usersFromDb[id]) {
+                    usersToRemovePromise.push(this.appService.deleteFromDb('remember-me-database-keys', id));
+                  }
+                }
+
+                await Promise.all(usersToRemovePromise);
               } catch (e) {
               }
 

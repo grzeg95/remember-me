@@ -1,25 +1,8 @@
-<h1 mat-dialog-title>User data encryption policy</h1>
+<h1 mat-dialog-title>User data policy</h1>
 
 <ol class="start-position">
-  <li>General rules.<br />
-    <ol>
-      <li>The user has only encrypted data in the database.</li>
-      <li>No user data from the database is saved in the browser.</li>
-      <li>It is not possible to read raw user data from the database in logical form.</li>
-      <li>There is a place for metadata of recently logged in users, which can be managed using the option "Log in" -> "Users".</li>
-    </ol>
-  </li>
-  <li>For noobs.<br />
-    <ol>
-      <li>There are two projects one for Firebase and second one for asymmetric key.</li>
-      <li>User has encrypted by asymmetric key individual symmetric key stored in the JWT token.</li>
-      <li>If there is no CryptoKey stored in the IndexedDB associated with user then user will send request for symmetric
-        key and then store it as a CryptoKey.
-      </li>
-      <li>CryptoKey is stored only for decrypting without option to extractable key from it.</li>
-      <li>Guest can remove users CryptoKeys that was stored via 'Log in' -> 'Users' option.</li>
-    </ol>
-  </li>
+  <li>User has only encrypted data in the database.</li>
+  <li>User can remove an account in user settings.</li>
 </ol>
 
 <div mat-dialog-actions style="justify-content: flex-end;">

@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {ConnectionService} from './connection.service';
 import {BehaviorSubject} from 'rxjs';
-import {UserRememberedIndexedDB} from './models';
 
 @Injectable()
 export class AppService {
@@ -87,16 +86,16 @@ export class AppService {
     });
   }
 
-  async getMapOfUsersFromDb(): Promise<{
-    [key in string]: UserRememberedIndexedDB
+  async getMapOfUsersCryptoKeysFromDb(): Promise<{
+    [key in string]: CryptoKey
   }> {
     const listOfUsersIds = await this.getListOfIdsUsersFromDb();
     const usersCryptoKeys: {
-      [key in string]: UserRememberedIndexedDB
+      [key in string]: CryptoKey
     } = {};
 
     for (const id of listOfUsersIds) {
-      usersCryptoKeys[id] = (await this.getFromDb('remember-me-database-keys', id)).user;
+      usersCryptoKeys[id] = (await this.getFromDb('remember-me-database-keys', id));
     }
 
     return usersCryptoKeys;
