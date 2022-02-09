@@ -67,6 +67,6 @@ export class RoundsListComponent {
       roundsMap[round.id] = round;
     }
 
-    return roundsOrder.map((roundId) => roundsMap[roundId]);
+    return roundsOrder.filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
   }
 }
