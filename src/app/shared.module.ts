@@ -5,6 +5,7 @@ import {AngularFirestoreModule} from '@angular/fire/compat/firestore';
 import {AngularFireFunctionsModule} from '@angular/fire/compat/functions';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatChipsModule} from '@angular/material/chips';
+import {MatExpansionModule} from '@angular/material/expansion';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
@@ -45,7 +46,8 @@ const MODULES = [
   MatChipsModule,
   MatToolbarModule,
   MatIconModule,
-  MatMenuModule
+  MatMenuModule,
+  MatExpansionModule
 ];
 
 @NgModule({

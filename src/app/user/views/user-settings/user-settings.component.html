@@ -1,6 +1,47 @@
-<h1 mat-dialog-title>Setting</h1>
-<p [innerHTML]="userData.displayName"></p>
-<p [innerHTML]="userData.email"></p>
+<div class="title">Setting</div>
+
+<div class="section">
+  <div class="title">Basic info</div>
+  <div class="items">
+    <div class="item photo">
+      <div class="name">Photo</div>
+      <div class="data">
+        <img *ngIf="userData.photoURL" [src]="userData.photoURL"/>
+        <div *ngIf="!userData.photoURL" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="name">Name</div>
+      <div class="data"[innerHTML]="userData.displayName"></div>
+    </div>
+    <div class="item">
+      <div class="name">Email</div>
+      <div class="data"[innerHTML]="userData.email"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="title">Privacy</div>
+  <div class="items">
+    <div class="item">
+      <div class="name">Cookiebot</div>
+      <a class="data" onclick="Cookiebot.renew();">Open</a>
+    </div>
+  </div>
+</div>
+
+<mat-expansion-panel class="section">
+  <mat-expansion-panel-header class="title advanced">
+    <mat-panel-title>Advanced</mat-panel-title>
+  </mat-expansion-panel-header>
+  <div class="items">
+    <div class="item close-account">
+      <div class="name">Close account :(</div>
+      <a class="data">I'm not quite sure</a>
+    </div>
+  </div>
+</mat-expansion-panel>
 
 <div mat-dialog-actions>
   <button mat-flat-button color="primary" (click)="dialogRef.close()">Close</button>
