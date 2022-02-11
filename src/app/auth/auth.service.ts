@@ -43,7 +43,8 @@ export class AuthService {
 
         this.isUserLoggedIn$.next(true);
 
-        this.userIntervalReloadSub = interval(1000 * 60 * 10).subscribe(() => {
+        // pre 30 min
+        this.userIntervalReloadSub = interval(1800000).subscribe(() => {
           this.afAuth.currentUser.then((user) => {
             if (user) {
               user.reload().then(() => {
