@@ -57,9 +57,15 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       return app.runTransaction(async (transaction) => {
         const userDocSnap = await getUser(app, transaction, user.uid);
 
+        // create simple two number adding test
+        const numbers = crypto.randomBytes(2);
+
         transaction.set(userDocSnap.ref, {
           hasSymmetricKey: true,
-          cryptoKeyTest: await encrypt(user.uid, cryptoKey)
+          cryptoKeyTest: await encrypt({
+            test: [numbers[0], numbers[1]],
+            result: numbers[0] + numbers[1]
+          }, cryptoKey)
         });
 
         return transaction;

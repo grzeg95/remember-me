@@ -123,10 +123,14 @@ export class AuthService {
               // remove it if user was e.g. removed and there is new one witch the same id
               if (userFromIndexedDB) {
                 try {
-                  const uid = await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey);
 
-                  if (uid !== user.uid) {
-                    throw new Error();
+                  const cryptoTest: {
+                    test: number[],
+                    result: number
+                  } = JSON.parse(await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey));
+
+                  if (cryptoTest.test[0] + cryptoTest.test[1] !== cryptoTest.result) {
+                    throw new Error(`crypto test error`);
                   }
 
                 } catch (e) {
