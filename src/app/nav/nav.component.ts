@@ -1,6 +1,6 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {faEllipsisV, faTasks, faUser} from '@fortawesome/free-solid-svg-icons';
+import {faEllipsisV, faTasks, faUser, faGear, faArrowRightFromBracket} from '@fortawesome/free-solid-svg-icons';
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
@@ -40,6 +40,8 @@ export class NavComponent {
   faFacebook = faFacebook;
   faGoogle = faGoogle;
   faEllipsisV = faEllipsisV;
+  faGear = faGear;
+  faArrowRightFromBracket = faArrowRightFromBracket;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(

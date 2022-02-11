@@ -1,6 +1,6 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatDialogRef} from '@angular/material/dialog';
-import {faUser} from '@fortawesome/free-solid-svg-icons';
+import {faUser, faGear} from '@fortawesome/free-solid-svg-icons';
 import {AuthService} from '../../../auth/auth.service';
 import {UserData} from '../../../auth/user-data.model';
 
@@ -12,6 +12,7 @@ import {UserData} from '../../../auth/user-data.model';
 export class UserSettingsComponent implements OnInit, OnDestroy {
 
   faUser = faUser;
+  faGear = faGear;
 
   get userData(): UserData {
     return this.authService.userData;

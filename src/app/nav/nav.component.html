@@ -38,8 +38,8 @@
               <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">
-                <button mat-menu-item (click)="signOut()">Log out</button>
-                <button mat-menu-item (click)="openUserSetting()">Setting</button>
+                <button mat-menu-item (click)="signOut()"><fa-icon [icon]="faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Log out</button>
+                <button mat-menu-item (click)="openUserSetting()"><fa-icon [icon]="faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</button>
               </mat-menu>
             </div>
 
