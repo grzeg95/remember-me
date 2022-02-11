@@ -5,8 +5,10 @@ import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {testRequirement} from '../helpers/test-requirement';
 import {getUser} from '../helpers/user';
+import {encrypt} from './security';
 
 const crypto = require('crypto');
+const {subtle} = crypto.webcrypto;
 const {getAuth} = require('firebase-admin/auth');
 const crc32c = require('fast-crc32c');
 
@@ -39,6 +41,16 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       encryptedSymmetricKey
     };
 
+    const cryptoKey = await subtle.importKey(
+      'raw',
+      key,
+      {
+        name: 'AES-GCM'
+      },
+      false,
+      ['encrypt']
+    );
+
     return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
       const app = firestore();
 
@@ -46,7 +58,8 @@ export const handler = async (user: UserRecord, context: EventContext) => {
         const userDocSnap = await getUser(app, transaction, user.uid);
 
         transaction.set(userDocSnap.ref, {
-          hasSymmetricKey: true
+          hasSymmetricKey: true,
+          cryptoKeyTest: await encrypt(user.uid, cryptoKey)
         });
 
         return transaction;

@@ -118,6 +118,26 @@ export class AuthService {
               } catch (e) {
               }
 
+              // try to decrypt user uid
+              // remove it if user was e.g. removed and there is new one witch the same id
+              if (userFromIndexedDB) {
+                try {
+                  const uid = await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey);
+
+                  if (uid !== user.uid) {
+                    throw new Error();
+                  }
+
+                } catch (e) {
+                  userFromIndexedDB = undefined;
+
+                  try {
+                    await this.appService.deleteFromDb('remember-me-database-keys', user.uid);
+                  } catch (e) {
+                  }
+                }
+              }
+
               if (userFromIndexedDB) {
                 this.userData.cryptoKey = userFromIndexedDB.cryptoKey;
                 await this.prepareUser(actionUserDocSnap);

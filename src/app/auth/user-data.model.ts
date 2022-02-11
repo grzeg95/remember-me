@@ -15,4 +15,5 @@ export interface User {
 export interface EncryptedUser {
   rounds: string;
   hasSymmetricKey: boolean;
+  cryptoKeyTest: string;
 }
