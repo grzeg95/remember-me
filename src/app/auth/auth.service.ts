@@ -65,7 +65,8 @@ export class AuthService {
           displayName: user.displayName,
           photoURL: user.photoURL,
           emailVerified: user.emailVerified,
-          cryptoKey: null
+          cryptoKey: null,
+          providerId: user.providerData[0].providerId
         };
 
         if (this.userDocSub && !this.userDocSub.closed) {

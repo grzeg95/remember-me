@@ -5,6 +5,7 @@ export interface UserData {
   photoURL: string;
   emailVerified: boolean;
   cryptoKey?: CryptoKey;
+  providerId?: string;
 }
 
 export interface User {
