@@ -226,7 +226,7 @@ export class AuthService {
     }
   }
 
-  googleLogin(): void {
+  googleSignIn(): void {
     this.whileLoginIn = true;
 
     this.afAuth.signInWithRedirect(new GoogleAuthProvider()).catch(() => {
@@ -236,7 +236,7 @@ export class AuthService {
     });
   }
 
-  facebookLogin(): void {
+  facebookSignIn(): void {
     this.whileLoginIn = true;
 
     this.afAuth.signInWithRedirect(new FacebookAuthProvider()).catch(() => {

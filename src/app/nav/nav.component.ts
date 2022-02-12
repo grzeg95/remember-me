@@ -51,12 +51,12 @@ export class NavComponent {
   ) {
   }
 
-  googleLogin(): void {
-    this.authService.googleLogin();
+  googleSignIn(): void {
+    this.authService.googleSignIn();
   }
 
-  facebookLogin(): void {
-    this.authService.facebookLogin();
+  facebookSignIn(): void {
+    this.authService.facebookSignIn();
   }
 
   signOut(): Promise<boolean> {

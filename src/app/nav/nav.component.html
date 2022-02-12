@@ -16,19 +16,19 @@
                       [matMenuTriggerFor]="menu"
                       [disabled]="!(isOnline$ | async) || whileLoginIn"
                       aria-label="Log in">
-                <span class="loginButton">Log in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
+                <span class="loginButton">Sign in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
               </button>
 
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item
                         [disabled]="!(isOnline$ | async) || whileLoginIn"
-                        (click)="googleLogin()">
+                        (click)="googleSignIn()">
                   <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
                 </button>
 
                 <button mat-menu-item
                         [disabled]="!(isOnline$ | async) || whileLoginIn"
-                        (click)="facebookLogin()">
+                        (click)="facebookSignIn()">
                   <span><fa-icon [icon]="faFacebook" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Facebook</span>
                 </button>
               </mat-menu>
@@ -38,7 +38,7 @@
               <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">
-                <button mat-menu-item (click)="signOut()"><fa-icon [icon]="faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Log out</button>
+                <button mat-menu-item (click)="signOut()"><fa-icon [icon]="faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</button>
                 <button mat-menu-item (click)="openUserSetting()"><fa-icon [icon]="faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</button>
               </mat-menu>
             </div>
