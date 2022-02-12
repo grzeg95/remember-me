@@ -12,3 +12,9 @@ export const userOnCreate = runWith({
   memory: '512MB',
   maxInstances: 2
 }).region(regionId).auth.user().onCreate(require('./user-on-create').handler);
+
+export const userOnDelete = runWith({
+  timeoutSeconds: 60,
+  memory: '512MB',
+  maxInstances: 2
+}).region(regionId).auth.user().onDelete(require('./user-on-delete').handler);

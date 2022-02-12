@@ -3,6 +3,7 @@ import {AngularFireAuth} from '@angular/fire/compat/auth';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
+import firebase from 'firebase/compat';
 import {BehaviorSubject, interval, Subscription, timer} from 'rxjs';
 import {catchError, filter, take} from 'rxjs/operators';
 import {AppService} from '../app-service';
@@ -25,6 +26,7 @@ export class AuthService {
   dbIsReadySub: Subscription;
   isUserLoggedIn$: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
   userIsReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  firebaseUser: firebase.User;
 
   constructor(
     private afAuth: AngularFireAuth,
@@ -41,6 +43,7 @@ export class AuthService {
 
       if (user) {
 
+        this.firebaseUser = user;
         this.isUserLoggedIn$.next(true);
 
         // pre 30 min

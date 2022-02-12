@@ -1,15 +1,16 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {MatDialogRef} from '@angular/material/dialog';
+import {Component} from '@angular/core';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {faUser, faGear} from '@fortawesome/free-solid-svg-icons';
 import {AuthService} from '../../../auth/auth.service';
 import {UserData} from '../../../auth/user-data.model';
+import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/user-dialog-confirm-delete.component';
 
 @Component({
   selector: 'app-user-settings',
   templateUrl: './user-settings.component.html',
   styleUrls: ['./user-settings.component.scss']
 })
-export class UserSettingsComponent implements OnInit, OnDestroy {
+export class UserSettingsComponent {
 
   faUser = faUser;
   faGear = faGear;
@@ -20,15 +21,20 @@ export class UserSettingsComponent implements OnInit, OnDestroy {
 
   constructor(
     public dialogRef: MatDialogRef<UserSettingsComponent>,
-    private authService: AuthService
+    private authService: AuthService,
+    private dialog: MatDialog
   ) {
   }
 
-  ngOnInit(): void {
+  openRemoveAccountConfirmPrompt(): void {
+    const dialog = this.dialog.open(UserDialogConfirmDeleteComponent);
 
-  }
+    dialog.afterClosed().subscribe((isConfirmed) => {
 
-  ngOnDestroy(): void {
-
+      if (isConfirmed) {
+        this.authService.firebaseUser.delete().then(() => this.authService.signOut());
+        this.dialogRef.close();
+      }
+    });
   }
 }
