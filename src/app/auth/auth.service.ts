@@ -168,19 +168,12 @@ export class AuthService {
                   // try to store user crypto key to indexedDB
                   try {
                     await this.appService.addToDb('remember-me-database-keys', user.uid, {
-                      user: {
-                        email: user.email,
-                        isAnonymous: user.isAnonymous,
-                        displayName: user.displayName,
-                        providerId: user.providerId,
-                        lastSignInTime: user.metadata.lastSignInTime
-                      },
                       cryptoKey: this.userData.cryptoKey
                     });
                   } catch (e) {
                   }
                 }).catch(() => {
-                  timer(2000).pipe(take(1)).subscribe(() => {
+                  timer(3000).pipe(take(1)).subscribe(() => {
                     user.reload().then(() => {
                       console.log('user reloaded');
                     });
