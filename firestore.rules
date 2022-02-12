@@ -40,8 +40,6 @@ service cloud.firestore {
         }
       }
 
-
-
       match /task/{taskId} {
         allow get: if userIsOk();
         allow list: if userIsOk()
