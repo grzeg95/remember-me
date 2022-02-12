@@ -116,3 +116,5 @@ Thumbs.db
 # Firestore backup
 /emulators-backup/
 /firebase-export-*
+
+/.angular/
