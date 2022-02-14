@@ -137,14 +137,19 @@ export class RoundService {
         this.todayDocsSub.unsubscribe();
       }
 
-      this.todayDocsSub = this.afs.collection<{ value: string }>(`/users/${this.authService.userData.uid}/rounds/${round.id}/today`).valueChanges({idField: 'id'}).subscribe((some) => {
+      this.todayDocsSub = this.afs.collection<{ value: string }>(`/users/${this.authService.userData.uid}/rounds/${round.id}/today`).valueChanges({idField: 'id'}).subscribe(async (some) => {
 
         const todayName = this.roundsService.todayName$.value;
 
-        const today = some.find(async (doc) => {
+        let today;
+        for (const doc of some) {
           const name = (await decryptToday(doc, this.authService.userData.cryptoKey)).name;
-          return name === todayName;
-        });
+
+          if (name === todayName) {
+            today = doc;
+            break;
+          }
+        }
 
         if (!today) {
           this.today$.next({});
