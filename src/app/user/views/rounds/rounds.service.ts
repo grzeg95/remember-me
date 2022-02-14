@@ -18,7 +18,7 @@ export class RoundsService {
 
   roundsList$: BehaviorSubject<Round[]> = new BehaviorSubject<Round[]>([]);
   roundSelected$: BehaviorSubject<Round> = new BehaviorSubject<Round>(null);
-  paramRoundIdSelected$: BehaviorSubject<string> = new BehaviorSubject<string>('');
+  paramRoundIdSelected$: BehaviorSubject<string> = new BehaviorSubject<string>(null);
   roundsOrder$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
   now$ = new BehaviorSubject<Date>(new Date());
   roundsOrderFirstLoading$ = new BehaviorSubject<boolean>(true);
@@ -100,13 +100,13 @@ export class RoundsService {
           return decryptedRoundList;
         })
       ).subscribe((roundsList) => {
-        this.generateLists(roundsList, this.roundsOrder$.value);
         this.roundsListFirstLoad$.next(false);
+        this.generateLists(roundsList, this.roundsOrder$.value);
       });
 
       this.roundsOrderSub = this.authService.user$.subscribe((user) => {
-        this.generateLists(this.roundsList$.value, user?.rounds);
         this.roundsOrderFirstLoading$.next(false);
+        this.generateLists(this.roundsList$.value, user?.rounds);
       });
     });
   }
@@ -119,13 +119,17 @@ export class RoundsService {
 
   protected runParamRoundIdSelected(): void {
     this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
-      this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.subscribe((roundParamIdSelected) => {
+      this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.pipe(filter((id) => id !== null)).subscribe((roundParamIdSelected) => {
         this.checkSelectedRound(this.roundsList$.value, roundParamIdSelected);
       });
     });
   }
 
   protected checkSelectedRound(roundsList: Round[], roundId?: string): void {
+
+    if (this.roundsListFirstLoad$.value || this.roundsOrderFirstLoading$.value) {
+      return;
+    }
 
     roundId = roundId || this.paramRoundIdSelected$.value;
 

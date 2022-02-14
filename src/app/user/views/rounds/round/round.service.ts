@@ -96,7 +96,8 @@ export class RoundService {
 
       // Skąd mam wiedzieć, że ten null oznacza rezygnację
       // pod spodem musi być coś jeszcze
-      this.roundsService.roundSelected$.pipe(skip(3)).subscribe((round) => {
+      // checkSelectedRound
+      this.roundsService.roundSelected$.pipe(skip(1)).subscribe((round) => {
 
         if (this.roundsService.inEditMode) {
           return;
