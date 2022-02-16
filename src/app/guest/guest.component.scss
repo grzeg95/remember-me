@@ -42,3 +42,71 @@ a, a:not([href]):not([class]) {
     text-decoration: underline;
   }
 }
+
+.features-clean {
+  padding-bottom: 30px;
+  background-color: #ffffff;
+  color: #313437;
+
+  @media (max-width: 767px) {
+    padding-bottom: 10px;
+  }
+
+  p {
+    color: #7d8285;
+  }
+
+  h2 {
+    margin-bottom: 40px;
+    padding-top: 40px;
+    color: inherit;
+    font-weight: bold;
+
+    @media (max-width: 767px) {
+      margin-bottom: 25px;
+      padding-top: 25px;
+      font-size: 24px;
+    }
+  }
+
+  .intro {
+    max-width: 500px;
+    margin: 0 auto 60px;
+    font-size: 16px;
+
+    @media (max-width: 767px) {
+      margin-bottom: 40px;
+    }
+  }
+
+  .item {
+    min-height: 100px;
+    margin-bottom: 40px;
+    padding-left: 80px;
+
+    @media (max-width: 767px) {
+      min-height: 0;
+    }
+
+    .name {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: inherit;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .description {
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    .icon {
+      display: flex;
+      margin-left: -65px;
+      float: left;
+      color: #1485ee;
+      font-size: 40px;
+    }
+  }
+}

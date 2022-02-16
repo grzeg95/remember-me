@@ -27,9 +27,7 @@
               "src/assets"
             ],
             "styles": [
-              "node_modules/bootstrap/scss/bootstrap.scss",
-              "src/style/styles.scss",
-              "node_modules/material-design-icons/iconfont/material-icons.css"
+              "src/style/styles.scss"
             ],
             "scripts": [],
             "vendorChunk": true,

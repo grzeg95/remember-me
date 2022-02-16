@@ -37,7 +37,8 @@
                         [selected]="false"
                         (selectionChange)="$event.source.deselect()"
                         (removed)="removeTimeOfDay(i)">{{ timeOfDay.value }}
-                <mat-icon class="material-icons" matChipRemove>cancel</mat-icon>
+
+                <img src="assets/img/mat-chip-close.svg" class="mat-chip-close" matChipRemove>
               </mat-chip>
             </div>
             <input autocomplete="off"
