@@ -6,6 +6,14 @@
 ></mat-spinner>
 <router-outlet></router-outlet>
 
+<footer *ngIf="!(((isUserLoggedIn$ | async) === null) || ((isUserLoggedIn$ | async) && !(userIsReady$ | async)))">
+  <p>
+    <a target="_blank" href="https://www.linkedin.com/in/grzeg95">LinkedIn;</a>&nbsp;&nbsp;<span [style]="{'color': '#7d8285'}">icons8.com</span>;
+  </p>
+  <p>Carpe diem or nie; no offence;</p>
+  <p>Last update 14 Feb 2022;</p>
+</footer>
+
 <div [class.active]="!(isOnline$ | async)" class="offline">
   <div class="text">rem.grzeg.pl is currently offline</div>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="1.325rem" height="1.325rem">

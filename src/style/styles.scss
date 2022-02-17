@@ -252,3 +252,14 @@ mat-dialog-container {
 .text-center {
   text-align: center;
 }
+
+a, a:not([href]):not([class]) {
+  color: #007bff;
+  text-decoration: none;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
