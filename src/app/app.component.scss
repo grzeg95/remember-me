@@ -1,19 +1,5 @@
 :host {
-  min-height: 100vh;
-  margin: 0;
   display: grid;
-  grid-template-rows: auto 0 1fr auto;
-}
-
-footer {
-  padding: 0 0 1rem;
-
-  p {
-    text-align: center;
-    font-size: .8rem;
-    margin-bottom: 0;
-    color: #555c60;
-  }
 }
 
 .offline {
