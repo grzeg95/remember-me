@@ -64,7 +64,7 @@ export class NavComponent {
   }
 
   openUserSetting() {
-    this.dialog.open(UserSettingsComponent,{
+    this.dialog.open(UserSettingsComponent, {
       maxWidth: '100vw',
       maxHeight: '100vh',
       height: '100%',

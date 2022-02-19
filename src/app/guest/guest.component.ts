@@ -18,7 +18,13 @@ export class GuestComponent {
 
   openGuestAboutSecurityDialog(from: string) {
     this.analytics.logEvent('openGuestAboutSecurityDialog', {from}).finally(() => {
-      this.dialog.open(GuestAboutSecurityComponent);
+      this.dialog.open(GuestAboutSecurityComponent, {
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        height: '100%',
+        width: '100%',
+        panelClass: 'full-screen-modal'
+      });
     });
   }
 }
