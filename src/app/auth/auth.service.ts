@@ -203,11 +203,11 @@ export class AuthService {
     this.userIsReady$.next(true);
   }
 
-  async getSymmetricKey(user, actionUserDocSnap): Promise<string> {
+  async getSymmetricKey(user: firebase.User, actionUserDocSnap): Promise<string> {
     const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
     if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
 
-      return await user.getIdTokenResult(true).then((token) => {
+      return user.getIdTokenResult().then((token) => {
         if (!token.claims.encryptedSymmetricKey) {
           throw new Error('user without symmetric key');
         } else {
