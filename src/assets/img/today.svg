@@ -1,9 +1,13 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect x="38" y="11" width="180" height="234" rx="24" fill="white" stroke="#313437" stroke-width="12" stroke-linejoin="round"/>
 <path d="M78 125.5L89.6235 131.5L103 116" stroke="#7DA4D0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M78 125.5L89.6235 131.5L103 116" stroke="#4D8CD2" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M78 91.5L89.6235 97.5L103 82" stroke="#7DA4D0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M78 91.5L89.6235 97.5L103 82" stroke="#4D8CD2" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M178 96H128" stroke="#7D8285" stroke-width="12" stroke-linecap="round"/>
+<path d="M178 96H128" stroke="#44494F" stroke-width="12" stroke-linecap="round"/>
 <path d="M178 130H128" stroke="#7D8285" stroke-width="12" stroke-linecap="round"/>
-<path d="M178 164H118" stroke="#7D8285" stroke-width="12" stroke-linecap="round"/>
-<path d="M98 163C98 168.523 93.5228 173 88 173C82.4772 173 78 168.523 78 163C78 157.477 82.4772 153 88 153C93.5228 153 98 157.477 98 163Z" fill="#7DA4D0"/>
+<path d="M178 130H128" stroke="#44494F" stroke-width="12" stroke-linecap="round"/>
+<path d="M178 164H118" stroke="#44494F" stroke-width="12" stroke-linecap="round"/>
+<path d="M100 164C100 170.627 94.6274 176 88 176C81.3726 176 76 170.627 76 164C76 157.373 81.3726 152 88 152C94.6274 152 100 157.373 100 164Z" fill="#4D8CD2"/>
 </svg>

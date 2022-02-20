@@ -1,9 +1,7 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <ellipse cx="127.5" cy="128.5" rx="97.5" ry="97.5" transform="rotate(-90 127.5 128.5)" fill="white" stroke="#313437"
-           stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M128 127.799L161.271 81" stroke="#D34A4A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M128 127.799H65" stroke="#313437" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M128 127.799L149.832 162.704" stroke="#313437" stroke-width="12" stroke-linecap="round"
-        stroke-linejoin="round"/>
-  <circle cx="128" cy="127.799" r="12" fill="white" stroke="#313437" stroke-width="12"/>
+<ellipse cx="127.5" cy="128.5" rx="97.5" ry="97.5" transform="rotate(-90 127.5 128.5)" fill="white" stroke="#313437" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M128 127.799L161.271 81" stroke="#D34A4A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M128 127.799H65" stroke="#313437" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M128 127.799L149.832 162.704" stroke="#44494F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="128" cy="127.799" r="12" fill="white" stroke="#313437" stroke-width="12"/>
 </svg>
