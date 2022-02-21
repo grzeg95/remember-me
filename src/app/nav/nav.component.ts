@@ -1,6 +1,6 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
-import {faEllipsisV, faTasks, faUser, faGear, faArrowRightFromBracket, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
+import {faEllipsisV, faTasks, faUser, faGear, faArrowRightFromBracket} from '@fortawesome/free-solid-svg-icons';
 import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
@@ -42,7 +42,6 @@ export class NavComponent {
   faEllipsisV = faEllipsisV;
   faGear = faGear;
   faArrowRightFromBracket = faArrowRightFromBracket;
-  faEyeSlash = faEyeSlash;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(
@@ -58,10 +57,6 @@ export class NavComponent {
 
   facebookSignIn(): void {
     this.authService.facebookSignIn();
-  }
-
-  anonymouslySignIn(): void {
-    this.authService.anonymouslySignIn();
   }
 
   signOut(): Promise<boolean> {
