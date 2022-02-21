@@ -1,8 +1,9 @@
-import {Component} from '@angular/core';
+import {ChangeDetectorRef, Component} from '@angular/core';
 import {Observable} from 'rxjs';
 
 import {AppService} from './app-service';
 import {AuthService} from './auth/auth.service';
+import {ConnectionService} from './connection.service';
 
 @Component({
   selector: 'app-root',
@@ -23,7 +24,17 @@ export class AppComponent {
     return this.appService.isOnline$;
   }
 
-  constructor(private appService: AppService,
-              private authService: AuthService) {
+  constructor(
+    private appService: AppService,
+    private authService: AuthService,
+    private connectionService: ConnectionService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.connectionService.wasTabInactive$.subscribe((wasTabInactive) => {
+      if (wasTabInactive) {
+        console.log({wasTabInactive});
+        this.cdr.markForCheck();
+      }
+    });
   }
 }

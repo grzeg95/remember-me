@@ -7,6 +7,7 @@ import {BehaviorSubject, fromEvent} from 'rxjs';
 export class ConnectionService {
 
   stateChange$ = new BehaviorSubject<boolean>(true);
+  wasTabInactive$ = new BehaviorSubject<boolean>(false);
 
   constructor() {
     fromEvent(window, 'online').subscribe(() => {
@@ -15,6 +16,10 @@ export class ConnectionService {
 
     fromEvent(window, 'offline').subscribe(() => {
       this.stateChange$.next(false);
+    });
+
+    fromEvent(document, 'visibilitychange').subscribe(() => {
+      this.wasTabInactive$.next(document.visibilityState === 'visible');
     });
   }
 }
