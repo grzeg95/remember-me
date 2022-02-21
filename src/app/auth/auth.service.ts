@@ -4,7 +4,7 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
 import firebase from 'firebase/compat';
-import {BehaviorSubject, interval, Subscription, timer} from 'rxjs';
+import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {catchError, filter, take} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {decrypt} from '../security';
@@ -172,12 +172,6 @@ export class AuthService {
                     });
                   } catch (e) {
                   }
-                }).catch(() => {
-                  timer(3000).pipe(take(1)).subscribe(() => {
-                    user.reload().then(() => {
-                      console.log('user reloaded');
-                    });
-                  });
                 }).then(async () => await this.prepareUser(actionUserDocSnap));
               }
             });
@@ -207,7 +201,7 @@ export class AuthService {
     const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
     if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
 
-      return user.getIdTokenResult().then((token) => {
+      return user.getIdTokenResult(true).then((token) => {
         if (!token.claims.encryptedSymmetricKey) {
           throw new Error('user without symmetric key');
         } else {
