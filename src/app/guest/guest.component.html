@@ -1,81 +1,73 @@
-<!--
-  If user sign as anonymous then spinner is showing faster then
-  guest.component disappears
--->
-<ng-container *ngIf="!(isUserLoggedIn$ | async)">
+<div class="container">
+  <h1>Hello there.</h1>
+  <h3>Do you remember?</h3>
+  <h6><a (click)="openGuestAboutSecurityDialog('top-container')">User data policy</a></h6>
+</div>
 
+<div class="features-clean">
   <div class="container">
-    <h1>Hello there.</h1>
-    <h3>Do you remember?</h3>
-    <h6><a (click)="openGuestAboutSecurityDialog('top-container')">User data policy</a></h6>
-  </div>
-
-  <div class="features-clean">
-    <div class="container">
-      <div class="intro">
-        <h2 class="text-center">Rounds&nbsp;<img [style]="{width: '64px'}" src="/assets/img/rounds.svg">
-        </h2>
-        <p class="text-center">We know you are busy, can't remember everything.<br>Just create your daily tasks and make
-          every day better.</p>
-        <p class="text-center">Create up to 5 rounds that include:</p>
+    <div class="intro">
+      <h2 class="text-center">Rounds&nbsp;<img [style]="{width: '64px'}" src="/assets/img/rounds.svg">
+      </h2>
+      <p class="text-center">We know you are busy, can't remember everything.<br>Just create your daily tasks and make
+        every day better.</p>
+      <p class="text-center">Create up to 5 rounds that include:</p>
+    </div>
+    <div class="row features">
+      <div class="col-sm-6 col-lg-4 item">
+        <img src="assets/img/today.svg" class="icon">
+        <h3 class="name">Today tasks</h3>
+        <p class="description">Check it out and select task that has been completed.</p>
       </div>
-      <div class="row features">
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/today.svg" class="icon">
-          <h3 class="name">Today tasks</h3>
-          <p class="description">Check it out and select task that has been completed.</p>
-        </div>
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/clock.svg" class="icon">
-          <h3 class="name">Sortable tasks groups</h3>
-          <p class="description">Set the order of up to 10 times of day tasks groups.</p>
-        </div>
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/list.svg" class="icon">
-          <h3 class="name">Tasks list</h3>
-          <p class="description">Have a look on your tasks. Store up to 25 of them.</p>
-        </div>
+      <div class="col-sm-6 col-lg-4 item">
+        <img src="assets/img/clock.svg" class="icon">
+        <h3 class="name">Sortable tasks groups</h3>
+        <p class="description">Set the order of up to 10 times of day tasks groups.</p>
+      </div>
+      <div class="col-sm-6 col-lg-4 item">
+        <img src="assets/img/list.svg" class="icon">
+        <h3 class="name">Tasks list</h3>
+        <p class="description">Have a look on your tasks. Store up to 25 of them.</p>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="features-clean">
-    <div class="container">
-      <div class="intro">
-        <h2 class="text-center">How it works.</h2>
-        <p class="text-center">Just Google.</p>
+<div class="features-clean">
+  <div class="container">
+    <div class="intro">
+      <h2 class="text-center">How it works.</h2>
+      <p class="text-center">Just Google.</p>
+    </div>
+    <div class="row features">
+      <div class="col-sm-6 col-lg-4 item">
+        <img src="/assets/img/firebase_logo_logomark.svg" class="icon firebase" />
+        <h3 class="name">Built with Firebase</h3>
+        <p class="description">
+          Feel free to <a href="https://firebase.google.com/">lear more</a> about Firebase.
+        </p>
       </div>
-      <div class="row features">
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/firebase_logo_logomark.svg" class="icon firebase" />
-          <h3 class="name">Built with Firebase</h3>
-          <p class="description">
-            Feel free to <a href="https://firebase.google.com/">lear more</a> about Firebase.
-          </p>
-        </div>
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/key_management_service.svg" class="icon kms" />
-          <h3 class="name">Cloud Key Management</h3>
-          <p class="description">
-            Encrypted by <a href="https://cloud.google.com/security-key-management">Cloud Key Management</a>.<br/>
-          </p>
-        </div>
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/cookiebot_blue_logo.svg" class="icon cookiebot" />
-          <h3 class="name">Cookiebot</h3>
-          <p class="description">Privacy is protected.<br/><a class="cookiebot-renew" onclick="Cookiebot.renew();">Cookiebot.renew();</a>
-          </p>
-        </div>
+      <div class="col-sm-6 col-lg-4 item">
+        <img src="/assets/img/key_management_service.svg" class="icon kms" />
+        <h3 class="name">Cloud Key Management</h3>
+        <p class="description">
+          Encrypted by <a href="https://cloud.google.com/security-key-management">Cloud Key Management</a>.<br/>
+        </p>
+      </div>
+      <div class="col-sm-6 col-lg-4 item">
+        <img src="/assets/img/cookiebot_blue_logo.svg" class="icon cookiebot" />
+        <h3 class="name">Cookiebot</h3>
+        <p class="description">Privacy is protected.<br/><a class="cookiebot-renew" onclick="Cookiebot.renew();">Cookiebot.renew();</a>
+        </p>
       </div>
     </div>
   </div>
+</div>
 
-  <footer>
-    <p>
-      <a target="_blank" href="https://www.linkedin.com/in/grzeg95">LinkedIn;</a>
-    </p>
-    <p>Carpe diem or nie; no offence;</p>
-    <p>Last update 20 Feb 2022;</p>
-  </footer>
-
-</ng-container>
+<footer>
+  <p>
+    <a target="_blank" href="https://www.linkedin.com/in/grzeg95">LinkedIn;</a>
+  </p>
+  <p>Carpe diem or nie; no offence;</p>
+  <p>Last update 20 Feb 2022;</p>
+</footer>
