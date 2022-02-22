@@ -90,8 +90,14 @@ export class AuthService {
           })
         ).subscribe(async (actionUserDocSnap) => {
 
+          // check if waitingForSymmetricKey
+          if (this.waitingForSymmetricKey) {
+            return;
+          }
+
           // check if user has loaded private key
-          if (this.userData.cryptoKey || this.waitingForSymmetricKey) {
+          if (this.userData.cryptoKey) {
+            await this.prepareUser(actionUserDocSnap);
             return;
           }
 
