@@ -44,6 +44,7 @@ export class AuthService {
 
       if (user) {
 
+        this.whileLoginIn = false;
         this.firebaseUser = user;
         this.isUserLoggedIn$.next(true);
 
@@ -71,7 +72,8 @@ export class AuthService {
           photoURL: user.photoURL,
           emailVerified: user.emailVerified,
           cryptoKey: null,
-          providerId: user.providerData[0].providerId
+          isAnonymous: user.isAnonymous,
+          providerId: user.isAnonymous ? 'Anonymous' : user.providerData[0].providerId
         };
 
         if (this.userDocSub && !this.userDocSub.closed) {
@@ -246,6 +248,17 @@ export class AuthService {
     });
   }
 
+  anonymouslySignIn(): void {
+    this.whileLoginIn = true;
+
+    this.afAuth.signInAnonymously().catch(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+      this.whileLoginIn = false;
+    }).then(() => {
+      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
+    });
+  }
+
   unsubscribeUserDocSub(): void {
     if (this.userDocSub && !this.userDocSub.closed) {
       this.userDocSub.unsubscribe();
@@ -261,6 +274,7 @@ export class AuthService {
   signOut(): Promise<boolean> {
     this.unsubscribeUserIntervalReloadSub();
     this.unsubscribeUserDocSub();
+    this.userIsReady$.next(false);
     return this.afAuth.signOut().then(() => {
       this.userData = null;
       return this.router.navigate(['/']);

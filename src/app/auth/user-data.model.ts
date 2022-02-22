@@ -6,6 +6,7 @@ export interface UserData {
   emailVerified: boolean;
   cryptoKey?: CryptoKey;
   providerId?: string;
+  isAnonymous?: boolean;
 }
 
 export interface User {

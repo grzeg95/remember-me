@@ -31,6 +31,12 @@
                         (click)="facebookSignIn()">
                   <span><fa-icon [icon]="faFacebook" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Facebook</span>
                 </button>
+
+                <button mat-menu-item
+                        [disabled]="!(isOnline$ | async) || whileLoginIn"
+                        (click)="anonymouslySignIn()">
+                  <span><fa-icon [icon]="faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</span>
+                </button>
               </mat-menu>
             </div>
 

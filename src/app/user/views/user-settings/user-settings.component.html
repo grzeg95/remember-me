@@ -1,27 +1,34 @@
-<div class="title"><fa-icon [icon]="faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</div>
+<div class="title">
+  <fa-icon [icon]="faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>
+  Setting
+</div>
 
 <div class="section">
   <div class="title">Basic info</div>
   <div class="items">
     <div class="item">
       <div class="name">Provider</div>
-      <div class="data"[innerHTML]="userData.providerId"></div>
+      <div class="data" [innerHTML]="userData.providerId"></div>
     </div>
-    <div class="item photo">
-      <div class="name">Photo</div>
-      <div class="data">
-        <img *ngIf="userData.photoURL" [src]="userData.photoURL"/>
-        <div *ngIf="!userData.photoURL" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
+    <ng-container *ngIf="!userData.isAnonymous">
+      <div class="item photo">
+        <div class="name">Photo</div>
+        <div class="data">
+          <img *ngIf="userData.photoURL" [src]="userData.photoURL"/>
+          <div *ngIf="!userData.photoURL" class="no-photo">
+            <fa-icon [icon]="faUser"></fa-icon>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="item">
-      <div class="name">Name</div>
-      <div class="data"[innerHTML]="userData.displayName"></div>
-    </div>
-    <div class="item">
-      <div class="name">Email</div>
-      <div class="data"[innerHTML]="userData.email"></div>
-    </div>
+      <div class="item">
+        <div class="name">Name</div>
+        <div class="data" [innerHTML]="userData.displayName"></div>
+      </div>
+      <div class="item">
+        <div class="name">Email</div>
+        <div class="data" [innerHTML]="userData.email"></div>
+      </div>
+    </ng-container>
   </div>
 </div>
 
