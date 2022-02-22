@@ -1,6 +1,8 @@
 import {Component} from '@angular/core';
 import {AngularFireAnalytics} from '@angular/fire/compat/analytics';
 import {MatDialog} from '@angular/material/dialog';
+import {Observable} from 'rxjs';
+import {AuthService} from '../auth/auth.service';
 import {GuestAboutSecurityComponent} from './guest-about-security/guest-about-security.component';
 
 @Component({
@@ -12,8 +14,17 @@ export class GuestComponent {
 
   constructor(
     private dialog: MatDialog,
-    private analytics: AngularFireAnalytics
+    private analytics: AngularFireAnalytics,
+    private authService: AuthService
   ) {
+  }
+
+  get userIsReady$(): Observable<boolean> {
+    return this.authService.userIsReady$;
+  }
+
+  get isUserLoggedIn$(): Observable<boolean | null> {
+    return this.authService.isUserLoggedIn$;
   }
 
   openGuestAboutSecurityDialog(from: string) {
