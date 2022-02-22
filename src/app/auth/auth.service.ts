@@ -27,6 +27,7 @@ export class AuthService {
   isUserLoggedIn$: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
   userIsReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   firebaseUser: firebase.User;
+  waitingForSymmetricKey = false;
 
   constructor(
     private afAuth: AngularFireAuth,
@@ -87,94 +88,107 @@ export class AuthService {
           })
         ).subscribe(async (actionUserDocSnap) => {
 
-          if (this.dbIsReadySub && !this.dbIsReadySub.closed) {
-            this.dbIsReadySub.unsubscribe();
+          // check if user has loaded private key
+          if (this.userData.cryptoKey || this.waitingForSymmetricKey) {
+            return;
           }
 
-          this.dbIsReadySub = this.appService.dbIsReady$
-            .pipe(
-              filter((isReady) => isReady === 'will not' || isReady),
-              take(1)
-            ).subscribe(async () => {
+          // wait for user private key
+          const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
 
-              // get key if tre is no db or key in db
+          if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
 
-              // get key from db or request
-              let userFromIndexedDB;
-              try {
+            // check if user has stored
+            if (this.dbIsReadySub && !this.dbIsReadySub.closed) {
+              this.dbIsReadySub.unsubscribe();
+            }
 
-                // get all users and delete others
-                const usersFromDb = await this.appService.getMapOfUsersCryptoKeysFromDb();
+            this.dbIsReadySub = this.appService.dbIsReady$
+              .pipe(
+                filter((isReady) => isReady === 'will not' || isReady),
+                take(1)
+              ).subscribe(async () => {
 
-                if (usersFromDb[user.uid] && usersFromDb[user.uid]) {
-                  userFromIndexedDB = usersFromDb[user.uid];
-                }
+                // get key if tre is no db or key in db
 
-                const usersToRemovePromise = [];
-
-                for (const id of Object.getOwnPropertyNames(usersFromDb)) {
-                  if (id !== user.uid && usersFromDb[id]) {
-                    usersToRemovePromise.push(this.appService.deleteFromDb('remember-me-database-keys', id));
-                  }
-                }
-
-                await Promise.all(usersToRemovePromise);
-              } catch (e) {
-              }
-
-              // try to decrypt user uid
-              // remove it if user was e.g. removed and there is new one witch the same id
-              if (userFromIndexedDB) {
+                // get key from db
+                let userFromIndexedDB;
                 try {
 
-                  const cryptoTest: {
-                    test: number[],
-                    result: number
-                  } = JSON.parse(await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey));
+                  // get all users and delete others
+                  const usersFromDb = await this.appService.getMapOfUsersCryptoKeysFromDb();
 
-                  if (cryptoTest.test[0] + cryptoTest.test[1] !== cryptoTest.result) {
-                    throw new Error(`crypto test error`);
+                  if (usersFromDb[user.uid] && usersFromDb[user.uid]) {
+                    userFromIndexedDB = usersFromDb[user.uid];
                   }
 
-                } catch (e) {
-                  userFromIndexedDB = undefined;
+                  const usersToRemovePromise = [];
 
+                  for (const id of Object.getOwnPropertyNames(usersFromDb)) {
+                    if (id !== user.uid && usersFromDb[id]) {
+                      usersToRemovePromise.push(this.appService.deleteFromDb('remember-me-database-keys', id));
+                    }
+                  }
+
+                  await Promise.all(usersToRemovePromise);
+                } catch (e) {
+                }
+
+                // try to decrypt user uid
+                // remove it if user was e.g. removed and there is new one witch the same id
+                if (userFromIndexedDB) {
                   try {
-                    await this.appService.deleteFromDb('remember-me-database-keys', user.uid);
+
+                    const cryptoTest: {
+                      test: number[],
+                      result: number
+                    } = JSON.parse(await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey));
+
+                    if (cryptoTest.test[0] + cryptoTest.test[1] !== cryptoTest.result) {
+                      throw new Error(`crypto test error`);
+                    }
+
                   } catch (e) {
+                    userFromIndexedDB = undefined;
+
+                    try {
+                      await this.appService.deleteFromDb('remember-me-database-keys', user.uid);
+                    } catch (e) {
+                    }
                   }
                 }
-              }
 
-              if (userFromIndexedDB) {
-                this.userData.cryptoKey = userFromIndexedDB.cryptoKey;
-                await this.prepareUser(actionUserDocSnap);
-              } else {
-                // request
-                await this.getSymmetricKey(user, actionUserDocSnap).then(async (key) => {
+                if (userFromIndexedDB) {
+                  this.userData.cryptoKey = userFromIndexedDB.cryptoKey;
+                  await this.prepareUser(actionUserDocSnap);
+                } else {
+                  // request
+                  await this.getSymmetricKey(user).then(async (key) => {
 
-                  // create crypto key
+                    // create crypto key
 
-                  this.userData.cryptoKey = await crypto.subtle.importKey(
-                    'raw',
-                    Buffer.from(key, 'hex'),
-                    {
-                      name: 'AES-GCM'
-                    },
-                    false,
-                    ['decrypt']
-                  );
+                    this.userData.cryptoKey = await crypto.subtle.importKey(
+                      'raw',
+                      Buffer.from(key, 'hex'),
+                      {
+                        name: 'AES-GCM'
+                      },
+                      false,
+                      ['decrypt']
+                    );
 
-                  // try to store user crypto key to indexedDB
-                  try {
-                    await this.appService.addToDb('remember-me-database-keys', user.uid, {
-                      cryptoKey: this.userData.cryptoKey
-                    });
-                  } catch (e) {
-                  }
-                }).then(async () => await this.prepareUser(actionUserDocSnap));
-              }
-            });
+                    // try to store user crypto key to indexedDB
+                    try {
+                      await this.appService.addToDb('remember-me-database-keys', user.uid, {
+                        cryptoKey: this.userData.cryptoKey
+                      });
+                    } catch (e) {
+                    }
+                  }).then(async () => await this.prepareUser(actionUserDocSnap));
+                }
+
+              });
+          }
         });
       } else {
         this.userData = null;
@@ -197,20 +211,17 @@ export class AuthService {
     this.userIsReady$.next(true);
   }
 
-  async getSymmetricKey(user: firebase.User, actionUserDocSnap): Promise<string> {
-    const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
-    if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
-
-      return user.getIdTokenResult(true).then((token) => {
-        if (!token.claims.encryptedSymmetricKey) {
-          throw new Error('user without symmetric key');
-        } else {
-          return this.fns.httpsCallable('getSymmetricKey')(null).toPromise();
-        }
-      });
-    } else {
-      throw new Error('user without symmetric key');
-    }
+  async getSymmetricKey(user: firebase.User): Promise<string> {
+    this.waitingForSymmetricKey = true;
+    return await user.getIdTokenResult(true).then((token) => {
+      if (!token.claims.encryptedSymmetricKey) {
+        throw new Error('user without symmetric key');
+      } else {
+        return this.fns.httpsCallable('getSymmetricKey')(null).toPromise();
+      }
+    }).finally(() => {
+      this.waitingForSymmetricKey = false;
+    });
   }
 
   googleSignIn(): void {
