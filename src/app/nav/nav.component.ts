@@ -64,8 +64,8 @@ export class NavComponent {
     this.authService.anonymouslySignIn();
   }
 
-  signOut(): Promise<boolean> {
-    return this.authService.signOut();
+  async signOut(): Promise<void> {
+    await this.authService.signOut();
   }
 
   openUserSetting() {

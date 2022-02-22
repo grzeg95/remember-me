@@ -32,7 +32,6 @@ export class AppComponent {
   ) {
     this.connectionService.wasTabInactive$.subscribe((wasTabInactive) => {
       if (wasTabInactive) {
-        console.log({wasTabInactive});
         this.cdr.markForCheck();
       }
     });

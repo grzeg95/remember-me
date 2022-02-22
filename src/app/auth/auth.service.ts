@@ -4,7 +4,7 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
 import firebase from 'firebase/compat';
-import {BehaviorSubject, interval, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, lastValueFrom, Subscription} from 'rxjs';
 import {catchError, filter, take} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {decrypt} from '../security';
@@ -53,7 +53,7 @@ export class AuthService {
           this.afAuth.currentUser.then((user) => {
             if (user) {
               user.reload().then(() => {
-                console.log('user reloaded');
+                console.log('inactive user reloaded');
               });
             }
           });
@@ -192,6 +192,9 @@ export class AuthService {
                       });
                     } catch (e) {
                     }
+                  }).catch((e) => {
+                    this.snackBar.open(e);
+                    this.signOut();
                   }).then(async () => await this.prepareUser(actionUserDocSnap));
                 }
 
@@ -225,7 +228,7 @@ export class AuthService {
       if (!token.claims.encryptedSymmetricKey) {
         throw new Error('user without symmetric key');
       } else {
-        return this.fns.httpsCallable('getSymmetricKey')(null).toPromise();
+        return lastValueFrom(this.fns.httpsCallable('getSymmetricKey')(null));
       }
     }).finally(() => {
       this.waitingForSymmetricKey = false;
@@ -277,13 +280,14 @@ export class AuthService {
     }
   }
 
-  signOut(): Promise<boolean> {
+  signOut(): Promise<void> {
     this.unsubscribeUserIntervalReloadSub();
     this.unsubscribeUserDocSub();
     this.userIsReady$.next(false);
-    return this.afAuth.signOut().then(() => {
-      this.userData = null;
-      return this.router.navigate(['/']);
+    this.userData = null;
+    this.firebaseUser = null;
+    return this.afAuth.signOut().finally(() => {
+      this.router.navigate(['/']);
     });
   }
 }
