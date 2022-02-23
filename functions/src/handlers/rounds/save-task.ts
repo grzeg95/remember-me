@@ -222,19 +222,21 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
   }
 
   // create task for days
+
+  // add task timesOfDay
+  const timesOfDay: { [key in string]: boolean } = {};
+
+  for (const timeOfDay of task.timesOfDay) {
+    timesOfDay[timeOfDay] = false;
+  }
+
+  const todayTaskToAdd = await encryptTodayTask({
+    description: task.description,
+    timesOfDay
+  }, cryptoKey);
+
   for (const item of newTaskForDays) {
-
-    // add task timesOfDay
-    const timesOfDay: { [key in string]: boolean } = {};
-
-    for (const timeOfDay of task.timesOfDay) {
-      timesOfDay[timeOfDay] = false;
-    }
-
-    transaction.create(item.docSnap.ref, await encryptTodayTask({
-      description: task.description,
-      timesOfDay
-    }, cryptoKey));
+    transaction.create(item.docSnap.ref, todayTaskToAdd);
   }
 
   // remove
@@ -253,15 +255,15 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
   }
 
   // update
-  for (const dayToUpdate of toUpdate) {
-    // add task timesOfDay to newTimesOfDay
-    const newTimesOfDay: { [key in string]: boolean } = {};
+  // add task timesOfDay to newTimesOfDay
+  const newTimesOfDayRaw: { [key in string]: boolean } = {};
 
-    // select inserted task timesOfDay to newTimesOfDay
-    const taskTimesOdDaySet = task.timesOfDay;
-    for (const timeOfDay of taskTimesOdDaySet) {
-      newTimesOfDay[timeOfDay] = false;
-    }
+  // select inserted task timesOfDay to newTimesOfDayRaw
+  for (const timeOfDay of task.timesOfDay) {
+    newTimesOfDayRaw[timeOfDay] = false;
+  }
+
+  for (const dayToUpdate of toUpdate) {
 
     // select current stored task timesOfDay to oldTimesOfDay
     // there can be selected true value
@@ -277,6 +279,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     }
 
     // maybe there exist selected timesOfDay
+    const newTimesOfDay = {...newTimesOfDayRaw};
     for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
       if (oldTimesOfDay[newTimeOfDay]) {
         newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
