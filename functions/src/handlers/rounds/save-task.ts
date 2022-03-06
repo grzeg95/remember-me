@@ -204,7 +204,6 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
   for (const dayToCreate of newTodayItemsForTaskToCreate) {
     todayDayToCreateEncryptPromise.push(encryptToday({
       name: dayToCreate.dayToCreate,
-      taskSize: 1,
       tasksIds: [taskDocSnap.id]
     }, cryptoKey));
   }
@@ -216,7 +215,6 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     if (todayDocRefsMap[dayToCreate]) {
       const todayTask = await decryptToday((todayDocRefsMap[dayToCreate].data() as {value: string}), cryptoKey);
       transaction.update(todayDocRefsMap[dayToCreate].ref, await encryptToday({
-        taskSize: todayTask.taskSize + 1,
         name: todayTask.name,
         tasksIds: [...todayTask.tasksIds, taskDocSnap.id]
       }, cryptoKey));
@@ -249,8 +247,8 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
 
   for (const day of taskDocSnapData.daysOfTheWeek || []) {
     if (!taskDaysOfTheWeek.has(day)) {
-      const todayTaskSize = +((await decryptToday((todayDocRefsMap[day].data() as {value: string}), cryptoKey)).taskSize);
-      if (todayTaskSize === 1) {
+      const todayTaskIds = (await decryptToday((todayDocRefsMap[day].data() as {value: string}), cryptoKey)).tasksIds;
+      if (todayTaskIds.length === 1) {
         transaction.delete(todayDocRefsMap[day].ref);
         todaysIds.delete(todayDocRefsMap[day].ref.id)
       }
@@ -424,7 +422,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     task.description = task.description.trim();
 
     const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-    let currentTaskSize = roundDocSnapData.taskSize;
     const timesOfDay = roundDocSnapData.timesOfDay;
     const timesOfDayCardinality = roundDocSnapData.timesOfDayCardinality;
     const tasksIds = roundDocSnapData.tasksIds.toSet();
@@ -436,11 +433,10 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // read task or create it
     let taskDocSnap: DocumentSnapshot;
     if (!taskDocSnapTmp.exists) {
-      testRequirement(currentTaskSize + 1 > 25, `You can own up tp 25 tasks but merge has ${currentTaskSize + 1} 🤔`);
+      testRequirement(roundDocSnapData.todaysIds.length + 1 > 25, `You can own up tp 25 tasks but merge has ${roundDocSnapData.todaysIds.length + 1} 🤔`);
       created = true;
       taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
       taskId = taskDocSnap.id;
-      currentTaskSize++;
       tasksIds.add(taskId);
     } else {
       taskDocSnap = taskDocSnapTmp;
@@ -526,7 +522,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
     // update round
     const timesOfDayDataToWrite = await encryptRound({
-      taskSize: currentTaskSize,
       timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
       timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
       name: roundDocSnapData.name,

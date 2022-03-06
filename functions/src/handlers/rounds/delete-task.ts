@@ -41,7 +41,6 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
 
   const task: Task = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
   const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-  const currentTaskSize = round.taskSize;
   const timesOfDay = round.timesOfDay;
   const timesOfDayCardinality = round.timesOfDayCardinality;
   const todaysIds = round.todaysIds.toSet();
@@ -102,7 +101,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
 
     const todayTask = await decryptToday(todayDocSnap.data() as {value: string}, cryptoKey);
 
-    if (todayTask.taskSize === 1) {
+    if (todayTask.tasksIds.length === 1) {
       transaction.delete(todayDocSnap.ref);
       todaysIds.delete(todayDocSnap.ref.id);
     } else {
@@ -110,7 +109,6 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
       todayTasksIds.delete(taskDocSnap.id);
       transaction.update(todayDocSnap.ref, await encryptToday({
         name: todayTask.name,
-        taskSize: todayTask.taskSize - 1,
         tasksIds: todayTasksIds.toArray()
       }, cryptoKey));
     }
@@ -131,7 +129,6 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
 
   const roundDataToWrite = await encryptRound({
     timesOfDayCardinality,
-    taskSize: currentTaskSize - 1,
     timesOfDay,
     name: round.name,
     todaysIds: todaysIds.toArray(),

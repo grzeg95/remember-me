@@ -95,7 +95,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.name.setValue(this.name.value.trim());
         this.roundsService.editedRound$.next({
           timesOfDayCardinality: [],
-          taskSize: 0,
           timesOfDay: [],
           name: this.name.value,
           id: success.roundId,

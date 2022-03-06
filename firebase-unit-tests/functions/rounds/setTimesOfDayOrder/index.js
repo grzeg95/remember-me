@@ -79,7 +79,7 @@ describe(`setTimesOfDayOrder`, async () => {
         await firestore.collection('users').doc(myId).collection('rounds').doc(roundId).set(await encryptRound({
           timesOfDay: startTimesOfDay,
           timesOfDayCardinality: startTimesOfDayCardinality,
-          taskSize: 1,
+          tasksIds: [],
           name: 'lol'
         }, cryptoKey));
 
@@ -99,7 +99,7 @@ describe(`setTimesOfDayOrder`, async () => {
           timesOfDay: test.to.split(''),
           timesOfDayCardinality: endTimesOfDayCardinality,
           name: 'lol',
-          taskSize: 1
+          tasksIds: []
         }).to.eql(toCompare);
       }).timeout(50000));
     });

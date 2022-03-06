@@ -93,6 +93,7 @@ describe(`saveTask`, async () => {
       let mustBe = JSON.stringify(test['mustBe']);
       mustBe = mustBe.replace(/{x}/gm, x.taskId);
       mustBe = JSON.parse(mustBe);
+      mustBe.tasksIds = mustBe.tasksIds.toSet();
 
       const user = simplifyUserResult(await getUserJson(myId), roundId);
       for (const key of Object.getOwnPropertyNames(user['today'])) {
@@ -135,6 +136,7 @@ describe(`saveTask`, async () => {
       mustBe = mustBe.replace(/{x}/gm, x.taskId);
       mustBe = mustBe.replace(/{y}/gm, y.taskId);
       mustBe = JSON.parse(mustBe);
+      mustBe.tasksIds = mustBe.tasksIds.toSet();
 
       const user = simplifyUserResult(await getUserJson(myId), roundId);
       for (const key of Object.getOwnPropertyNames(user['today'])) {
@@ -200,6 +202,7 @@ describe(`saveTask`, async () => {
       let mustBe = JSON.stringify(test['mustBe']);
       mustBe = mustBe.replace(/{from}/gm, from.taskId);
       mustBe = JSON.parse(mustBe);
+      mustBe.tasksIds = mustBe.tasksIds.toSet();
 
       const user = simplifyUserResult(await getUserJson(myId), roundId);
       for (const key of Object.getOwnPropertyNames(user['today'])) {

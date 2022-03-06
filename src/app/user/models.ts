@@ -43,7 +43,6 @@ export interface Task {
 export interface Round {
   timesOfDayEncrypted?: string[];
   id?: string;
-  taskSize: number;
   timesOfDay: string[];
   timesOfDayCardinality: number[];
   todaysIds: string[];
@@ -52,7 +51,6 @@ export interface Round {
 }
 
 export interface TimesOfDay {
-  taskSize?: number;
   timesOfDay?: string[];
   timesOfDayCardinality?: number[];
 }
@@ -74,6 +72,5 @@ export interface EncryptedTodayTask {
 
 export interface Today {
   name: string;
-  taskSize: number;
   tasksIds: string[];
 }

@@ -143,7 +143,6 @@ export const decryptRound = async (encryptedRound: { value: string } | undefined
   }
 
   return {
-    taskSize: 0,
     timesOfDay: [],
     name: '',
     timesOfDayCardinality: [],
@@ -218,7 +217,6 @@ export const decryptToday = async (encryptedToday: { value: string }, cryptoKey:
 
   return {
     name: '',
-    taskSize: 0,
     tasksIds: []
   };
 };

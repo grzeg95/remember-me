@@ -84,7 +84,6 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
 
       roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
       const roundEncryptPromise = encryptRound({
-        taskSize: 0,
         timesOfDay: [],
         timesOfDayCardinality: [],
         name: data.name,
@@ -115,7 +114,6 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
       testRequirement(round.name === data.name);
 
       transaction.update(roundDocSnap.ref, await encryptRound({
-        taskSize: round.taskSize,
         name: data.name,
         timesOfDay: round.timesOfDay,
         timesOfDayCardinality: round.timesOfDayCardinality,

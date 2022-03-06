@@ -8,8 +8,8 @@ const expect = chai.expect;
 const tests = require('../saveTask/tests.json');
 const testsInvalid = require('./tests.json');
 
-const emptyUser = {
-  taskSize: 0,
+const emptyRound = {
+  tasksIds: new Set(),
   timesOfDay: [],
   timesOfDayCardinality: []
 }
@@ -67,7 +67,7 @@ describe(`deleteTask`, () => {
         details: 'Your task has been deleted 🤭'
       }).to.eql(deletedResult);
 
-      expect(emptyUser).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
+      expect(emptyRound).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
     }));
   })
 
@@ -144,6 +144,7 @@ describe(`deleteTask`, () => {
         regex = new RegExp(`${yId}`, 'gm');
         mustBe = mustBe.replace(regex, y.taskId);
         mustBe = JSON.parse(mustBe);
+        mustBe.tasksIds = [y.taskId].toSet();
 
         const user = simplifyUserResult(await getUserJson(myId), roundId);
         const idToReplaceFromUser = Object.getOwnPropertyNames(user.today)[0];
@@ -156,7 +157,7 @@ describe(`deleteTask`, () => {
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
-        expect(emptyUser).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
+        expect(emptyRound).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
       }).timeout(50000);
 
       // remove y then x
@@ -178,6 +179,8 @@ describe(`deleteTask`, () => {
         regex = new RegExp(`${xId}`, 'gm');
         mustBe = mustBe.replace(regex, x.taskId);
         mustBe = JSON.parse(mustBe);
+        mustBe.tasksIds = [x.taskId].toSet();
+
         const user = simplifyUserResult(await getUserJson(myId), roundId);
         const idToReplaceFromUser = Object.getOwnPropertyNames(user.today)[0];
         mustBe.today[idToReplaceFromUser] = {...mustBe.today[Object.getOwnPropertyNames(mustBe.today)[0]]};
@@ -189,7 +192,7 @@ describe(`deleteTask`, () => {
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
-        expect(emptyUser).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
+        expect(emptyRound).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
       }).timeout(50000);
 
     }).timeout(50000));

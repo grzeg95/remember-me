@@ -206,7 +206,6 @@ module.exports.getEmptyRound = (name) => {
   return {
     fields: {
       timesOfDay: [],
-      taskSize: 0,
       timesOfDayCardinality: [],
       name,
       todaysIds: [],
@@ -238,7 +237,7 @@ module.exports.simplifyUserResult = (user, timesOfDayId) => {
 
   if (user[myId]['collections']['rounds']) {
     const simplifyUserResult = {
-      taskSize: user[myId]['collections']['rounds'][timesOfDayId]['fields']['taskSize'],
+      tasksIds: user[myId]['collections']['rounds'][timesOfDayId]['fields']['tasksIds'].toSet(),
       timesOfDay: user[myId]['collections']['rounds'][timesOfDayId]['fields']['timesOfDay'],
       timesOfDayCardinality: user[myId]['collections']['rounds'][timesOfDayId]['fields']['timesOfDayCardinality']
     };
@@ -257,7 +256,7 @@ module.exports.simplifyUserResult = (user, timesOfDayId) => {
       for (const todayName of Object.getOwnPropertyNames(simplifyUserResult['today'])) {
 
         const name = simplifyUserResult['today'][todayName]['fields']['name'];
-        const taskSize = simplifyUserResult['today'][todayName]['fields']['taskSize'];
+        const tasksIds = simplifyUserResult['today'][todayName]['fields']['tasksIds'].toSet();
 
         if (simplifyUserResult['today'][todayName]['collections']['task']) {
           for (const taskId of Object.getOwnPropertyNames(simplifyUserResult['today'][todayName]['collections']['task'])) {
@@ -274,7 +273,7 @@ module.exports.simplifyUserResult = (user, timesOfDayId) => {
         } else {
           simplifyUserResult['today'][todayName] = {};
           simplifyUserResult['today'][todayName]['name'] = name;
-          simplifyUserResult['today'][todayName]['taskSize'] = taskSize;
+          simplifyUserResult['today'][todayName]['tasksIds'] = tasksIds.toSet();
         }
       }
     }

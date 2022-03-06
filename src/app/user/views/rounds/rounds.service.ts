@@ -161,7 +161,8 @@ export class RoundsService {
       this.roundSelected$.value?.id === roundId &&
       this.roundSelected$.value?.name === selectedRoundRoundsList?.name &&
       theSameTimesOfDay &&
-      this.roundSelected$.value?.taskSize === selectedRoundRoundsList?.taskSize
+      this.roundSelected$.value?.tasksIds.toSet().hasOnly(selectedRoundRoundsList?.todaysIds.toSet()) &&
+      this.roundSelected$.value?.todaysIds.toSet().hasOnly(selectedRoundRoundsList?.todaysIds.toSet())
     ) {
       return;
     }
