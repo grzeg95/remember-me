@@ -13,6 +13,8 @@ export interface Round {
   taskSize: number;
   timesOfDay: string[];
   timesOfDayCardinality: number[];
+  todaysIds: string[];
+  tasksIds: string[];
   name: string;
 }
 
@@ -29,4 +31,5 @@ export interface EncryptedTodayTask {
 export interface Today {
   name: string;
   taskSize: number;
+  tasksIds: string[];
 }

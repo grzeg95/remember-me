@@ -88,7 +88,9 @@ export const handler = async (data: any, context: CallableContext) => {
       timesOfDay,
       timesOfDayCardinality,
       name: round.name,
-      taskSize: round.taskSize
+      taskSize: round.taskSize,
+      todaysIds: round.todaysIds,
+      tasksIds: round.tasksIds
     }, cryptoKey);
 
     transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);

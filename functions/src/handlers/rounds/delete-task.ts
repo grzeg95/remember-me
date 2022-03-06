@@ -44,16 +44,18 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   const currentTaskSize = round.taskSize;
   const timesOfDay = round.timesOfDay;
   const timesOfDayCardinality = round.timesOfDayCardinality;
+  const todaysIds = round.todaysIds.toSet();
+  const tasksIds = round.tasksIds.toSet();
 
   // read all task for user/{userId}/today/{day}/task/{taskId}
   const todayTaskDocSnapsToUpdatePromises = [];
 
   const todayMapDocumentsPromise: { [key in string]: Promise<DocumentSnapshot> } = {};
-  await roundDocSnap.ref.collection('today').listDocuments().then(async (docRefs) => {
-    for (const docRef of docRefs) {
-      todayMapDocumentsPromise[docRef.id] = transaction.get(docRef);
-    }
-  });
+
+  for (const docId of todaysIds) {
+    const docRef = roundDocSnap.ref.collection('today').doc(docId);
+    todayMapDocumentsPromise[docRef.id] = transaction.get(docRef);
+  }
 
   const todayMapDocuments: { [key in string]: DocumentSnapshot } = {};
   for (const docRefId of Object.getOwnPropertyNames(todayMapDocumentsPromise)) {
@@ -98,14 +100,18 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   // just read one field: size of tasks lol
   for (const todayDocSnap of todaySnapsToCheckToRemove) {
 
-    const today = await decryptToday(todayDocSnap.data() as {value: string}, cryptoKey);
+    const todayTask = await decryptToday(todayDocSnap.data() as {value: string}, cryptoKey);
 
-    if (today.taskSize === 1) {
+    if (todayTask.taskSize === 1) {
       transaction.delete(todayDocSnap.ref);
+      todaysIds.delete(todayDocSnap.ref.id);
     } else {
+      const todayTasksIds = todayTask.tasksIds.toSet();
+      todayTasksIds.delete(taskDocSnap.id);
       transaction.update(todayDocSnap.ref, await encryptToday({
-        name: today.name,
-        taskSize: today.taskSize - 1
+        name: todayTask.name,
+        taskSize: todayTask.taskSize - 1,
+        tasksIds: todayTasksIds.toArray()
       }, cryptoKey));
     }
   }
@@ -116,6 +122,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
 
   // remove task
   transaction.delete(taskDocSnap.ref);
+  tasksIds.delete(taskDocSnap.id);
 
   // remove todayTasks
   for (const todayTaskDocSnap of todayTasks) {
@@ -126,7 +133,9 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
     timesOfDayCardinality,
     taskSize: currentTaskSize - 1,
     timesOfDay,
-    name: round.name
+    name: round.name,
+    todaysIds: todaysIds.toArray(),
+    tasksIds: tasksIds.toArray()
   }, cryptoKey);
 
   transaction.update(roundDocSnap.ref, roundDataToWrite);

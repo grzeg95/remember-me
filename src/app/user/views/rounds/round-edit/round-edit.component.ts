@@ -98,7 +98,9 @@ export class RoundEditComponent implements OnInit, OnDestroy {
           taskSize: 0,
           timesOfDay: [],
           name: this.name.value,
-          id: success.roundId
+          id: success.roundId,
+          todaysIds: [],
+          tasksIds: []
         });
         this.id = success.roundId;
         this.savingInProgress = false;

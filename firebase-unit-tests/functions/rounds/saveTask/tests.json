@@ -655,6 +655,26 @@
       }
     }
   ],
+  "every day multiple times": {
+    "x": {
+      "task": {
+        "timesOfDay": [
+          "a"
+        ],
+        "daysOfTheWeek": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ],
+        "description": "0001"
+      },
+      "taskId": "null"
+    }
+  },
   "add": [
     {
       "name": "x.a + y.a = 2a",

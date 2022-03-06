@@ -46,6 +46,30 @@ describe(`saveTask`, async () => {
     }
   });
 
+  before(async () => {
+    await removeUser(myId);
+
+    roundId = (await getResult(saveRound, {
+      roundId: 'null',
+      name: 'testowy'
+    }, myAuth)).roundId;
+  });
+
+  it(`every day multiple times[4]`, async () => {
+
+    const test = tests['every day multiple times'];
+
+    for (let i = 0 ; i < 4; ++i) {
+      await getResult(saveTask, {...test['x'], roundId}, myAuth);
+    }
+
+    const user = simplifyUserResult(await getUserJson(myId), roundId);
+
+    expect(Object.values(user.today).map((today) => today.name).toSet()).to.eql([
+      'wed', 'sun', 'thu', 'tue', 'fri', 'mon', 'sat'
+    ].toSet());
+  }).timeout(10000);
+
   describe(`create`, async () => {
 
     beforeEach(async () => {

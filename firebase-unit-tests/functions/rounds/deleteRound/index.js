@@ -80,7 +80,7 @@ describe(`deleteRound`, async () => {
 
     expect(emptyRound['rounds']).to.eql(user[myId]['fields']['rounds']);
     expect(emptyRound['collections']).to.eql({});
-  });
+  }).timeout(50000);
 
   it(`create two then remove one`, async () => {
 

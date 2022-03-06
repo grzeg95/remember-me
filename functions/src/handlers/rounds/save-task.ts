@@ -13,7 +13,7 @@ import {
   encryptTask, encryptToday,
   encryptTodayTask, getCryptoKey
 } from '../../security/security';
-import {EncryptedTodayTask, Task} from '../../helpers/models';
+import {EncryptedTodayTask, Round, Task} from '../../helpers/models';
 
 const app = firestore();
 
@@ -92,25 +92,24 @@ const prepareTimesOfDay = (
   };
 };
 
-const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, cryptoKey: CryptoKey) => {
+const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, roundDocSnapData: Round, cryptoKey: CryptoKey) => {
+
+  const todaysIds: Set<string> = new Set(roundDocSnapData.todaysIds);
 
   // get all days from round
   const todayDocRefsMap: { [key in string]: DocumentSnapshot } = {};
 
-  await roundDocSnap.ref.collection('today').listDocuments().then(async (docRefs) => {
+  const docsSnapsPromises: Promise<DocumentSnapshot>[] = [];
 
-    const docsSnapsPromises: Promise<DocumentSnapshot>[] = [];
+  for (const todayId of todaysIds.toArray()) {
+    docsSnapsPromises.push(transaction.get(roundDocSnap.ref.collection('today').doc(todayId)));
+  }
 
-    for (const docRef of docRefs) {
-      docsSnapsPromises.push(transaction.get(docRef));
-    }
+  const docsSnaps = await Promise.all(docsSnapsPromises);
 
-    const docsSnaps = await Promise.all(docsSnapsPromises);
-
-    for (const docSnap of docsSnaps) {
-      todayDocRefsMap[(await decryptToday(docSnap.data() as {value: string}, cryptoKey)).name] = docSnap;
-    }
-  });
+  for (const docSnap of docsSnaps) {
+    todayDocRefsMap[(await decryptToday(docSnap.data() as {value: string}, cryptoKey)).name] = docSnap;
+  }
 
   // get all days task from existed task
   const todayTaskDocSnapsDayPackPromise = [];
@@ -175,6 +174,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
 
   for (const item of newTodayItemsForTaskToCreate) {
     newTodayItemsMap[item.dayToCreate] = item.docSnap;
+    todaysIds.add(item.docSnap.id)
   }
 
   // get new today tasks
@@ -204,7 +204,8 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
   for (const dayToCreate of newTodayItemsForTaskToCreate) {
     todayDayToCreateEncryptPromise.push(encryptToday({
       name: dayToCreate.dayToCreate,
-      taskSize: 1
+      taskSize: 1,
+      tasksIds: [taskDocSnap.id]
     }, cryptoKey));
   }
 
@@ -216,7 +217,8 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
       const todayTask = await decryptToday((todayDocRefsMap[dayToCreate].data() as {value: string}), cryptoKey);
       transaction.update(todayDocRefsMap[dayToCreate].ref, await encryptToday({
         taskSize: todayTask.taskSize + 1,
-        name: todayTask.name
+        name: todayTask.name,
+        tasksIds: [...todayTask.tasksIds, taskDocSnap.id]
       }, cryptoKey));
     }
   }
@@ -250,6 +252,7 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
       const todayTaskSize = +((await decryptToday((todayDocRefsMap[day].data() as {value: string}), cryptoKey)).taskSize);
       if (todayTaskSize === 1) {
         transaction.delete(todayDocRefsMap[day].ref);
+        todaysIds.delete(todayDocRefsMap[day].ref.id)
       }
     }
   }
@@ -298,6 +301,8 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
   for (let i = 0; i < newTodayItemsForTaskToCreate.length; ++i) {
     transaction.create(newTodayItemsForTaskToCreate[i].docSnap.ref, todayDayToCreateEncrypted[i]);
   }
+
+  return todaysIds.toArray();
 };
 
 /**
@@ -419,9 +424,10 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     task.description = task.description.trim();
 
     const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-    let currentTaskSize = roundDocSnapData?.taskSize || 0;
-    const timesOfDay = roundDocSnapData?.timesOfDay || [];
-    const timesOfDayCardinality = roundDocSnapData?.timesOfDayCardinality || [];
+    let currentTaskSize = roundDocSnapData.taskSize;
+    const timesOfDay = roundDocSnapData.timesOfDay;
+    const timesOfDayCardinality = roundDocSnapData.timesOfDayCardinality;
+    const tasksIds = roundDocSnapData.tasksIds.toSet();
 
     /*
     * Read all data
@@ -435,6 +441,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
       taskId = taskDocSnap.id;
       currentTaskSize++;
+      tasksIds.add(taskId);
     } else {
       taskDocSnap = taskDocSnapTmp;
       const taskDocSnapData = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
@@ -457,13 +464,11 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
         // read all task for user/{userId}/today/{day}/task/{taskId}
         const todayTaskDocSnapsToUpdatePromises = [];
         const docRefsMap: { [key in string]: DocumentSnapshot } = {};
-        await roundDocSnap.ref.collection('today').listDocuments().then(async (docRefs) => {
-          for (const docRef of docRefs) {
-            const docSnap = await transaction.get(docRef);
-            const today = await decryptToday(docSnap.data() as {value: string}, cryptoKey);
-            docRefsMap[today.name] = docSnap;
-          }
-        });
+        for (const todayId of roundDocSnapData.todaysIds) {
+          const docSnap = await transaction.get(roundDocSnap.ref.collection('today').doc(todayId));
+          const todayTask = await decryptToday(docSnap.data() as {value: string}, cryptoKey);
+          docRefsMap[todayTask.name] = docSnap;
+        }
 
         for (const day of task.daysOfTheWeek) {
           todayTaskDocSnapsToUpdatePromises.push(
@@ -497,7 +502,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       * */
       if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-        await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, cryptoKey);
+        await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, cryptoKey);
 
         // update task
         transaction.set(taskDocSnap.ref, await encryptTask(task, cryptoKey));
@@ -509,7 +514,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
     const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, (await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey)).timesOfDay || [], data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
 
-    await proceedTodayTasks(transaction, task, taskDocSnap, await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey), roundDocSnap, cryptoKey);
+    const todaysIds = await proceedTodayTasks(transaction, task, taskDocSnap, await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey), roundDocSnap, roundDocSnapData, cryptoKey);
 
     // update task
     transaction.set(taskDocSnap.ref, await encryptTask(task, cryptoKey));
@@ -524,7 +529,9 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
       taskSize: currentTaskSize,
       timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
       timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-      name: roundDocSnapData.name
+      name: roundDocSnapData.name,
+      todaysIds,
+      tasksIds: tasksIds.toArray()
     }, cryptoKey);
 
     transaction.update(userDocSnap.ref.collection('rounds').doc(roundId), timesOfDayDataToWrite);

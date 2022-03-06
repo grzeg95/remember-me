@@ -87,7 +87,9 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
         taskSize: 0,
         timesOfDay: [],
         timesOfDayCardinality: [],
-        name: data.name
+        name: data.name,
+        todaysIds: [],
+        tasksIds: []
       }, cryptoKey);
 
       roundId = roundDocSnap.id;
@@ -116,7 +118,9 @@ export const handler = (data: any, context: CallableContext): Promise<{ created:
         taskSize: round.taskSize,
         name: data.name,
         timesOfDay: round.timesOfDay,
-        timesOfDayCardinality: round.timesOfDayCardinality
+        timesOfDayCardinality: round.timesOfDayCardinality,
+        todaysIds: round.todaysIds,
+        tasksIds: round.tasksIds
       }, cryptoKey));
     }
 

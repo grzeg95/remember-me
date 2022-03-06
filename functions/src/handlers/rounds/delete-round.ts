@@ -1,9 +1,9 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {Today} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser, writeUser} from '../../helpers/user';
-import {decrypt, decryptSymmetricKey, encrypt, getCryptoKey} from '../../security/security';
-import DocumentReference = firestore.DocumentReference;
+import {decrypt, decryptRound, decryptSymmetricKey, decryptToday, encrypt, getCryptoKey} from '../../security/security';
 
 const app = firestore();
 
@@ -34,6 +34,7 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundsInUserDecryptPromise = decrypt(userDocSnap.data()?.rounds, cryptoKey);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
 
     // check if round exists
     testRequirement(!roundDocSnap.exists);
@@ -42,26 +43,33 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     const docsToRemove: Promise<firestore.DocumentSnapshot<firestore.DocumentData>>[] = [];
 
     // get all tasks
-    const getTasksPromise = roundDocSnap.ref.collection('task').listDocuments().then((list) => {
-      list.forEach((docRef) => docsToRemove.push(transaction.get(docRef)));
-    });
+    for (const taskId of roundDocSnapData.tasksIds) {
+      docsToRemove.push(transaction.get(roundDocSnap.ref.collection('task').doc(taskId)));
+    }
 
-    const getAllTasksListOfDay: Promise<DocumentReference[]>[] = [];
+    const allTasksListOfDayRefsPromise: Promise<firestore.DocumentSnapshot<firestore.DocumentData>>[] = [];
 
     // get all today's
-    const getAllDaysPromise = roundDocSnap.ref.collection('today').listDocuments().then((list) => {
-      list.forEach((day) => {
-        getAllTasksListOfDay.push(day.collection('task').listDocuments());
-        docsToRemove.push(transaction.get(day));
+    roundDocSnapData.todaysIds.forEach((todayId) => {
+      const today = roundDocSnap.ref.collection('today').doc(todayId);
+      allTasksListOfDayRefsPromise.push(today.get());
+      docsToRemove.push(transaction.get(today));
+    });
+
+    const decryptTodaysPromise = [];
+    const allTasksListOfDayRefs = await Promise.all(allTasksListOfDayRefsPromise);
+    for (const todaySnap of allTasksListOfDayRefs) {
+      decryptTodaysPromise.push(decryptToday(todaySnap.data() as {value: string}, cryptoKey));
+    }
+
+    const decryptedTodays = await Promise.all(decryptTodaysPromise);
+    for (const [i, todaySnap] of allTasksListOfDayRefs.entries()) {
+      const today: Today = decryptedTodays[i];
+
+      today.tasksIds.forEach((todayTaskId) => {
+        docsToRemove.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)))
       });
-    });
-
-    await getAllDaysPromise;
-    (await Promise.all(getAllTasksListOfDay)).forEach((list) => {
-      list.forEach((docRef) => docsToRemove.push(transaction.get(docRef)));
-    });
-
-    await getTasksPromise;
+    }
 
     // remove all documents
     (await Promise.all(docsToRemove)).forEach((doc) => {

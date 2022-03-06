@@ -208,7 +208,9 @@ module.exports.getEmptyRound = (name) => {
       timesOfDay: [],
       taskSize: 0,
       timesOfDayCardinality: [],
-      name
+      name,
+      todaysIds: [],
+      tasksIds: []
     },
     collections: {}
   };
