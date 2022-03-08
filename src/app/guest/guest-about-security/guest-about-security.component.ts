@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {MatDialogRef} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-guest-about-security',
@@ -8,7 +7,5 @@ import {MatDialogRef} from '@angular/material/dialog';
 })
 export class GuestAboutSecurityComponent {
 
-  constructor(
-    public dialogRef: MatDialogRef<GuestAboutSecurityComponent>
-  ) {}
+  constructor() {}
 }

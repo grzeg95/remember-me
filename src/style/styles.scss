@@ -263,3 +263,9 @@ a, a:not([href]):not([class]) {
     text-decoration: underline;
   }
 }
+
+.no-select{
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

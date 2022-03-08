@@ -1,33 +1,33 @@
-<h1 mat-dialog-title>User data policy</h1>
-
-<ol class="start-position">
-  <li>General provisions:
-    <ol>
-      <li>Sing in by Google or Facebook or try it anonymously.</li>
-      <li>Each user is individually encrypted.</li>
-      <li>No data from database is stored in browser.</li>
-      <li>Delete the account and all your data if you want.</li>
-      <li>There is no logic and there will be no logic for an admin to sing in as a different user.</li>
-      <li>Feel free to ask me any questions.</li>
-    </ol>
-  </li>
-  <li>How it works:
-    <ol>
-      <li>There are two independent accounts one for the Firebase and second one for the KMS. The database is not
-        possible to decrypt without accessing to the KMS.
-      </li>
-      <li>After the account is created, a custom private/symmetric key claim in the JWT is created which is encrypted
-        with the asymmetric key from the KMS.
-      </li>
-      <li>The user asks to decrypt the private key by the KMS.</li>
-      <li>If it is possible, the user stores the private key in the IndexedDB as the CryptoKey.</li>
-      <li>The CryptoKey is only used for decryption with no export option.</li>
-      <li>The user has a random simple math test to determine the ownership of the stored CryptoKey.</li>
-      <li>Only one CryptoKey is stored in the IndexedDB.</li>
-    </ol>
-  </li>
-</ol>
-
-<div mat-dialog-actions style="justify-content: flex-end;">
-  <button mat-flat-button color="primary" (click)="dialogRef.close()">Ok</button>
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <ol class="start-position">
+        <li>General provisions:
+          <ol>
+            <li>Sing in by Google or Facebook or try it anonymously.</li>
+            <li>Each user is individually encrypted.</li>
+            <li>No data from database is stored in browser.</li>
+            <li>Delete the account and all your data if you want.</li>
+            <li>There is no logic and there will be no logic for an admin to sing in as a different user.</li>
+            <li>Feel free to ask me any questions.</li>
+          </ol>
+        </li>
+        <li>How it works:
+          <ol>
+            <li>There are two independent accounts one for the Firebase and second one for the KMS. The database is not
+              possible to decrypt without accessing to the KMS.
+            </li>
+            <li>After the account is created, a custom private/symmetric key claim in the JWT is created which is encrypted
+              with the asymmetric key from the KMS.
+            </li>
+            <li>The user asks to decrypt the private key by the KMS.</li>
+            <li>If it is possible, the user stores the private key in the IndexedDB as the CryptoKey.</li>
+            <li>The CryptoKey is only used for decryption with no export option.</li>
+            <li>The user has a random simple math test to determine the ownership of the stored CryptoKey.</li>
+            <li>Only one CryptoKey is stored in the IndexedDB.</li>
+          </ol>
+        </li>
+      </ol>
+    </div>
+  </div>
 </div>

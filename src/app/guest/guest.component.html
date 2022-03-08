@@ -8,12 +8,14 @@
     <h1>Hello there.</h1>
     <h3>Do you remember?</h3>
     <h6>
-      <a (click)="openGuestAboutSecurityDialog('top-container')">
+      <a (click)="showGuestAboutSecurity = !showGuestAboutSecurity" class="no-select">
         User data policy
         <img src="/assets/img/incognito.svg" class="icon top-incognito" />
       </a>
     </h6>
   </div>
+
+  <app-guest-about-security *ngIf="showGuestAboutSecurity"></app-guest-about-security>
 
   <div class="features-clean">
     <div class="container">

@@ -30,7 +30,6 @@ import {SharedModule} from './shared.module';
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAnalyticsModule
   ],
-  entryComponents: [GuestAboutSecurityComponent],
   bootstrap: [AppComponent]
 })
 export class AppModule {
