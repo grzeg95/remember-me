@@ -284,14 +284,14 @@ module.exports.simplifyUserResult = (user, timesOfDayId) => {
   return {};
 };
 
-const avg = (values) => {
+module.exports.avg = (values) => {
   if (values.length === 0) throw new Error("No inputs");
 
   const sum = values.reduce((a, b) => a + b, 0);
   return (sum / values.length) || 0;
 }
 
-const median = (values) => {
+module.exports.median = (values) => {
   if (values.length === 0) throw new Error("No inputs");
 
   values.sort(function (a, b) {
@@ -319,8 +319,12 @@ describe(`My functions tests`, () => {
       console.log('---------------------------');
       console.log(`${functionName}`);
       console.log(`cnt   : ${runTimes.length}`);
-      console.log(`median: ${median(runTimes)}`);
-      console.log(`avg   : ${avg(runTimes)}`);
+      console.log(`median: ${module.exports.median(runTimes)}`);
+      console.log(`avg   : ${module.exports.avg(runTimes)}`);
     }
   });
+});
+
+describe(`My functions benchmarks`, () => {
+  require('./rounds/benchmarks/saveTask');
 });
