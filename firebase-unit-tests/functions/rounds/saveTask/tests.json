@@ -3953,6 +3953,209 @@
       }
     },
     {
+      "name": "Only daysOfTheWeek was changed from 'mon' to every day",
+      "from": {
+        "task": {
+          "timesOfDay": [
+            "q", "w", "e", "r", "t", "y", "u", "i", "o", "p"
+          ],
+          "daysOfTheWeek": [
+            "mon"
+          ],
+          "description": "0001"
+        },
+        "taskId": "null"
+      },
+      "to": {
+        "task": {
+          "timesOfDay": [
+            "q", "w", "e", "r", "t", "y", "u", "i", "o", "p"
+          ],
+          "daysOfTheWeek": [
+            "mon",
+            "tue",
+            "wed",
+            "thu",
+            "fri",
+            "sat",
+            "sun"
+          ],
+          "description": "0001"
+        },
+        "taskId": "{from}"
+      },
+      "mustBe": {
+        "tasksIds": ["{from}"],
+        "task": {
+          "{from}": {
+            "description": "0001",
+            "timesOfDay": [
+              "q", "w", "e", "r", "t", "y", "u", "i", "o", "p"
+            ],
+            "daysOfTheWeek": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri",
+              "sat",
+              "sun"
+            ]
+          }
+        },
+        "timesOfDay": [
+          "p",
+          "o",
+          "i",
+          "u",
+          "y",
+          "t",
+          "r",
+          "e",
+          "w",
+          "q"
+        ],
+        "timesOfDayCardinality": [
+          1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+        ],
+        "today": {
+          "fri": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          },
+          "mon": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          },
+          "sat": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          },
+          "thu": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          },
+          "tue": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          },
+          "wed": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          },
+          "sun": {
+            "task": {
+              "{from}": {
+                "description": "0001",
+                "timesOfDay": {
+                  "p": false,
+                  "o": false,
+                  "i": false,
+                  "u": false,
+                  "y": false,
+                  "t": false,
+                  "r": false,
+                  "e": false,
+                  "w": false,
+                  "q": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "Change description from 0001 to 0002, timesOfDay from 'a' to 'a', 'b', daysOfTheWeek from 1 to 3",
       "from": {
         "task": {

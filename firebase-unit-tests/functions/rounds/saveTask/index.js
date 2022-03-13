@@ -46,20 +46,18 @@ describe(`saveTask`, async () => {
     }
   });
 
-  before(async () => {
+  it(`every day multiple times[4]`, async () => {
+
     await removeUser(myId);
 
     roundId = (await getResult(saveRound, {
       roundId: 'null',
       name: 'testowy'
     }, myAuth)).roundId;
-  });
-
-  it(`every day multiple times[4]`, async () => {
 
     const test = tests['every day multiple times'];
 
-    for (let i = 0 ; i < 4; ++i) {
+    for (let i = 0; i < 4; ++i) {
       await getResult(saveTask, {...test['x'], roundId}, myAuth);
     }
 
@@ -97,9 +95,14 @@ describe(`saveTask`, async () => {
 
       const user = simplifyUserResult(await getUserJson(myId), roundId);
       for (const key of Object.getOwnPropertyNames(user['today'])) {
-        const name = user['today'][key]['name'];
-        mustBe['today'][key] = {...user['today'][key]};
-        delete mustBe['today'][name];
+        const nameOfDayInUser = user['today'][key]['name'];
+
+        mustBe['today'][key] = {
+          task: {...mustBe['today'][nameOfDayInUser]['task']},
+          name: nameOfDayInUser
+        };
+
+        delete mustBe['today'][nameOfDayInUser];
       }
 
       expect(mustBe).to.eql(user);
@@ -140,9 +143,14 @@ describe(`saveTask`, async () => {
 
       const user = simplifyUserResult(await getUserJson(myId), roundId);
       for (const key of Object.getOwnPropertyNames(user['today'])) {
-        const name = user['today'][key]['name'];
-        mustBe['today'][key] = {...user['today'][key]};
-        delete mustBe['today'][name];
+        const nameOfDayInUser = user['today'][key]['name'];
+
+        mustBe['today'][key] = {
+          task: {...mustBe['today'][nameOfDayInUser]['task']},
+          name: nameOfDayInUser
+        };
+
+        delete mustBe['today'][nameOfDayInUser];
       }
 
       expect(mustBe).to.eql(user);
@@ -206,13 +214,18 @@ describe(`saveTask`, async () => {
 
       const user = simplifyUserResult(await getUserJson(myId), roundId);
       for (const key of Object.getOwnPropertyNames(user['today'])) {
-        const name = user['today'][key]['name'];
-        mustBe['today'][key] = {...user['today'][key]};
-        delete mustBe['today'][name];
+
+        const nameOfDayInUser = user['today'][key]['name'];
+
+        mustBe['today'][key] = {
+          task: {...mustBe['today'][nameOfDayInUser]['task']},
+          name: nameOfDayInUser
+        };
+
+        delete mustBe['today'][nameOfDayInUser];
       }
 
       expect(mustBe).to.eql(user);
     }).timeout(10000));
   });
-
 });
