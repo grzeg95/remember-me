@@ -95,7 +95,7 @@ module.exports.removeUser = async (userId) => {
   await firestore.recursiveDelete(documentRef);
 };
 
-module.exports._getDoc = async (documentRef, obj) => {
+module.exports._getUserAllData = async (documentRef, obj) => {
 
   if (!module.exports.cryptoKey) {
     module.exports.cryptoKey = await subtle.importKey(
@@ -182,7 +182,7 @@ module.exports._getDoc = async (documentRef, obj) => {
       await firestore.collection(collection.path).listDocuments().then(async (docsRef) => {
 
         for (const docRef of docsRef) {
-          await module.exports._getDoc(docRef, obj[documentRef.id]['collections'][collection.id]);
+          await module.exports._getUserAllData(docRef, obj[documentRef.id]['collections'][collection.id]);
         }
       });
 
@@ -190,16 +190,104 @@ module.exports._getDoc = async (documentRef, obj) => {
   });
 };
 
-module.exports.getDoc = async (documentRef) => {
+module.exports.getUserAllData = async (documentRef) => {
   const obj = {};
-  await module.exports._getDoc(documentRef, obj);
+  await module.exports._getUserAllData(documentRef, obj);
   return obj;
+};
+
+module.exports._getDocEncrypted = async (documentRef, obj) => {
+
+  if (!module.exports.cryptoKey) {
+    module.exports.cryptoKey = await subtle.importKey(
+      'raw',
+      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey, 'hex'),
+      {
+        name: 'AES-GCM'
+      },
+      false,
+      ['decrypt']
+    );
+  }
+
+  const firestore = module.exports.firestore;
+
+  const docSnap = await documentRef.get();
+  obj[documentRef.id] = {};
+  obj[documentRef.id]['fields'] = {};
+  obj[documentRef.id]['fields'] = docSnap.data();
+
+  await documentRef.listCollections().then(async (collections) => {
+
+    obj[documentRef.id]['collections'] = {};
+
+    for (let collection of collections) {
+
+      obj[documentRef.id]['collections'][collection.id] = {};
+
+      await firestore.collection(collection.path).listDocuments().then(async (docsRef) => {
+
+        for (const docRef of docsRef) {
+          await module.exports._getDocEncrypted(docRef, obj[documentRef.id]['collections'][collection.id]);
+        }
+      });
+
+    }
+  });
+};
+
+module.exports.getDocEncrypted = async (documentRef) => {
+  const obj = {};
+  await module.exports._getDocEncrypted(documentRef, obj);
+  return obj;
+};
+
+module.exports.getUserJsonEncrypted = async (userId) => {
+  const firestore = module.exports.firestore;
+  const documentRef = firestore.collection('users').doc(userId);
+  return await module.exports.getDocEncrypted(documentRef);
 };
 
 module.exports.getUserJson = async (userId) => {
   const firestore = module.exports.firestore;
   const documentRef = firestore.collection('users').doc(userId);
-  return await module.exports.getDoc(documentRef);
+  return await module.exports.getUserAllData(documentRef);
+};
+
+module.exports._insertUser = async (docJSON, docRef) => {
+
+  // jestem w kolekcji
+  // dodaje dokument
+  // jeśli w dokumencie są kolejkcje to dodaje kolejny dokument z tej kolejkcji
+
+  if (Object.getOwnPropertyNames(docJSON['fields']).length) {
+    await docRef.set(docJSON['fields']);
+  }
+
+  const collections = Object.getOwnPropertyNames(docJSON['collections']);
+  if (collections.length) {
+    for (const collection of collections) {
+
+      const docsOfCollection = Object.getOwnPropertyNames(docJSON['collections'][collection]);
+
+      if (docsOfCollection.length) {
+
+        for (const docOfCollection of docsOfCollection) {
+          await module.exports._insertUser(
+            docJSON['collections'][collection][docOfCollection],
+            docRef.collection(collection).doc(docOfCollection)
+          );
+        }
+      }
+
+    }
+  }
+};
+
+module.exports.insertUser = async (docJSON) => {
+  const firestore = module.exports.firestore;
+  const userId = Object.getOwnPropertyNames(docJSON)[0];
+  await module.exports._insertUser(docJSON[userId], firestore.collection('users').doc(userId));
 };
 
 module.exports.getEmptyRound = (name) => {
@@ -305,6 +393,35 @@ module.exports.median = (values) => {
 
   return (values[half - 1] + values[half]) / 2.0;
 }
+
+module.exports.randomBetween = (a, b) => {
+  return Math.random() * (b - a) + a;
+}
+
+module.exports.daysOfTheWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+module.exports.timesOfDay = [
+  'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'
+];
+
+module.exports.getRandomDaysOfTheWeek = () => {
+  return module.exports.daysOfTheWeek.shuffle().slice(0, module.exports.randomBetween(1, module.exports.daysOfTheWeek.length - 1));
+};
+
+module.exports.getRandomTimesOfDay = () => {
+  return module.exports.timesOfDay.shuffle().slice(0, module.exports.randomBetween(1, module.exports.timesOfDay.length - 1));
+};
+
+module.exports.getRandomDescription = () => {
+
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  for (let i = 0; i < module.exports.randomBetween(1, 255); i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return result;
+};
 
 describe(`My functions tests`, () => {
   require('./rounds/saveRound');

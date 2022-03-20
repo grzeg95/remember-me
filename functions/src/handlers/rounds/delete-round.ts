@@ -1,9 +1,10 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Today} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser, writeUser} from '../../helpers/user';
 import {decrypt, decryptRound, decryptSymmetricKey, decryptToday, encrypt, getCryptoKey} from '../../security/security';
+import DocumentSnapshot = firestore.DocumentSnapshot;
+import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 
@@ -40,41 +41,38 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     testRequirement(!roundDocSnap.exists);
 
     // get all documents
-    const docsToRemove: Promise<firestore.DocumentSnapshot<firestore.DocumentData>>[] = [];
+    const docsToRemove: Promise<DocumentSnapshot<DocumentData>>[] = [];
 
     // get all tasks
     for (const taskId of roundDocSnapData.tasksIds) {
       docsToRemove.push(transaction.get(roundDocSnap.ref.collection('task').doc(taskId)));
     }
 
-    const allTasksListOfDayRefsPromise: Promise<firestore.DocumentSnapshot<firestore.DocumentData>>[] = [];
+    const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
 
     // get all today's
-    roundDocSnapData.todaysIds.forEach((todayId) => {
+    for (const todayId of roundDocSnapData.todaysIds) {
       const today = roundDocSnap.ref.collection('today').doc(todayId);
-      allTasksListOfDayRefsPromise.push(today.get());
-      docsToRemove.push(transaction.get(today));
-    });
+      allTasksListOfDayRefsPromise.push(transaction.get(today));
+    }
 
     const decryptTodaysPromise = [];
     const allTasksListOfDayRefs = await Promise.all(allTasksListOfDayRefsPromise);
     for (const todaySnap of allTasksListOfDayRefs) {
-      decryptTodaysPromise.push(decryptToday(todaySnap.data() as {value: string}, cryptoKey));
+      docsToRemove.push(new Promise(async (resolve) => {resolve(todaySnap)}));
+      decryptTodaysPromise.push(decryptToday(todaySnap.data() as {value: string}, cryptoKey).then((decryptedToday) => {
+        for (const todayTaskId of decryptedToday.tasksIds) {
+          docsToRemove.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)))
+        }
+      }));
     }
 
-    const decryptedTodays = await Promise.all(decryptTodaysPromise);
-    for (const [i, todaySnap] of allTasksListOfDayRefs.entries()) {
-      const today: Today = decryptedTodays[i];
-
-      today.tasksIds.forEach((todayTaskId) => {
-        docsToRemove.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)))
-      });
-    }
+    await Promise.all(decryptTodaysPromise);
 
     // remove all documents
-    (await Promise.all(docsToRemove)).forEach((doc) => {
+    for (const doc of await Promise.all(docsToRemove)) {
       transaction.delete(doc.ref);
-    });
+    }
     transaction.delete(roundDocSnap.ref);
 
     // update user
