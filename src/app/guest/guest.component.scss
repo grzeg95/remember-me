@@ -92,12 +92,13 @@
       font-size: 15px;
     }
 
-    .icon {
+    .icon, .pseudo-img {
       display: flex;
       margin-left: -65px;
       float: left;
       color: #1485ee;
-      font-size: 40px;
+      font-size: 38px;
+      line-height: 38px;
     }
   }
 }
