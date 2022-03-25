@@ -102,9 +102,9 @@ export class AuthService {
           }
 
           // wait for user private key
-          const hasSymmetricKey = actionUserDocSnap.payload.data()?.hasSymmetricKey;
+          const cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
 
-          if (typeof hasSymmetricKey === 'boolean' && hasSymmetricKey) {
+          if (typeof cryptoKeyTest === 'string' && cryptoKeyTest.length) {
 
             // check if user has stored
             if (this.dbIsReadySub && !this.dbIsReadySub.closed) {
