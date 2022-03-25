@@ -1,4 +1,4 @@
-const {decrypt, decryptRound} = require("../../functions/lib/functions/src/security/security");
+const {decrypt, decryptRound, encrypt} = require("../../functions/lib/functions/src/security/security");
 const {Buffer} = require("buffer");
 const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
@@ -95,6 +95,31 @@ module.exports.removeUser = async (userId) => {
   await firestore.recursiveDelete(documentRef);
 };
 
+module.exports.createUser = async (userId) => {
+
+  if (!module.exports.cryptoKey) {
+    module.exports.cryptoKey = await subtle.importKey(
+      'raw',
+      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey, 'hex'),
+      {
+        name: 'AES-GCM'
+      },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  const firestore = module.exports.firestore;
+  const numbers = crypto.randomBytes(2);
+
+  await firestore.collection('users').doc(userId).set({
+    cryptoKeyTest: await encrypt({
+      test: [numbers[0], numbers[1]],
+      result: numbers[0] + numbers[1]
+    }, module.exports.cryptoKey)
+  });
+};
+
 module.exports._getUserAllData = async (documentRef, obj) => {
 
   if (!module.exports.cryptoKey) {
@@ -105,7 +130,7 @@ module.exports._getUserAllData = async (documentRef, obj) => {
         name: 'AES-GCM'
       },
       false,
-      ['decrypt']
+      ['encrypt', 'decrypt']
     );
   }
 
@@ -206,7 +231,7 @@ module.exports._getDocEncrypted = async (documentRef, obj) => {
         name: 'AES-GCM'
       },
       false,
-      ['decrypt']
+      ['encrypt', 'decrypt']
     );
   }
 
@@ -417,6 +442,18 @@ module.exports.getRandomDescription = () => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   for (let i = 0; i < module.exports.randomBetween(1, 255); i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return result;
+};
+
+module.exports.getRandomRoundName = () => {
+
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  for (let i = 0; i < module.exports.randomBetween(1, 100); i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
 

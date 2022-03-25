@@ -1,5 +1,6 @@
 const {removeUser, myId, getResult, saveRound, myAuth, saveTask, deleteRound, runTimes, median, avg,
-  getRandomTimesOfDay, getRandomDaysOfTheWeek, getRandomDescription, getUserJson, getUserJsonEncrypted, insertUser
+  getRandomTimesOfDay, getRandomDaysOfTheWeek, getRandomDescription, getUserJson, getUserJsonEncrypted, insertUser,
+  getRandomRoundName, createUser
 } = require("../../../index");
 
 describe(`deleteRound`,async function() {
@@ -15,12 +16,13 @@ describe(`deleteRound`,async function() {
   before(async () => {
     console.log('removeUser');
     await removeUser(myId);
+    // await createUser(myId);
 
     for (let i = 0; i < 5; ++i) {
       console.log(`round: ${i}`);
       const roundId = (await getResult(saveRound, {
         roundId: 'null',
-        name: 'testowy'
+        name: getRandomRoundName()
       }, myAuth)).roundId;
 
       roundsId.push(roundId);
@@ -41,6 +43,7 @@ describe(`deleteRound`,async function() {
     // get user
     console.log('getUserJsonEncrypted');
     user = await getUserJsonEncrypted(myId);
+    // console.log(JSON.stringify(user));
   });
 
   for (let i = 0; i < 50; ++i) {
