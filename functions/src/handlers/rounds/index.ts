@@ -30,3 +30,9 @@ export const deleteRound = runWith({
   memory: '512MB',
   maxInstances: 2
 }).region(regionId).https.onCall(require('./delete-round').handler);
+
+export const setRoundsOrder = runWith({
+  timeoutSeconds: 30,
+  memory: '512MB',
+  maxInstances: 2
+}).region(regionId).https.onCall(require('./set-rounds-order').handler);

@@ -1,0 +1,464 @@
+{
+  "authenticated": {
+    "invalid argument": {
+      "data is not an object and null": [
+        null,
+        [],
+        "",
+        0,
+        "0",
+        true
+      ],
+      "data has not 2 keys": [
+        {},
+        {
+          "key1": "value"
+        },
+        {
+          "key1": "value",
+          "key2": "value",
+          "key3": "value"
+        }
+      ],
+      "data has not 'moveBy', 'roundId'": [
+        {
+          "moveBy1": "value",
+          "timeOfDay": "value",
+          "timesOfDayId": "value"
+        }
+      ]
+    },
+    "valid argument": [
+      {
+        "from": "b",
+        "to": "b",
+        "args": [
+          "a",
+          0
+        ],
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Some went wrong \uD83E\uDD2B Try again \uD83D\uDE42"
+        }
+      },
+      {
+        "from": "b",
+        "to": "b",
+        "args": [
+          "b",
+          0
+        ],
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Some went wrong \uD83E\uDD2B Try again \uD83D\uDE42"
+        }
+      },
+      {
+        "from": "b",
+        "to": "b",
+        "args": [
+          "a",
+          1
+        ],
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Some went wrong \uD83E\uDD2B Try again \uD83D\uDE42"
+        }
+      },
+      {
+        "from": "b",
+        "to": "b",
+        "args": [
+          "a",
+          -1
+        ],
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Some went wrong \uD83E\uDD2B Try again \uD83D\uDE42"
+        }
+      },
+      {
+        "from": "b",
+        "to": "b",
+        "args": [
+          "b",
+          1
+        ],
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Some went wrong \uD83E\uDD2B Try again \uD83D\uDE42"
+        }
+      },
+      {
+        "from": "b",
+        "to": "b",
+        "args": [
+          "b",
+          -1
+        ],
+        "expected": {
+          "code": "invalid-argument",
+          "message": "Bad Request",
+          "details": "Some went wrong \uD83E\uDD2B Try again \uD83D\uDE42"
+        }
+      },
+      {
+        "from": "aXb",
+        "to": "Xab",
+        "args": [
+          "a",
+          1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXb",
+        "to": "Xba",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXb",
+        "to": "baX",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXb",
+        "to": "abX",
+        "args": [
+          "b",
+          -1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYb",
+        "to": "XYab",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYb",
+        "to": "XYba",
+        "args": [
+          "a",
+          3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYb",
+        "to": "baXY",
+        "args": [
+          "b",
+          -3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYb",
+        "to": "abXY",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZXab",
+        "args": [
+          "a",
+          1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZXba",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZbaX",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXb",
+        "to": "ZabX",
+        "args": [
+          "b",
+          -1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZXYab",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZXYba",
+        "args": [
+          "a",
+          3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZbaXY",
+        "args": [
+          "b",
+          -3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYb",
+        "to": "ZabXY",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXbC",
+        "to": "XabC",
+        "args": [
+          "a",
+          1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXbC",
+        "to": "XbaC",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXbC",
+        "to": "baXC",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXbC",
+        "to": "abXC",
+        "args": [
+          "b",
+          -1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYbC",
+        "to": "XYabC",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYbC",
+        "to": "XYbaC",
+        "args": [
+          "a",
+          3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYbC",
+        "to": "baXYC",
+        "args": [
+          "b",
+          -3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "aXYbC",
+        "to": "abXYC",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZXabC",
+        "args": [
+          "a",
+          1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZXbaC",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZbaXC",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXbC",
+        "to": "ZabXC",
+        "args": [
+          "b",
+          -1
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZXYabC",
+        "args": [
+          "a",
+          2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZXYbaC",
+        "args": [
+          "a",
+          3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZbaXYC",
+        "args": [
+          "b",
+          -3
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      },
+      {
+        "from": "ZaXYbC",
+        "to": "ZabXYC",
+        "args": [
+          "b",
+          -2
+        ],
+        "expected": {
+          "details": "Order has been updated 🙃"
+        }
+      }
+    ]
+  }
+}

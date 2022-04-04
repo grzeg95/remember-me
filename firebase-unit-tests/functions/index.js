@@ -30,21 +30,30 @@ module.exports.saveRound = {
   wrapped: module.exports.test.wrap(module.exports.myFunctions.saveRound),
   name: 'saveRound'
 };
+
 module.exports.deleteRound = {
   wrapped: module.exports.test.wrap(module.exports.myFunctions.deleteRound),
   name: 'deleteRound'
 };
+
 module.exports.saveTask = {
   wrapped: module.exports.test.wrap(module.exports.myFunctions.saveTask),
   name: 'saveTask'
 };
+
 module.exports.deleteTask = {
   wrapped: module.exports.test.wrap(module.exports.myFunctions.deleteTask),
   name: 'deleteTask'
 };
+
 module.exports.setTimesOfDayOrder = {
   wrapped: module.exports.test.wrap(module.exports.myFunctions.setTimesOfDayOrder),
   name: 'setTimesOfDayOrder'
+};
+
+module.exports.setRoundsOrder = {
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.setRoundsOrder),
+  name: 'setRoundsOrder'
 };
 
 class RunTime {
@@ -66,6 +75,10 @@ class RunTime {
 module.exports.decryptRound = async (encryptedRound, cryptoKey) => {
   return await decryptRound(encryptedRound, cryptoKey);
 };
+
+module.exports.encrypt = encrypt;
+
+module.exports.decrypt = decrypt;
 
 module.exports.runTimes = {};
 
@@ -466,6 +479,7 @@ describe(`My functions tests`, () => {
   require('./rounds/deleteTask');
   require('./rounds/deleteRound');
   require('./rounds/setTimesOfDayOrder');
+  require('./rounds/setRoundsOrder');
 
   after(() => {
     for (const functionName of Object.getOwnPropertyNames(module.exports.runTimes)) {
