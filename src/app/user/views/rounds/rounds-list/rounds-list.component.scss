@@ -4,7 +4,7 @@ tr.mat-row:hover {
   user-select: none;
 }
 
-.add-task {
+.add-round {
   width: 100%;
   text-align: right;
 }
@@ -20,4 +20,17 @@ tr.mat-row:hover {
       margin: 0 auto 1rem;
     }
   }
+}
+
+.mat-spinner {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+}
+
+.drag-handler {
+  display: none;
 }

@@ -1,5 +1,6 @@
 import {Injectable} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
+import {AppService} from '../../../app-service';
 import {AuthService} from '../../../auth/auth.service';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
 import {filter, map, switchMap, take} from 'rxjs/operators';
@@ -10,6 +11,14 @@ import {ActivatedRoute} from '@angular/router';
 
 @Injectable()
 export class RoundsService {
+
+  set setRoundsOrderSub(setTimesOfDayOrderSub: Subscription) {
+    this._setRoundsOrderSub = setTimesOfDayOrderSub;
+  }
+
+  get setRoundsOrderSub(): Subscription {
+    return this._setRoundsOrderSub;
+  }
 
   protected roundsListSub: Subscription;
   protected roundsOrderSub: Subscription;
@@ -30,13 +39,23 @@ export class RoundsService {
   roundsListFirstLoad$ = new BehaviorSubject<boolean>(true);
   inEditMode: boolean;
   editedRound$: BehaviorSubject<Round> = new BehaviorSubject<Round>(null);
+  private _setRoundsOrderSub: Subscription;
 
   constructor(
     protected afs: AngularFirestore,
     protected authService: AuthService,
     protected fns: AngularFireFunctions,
-    protected route: ActivatedRoute
+    protected route: ActivatedRoute,
+    protected appService: AppService
   ) {
+    this.appService.isOnline$.subscribe((isOnline) => {
+      if (!isOnline) {
+        this.roundsOrderFirstLoading$.next(true);
+        if (this._setRoundsOrderSub && !this._setRoundsOrderSub.closed) {
+          this._setRoundsOrderSub.unsubscribe();
+        }
+      }
+    });
   }
 
   init(): void {
@@ -196,6 +215,17 @@ export class RoundsService {
             return null;
           })
         );
+      })
+    );
+  }
+
+  setRoundsOrder(data: { moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
+
+    return this.authService.userIsReady$.pipe(
+      filter((isReady) => isReady),
+      take(1),
+      switchMap(() => {
+        return this.fns.httpsCallable('setRoundsOrder')(data);
       })
     );
   }
