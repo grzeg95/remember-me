@@ -13,7 +13,7 @@ import {
   encryptTask, encryptToday,
   encryptTodayTask, getCryptoKey
 } from '../../security/security';
-import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
+import {EncryptedTodayTask, InternalContext, Round, Task, Today, TodayTask} from '../../helpers/models';
 import {
   transactionWriteAdd,
   transactionWriteExecute,
@@ -343,16 +343,25 @@ const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSn
     taskId: string,
     roundId: string
   }
- * @param context CallableContext
+ * @param callableContext
+ * @param internalContext
  * @return Promise<{ created: boolean; details: string; taskId: string }>
  **/
-export const handler = async (data: any, context: CallableContext): Promise<{ created: boolean; details: string; taskId: string }> => {
+export const handler = async (data: any, callableContext?: CallableContext, internalContext?: InternalContext): Promise<{ created: boolean; details: string; taskId: string }> => {
 
-  // without app check
-  testRequirement(!context.app);
+  if (!callableContext) {
+    if (!internalContext) {
+      testRequirement(true);
+    }
+  }
 
-  // not logged in
-  testRequirement(!context.auth);
+  if (callableContext) {
+    // without app check
+    testRequirement(!callableContext?.app);
+
+    // not logged in
+    testRequirement(!callableContext?.auth);
+  }
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -421,7 +430,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
   // data.task.timesOfDay contains duplicates
   testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
 
-  const auth: { uid: string } | undefined = context.auth;
+  const auth = callableContext?.auth;
 
   let created = false;
   let taskId: string = data.taskId;
@@ -432,7 +441,7 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
 
   return app.runTransaction(async (transaction) => {
 
-    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
+    const userDocSnap = await getUser(app, transaction, auth?.uid || internalContext?.uid as string);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
     // roundSnap must exist
@@ -441,10 +450,16 @@ export const handler = async (data: any, context: CallableContext): Promise<{ cr
     // get crypto key
     // TODO
     let cryptoKey: CryptoKey;
-    if (context.auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
+
+    if (auth?.token.decryptedSymmetricKey) {
+      cryptoKey = await getCryptoKey(auth?.token.decryptedSymmetricKey, auth?.uid);
     } else {
-      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
+
+      if (internalContext) {
+        cryptoKey = await getCryptoKey(internalContext.decryptedSymmetricKey, internalContext.uid);
+      } else {
+        cryptoKey = await decryptSymmetricKey(auth?.token.encryptedSymmetricKey, auth?.uid);
+      }
     }
 
     const taskDocSnapTmp = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));

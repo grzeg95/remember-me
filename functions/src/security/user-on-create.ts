@@ -3,6 +3,8 @@ import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
 // @ts-ignore
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
+import {handler as saveRound} from '../handlers/rounds/save-round';
+import {handler as saveTask} from '../handlers/rounds/save-task';
 import {testRequirement} from '../helpers/test-requirement';
 import {getUser} from '../helpers/user';
 import {encrypt} from './security';
@@ -51,8 +53,40 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       ['encrypt']
     );
 
-    return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
+    return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(async () => {
+
       const app = firestore();
+
+      try {
+        const savedRound = await saveRound(
+          {
+            roundId: 'null',
+            name: 'Daily'
+          },
+          undefined, {
+            uid: user.uid,
+            decryptedSymmetricKey: key.toString('hex')
+          }
+        );
+
+        await saveTask(
+          {
+            task: {
+              timesOfDay: ['Before work'],
+              daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri'],
+              description: 'Drink coffee 🤠'
+            },
+            taskId: 'null',
+            roundId: savedRound.roundId
+          },
+          undefined, {
+            uid: user.uid,
+            decryptedSymmetricKey: key.toString('hex')
+          }
+        );
+      } catch (e) {
+        console.log(e);
+      }
 
       return app.runTransaction(async (transaction) => {
         const userDocSnap = await getUser(app, transaction, user.uid);
@@ -60,12 +94,21 @@ export const handler = async (user: UserRecord, context: EventContext) => {
         // create simple two number adding test
         const numbers = crypto.randomBytes(2);
 
-        transaction.set(userDocSnap.ref, {
-          cryptoKeyTest: await encrypt({
-            test: [numbers[0], numbers[1]],
-            result: numbers[0] + numbers[1]
-          }, cryptoKey)
-        });
+        if (userDocSnap.exists) {
+          transaction.update(userDocSnap.ref, {
+            cryptoKeyTest: await encrypt({
+              test: [numbers[0], numbers[1]],
+              result: numbers[0] + numbers[1]
+            }, cryptoKey)
+          });
+        } else {
+          transaction.set(userDocSnap.ref, {
+            cryptoKeyTest: await encrypt({
+              test: [numbers[0], numbers[1]],
+              result: numbers[0] + numbers[1]
+            }, cryptoKey)
+          });
+        }
 
         return transaction;
       }).catch(() => {

@@ -31,3 +31,8 @@ export interface Today {
   name: string;
   tasksIds: string[];
 }
+
+export interface InternalContext {
+  uid: string;
+  decryptedSymmetricKey: string;
+}
