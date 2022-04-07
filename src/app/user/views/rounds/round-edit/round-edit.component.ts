@@ -1,6 +1,6 @@
 import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
-import {AbstractControl, FormControl, FormGroup, Validators} from '@angular/forms';
+import {AbstractControl, FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -8,6 +8,7 @@ import {Observable, Subscription} from 'rxjs';
 import {finalize} from 'rxjs/operators';
 import {AppService} from '../../../../app-service';
 import {RouterDict} from '../../../../app.constants';
+import {CustomValidators} from '../../../../custom-validators';
 import {HTTPError, HTTPSuccess} from '../../../models';
 import {RoundsService} from '../rounds.service';
 import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
@@ -29,7 +30,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   }
 
   roundForm: FormGroup = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.max(256)])
+    name: new FormControl('', [CustomValidators.maxRequired(256)])
   });
 
   savingInProgress = false;

@@ -5,7 +5,7 @@
         <mat-form-field floatLabel="always">
           <mat-label>Round name</mat-label>
           <input autocomplete="off" matInput formControlName="name">
-          <mat-error *ngIf="!roundForm.disabled && !name.valid && (name.dirty || name.touched)">Enter name from 1 to 100 characters</mat-error>
+          <mat-error *ngIf="!roundForm.disabled && !name.valid && (name.dirty || name.touched)">Enter name from 1 to 256 characters</mat-error>
         </mat-form-field>
       </div>
     </div>

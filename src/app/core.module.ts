@@ -8,6 +8,7 @@ import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
 import {AngularFireAuth} from '@angular/fire/compat/auth';
 import {USE_EMULATOR as USE_FIRESTORE_EMULATOR} from '@angular/fire/compat/firestore';
+import {CustomValidators} from './custom-validators';
 import {ExtraParametersGuard} from './extra-parameters-guard.service';
 
 export function initializeEmulators(afAuth: AngularFireAuth, fns: AngularFireFunctions): () => Promise<void> {
@@ -59,7 +60,8 @@ export function initializeAppCheckPrivate(afAuth: AngularFireAuth): () => Promis
     AppService,
     AuthService,
     ConnectionService,
-    ExtraParametersGuard
+    ExtraParametersGuard,
+    CustomValidators
   ]
 })
 export class CoreModule {

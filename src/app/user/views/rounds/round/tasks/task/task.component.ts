@@ -13,6 +13,7 @@ import '../../../../../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {AppService} from '../../../../../../app-service';
 import {RouterDict} from '../../../../../../app.constants';
+import {CustomValidators} from '../../../../../../custom-validators';
 import {HTTPError, HTTPSuccess, Round, TaskForm, Task} from '../../../../../models';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskService} from './task.service';
@@ -59,7 +60,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   };
   id = 'null';
   taskForm: FormGroup = new FormGroup({
-    description: new FormControl('', TaskComponent.descriptionValidator),
+    description: new FormControl('', CustomValidators.maxRequired(256)),
     daysOfTheWeek: new FormGroup({
       mon: new FormControl(false),
       tue: new FormControl(false),
@@ -498,18 +499,6 @@ export class TaskComponent implements OnInit, OnDestroy {
     const rawValue = g.getRawValue();
     const some = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].some((checkbox) => rawValue[checkbox]);
     return some ? null : {required: true};
-  }
-
-  static descriptionValidator(g: FormControl): { required: boolean } {
-
-    const current = g.value as string;
-    const trimLeft = (g.value as string).trimLeft();
-
-    if (current.length !== trimLeft.length) {
-      g.setValue(trimLeft);
-    }
-
-    return (typeof g.value === 'string') && (g.value.trim().length > 0) && (g.value.trim().length <= 256) ? null : {required: true};
   }
 
   static timesOfDayValidator(g: FormArray): { required: boolean } {

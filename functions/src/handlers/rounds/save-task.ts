@@ -396,8 +396,8 @@ export const handler = async (data: any, callableContext?: CallableContext, inte
 
   data.task.description = data.task.description.trim();
 
-  // data.task.description is not a string in [1, 100]
-  testRequirement(data.task.description.length < 1 || data.task.description.length > 100);
+  // data.task.description is not a string in [1, 256]
+  testRequirement(data.task.description.length < 1 || data.task.description.length > 256);
 
   // data.task.daysOfTheWeek is not in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
   testRequirement(

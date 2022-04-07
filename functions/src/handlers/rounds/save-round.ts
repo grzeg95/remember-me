@@ -57,9 +57,9 @@ export const handler = (data: any, callableContext?: CallableContext, internalCo
   // data.name is not string
   testRequirement(typeof data.name !== 'string');
 
-  // data.name is not a string in [1, 100]
+  // data.name is not a string in [1, 256]
   data.name = data.name.trim();
-  testRequirement(data.name.length < 1 || data.name.length > 100);
+  testRequirement(data.name.length < 1 || data.name.length > 256);
 
   const auth = callableContext?.auth;
 
