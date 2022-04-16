@@ -57,7 +57,7 @@ const getTaskChange = (a: Task, b: Task): TaskDiff => {
  * @param timesOfDayCardinality
  * @return { addedTimesOfDay: Set<string>, removedTimesOfDay: Set<string> }
  **/
-const prepareTimesOfDay = (
+export const prepareTimesOfDay = (
   transaction: Transaction,
   taskCurrentTimesOfDay: string[],
   enteredTimesOfDay: string[],
@@ -97,7 +97,7 @@ const prepareTimesOfDay = (
   };
 };
 
-const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, roundDocSnapData: Round, transactionWriteList: TransactionWriteList, cryptoKey: CryptoKey) => {
+export const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, roundDocSnapData: Round, transactionWriteList: TransactionWriteList, cryptoKey: CryptoKey) => {
 
   // create task for days
   // add task timesOfDay
