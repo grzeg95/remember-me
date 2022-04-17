@@ -1,6 +1,6 @@
+import {google} from '@google-cloud/kms/build/protos/protos';
 import {firestore} from 'firebase-admin';
 import {UserRecord} from 'firebase-admin/lib/auth';
-import {EventContext} from 'firebase-functions';
 // @ts-ignore
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {prepareTimesOfDay, proceedTodayTasks} from '../handlers/rounds/save-task';
@@ -16,6 +16,8 @@ const crc32c = require('fast-crc32c');
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 import {Task} from '../helpers/models';
+
+let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
 const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWriteList: TransactionWriteList) => {
 
@@ -62,11 +64,13 @@ const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: 
   return roundId;
 };
 
-export const handler = async (user: UserRecord, context: EventContext) => {
+export const handler = async (user: UserRecord) => {
 
-  const [publicKey] = await keyManagementServiceClient.getPublicKey({
-    name: cryptoKeyVersionPath
-  });
+  if (!publicKey) {
+    [publicKey] = await keyManagementServiceClient.getPublicKey({
+      name: cryptoKeyVersionPath
+    });
+  }
 
   testRequirement(
     publicKey.name !== cryptoKeyVersionPath ||
@@ -101,7 +105,7 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       ['encrypt']
     );
 
-    return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(async () => {
+    return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
 
       const app = firestore();
 
@@ -119,14 +123,22 @@ export const handler = async (user: UserRecord, context: EventContext) => {
         // createSampleUserData
         const roundId =  await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWriteList);
 
-        const userData = {
-          cryptoKeyTest: await encrypt({
+        transactionWriteAdd(transaction, transactionWriteList, userDocSnap.ref, 'set', new Promise(async (resolve) => {
+
+          const cryptoKeyTest = encrypt({
             test: [numbers[0], numbers[1]],
             result: numbers[0] + numbers[1]
-          }, cryptoKey),
-          rounds: await encrypt([roundId], cryptoKey)
-        };
-        transaction.set(userDocSnap.ref, userData);
+          }, cryptoKey);
+
+          const rounds = encrypt([roundId], cryptoKey);
+
+          const userData = {
+            cryptoKeyTest: await cryptoKeyTest,
+            rounds: await rounds
+          };
+
+          resolve(userData);
+        }));
 
         await transactionWriteExecute(transactionWriteList);
 
@@ -134,6 +146,8 @@ export const handler = async (user: UserRecord, context: EventContext) => {
       });
     });
   } catch (e) {
+    publicKey = null;
+    console.error(e);
     throw new Error(`user ${user.uid} rsa key creation`);
   }
 }
