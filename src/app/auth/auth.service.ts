@@ -4,7 +4,7 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
 import firebase from 'firebase/compat';
-import {BehaviorSubject, interval, lastValueFrom, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, lastValueFrom, Subject, Subscription} from 'rxjs';
 import {catchError, filter, take} from 'rxjs/operators';
 import {AppService} from '../app-service';
 import {decrypt} from '../security';
@@ -24,8 +24,8 @@ export class AuthService {
   whileLoginIn = false;
   userIntervalReloadSub: Subscription;
   dbIsReadySub: Subscription;
-  isUserLoggedIn$: BehaviorSubject<boolean | null> = new BehaviorSubject<boolean | null>(null);
-  userIsReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  isUserLoggedIn$: Subject<boolean> = new Subject<boolean>();
+  isUserReady$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   firebaseUser: firebase.User;
   waitingForSymmetricKey = false;
 
@@ -219,7 +219,7 @@ export class AuthService {
     this.user$.next({
       rounds
     });
-    this.userIsReady$.next(true);
+    this.isUserReady$.next(true);
   }
 
   async getSymmetricKey(user: firebase.User): Promise<string> {
@@ -283,7 +283,7 @@ export class AuthService {
   signOut(): Promise<void> {
     this.unsubscribeUserIntervalReloadSub();
     this.unsubscribeUserDocSub();
-    this.userIsReady$.next(false);
+    this.isUserReady$.next(false);
     this.userData = null;
     this.firebaseUser = null;
     return this.afAuth.signOut().finally(() => {

@@ -1,7 +1,6 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {AfterViewChecked, Component, ElementRef, HostListener, NgZone, Renderer2, ViewChild} from '@angular/core';
+import {AfterViewChecked, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, Renderer2, ViewChild} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {Observable, Subscription} from 'rxjs';
 import {AppService} from '../../../../app-service';
 import {RoundsService} from '../rounds.service';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -9,45 +8,34 @@ import {MatDialog} from '@angular/material/dialog';
 import {RouterDict} from '../../../../app.constants';
 import {Round} from '../../../models';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-rounds-list',
   templateUrl: './rounds-list.component.html',
   styleUrls: ['./rounds-list.component.scss']
 })
-export class RoundsListComponent implements AfterViewChecked {
+export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked {
 
-  set setRoundsOrderSub(setTimesOfDayOrderSub: Subscription) {
-    this.roundsService.setRoundsOrderSub = setTimesOfDayOrderSub;
-  }
-
-  get setRoundsOrderSub(): Subscription {
-    return this.roundsService.setRoundsOrderSub;
-  }
-
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
-
-  get roundsListFirstLoad$(): Observable<boolean> {
-    return this.roundsService.roundsListFirstLoad$;
-  }
-
-  get roundsOrderFirstLoading$(): Observable<boolean> {
-    return this.roundsService.roundsOrderFirstLoading$;
-  }
-
+  setRoundsOrderSub = this.roundsService.setRoundsOrderSub;
   displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
   faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper: ElementRef;
 
-  get roundsList$(): Observable<Round[]> {
-    return this.roundsService.roundsList$;
-  }
+  roundsList: Round[];
+  roundsListSub: Subscription;
 
-  get roundsOrder$(): Observable<string[]> {
-    return this.roundsService.roundsOrder$;
-  }
+  roundsOrder: string[];
+  roundsOrderSub: Subscription;
+
+  isOnline: boolean;
+  isOnlineSub: Subscription;
+
+  roundsOrderFirstLoading: boolean;
+  roundsOrderFirstLoadingSub: Subscription;
+
+  roundsListFirstLoad: boolean;
+  roundsListFirstLoadSub: Subscription;
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -64,6 +52,22 @@ export class RoundsListComponent implements AfterViewChecked {
     protected snackBar: MatSnackBar,
     protected renderer: Renderer2
   ) {
+  }
+
+  ngOnInit(): void {
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.roundsListSub = this.roundsService.roundsList$.subscribe((roundsList) => this.roundsList = roundsList);
+    this.roundsOrderSub = this.roundsService.roundsOrder$.subscribe((roundsOrder) => this.roundsOrder = roundsOrder);
+    this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
+    this.roundsListFirstLoadSub = this.roundsService.roundsListFirstLoad$.subscribe((roundsListFirstLoad) => this.roundsListFirstLoad = roundsListFirstLoad);
+  }
+
+  ngOnDestroy(): void {
+    this.isOnlineSub.unsubscribe();
+    this.roundsListSub.unsubscribe();
+    this.roundsOrderSub.unsubscribe();
+    this.roundsOrderFirstLoadingSub.unsubscribe();
+    this.roundsListFirstLoadSub.unsubscribe();
   }
 
   addRound(): void {

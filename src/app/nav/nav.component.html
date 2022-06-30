@@ -7,40 +7,39 @@
           <img src="/assets/img/logo.svg" class="logo">
           <span class="example-spacer"></span>
 
-          <div *ngIf="(isUserLoggedIn$ | async) !== null">
+          <div *ngIf="isUserLoggedIn !== undefined">
 
-            <div *ngIf="!(isUserLoggedIn$ | async)" class="d-flex align-items-center right">
-
+            <div *ngIf="!isUserLoggedIn" class="d-flex align-items-center right">
               <button mat-flat-button
                       color="primary"
                       [matMenuTriggerFor]="menu"
-                      [disabled]="!(isOnline$ | async) || whileLoginIn"
+                      [disabled]="!isOnline || whileLoginIn"
                       aria-label="Log in">
                 <span class="loginButton">Sign in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
               </button>
 
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item
-                        [disabled]="!(isOnline$ | async) || whileLoginIn"
+                        [disabled]="!isOnline || whileLoginIn"
                         (click)="googleSignIn()">
                   <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
                 </button>
 
                 <button mat-menu-item
-                        [disabled]="!(isOnline$ | async) || whileLoginIn"
+                        [disabled]="!isOnline || whileLoginIn"
                         (click)="facebookSignIn()">
                   <span><fa-icon [icon]="faFacebook" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Facebook</span>
                 </button>
 
                 <button mat-menu-item
-                        [disabled]="!(isOnline$ | async) || whileLoginIn"
+                        [disabled]="!isOnline || whileLoginIn"
                         (click)="anonymouslySignIn()">
                   <span><fa-icon [icon]="faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</span>
                 </button>
               </mat-menu>
             </div>
 
-            <div *ngIf="(isUserLoggedIn$ | async)" class="d-flex align-items-center right">
+            <div *ngIf="isUserLoggedIn" class="d-flex align-items-center right">
               <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">

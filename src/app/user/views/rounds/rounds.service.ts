@@ -12,14 +12,6 @@ import {ActivatedRoute} from '@angular/router';
 @Injectable()
 export class RoundsService {
 
-  set setRoundsOrderSub(setTimesOfDayOrderSub: Subscription) {
-    this._setRoundsOrderSub = setTimesOfDayOrderSub;
-  }
-
-  get setRoundsOrderSub(): Subscription {
-    return this._setRoundsOrderSub;
-  }
-
   protected roundsListSub: Subscription;
   protected roundsOrderSub: Subscription;
   protected paramRoundIdSelectedSub: Subscription;
@@ -39,7 +31,7 @@ export class RoundsService {
   roundsListFirstLoad$ = new BehaviorSubject<boolean>(true);
   inEditMode: boolean;
   editedRound$: BehaviorSubject<Round> = new BehaviorSubject<Round>(null);
-  private _setRoundsOrderSub: Subscription;
+  setRoundsOrderSub: Subscription;
 
   constructor(
     protected afs: AngularFirestore,
@@ -51,8 +43,8 @@ export class RoundsService {
     this.appService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {
         this.roundsOrderFirstLoading$.next(true);
-        if (this._setRoundsOrderSub && !this._setRoundsOrderSub.closed) {
-          this._setRoundsOrderSub.unsubscribe();
+        if (this.setRoundsOrderSub && !this.setRoundsOrderSub.closed) {
+          this.setRoundsOrderSub.unsubscribe();
         }
       }
     });
@@ -99,7 +91,7 @@ export class RoundsService {
 
   protected runRoundsList(): void {
 
-    this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
+    this.authService.isUserReady$.pipe(filter((isUserReady) => isUserReady), take(1)).subscribe(() => {
       this.roundsListSub = this.afs.collection<{ value: string }>(`users/${this.authService.userData.uid}/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
         switchMap(async (docs) => {
 
@@ -137,7 +129,7 @@ export class RoundsService {
   }
 
   protected runParamRoundIdSelected(): void {
-    this.authService.userIsReady$.pipe(filter((isReady) => isReady), take(1)).subscribe(() => {
+    this.authService.isUserReady$.pipe(filter((isUserReady) => isUserReady), take(1)).subscribe(() => {
       this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.pipe(filter((id) => id !== null)).subscribe((roundParamIdSelected) => {
         this.checkSelectedRound(this.roundsList$.value, roundParamIdSelected);
       });
@@ -202,8 +194,8 @@ export class RoundsService {
 
   getRoundById$(roundId: string): Observable<Promise<Round | null>> {
 
-    return this.authService.userIsReady$.pipe(
-      filter((isReady) => isReady),
+    return this.authService.isUserReady$.pipe(
+      filter((isUserReady) => isUserReady),
       take(1),
       switchMap(() => {
         return this.afs.doc<{ value: string }>(`users/${this.authService.userData.uid}/rounds/${roundId}`).get().pipe(
@@ -221,8 +213,8 @@ export class RoundsService {
 
   setRoundsOrder(data: { moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
 
-    return this.authService.userIsReady$.pipe(
-      filter((isReady) => isReady),
+    return this.authService.isUserReady$.pipe(
+      filter((isUserReady) => isUserReady),
       take(1),
       switchMap(() => {
         return this.fns.httpsCallable('setRoundsOrder')(data);

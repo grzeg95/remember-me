@@ -119,8 +119,8 @@ export class RoundService {
 
   runToday(round: Round): void {
 
-    this.authService.userIsReady$.pipe(
-      filter((isReady) => isReady),
+    this.authService.isUserReady$.pipe(
+      filter((isUserReady) => isUserReady),
       take(1)
     ).subscribe(() => {
       if (this.roundsService.lastTodayName !== this.roundsService.todayName$.getValue() && this.todaySub && !this.todaySub.closed) {
@@ -207,8 +207,8 @@ export class RoundService {
 
   runTasksList(round: Round): void {
 
-    this.authService.userIsReady$.pipe(
-      filter((isReady) => isReady),
+    this.authService.isUserReady$.pipe(
+      filter((isUserReady) => isUserReady),
       take(1)
     ).subscribe(() => {
       if (this.tasksListSub && !this.tasksListSub.closed || !round) {
@@ -245,8 +245,8 @@ export class RoundService {
 
   getTaskById$(id: string, roundId: string): Observable<Promise<Task | null>> {
 
-    return this.authService.userIsReady$.pipe(
-      filter((isReady) => isReady),
+    return this.authService.isUserReady$.pipe(
+      filter((isUserReady) => isUserReady),
       take(1),
       switchMap(() => {
         return this.afs.doc<{ value: string }>(`users/${this.authService.userData.uid}/rounds/${roundId}/task/${id}`).get().pipe(
@@ -265,8 +265,8 @@ export class RoundService {
 
   updateTimesOfDayOrder(data: { timeOfDay: string, moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
 
-    return this.authService.userIsReady$.pipe(
-      filter((isReady) => isReady),
+    return this.authService.isUserReady$.pipe(
+      filter((isUserReady) => isUserReady),
       take(1),
       switchMap(() => {
         return this.fns.httpsCallable('setTimesOfDayOrder')(data);

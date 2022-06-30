@@ -1,23 +1,16 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {Observable} from 'rxjs';
-import {AuthService} from '../../../../auth/auth.service';
 import {RoundsService} from '../rounds.service';
 
 @Component({
-  selector: 'app-times-of-day-item',
+  selector: 'app-round',
   templateUrl: './round.component.html'
 })
 export class RoundComponent implements OnInit {
 
-  get userIsReady$(): Observable<boolean> {
-    return this.authService.userIsReady$;
-  }
-
   constructor(
       private route: ActivatedRoute,
-      private roundsService: RoundsService,
-      private authService: AuthService
+      private roundsService: RoundsService
   ) {
   }
 

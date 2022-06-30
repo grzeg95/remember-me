@@ -13,17 +13,17 @@
 
       -->
 
-    <div class="row message" *ngIf="!(isOnline$ | async) && (tasks$ | async) === null">
+    <div class="row message" *ngIf="!isOnline && tasks === null">
       <div class="col">
         <span>You are offline. Waiting for connection...</span>
       </div>
     </div>
 
-    <ng-template *ngIf="!(isOnline$ | async) && (tasks$ | async) !== null && (tasks$ | async).length > 0; then showItems"></ng-template>
+    <ng-template *ngIf="!isOnline && tasks !== null && tasks.length > 0; then showItems"></ng-template>
 
-    <ng-container *ngIf="(isOnline$ | async)">
+    <ng-container *ngIf="isOnline">
 
-      <ng-container *ngIf="(tasksFirstLoading$ | async) || (roundsOrderFirstLoading$ | async) || (tasks$ | async) === null">
+      <ng-container *ngIf="tasksFirstLoading || roundsOrderFirstLoading || tasks === null">
         <div class="row message">
           <div class="col">
             <app-loading-text></app-loading-text>
@@ -31,7 +31,7 @@
         </div>
       </ng-container>
 
-      <ng-container *ngIf="!(tasksFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (tasks$ | async) !== null && (tasks$ | async).length === 0">
+      <ng-container *ngIf="!tasksFirstLoading && !roundsOrderFirstLoading && tasks !== null && tasks.length === 0">
         <div class="row message">
           <div class="col">
             <span>Add some tasks to this empty list</span>
@@ -47,13 +47,13 @@
         </div>
       </ng-container>
 
-      <ng-template *ngIf="!(tasksFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (tasks$ | async) !== null && (tasks$ | async).length > 0; then showItems"></ng-template>
+      <ng-template *ngIf="!tasksFirstLoading && !roundsOrderFirstLoading && tasks !== null && tasks.length > 0; then showItems"></ng-template>
 
     </ng-container>
 
     <ng-template #showItems>
       <div class="row">
-        <table mat-table [dataSource]="tasks$ | async" *ngIf="timesOfDay; let timesOfDay">
+        <table mat-table [dataSource]="tasks" *ngIf="roundSelected.timesOfDay || []; let timesOfDay">
 
           <ng-container matColumnDef="description">
             <th mat-header-cell *matHeaderCellDef>Description</th>

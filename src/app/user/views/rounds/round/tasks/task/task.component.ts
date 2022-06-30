@@ -8,7 +8,7 @@ import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, UrlTree} from '@angular/router';
-import {asapScheduler, BehaviorSubject, Observable, Subscription} from 'rxjs';
+import {asapScheduler, BehaviorSubject, Subscription} from 'rxjs';
 import '../../../../../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {AppService} from '../../../../../../app-service';
@@ -26,24 +26,12 @@ import {RoundsService} from '../../../rounds.service';
   styleUrls: ['./task.component.scss']
 })
 export class TaskComponent implements OnInit, OnDestroy {
+
   private waitingForRefresh: boolean;
   private waitingForRefreshTaskId: string;
 
-  get description(): AbstractControl {
-    return this.taskForm.get('description');
-  }
-
-  get daysOfTheWeek(): FormGroup {
-    return this.taskForm.get('daysOfTheWeek') as FormGroup;
-  }
-
-  get timesOfDay(): FormArray {
-    return this.taskForm.get('timesOfDay') as FormArray;
-  }
-
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
   initValues: TaskForm = {
     daysOfTheWeek: {
@@ -73,6 +61,11 @@ export class TaskComponent implements OnInit, OnDestroy {
     timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator),
     timeOfDay: new FormControl('')
   });
+
+  timesOfDay = this.taskForm.get('timesOfDay') as FormArray;
+  daysOfTheWeek = this.taskForm.get('daysOfTheWeek') as FormGroup;
+  description = this.taskForm.get('description');
+
   savingInProgress = false;
   deletingInProgress = false;
   filteredOptions$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
@@ -108,12 +101,13 @@ export class TaskComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
 
     this.taskForm.enable();
-    this.isConnectedSub = this.isOnline$.subscribe((isConnected) => {
-      if (isConnected) {
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => {
+      if (isOnline) {
         this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
       } else {
         this.taskForm.disable();
       }
+      this.isOnline = isOnline;
     });
 
     this.timeOfDayValueChanges = (this.taskForm.get('timesOfDay') as FormArray).valueChanges.subscribe((timesOfDay: string[]) => {
@@ -247,7 +241,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.isConnectedSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
 
     if (this.getTaskByIdSub && !this.getTaskByIdSub.closed) {
       this.getTaskByIdSub.unsubscribe();

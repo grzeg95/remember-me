@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {Observable} from 'rxjs';
 import {AuthService} from '../auth/auth.service';
 
 @Component({
@@ -10,17 +9,10 @@ import {AuthService} from '../auth/auth.service';
 export class GuestComponent {
 
   showGuestAboutSecurity = false;
+  isUserLoggedIn$ = this.authService.isUserLoggedIn$;
 
   constructor(
     private authService: AuthService
   ) {
-  }
-
-  get userIsReady$(): Observable<boolean> {
-    return this.authService.userIsReady$;
-  }
-
-  get isUserLoggedIn$(): Observable<boolean | null> {
-    return this.authService.isUserLoggedIn$;
   }
 }

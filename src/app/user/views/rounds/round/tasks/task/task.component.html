@@ -17,7 +17,7 @@
           <mat-slide-toggle
             *ngFor="let dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];"
             [checked]="daysOfTheWeek.get(dayOfTheWeek).value == true"
-            [class.disabled]="taskForm.disabled || !(isOnline$ | async)"
+            [class.disabled]="taskForm.disabled || !isOnline"
             [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
         </div>
       </div>
@@ -30,7 +30,7 @@
           <mat-chip-list #chipList>
             <div formArrayName="timesOfDay">
               <mat-chip *ngFor="let timeOfDay of timesOfDay.controls; let i = index"
-                        [class.disabled]="taskForm.disabled || !(isOnline$ | async)"
+                        [class.disabled]="taskForm.disabled || !isOnline"
                         [formGroupName]="i"
                         [value]="timeOfDay.value"
                         [removable]="true"
@@ -68,17 +68,17 @@
       <div class="col text-center actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="taskForm.disabled || taskForm.invalid || !(isOnline$ | async) || nothingChanged()"
+                [disabled]="taskForm.disabled || taskForm.invalid || !isOnline || nothingChanged()"
                 (click)="saveTask()">{{ idIsNull() ? 'Create' : 'Save' }}</button>
         <button *ngIf="!idIsNull()"
                 mat-stroked-button
                 color="primary"
-                [disabled]="taskForm.disabled || !(isOnline$ | async)"
+                [disabled]="taskForm.disabled || !isOnline"
                 (click)="deepResetForm()">New</button>
         <button *ngIf="!idIsNull()"
                 mat-stroked-button
                 color="warn"
-                [disabled]="taskForm.disabled || !(isOnline$ | async)"
+                [disabled]="taskForm.disabled || !isOnline"
                 (click)="deleteTask()">Delete</button>
       </div>
     </div>

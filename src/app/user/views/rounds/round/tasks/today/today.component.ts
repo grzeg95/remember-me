@@ -2,7 +2,7 @@ import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
-import {BehaviorSubject, interval, Observable, Subscription} from 'rxjs';
+import {interval, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../../../../../app-service';
@@ -20,33 +20,24 @@ import {RoundsService} from '../../../rounds.service';
 })
 export class TodayComponent implements OnInit, OnDestroy {
 
-  get roundsOrderFirstLoading$(): Observable<boolean> {
-    return this.roundsService.roundsOrderFirstLoading$;
-  }
+  todayName$ = this.roundsService.todayName$;
+  todayFullName$ = this.roundsService.todayFullName$;
 
-  get todayFirstLoading$(): Observable<boolean> {
-    return this.roundService.todayFirstLoading$;
-  }
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
-  get todayName$(): BehaviorSubject<string> {
-    return this.roundsService.todayName$;
-  }
+  todayFirstLoading: boolean;
+  todayFirstLoadingSub: Subscription;
 
-  get todayFullName$(): Observable<string> {
-    return this.roundsService.todayFullName$;
-  }
-
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
+  roundsOrderFirstLoading: boolean;
+  roundsOrderFirstLoadingSub: Subscription;
 
   RouterDict = RouterDict;
   faCheckCircle = faCheckCircle;
   destroyed = false;
-  todayItemsView$: BehaviorSubject<{ timeOfDay: string, tasks: TodayItem[] }[]> = new BehaviorSubject(null);
+  todayItemsView: { timeOfDay: string, tasks: TodayItem[] }[] = null;
   changeDayIntervalSub: Subscription;
   todayItemsViewSub: Subscription;
-  isConnectedSub: Subscription;
   timesOfDayListSub: Subscription;
   roundSelectedSub: Subscription;
   roundSelectedChangeDaySub: Subscription;
@@ -67,15 +58,19 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     this.destroyed = false;
 
-    this.isConnectedSub = this.isOnline$.subscribe((isConnected) => {
-      if (isConnected) {
+    this.todayItemsViewSub = this.roundService.today$.subscribe(() => this.todayItemsViewUpdate(this.roundsService.roundSelected$.value));
+
+    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.todayItemsViewUpdate(round));
+
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => {
+      this.isOnline = isOnline;
+      if (isOnline) {
         this.changeDay();
       }
     });
 
-    this.todayItemsViewSub = this.roundService.today$.subscribe(() => this.todayItemsViewUpdate(this.roundsService.roundSelected$.value));
-
-    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.todayItemsViewUpdate(round));
+    this.todayFirstLoadingSub = this.roundService.todayFirstLoading$.subscribe((todayFirstLoading) => this.todayFirstLoading = todayFirstLoading);
+    this.roundsOrderFirstLoadingSub = this.roundService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
   }
 
   ngOnDestroy(): void {
@@ -95,10 +90,10 @@ export class TodayComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.todayItemsView$.next(order.filter((timeOfDay) => today[timeOfDay]).map((timeOfDay) => ({
+    this.todayItemsView = order.filter((timeOfDay) => today[timeOfDay]).map((timeOfDay) => ({
       timeOfDay,
       tasks: today[timeOfDay]
-    })));
+    }));
   }
 
   clearCache(): void {
@@ -109,10 +104,6 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     if (this.todayItemsViewSub && !this.todayItemsViewSub.closed) {
       this.todayItemsViewSub.unsubscribe();
-    }
-
-    if (this.isConnectedSub && !this.isConnectedSub.closed) {
-      this.isConnectedSub.unsubscribe();
     }
 
     if (this.timesOfDayListSub && !this.timesOfDayListSub.closed) {
@@ -126,6 +117,10 @@ export class TodayComponent implements OnInit, OnDestroy {
     if (this.roundSelectedChangeDaySub && !this.roundSelectedChangeDaySub.closed) {
       this.roundSelectedChangeDaySub.unsubscribe();
     }
+
+    this.isOnlineSub.unsubscribe();
+    this.todayFirstLoadingSub.unsubscribe();
+    this.roundsOrderFirstLoadingSub.unsubscribe();
 
     this.destroyed = true;
   }
@@ -189,7 +184,7 @@ export class TodayComponent implements OnInit, OnDestroy {
   }
 
   addNewTask(): void {
-    this.taskService.dayToApply = this.todayName$.getValue() as Day;
+    this.taskService.dayToApply = this.roundsService.todayName$.getValue() as Day;
     this.router.navigate(['../', RouterDict.taskEditor], {relativeTo: this.route});
   }
 }

@@ -14,17 +14,17 @@
 
       -->
 
-      <div class="row message" *ngIf="!(isOnline$ | async) && (todayItemsView$ | async) === null">
+      <div class="row message" *ngIf="!isOnline && todayItemsView === null">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
         </div>
       </div>
 
-      <ng-template *ngIf="!(isOnline$ | async) && (todayItemsView$ | async) !== null && (todayItemsView$ | async).length > 0; then showItems"></ng-template>
+      <ng-template *ngIf="!isOnline && todayItemsView !== null && todayItemsView.length > 0; then showItems"></ng-template>
 
-      <ng-container *ngIf="(isOnline$ | async)">
+      <ng-container *ngIf="isOnline">
 
-        <ng-container *ngIf="(todayFirstLoading$ | async) || (roundsOrderFirstLoading$ | async) || (todayItemsView$ | async) === null">
+        <ng-container *ngIf="todayFirstLoading || roundsOrderFirstLoading || todayItemsView === null">
           <div class="row message">
             <div class="col">
               <app-loading-text></app-loading-text>
@@ -32,7 +32,7 @@
           </div>
         </ng-container>
 
-        <ng-container *ngIf="!(todayFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (todayItemsView$ | async) !== null && (todayItemsView$ | async).length === 0">
+        <ng-container *ngIf="!todayFirstLoading && !roundsOrderFirstLoading && todayItemsView !== null && todayItemsView.length === 0">
           <div class="row message">
             <div class="col">
               <span>Add some tasks for {{todayFullName$ | async}}</span>
@@ -48,14 +48,14 @@
           </div>
         </ng-container>
 
-        <ng-template *ngIf="!(todayFirstLoading$ | async) && !(roundsOrderFirstLoading$ | async) && (todayItemsView$ | async) !== null && (todayItemsView$ | async).length > 0; then showItems"></ng-template>
+        <ng-template *ngIf="!todayFirstLoading && !roundsOrderFirstLoading && todayItemsView !== null && todayItemsView.length > 0; then showItems"></ng-template>
 
       </ng-container>
 
       <ng-template #showItems>
 
         <div class="time-of-day-row"
-             *ngFor="let todayItem of (todayItemsView$ | async); let i = index; trackBy: trackByTodayItems">
+             *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
 
           <div class="row">
             <div class="col">

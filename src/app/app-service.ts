@@ -5,18 +5,14 @@ import {BehaviorSubject} from 'rxjs';
 @Injectable()
 export class AppService {
 
-  get isOnline$(): BehaviorSubject<boolean> {
-    return this._isOnline$;
-  }
-
-  private _isOnline$: BehaviorSubject<boolean> = new BehaviorSubject(true);
+  isOnline$: BehaviorSubject<boolean> = new BehaviorSubject(true);
   private indexedDB = window['indexedDB'] || window['mozIndexedDB'] || window['webkitIndexedDB'] || window['msIndexedDB'];
   db: IDBDatabase;
   dbIsReady$ = new BehaviorSubject<boolean | 'will not'>(false);
 
   constructor(private connectionService: ConnectionService) {
     this.connectionService.stateChange$.subscribe((isOnline) =>
-      this._isOnline$.next(isOnline)
+      this.isOnline$.next(isOnline)
     );
 
     if (!this.indexedDB) {

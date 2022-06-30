@@ -1,17 +1,17 @@
 <div class="container">
   <div class="col">
 
-    <ng-template *ngIf="(roundsList$ | async).length === 0 || (roundsOrder$ | async).length === 0; then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="roundsList.length === 0 || roundsOrder.length === 0; then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div class="row message" *ngIf="((roundsListFirstLoad$ | async) || (roundsOrderFirstLoading$ | async)) && (isOnline$ | async); else onOneExists">
+      <div class="row message" *ngIf="(roundsListFirstLoad || roundsOrderFirstLoading) && isOnline; else onOneExists">
         <div class="col">
           <app-loading-text></app-loading-text>
         </div>
       </div>
 
       <ng-template #onOneExists>
-        <div class="row message" *ngIf="isOnline$ | async">
+        <div class="row message" *ngIf="isOnline">
           <div class="col">
             <span>Add some rounds to this empty list</span>
           </div>
@@ -24,7 +24,7 @@
             </div>
           </div>
         </div>
-        <div class="row message" *ngIf="!(isOnline$ | async)">
+        <div class="row message" *ngIf="!isOnline">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
           </div>
@@ -33,8 +33,8 @@
     </ng-template>
 
     <ng-template #showItems>
-      <ng-container *ngIf="(roundsList$ | async) as roundsList">
-        <ng-container *ngIf="(roundsOrder$ | async) as roundsOrder">
+      <ng-container *ngIf="roundsList as roundsList">
+        <ng-container *ngIf="roundsOrder as roundsOrder">
           <div class="row" #roundListTableWrapper>
             <table
               class="rounds-list no-select"
@@ -42,7 +42,7 @@
               [dataSource]="sortRoundList(roundsList, roundsOrder)"
               cdkDropList
               (cdkDropListDropped)="drop($event)"
-              [cdkDropListDisabled]="!(isOnline$ | async)">
+              [cdkDropListDisabled]="!isOnline">
 
               <ng-container matColumnDef="roundName">
                 <th mat-header-cell *matHeaderCellDef>Round</th>
@@ -67,7 +67,7 @@
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr cdkDrag [class.disabled]="!(isOnline$ | async) || (setRoundsOrderSub && !setRoundsOrderSub.closed)" mat-row *matRowDef="let row; columns: displayedColumns;" (click)="goToRound(row.id)"></tr>
+              <tr cdkDrag [class.disabled]="!isOnline || (setRoundsOrderSub && !setRoundsOrderSub.closed)" mat-row *matRowDef="let row; columns: displayedColumns;" (click)="goToRound(row.id)"></tr>
 
             </table>
 

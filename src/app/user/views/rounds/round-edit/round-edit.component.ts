@@ -1,10 +1,10 @@
 import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
-import {AbstractControl, FormControl, FormGroup} from '@angular/forms';
+import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
-import {Observable, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 import {finalize} from 'rxjs/operators';
 import {AppService} from '../../../../app-service';
 import {RouterDict} from '../../../../app.constants';
@@ -21,17 +21,14 @@ import {Location} from '@angular/common';
 })
 export class RoundEditComponent implements OnInit, OnDestroy {
 
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
-
-  get name(): AbstractControl {
-    return this.roundForm.get('name');
-  }
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
   roundForm: FormGroup = new FormGroup({
     name: new FormControl('', [CustomValidators.maxRequired(256)])
   });
+
+  name = this.roundForm.get('name');
 
   savingInProgress = false;
   deletingInProgress = false;
@@ -66,6 +63,8 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     });
 
     this.roundsService.inEditMode = true;
+
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   idIsNull(): boolean {
@@ -218,5 +217,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
     this.roundsService.inEditMode = false;
     this.roundsService.editedRound$.next(null);
+    this.isOnlineSub.unsubscribe();
   }
 }

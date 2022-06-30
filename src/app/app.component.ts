@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Subscription} from 'rxjs';
 
 import {AppService} from './app-service';
 import {AuthService} from './auth/auth.service';
@@ -12,17 +12,17 @@ import {ConnectionService} from './connection.service';
 })
 export class AppComponent {
 
-  get userIsReady$(): Observable<boolean> {
-    return this.authService.userIsReady$;
+  get isUserLoggedInNotReady(): boolean {
+    return this.isUserLoggedIn && !this.isUserReady;
   }
 
-  get isUserLoggedIn$(): Observable<boolean | null> {
-    return this.authService.isUserLoggedIn$;
-  }
+  isUserReady: boolean;
+  isUserReadySub: Subscription;
 
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
+  isUserLoggedIn: boolean;
+  isUserLoggedInSub: Subscription;
+
+  isOnline$ = this.appService.isOnline$;
 
   constructor(
     private appService: AppService,
@@ -35,5 +35,8 @@ export class AppComponent {
         this.cdr.markForCheck();
       }
     });
+
+    this.isUserReadySub = this.authService.isUserReady$.subscribe((isUserReady) => this.isUserReady = isUserReady);
+    this.isUserLoggedInSub = this.authService.isUserLoggedIn$.subscribe((isUserLoggedIn) => this.isUserLoggedIn = isUserLoggedIn);
   }
 }

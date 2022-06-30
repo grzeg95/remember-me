@@ -1,41 +1,29 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, NgZone} from '@angular/core';
+import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
-import {Observable, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {AppService} from '../../../../../../app-service';
-import {Round} from '../../../../../models';
 import {RoundService} from '../../round.service';
 import {RoundsService} from '../../../rounds.service';
 import {ActivatedRoute, Router} from '@angular/router';
+import {Round} from 'functions/src/helpers/models';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-times-of-day-order',
   templateUrl: './times-of-day-order.component.html',
   styleUrls: ['./times-of-day-order.component.scss']
 })
-export class TimesOfDayOrderComponent {
+export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
-  set setTimesOfDayOrderSub(setTimesOfDayOrderSub: Subscription) {
-    this.roundService.setTimesOfDayOrderSub = setTimesOfDayOrderSub;
-  }
+  setTimesOfDayOrderSub = this.roundService.setTimesOfDayOrderSub;
+  roundsOrderFirstLoading$ = this.roundService.roundsOrderFirstLoading$;
+  roundSelected: Round;
+  roundSelectedSub: Subscription;
 
-  get setTimesOfDayOrderSub(): Subscription {
-    return this.roundService.setTimesOfDayOrderSub;
-  }
-
-  get roundsOrderFirstLoading$(): Observable<boolean> {
-    return this.roundService.roundsOrderFirstLoading$;
-  }
-
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
-
-  get roundSelected(): Round {
-    return this.roundsService.roundSelected$.value;
-  }
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
   faGripLines = faGripLines;
   RouterDict = RouterDict;
@@ -47,6 +35,16 @@ export class TimesOfDayOrderComponent {
               private zone: NgZone,
               private route: ActivatedRoute,
               private router: Router) {}
+  
+  ngOnInit(): void {
+    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.roundSelected = round);
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+  }
+
+  ngOnDestroy(): void {
+    this.roundSelectedSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
+  }
 
   drop(event: CdkDragDrop<string[]>): void {
 
@@ -54,12 +52,10 @@ export class TimesOfDayOrderComponent {
       return;
     }
 
-    const roundSelected = this.roundSelected;
-
-    const timeOfDay = roundSelected.timesOfDay[event.previousIndex];
+    const timeOfDay = this.roundSelected.timesOfDay[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
-    moveItemInArray(roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
+    moveItemInArray(this.roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
 
     this.setTimesOfDayOrderSub = this.roundService.updateTimesOfDayOrder({timeOfDay, moveBy, roundId: this.roundsService.roundSelected$.value.id}).subscribe((success) => {
       this.zone.run(() => {
@@ -68,7 +64,7 @@ export class TimesOfDayOrderComponent {
     }, (error) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(roundSelected.timesOfDay, event.currentIndex, event.previousIndex);
+        moveItemInArray(this.roundSelected.timesOfDay, event.currentIndex, event.previousIndex);
       });
     });
 

@@ -1,39 +1,27 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {faEllipsisV, faTasks, faUser, faGear, faArrowRightFromBracket, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
-import {Observable} from 'rxjs';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
 import {faGoogle, faFacebook} from '@fortawesome/free-brands-svg-icons';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-nav',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.scss']
 })
-export class NavComponent {
+export class NavComponent implements OnInit {
 
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
+  isUserLoggedIn: boolean;
+  isUserLoggedInSub: Subscription;
 
-  get isUserLoggedIn$(): Observable<boolean | null> {
-    return this.authService.isUserLoggedIn$;
-  }
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
-  get userPhoto(): string {
-
-    if (this.authService.userData) {
-      return this.authService.userData.photoURL;
-    }
-
-    return null;
-  }
-
-  get whileLoginIn(): boolean {
-    return this.authService.whileLoginIn;
-  }
+  userPhoto = this.authService.userData?.photoURL;
+  whileLoginIn = this.authService.whileLoginIn;
 
   faTasks = faTasks;
   faUser = faUser;
@@ -50,6 +38,11 @@ export class NavComponent {
     private appService: AppService,
     private dialog: MatDialog
   ) {
+  }
+
+  ngOnInit(): void {
+    this.isUserLoggedInSub = this.authService.isUserLoggedIn$.subscribe((isUserLoggedIn) => this.isUserLoggedIn = isUserLoggedIn);
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   googleSignIn(): void {

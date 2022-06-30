@@ -1,8 +1,8 @@
 <app-nav></app-nav>
 
-<mat-spinner *ngIf="((isUserLoggedIn$ | async) === null) || ((isUserLoggedIn$ | async) && !(userIsReady$ | async))"
-             [strokeWidth]="((isUserLoggedIn$ | async) && !(userIsReady$ | async)) ? 8 : 5"
-             [color]="((isUserLoggedIn$ | async) && !(userIsReady$ | async)) ? 'accent' : 'primary'"
+<mat-spinner *ngIf="isUserLoggedIn === undefined || isUserLoggedInNotReady"
+             [strokeWidth]="isUserLoggedInNotReady ? 8 : 5"
+             [color]="isUserLoggedInNotReady ? 'accent' : 'primary'"
 ></mat-spinner>
 <router-outlet></router-outlet>
 

@@ -1,13 +1,14 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
-import {BehaviorSubject, Observable, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 import '../../../../../../../../global.prototype';
 import {AppService} from '../../../../../../app-service';
 import {RouterDict} from '../../../../../../app.constants';
-import {TasksListItem} from '../../../../../models';
 import {RoundService} from '../../round.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {RoundsService} from '../../../rounds.service';
+import { Round } from 'functions/src/helpers/models';
+import { TasksListItem } from 'src/app/user/models';
 
 @Component({
   selector: 'app-tasks',
@@ -16,31 +17,24 @@ import {RoundsService} from '../../../rounds.service';
 })
 export class TasksComponent implements OnInit, OnDestroy {
 
-  get roundsOrderFirstLoading$(): Observable<boolean> {
-    return this.roundService.roundsOrderFirstLoading$;
-  }
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
-  get tasksFirstLoading$(): Observable<boolean> {
-    return this.roundService.tasksFirstLoading$;
-  }
+  tasksFirstLoading: boolean;
+  tasksFirstLoadingSub: Subscription;
 
-  get timesOfDay(): string[] {
-    return this.roundsService.roundSelected$?.value?.timesOfDay || [];
-  }
+  roundsOrderFirstLoading: boolean;
+  roundsOrderFirstLoadingSub: Subscription;
 
-  get isOnline$(): Observable<boolean> {
-    return this.appService.isOnline$;
-  }
-
-  get tasks$(): BehaviorSubject<TasksListItem[]> {
-    return this.roundService.tasks$;
-  }
+  tasks: TasksListItem[];
+  tasksSub: Subscription;
 
   RouterDict = RouterDict;
   faEdit = faEdit;
   displayedColumns: string[] = ['description', 'daysOfTheWeek', 'timesOfDays', 'edit'];
 
   roundSelectedSub: Subscription;
+  roundSelected: Round;
 
   constructor(
       private roundService: RoundService,
@@ -53,7 +47,13 @@ export class TasksComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => {
       this.roundService.runTasksList(round);
+      this.roundSelected = round;
     });
+
+    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.tasksFirstLoadingSub = this.roundService.tasksFirstLoading$.subscribe((tasksFirstLoading) => this.tasksFirstLoading = tasksFirstLoading);
+    this.roundsOrderFirstLoadingSub = this.roundService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
+    this.tasksSub = this.roundService.tasks$.subscribe((tasks) => this.tasks = tasks);
   }
 
   getTimesOfDay(timesOfDayOrder: string[], taskTimesOfDay: string[]): string[] {
@@ -71,5 +71,9 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.roundSelectedSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
+    this.tasksFirstLoadingSub.unsubscribe();
+    this.roundsOrderFirstLoadingSub.unsubscribe();
+    this.tasksSub.unsubscribe();
   }
 }

@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {asapScheduler, BehaviorSubject, Observable, Subscription} from 'rxjs';
+import {asapScheduler, Subscription} from 'rxjs';
 import {skip} from 'rxjs/operators';
 import {RouterDict} from '../../../app.constants';
 import {AuthService} from '../../../auth/auth.service';
@@ -13,13 +13,8 @@ import {RoundsService} from './rounds.service';
 })
 export class RoundsComponent implements OnInit, OnDestroy {
 
-  get userIsReady$(): Observable<boolean> {
-    return this.authService.userIsReady$;
-  }
-
-  get editedRound$(): BehaviorSubject<Round> {
-    return this.roundsService.editedRound$;
-  }
+  isUserReady$ = this.authService.isUserReady$;
+  editedRound$ = this.roundsService.editedRound$;
 
   roundSelectedSub: Subscription;
   asapSchedulerForRoundSelected: Subscription;
