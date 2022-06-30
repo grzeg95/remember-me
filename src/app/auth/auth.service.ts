@@ -10,7 +10,7 @@ import {AppService} from '../app-service';
 import {decrypt} from '../security';
 import {HTTPError} from '../user/models';
 import {User, UserData, EncryptedUser} from './user-data.model';
-import {GoogleAuthProvider, FacebookAuthProvider} from 'firebase/auth';
+import {GoogleAuthProvider} from 'firebase/auth';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 import {Buffer} from 'buffer';
@@ -240,18 +240,6 @@ export class AuthService {
 
     this.afAuth.signInWithRedirect(new GoogleAuthProvider()).catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-    }).finally(() => {
-      this.whileLoginIn = false;
-    });
-  }
-
-  facebookSignIn(): void {
-    this.whileLoginIn = true;
-
-    this.afAuth.signInWithRedirect(new FacebookAuthProvider()).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-    }).then(() => {
-      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
     }).finally(() => {
       this.whileLoginIn = false;
     });

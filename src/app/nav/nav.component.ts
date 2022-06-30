@@ -3,7 +3,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {faEllipsisV, faTasks, faUser, faGear, faArrowRightFromBracket, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 import {AppService} from '../app-service';
 import {AuthService} from '../auth/auth.service';
-import {faGoogle, faFacebook} from '@fortawesome/free-brands-svg-icons';
+import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 import { Subscription } from 'rxjs';
 
@@ -25,7 +25,6 @@ export class NavComponent implements OnInit {
 
   faTasks = faTasks;
   faUser = faUser;
-  faFacebook = faFacebook;
   faGoogle = faGoogle;
   faEllipsisV = faEllipsisV;
   faGear = faGear;
@@ -47,10 +46,6 @@ export class NavComponent implements OnInit {
 
   googleSignIn(): void {
     this.authService.googleSignIn();
-  }
-
-  facebookSignIn(): void {
-    this.authService.facebookSignIn();
   }
 
   anonymouslySignIn(): void {
