@@ -228,6 +228,12 @@ input, .mat-form-field {
   margin-right: 0;
   margin-left: 0;
   border-radius: 0.5rem;
+
+  &:hover {
+    .mat-slide-toggle-persistent-ripple {
+      left: 0;
+    }
+  }
 }
 
 .mat-slide-toggle-content {
