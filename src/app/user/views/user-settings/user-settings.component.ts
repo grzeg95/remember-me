@@ -2,6 +2,7 @@ import {Component} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {faUser, faGear} from '@fortawesome/free-solid-svg-icons';
 import {AuthService} from '../../../auth/auth.service';
+import {UserData} from '../../../auth/user-data.model';
 import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/user-dialog-confirm-delete.component';
 
 @Component({
@@ -14,7 +15,9 @@ export class UserSettingsComponent {
   faUser = faUser;
   faGear = faGear;
 
-  userData = this.authService.userData;
+  get userData(): UserData {
+    return this.authService.userData;
+  }
 
   constructor(
     public dialogRef: MatDialogRef<UserSettingsComponent>,

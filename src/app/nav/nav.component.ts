@@ -20,8 +20,18 @@ export class NavComponent implements OnInit {
   isOnline: boolean;
   isOnlineSub: Subscription;
 
-  userPhoto = this.authService.userData?.photoURL;
-  whileLoginIn = this.authService.whileLoginIn;
+  get userPhoto(): string {
+
+    if (this.authService.userData) {
+      return this.authService.userData.photoURL;
+    }
+
+    return null;
+  }
+
+  get whileLoginIn(): boolean {
+    return this.authService.whileLoginIn;
+  }
 
   faTasks = faTasks;
   faUser = faUser;
