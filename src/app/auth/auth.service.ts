@@ -202,8 +202,10 @@ export class AuthService {
           }
         });
       } else {
-        this.userData = null;
         this.isUserLoggedIn$.next(false);
+        this.isUserReady$.next(false);
+        this.userData = null;
+        this.firebaseUser = null;
         this.router.navigate(['/']);
       }
     });
@@ -269,13 +271,6 @@ export class AuthService {
   }
 
   signOut(): Promise<void> {
-    this.unsubscribeUserIntervalReloadSub();
-    this.unsubscribeUserDocSub();
-    this.isUserReady$.next(false);
-    this.userData = null;
-    this.firebaseUser = null;
-    return this.afAuth.signOut().finally(() => {
-      this.router.navigate(['/']);
-    });
+    return this.afAuth.signOut();
   }
 }
