@@ -14,27 +14,7 @@ import {RoundsService} from '../rounds.service';
 @Injectable()
 export class RoundService {
 
-  set setTimesOfDayOrderSub(setTimesOfDayOrderSub: Subscription) {
-    this._setTimesOfDayOrderSub = setTimesOfDayOrderSub;
-  }
-
-  get setTimesOfDayOrderSub(): Subscription {
-    return this._setTimesOfDayOrderSub;
-  }
-
-  get roundsOrderFirstLoading$(): BehaviorSubject<boolean> {
-    return this.roundsService.roundsOrderFirstLoading$;
-  }
-
-  get todayFirstLoading$(): BehaviorSubject<boolean> {
-    return this.roundsService.todayFirstLoading$;
-  }
-
-  get tasksFirstLoading$(): BehaviorSubject<boolean> {
-    return this.roundsService.tasksFirstLoading$;
-  }
-
-  private _setTimesOfDayOrderSub: Subscription;
+  setTimesOfDayOrderSub: Subscription;
 
   today$ = new BehaviorSubject<{ [p: string]: TodayItem[] }>(null);
   tasks$ = new BehaviorSubject<TasksListItem[]>(null);
@@ -43,30 +23,6 @@ export class RoundService {
   private tasksListSub: Subscription;
   private lastRound: Round;
   todayDocsSub: Subscription;
-
-  clearCache(): void {
-
-    this.today$.next(null);
-    this.tasks$.next(null);
-    this.todayFirstLoading$.next(true);
-    this.tasksFirstLoading$.next(true);
-
-    if (this.setTimesOfDayOrderSub && !this.setTimesOfDayOrderSub.closed) {
-      this.setTimesOfDayOrderSub.unsubscribe();
-    }
-
-    if (this.todaySub && !this.todaySub.closed) {
-      this.todaySub.unsubscribe();
-    }
-
-    if (this.tasksListSub && !this.tasksListSub.closed) {
-      this.tasksListSub.unsubscribe();
-    }
-
-    if (this.todayDocsSub && !this.todayDocsSub.closed) {
-      this.todayDocsSub.unsubscribe();
-    }
-  }
 
   constructor(
     private afs: AngularFirestore,
@@ -81,10 +37,10 @@ export class RoundService {
   init(): void {
     this.appService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {
-        this.tasksFirstLoading$.next(true);
-        this.todayFirstLoading$.next(true);
-        if (this._setTimesOfDayOrderSub && !this._setTimesOfDayOrderSub.closed) {
-          this._setTimesOfDayOrderSub.unsubscribe();
+        this.roundsService.tasksFirstLoading$.next(true);
+        this.roundsService.todayFirstLoading$.next(true);
+        if (this.setTimesOfDayOrderSub && !this.setTimesOfDayOrderSub.closed) {
+          this.setTimesOfDayOrderSub.unsubscribe();
         }
       }
     });
@@ -94,9 +50,6 @@ export class RoundService {
       take(1)
     ).subscribe(() => {
 
-      // Skąd mam wiedzieć, że ten null oznacza rezygnację
-      // pod spodem musi być coś jeszcze
-      // checkSelectedRound
       this.roundsService.roundSelected$.pipe(skip(1)).subscribe((round) => {
 
         if (this.roundsService.inEditMode) {
@@ -115,6 +68,30 @@ export class RoundService {
         this.lastRound = round;
       });
     });
+  }
+
+  clearCache(): void {
+
+    this.today$.next(null);
+    this.tasks$.next(null);
+    this.roundsService.todayFirstLoading$.next(true);
+    this.roundsService.tasksFirstLoading$.next(true);
+
+    if (this.setTimesOfDayOrderSub && !this.setTimesOfDayOrderSub.closed) {
+      this.setTimesOfDayOrderSub.unsubscribe();
+    }
+
+    if (this.todaySub && !this.todaySub.closed) {
+      this.todaySub.unsubscribe();
+    }
+
+    if (this.tasksListSub && !this.tasksListSub.closed) {
+      this.tasksListSub.unsubscribe();
+    }
+
+    if (this.todayDocsSub && !this.todayDocsSub.closed) {
+      this.todayDocsSub.unsubscribe();
+    }
   }
 
   runToday(round: Round): void {
@@ -154,7 +131,7 @@ export class RoundService {
 
         if (!today) {
           this.today$.next({});
-          this.todayFirstLoading$.next(false);
+          this.roundsService.todayFirstLoading$.next(false);
           return;
         }
 
@@ -199,7 +176,7 @@ export class RoundService {
             if (today) {
               this.today$.next(today);
             }
-            this.todayFirstLoading$.next(false);
+            this.roundsService.todayFirstLoading$.next(false);
           });
       });
     });
@@ -238,7 +215,7 @@ export class RoundService {
           if (tasks) {
             this.tasks$.next(tasks);
           }
-          this.tasksFirstLoading$.next(false);
+          this.roundsService.tasksFirstLoading$.next(false);
         });
     });
   }

@@ -69,8 +69,8 @@ export class TodayComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.todayFirstLoadingSub = this.roundService.todayFirstLoading$.subscribe((todayFirstLoading) => this.todayFirstLoading = todayFirstLoading);
-    this.roundsOrderFirstLoadingSub = this.roundService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
+    this.todayFirstLoadingSub = this.roundsService.todayFirstLoading$.subscribe((todayFirstLoading) => this.todayFirstLoading = todayFirstLoading);
+    this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
   }
 
   ngOnDestroy(): void {

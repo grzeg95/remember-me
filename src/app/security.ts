@@ -22,12 +22,7 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
 export const decryptTask = async (encryptedTask: { value: string } | undefined, cryptoKey: CryptoKey): Promise<Task> => {
 
   if (encryptedTask) {
-    try {
-      return JSON.parse(await decrypt(encryptedTask.value, cryptoKey));
-    } catch (e) {
-      console.log('decryptTask');
-      throw e;
-    }
+    return JSON.parse(await decrypt(encryptedTask.value, cryptoKey));
   }
 
   return {
@@ -40,13 +35,7 @@ export const decryptTask = async (encryptedTask: { value: string } | undefined, 
 export const decryptRound = async (encryptedRound: { value: string } | undefined, cryptoKey: CryptoKey): Promise<Round> => {
 
   if (encryptedRound) {
-
-    try {
-      return JSON.parse(await decrypt(encryptedRound.value, cryptoKey));
-    } catch (e) {
-      console.log('decryptRound');
-      throw e;
-    }
+    return JSON.parse(await decrypt(encryptedRound.value, cryptoKey));
   }
 
   return {

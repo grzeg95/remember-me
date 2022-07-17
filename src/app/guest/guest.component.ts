@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {AuthService} from '../auth/auth.service';
 
 @Component({
   selector: 'app-guest',
@@ -9,10 +8,7 @@ import {AuthService} from '../auth/auth.service';
 export class GuestComponent {
 
   showGuestAboutSecurity = false;
-  isUserLoggedIn$ = this.authService.isUserLoggedIn$;
 
-  constructor(
-    private authService: AuthService
-  ) {
+  constructor() {
   }
 }

@@ -5,7 +5,7 @@
     <ng-template *ngIf="!roundSelected || (roundSelected && roundSelected.timesOfDay && roundSelected.timesOfDay.length === 0); then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div *ngIf="!roundSelected || !roundSelected.timesOfDay || (roundsOrderFirstLoading$ | async) && isOnline; else onOneExists" class="row message">
+      <div *ngIf="!roundSelected || !roundSelected.timesOfDay && isOnline; else onOneExists" class="row message">
         <div class="col">
           <app-loading-text></app-loading-text>
         </div>

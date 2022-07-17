@@ -17,8 +17,10 @@ import {Subscription} from 'rxjs';
 })
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
-  setTimesOfDayOrderSub = this.roundService.setTimesOfDayOrderSub;
-  roundsOrderFirstLoading$ = this.roundService.roundsOrderFirstLoading$;
+  get setTimesOfDayOrderSub () {
+    return this.roundService.setTimesOfDayOrderSub;
+  }
+
   roundSelected: Round;
   roundSelectedSub: Subscription;
 
@@ -35,7 +37,7 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
               private zone: NgZone,
               private route: ActivatedRoute,
               private router: Router) {}
-  
+
   ngOnInit(): void {
     this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.roundSelected = round);
     this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
@@ -57,7 +59,7 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
     moveItemInArray(this.roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
 
-    this.setTimesOfDayOrderSub = this.roundService.updateTimesOfDayOrder({timeOfDay, moveBy, roundId: this.roundsService.roundSelected$.value.id}).subscribe((success) => {
+    this.roundService.setTimesOfDayOrderSub = this.roundService.updateTimesOfDayOrder({timeOfDay, moveBy, roundId: this.roundsService.roundSelected$.value.id}).subscribe((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });

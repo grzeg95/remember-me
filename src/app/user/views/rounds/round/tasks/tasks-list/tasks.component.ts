@@ -51,8 +51,8 @@ export class TasksComponent implements OnInit, OnDestroy {
     });
 
     this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
-    this.tasksFirstLoadingSub = this.roundService.tasksFirstLoading$.subscribe((tasksFirstLoading) => this.tasksFirstLoading = tasksFirstLoading);
-    this.roundsOrderFirstLoadingSub = this.roundService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
+    this.tasksFirstLoadingSub = this.roundsService.tasksFirstLoading$.subscribe((tasksFirstLoading) => this.tasksFirstLoading = tasksFirstLoading);
+    this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
     this.tasksSub = this.roundService.tasks$.subscribe((tasks) => this.tasks = tasks);
   }
 
