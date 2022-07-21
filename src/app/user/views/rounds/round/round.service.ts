@@ -96,8 +96,8 @@ export class RoundService {
 
   runToday(round: Round): void {
 
-    this.authService.isUserReady$.pipe(
-      filter((isUserReady) => isUserReady),
+    this.authService.isUserLoggedIn$.pipe(
+      filter((isUserLoggedIn) => isUserLoggedIn),
       take(1)
     ).subscribe(() => {
       if (this.roundsService.lastTodayName !== this.roundsService.todayName$.getValue() && this.todaySub && !this.todaySub.closed) {
@@ -115,13 +115,15 @@ export class RoundService {
         this.todayDocsSub.unsubscribe();
       }
 
-      this.todayDocsSub = this.afs.collection<{ value: string }>(`/users/${this.authService.userData.uid}/rounds/${round.id}/today`).valueChanges({idField: 'id'}).subscribe(async (some) => {
+      const user = this.authService.user$.value;
+
+      this.todayDocsSub = this.afs.collection<{ value: string }>(`/users/${user.uid}/rounds/${round.id}/today`).valueChanges({idField: 'id'}).subscribe(async (some) => {
 
         const todayName = this.roundsService.todayName$.value;
 
         let today;
         for (const doc of some) {
-          const name = (await decryptToday(doc, this.authService.userData.cryptoKey)).name;
+          const name = (await decryptToday(doc, user.cryptoKey)).name;
 
           if (name === todayName) {
             today = doc;
@@ -143,12 +145,12 @@ export class RoundService {
           this.todaySub.unsubscribe();
         }
 
-        this.todaySub = this.afs.doc(`/users/${this.authService.userData.uid}/rounds/${round.id}/today/${today.id}`).collection<EncryptedTodayTask>('task', (ref) => ref.limit(25))
+        this.todaySub = this.afs.doc(`/users/${user.uid}/rounds/${round.id}/today/${today.id}`).collection<EncryptedTodayTask>('task', (ref) => ref.limit(25))
           .valueChanges({idField: 'id'}).pipe(
             map(async (encryptedTodayTaskArr) => {
 
               const todayTasksByTimeOfDay: { [timeOfDay: string]: TodayItem[] } = {};
-              const todayTaskArrPromise = encryptedTodayTaskArr.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask, this.authService.userData.cryptoKey));
+              const todayTaskArrPromise = encryptedTodayTaskArr.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask, user.cryptoKey));
               const todayTaskArr = await Promise.all(todayTaskArrPromise);
 
               for (const [i, todayTask] of todayTaskArr.entries()) {
@@ -184,20 +186,22 @@ export class RoundService {
 
   runTasksList(round: Round): void {
 
-    this.authService.isUserReady$.pipe(
-      filter((isUserReady) => isUserReady),
+    this.authService.isUserLoggedIn$.pipe(
+      filter((isUserLoggedIn) => isUserLoggedIn),
       take(1)
     ).subscribe(() => {
       if (this.tasksListSub && !this.tasksListSub.closed || !round) {
         return;
       }
 
-      this.tasksListSub = this.afs.doc(`users/${this.authService.userData.uid}/rounds/${round.id}`)
+      const user = this.authService.user$.value;
+
+      this.tasksListSub = this.afs.doc(`users/${user.uid}/rounds/${round.id}`)
         .collection<{ value: string }>('task', (ref) => ref.limit(25))
         .valueChanges({idField: 'id'}).pipe(
           map(async (encryptedTaskArr) => {
 
-            const taskArrPromise = encryptedTaskArr.map((encryptTask) => decryptTask(encryptTask, this.authService.userData.cryptoKey));
+            const taskArrPromise = encryptedTaskArr.map((encryptTask) => decryptTask(encryptTask, user.cryptoKey));
             const taskArr = await Promise.all(taskArrPromise);
 
             return taskArr.map((task, index) => {
@@ -222,16 +226,19 @@ export class RoundService {
 
   getTaskById$(id: string, roundId: string): Observable<Promise<Task | null>> {
 
-    return this.authService.isUserReady$.pipe(
-      filter((isUserReady) => isUserReady),
+    return this.authService.isUserLoggedIn$.pipe(
+      filter((isUserLoggedIn) => isUserLoggedIn),
       take(1),
       switchMap(() => {
-        return this.afs.doc<{ value: string }>(`users/${this.authService.userData.uid}/rounds/${roundId}/task/${id}`).get().pipe(
+
+        const user = this.authService.user$.value;
+
+        return this.afs.doc<{ value: string }>(`users/${user.uid}/rounds/${roundId}/task/${id}`).get().pipe(
           map(async (taskDocSnap) => {
             const encryptedTask = taskDocSnap.data();
 
             if (encryptedTask) {
-              return await decryptTask(encryptedTask, this.authService.userData.cryptoKey);
+              return await decryptTask(encryptedTask, user.cryptoKey);
             }
 
             return null;
@@ -242,8 +249,8 @@ export class RoundService {
 
   updateTimesOfDayOrder(data: { timeOfDay: string, moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
 
-    return this.authService.isUserReady$.pipe(
-      filter((isUserReady) => isUserReady),
+    return this.authService.isUserLoggedIn$.pipe(
+      filter((isUserLoggedIn) => isUserLoggedIn),
       take(1),
       switchMap(() => {
         return this.fns.httpsCallable('setTimesOfDayOrder')(data);

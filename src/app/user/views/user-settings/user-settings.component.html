@@ -3,34 +3,37 @@
   Setting
 </div>
 
-<div class="section">
-  <div class="title">Basic info</div>
-  <div class="items">
-    <div class="item">
-      <div class="name">Provider</div>
-      <div class="data" [innerHTML]="userData.providerId"></div>
-    </div>
-    <ng-container *ngIf="!userData.isAnonymous">
-      <div class="item photo">
-        <div class="name">Photo</div>
-        <div class="data">
-          <img *ngIf="userData.photoURL" [src]="userData.photoURL"/>
-          <div *ngIf="!userData.photoURL" class="no-photo">
-            <fa-icon [icon]="faUser"></fa-icon>
+<ng-container *ngIf="user">
+  <div class="section">
+    <div class="title">Basic info</div>
+    <div class="items">
+      <div class="item">
+        <div class="name">Provider</div>
+        <div class="data" [innerHTML]="user.providerId"></div>
+      </div>
+      <ng-container *ngIf="!user.isAnonymous">
+        <div class="item photo">
+          <div class="name">Photo</div>
+          <div class="data">
+            <img *ngIf="user.photoURL" [src]="user.photoURL"/>
+            <div *ngIf="!user.photoURL" class="no-photo">
+              <fa-icon [icon]="faUser"></fa-icon>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="item">
-        <div class="name">Name</div>
-        <div class="data" [innerHTML]="userData.displayName"></div>
-      </div>
-      <div class="item">
-        <div class="name">Email</div>
-        <div class="data" [innerHTML]="userData.email"></div>
-      </div>
-    </ng-container>
+        <div class="item">
+          <div class="name">Name</div>
+          <div class="data" [innerHTML]="user.displayName"></div>
+        </div>
+        <div class="item">
+          <div class="name">Email</div>
+          <div class="data" [innerHTML]="user.email"></div>
+        </div>
+      </ng-container>
+    </div>
   </div>
-</div>
+
+</ng-container>
 
 <div class="section">
   <div class="title">Privacy</div>
@@ -42,17 +45,19 @@
   </div>
 </div>
 
-<mat-expansion-panel class="section">
-  <mat-expansion-panel-header class="title advanced">
-    <mat-panel-title>Advanced</mat-panel-title>
-  </mat-expansion-panel-header>
-  <div class="items">
-    <div class="item close-account">
-      <div class="name">Delete account :(</div>
-      <a class="data" (click)="openRemoveAccountConfirmPrompt()">I'm not quite sure</a>
+<ng-container *ngIf="user">
+  <mat-expansion-panel class="section">
+    <mat-expansion-panel-header class="title advanced">
+      <mat-panel-title>Advanced</mat-panel-title>
+    </mat-expansion-panel-header>
+    <div class="items">
+      <div class="item close-account">
+        <div class="name">Delete account :(</div>
+        <a class="data" (click)="openRemoveAccountConfirmPrompt()">I'm not quite sure</a>
+      </div>
     </div>
-  </div>
-</mat-expansion-panel>
+  </mat-expansion-panel>
+</ng-container>
 
 <div mat-dialog-actions>
   <button mat-flat-button color="primary" (click)="dialogRef.close()">Close</button>

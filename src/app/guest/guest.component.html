@@ -1,98 +1,100 @@
-<div class="container">
-  <h1>Hello there.</h1>
-  <h3>Do you remember?</h3>
-  <h6>
-    <a (click)="showGuestAboutSecurity = !showGuestAboutSecurity" class="no-select">
-      User data policy
-      <img src="/assets/img/incognito.svg" class="icon top-incognito"/>
-    </a>
-  </h6>
-</div>
-
-<app-guest-about-security *ngIf="showGuestAboutSecurity"></app-guest-about-security>
-
-<div class="features-clean">
+<ng-container *ngIf="!whileLoginIn">
   <div class="container">
-    <div class="intro">
-      <h2 class="text-center">Rounds&nbsp;<img [style]="{width: '64px'}" src="/assets/img/rounds.svg">
-      </h2>
-      <p class="text-center">We know you are busy, can't remember everything.<br>Just create your daily tasks and make
-        every day better.</p>
-      <p class="text-center">Create up to 5 rounds that include:</p>
-    </div>
-    <div class="row features">
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="assets/img/today.svg" class="icon">
-        <h3 class="name">Today tasks</h3>
-        <p class="description">Check it out and select task that has been completed.</p>
+    <h1>Hello there.</h1>
+    <h3>Do you remember?</h3>
+    <h6>
+      <a (click)="showGuestAboutSecurity = !showGuestAboutSecurity" class="no-select">
+        User data policy
+        <img src="/assets/img/incognito.svg" class="icon top-incognito"/>
+      </a>
+    </h6>
+  </div>
+
+  <app-guest-about-security *ngIf="showGuestAboutSecurity"></app-guest-about-security>
+
+  <div class="features-clean">
+    <div class="container">
+      <div class="intro">
+        <h2 class="text-center">Rounds&nbsp;<img [style]="{width: '64px'}" src="/assets/img/rounds.svg">
+        </h2>
+        <p class="text-center">We know you are busy, can't remember everything.<br>Just create your daily tasks and make
+          every day better.</p>
+        <p class="text-center">Create up to 5 rounds that include:</p>
       </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="assets/img/clock.svg" class="icon">
-        <h3 class="name">Sortable tasks groups</h3>
-        <p class="description">Set the order of up to 10 times of day tasks groups.</p>
-      </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="assets/img/list.svg" class="icon">
-        <h3 class="name">Tasks list</h3>
-        <p class="description">Have a look on your tasks. Store up to 25 of them.</p>
+      <div class="row features">
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="assets/img/today.svg" class="icon">
+          <h3 class="name">Today tasks</h3>
+          <p class="description">Check it out and select task that has been completed.</p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="assets/img/clock.svg" class="icon">
+          <h3 class="name">Sortable tasks groups</h3>
+          <p class="description">Set the order of up to 10 times of day tasks groups.</p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="assets/img/list.svg" class="icon">
+          <h3 class="name">Tasks list</h3>
+          <p class="description">Have a look on your tasks. Store up to 25 of them.</p>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<div class="features-clean">
-  <div class="container">
-    <div class="intro">
-      <h2 class="text-center">Security 🤞</h2>
-      <p class="text-center">The best 🙄</p>
-    </div>
-    <div class="row features">
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="/assets/img/bug.svg" class="icon bug"/>
-        <h3 class="name">Bug bounty</h3>
-        <p class="description">Let's try to find out the unknown. Keep hacking 🧐</p>
+  <div class="features-clean">
+    <div class="container">
+      <div class="intro">
+        <h2 class="text-center">Security 🤞</h2>
+        <p class="text-center">The best 🙄</p>
       </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="/assets/img/branding/mochajs-icon.svg" class="icon mochajs"/>
-        <h3 class="name">Unit testing 🤔</h3>
-        <p class="description">Before publishing, each vulnerable functionality is unit tested ...</p>
-      </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <div class="pseudo-img">🤯</div>
-        <h3 class="name">Benchmarks</h3>
-        <p class="description">... and also hard tested.</p>
-      </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="/assets/img/branding/key_management_service.svg" class="icon kms"/>
-        <h3 class="name">Encrypted like a Pro</h3>
-        <p class="description">
-          Your data is encrypted. Only for you. Individually.<br/>
-          <a href="/assets/myId.json">Sample data of the user "myId".</a><br/>
-          <a href="https://cloud.google.com/security-key-management">Learn more.</a>
-        </p>
-      </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="/assets/img/branding/cookiebot_blue_logo.svg" class="icon cookiebot"/>
-        <h3 class="name">Control privacy</h3>
-        <p class="description">
-          <a class="cookiebot-renew" onclick="Cookiebot.renew();">Check out your cookies.</a>
-        </p>
-      </div>
-      <div class="col-sm-6 col-lg-4 item">
-        <img src="/assets/img/branding/firebase_logo_logomark.svg" class="icon firebase"/>
-        <h3 class="name">Built with Firebase</h3>
-        <p class="description">
-          Backed by Google and loved by app development teams - from startups to global enterprises.
-        </p>
+      <div class="row features">
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="/assets/img/bug.svg" class="icon bug"/>
+          <h3 class="name">Bug bounty</h3>
+          <p class="description">Let's try to find out the unknown. Keep hacking 🧐</p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="/assets/img/branding/mochajs-icon.svg" class="icon mochajs"/>
+          <h3 class="name">Unit testing 🤔</h3>
+          <p class="description">Before publishing, each vulnerable functionality is unit tested ...</p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <div class="pseudo-img">🤯</div>
+          <h3 class="name">Benchmarks</h3>
+          <p class="description">... and also hard tested.</p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="/assets/img/branding/key_management_service.svg" class="icon kms"/>
+          <h3 class="name">Encrypted like a Pro</h3>
+          <p class="description">
+            Your data is encrypted. Only for you. Individually.<br/>
+            <a href="/assets/myId.json">Sample data of the user "myId".</a><br/>
+            <a href="https://cloud.google.com/security-key-management">Learn more.</a>
+          </p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="/assets/img/branding/cookiebot_blue_logo.svg" class="icon cookiebot"/>
+          <h3 class="name">Control privacy</h3>
+          <p class="description">
+            <a class="cookiebot-renew" onclick="Cookiebot.renew();">Check out your cookies.</a>
+          </p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
+          <img src="/assets/img/branding/firebase_logo_logomark.svg" class="icon firebase"/>
+          <h3 class="name">Built with Firebase</h3>
+          <p class="description">
+            Backed by Google and loved by app development teams - from startups to global enterprises.
+          </p>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<footer>
-  <p>
-    <a target="_blank" href="https://www.linkedin.com/in/grzeg95">LinkedIn;</a>
-  </p>
-  <p>Carpe diem or nie; no offence; !expect;</p>
-  <p>Last update 17 Jul 2022;</p>
-</footer>
+  <footer>
+    <p>
+      <a target="_blank" href="https://www.linkedin.com/in/grzeg95">LinkedIn;</a>
+    </p>
+    <p>Carpe diem or nie; no offence; !expect;</p>
+    <p>Last update 17 Jul 2022;</p>
+  </footer>
+</ng-container>

@@ -113,4 +113,20 @@ export class AppService {
       }
     });
   }
+
+  async removeAllUsers(): Promise<any> {
+
+    try {
+      // get all users and delete others
+      const usersFromDb = await this.getMapOfUsersCryptoKeysFromDb();
+
+      const usersToRemovePromise = [];
+
+      for (const id of Object.getOwnPropertyNames(usersFromDb)) {
+        usersToRemovePromise.push(this.deleteFromDb('remember-me-database-keys', id));
+      }
+
+      await Promise.all(usersToRemovePromise);
+    } catch (e) {}
+  }
 }

@@ -22,8 +22,10 @@ export class NavComponent implements OnInit {
 
   get userPhoto(): string {
 
-    if (this.authService.userData) {
-      return this.authService.userData.photoURL;
+    const user = this.authService.user$.value;
+
+    if (user) {
+      return user.photoURL;
     }
 
     return null;

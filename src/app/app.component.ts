@@ -12,12 +12,9 @@ import {ConnectionService} from './connection.service';
 })
 export class AppComponent {
 
-  get isUserLoggedInNotReady(): boolean {
-    return this.isUserLoggedIn && !this.isUserReady;
+  get whileLoginIn(): boolean {
+    return this.authService.whileLoginIn;
   }
-
-  isUserReady: boolean;
-  isUserReadySub: Subscription;
 
   isUserLoggedIn: boolean;
   isUserLoggedInSub: Subscription;
@@ -36,7 +33,6 @@ export class AppComponent {
       }
     });
 
-    this.isUserReadySub = this.authService.isUserReady$.subscribe((isUserReady) => this.isUserReady = isUserReady);
     this.isUserLoggedInSub = this.authService.isUserLoggedIn$.subscribe((isUserLoggedIn) => this.isUserLoggedIn = isUserLoggedIn);
   }
 }

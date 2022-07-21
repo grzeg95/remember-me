@@ -13,7 +13,7 @@ import {RoundsService} from './rounds.service';
 })
 export class RoundsComponent implements OnInit, OnDestroy {
 
-  isUserReady$ = this.authService.isUserReady$;
+  isUserLoggedIn$ = this.authService.isUserLoggedIn$;
   editedRound$ = this.roundsService.editedRound$;
 
   roundSelectedSub: Subscription;

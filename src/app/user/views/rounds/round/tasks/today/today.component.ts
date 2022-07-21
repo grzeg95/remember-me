@@ -168,8 +168,9 @@ export class TodayComponent implements OnInit, OnDestroy {
     todayItem.disabled = true;
 
     const toMerge = JSON.parse(`{"timesOfDay": {"${todayItem.timeOfDayEncrypted}": ${!todayItem.done}}}`);
+    const user = this.authService.user$.value;
 
-    this.afs.doc(`/users/${this.authService.userData.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`).set(toMerge, {merge: true}).then(() => {
+    this.afs.doc(`/users/${user.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`).set(toMerge, {merge: true}).then(() => {
       todayItem.disabled = false;
     }).catch(() => {
       this.zone.run(() => {

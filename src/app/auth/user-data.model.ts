@@ -1,4 +1,7 @@
-export interface UserData {
+import firebase from 'firebase/compat';
+
+export interface User {
+  rounds?: string[];
   uid: string;
   email: string;
   displayName: string;
@@ -7,10 +10,7 @@ export interface UserData {
   cryptoKey?: CryptoKey;
   providerId?: string;
   isAnonymous?: boolean;
-}
-
-export interface User {
-  rounds: string[];
+  firebaseUser: firebase.User
 }
 
 export interface EncryptedUser {
