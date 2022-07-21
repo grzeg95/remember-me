@@ -2,7 +2,6 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {asapScheduler, Subscription} from 'rxjs';
 import {skip} from 'rxjs/operators';
 import {RouterDict} from '../../../app.constants';
-import {AuthService} from '../../../auth/auth.service';
 import {Round} from '../../models';
 import {RoundsService} from './rounds.service';
 
@@ -13,7 +12,6 @@ import {RoundsService} from './rounds.service';
 })
 export class RoundsComponent implements OnInit, OnDestroy {
 
-  isUserLoggedIn$ = this.authService.isUserLoggedIn$;
   editedRound$ = this.roundsService.editedRound$;
 
   roundSelectedSub: Subscription;
@@ -22,8 +20,7 @@ export class RoundsComponent implements OnInit, OnDestroy {
   RouterDict = RouterDict;
 
   constructor(
-    private roundsService: RoundsService,
-    private authService: AuthService
+    private roundsService: RoundsService
   ) {}
 
   ngOnInit(): void {

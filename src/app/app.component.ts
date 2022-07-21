@@ -16,8 +16,8 @@ export class AppComponent {
     return this.authService.whileLoginIn;
   }
 
-  isUserLoggedIn: boolean;
-  isUserLoggedInSub: Subscription;
+  isUserDecrypted: boolean;
+  isUserDecryptedSub: Subscription;
 
   isOnline$ = this.appService.isOnline$;
 
@@ -33,6 +33,6 @@ export class AppComponent {
       }
     });
 
-    this.isUserLoggedInSub = this.authService.isUserLoggedIn$.subscribe((isUserLoggedIn) => this.isUserLoggedIn = isUserLoggedIn);
+    this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
   }
 }

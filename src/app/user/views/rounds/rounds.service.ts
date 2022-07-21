@@ -3,7 +3,7 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AppService} from '../../../app-service';
 import {AuthService} from '../../../auth/auth.service';
 import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {filter, map, switchMap, take} from 'rxjs/operators';
+import {filter, map, switchMap} from 'rxjs/operators';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {decryptRound} from '../../../security';
 import {Round} from '../../models';
@@ -91,37 +91,34 @@ export class RoundsService {
 
   protected runRoundsList(): void {
 
-    this.authService.isUserLoggedIn$.pipe(filter((isUserLoggedIn) => isUserLoggedIn), take(1)).subscribe(() => {
+    const user = this.authService.user$.value;
 
-      const user = this.authService.user$.value;
+    this.roundsListSub = this.afs.collection<{ value: string }>(`users/${user.uid}/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
+      switchMap(async (docs) => {
 
-      this.roundsListSub = this.afs.collection<{ value: string }>(`users/${user.uid}/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
-        switchMap(async (docs) => {
+        // decrypt
+        const roundsDecryptPromise: Promise<Round>[] = [];
 
-          // decrypt
-          const roundsDecryptPromise: Promise<Round>[] = [];
+        for (const doc of docs) {
+          roundsDecryptPromise.push(decryptRound(doc, user.cryptoKey));
+        }
 
-          for (const doc of docs) {
-            roundsDecryptPromise.push(decryptRound(doc, user.cryptoKey));
-          }
+        const decryptedRoundList = await Promise.all(roundsDecryptPromise);
 
-          const decryptedRoundList = await Promise.all(roundsDecryptPromise);
+        for (const [i, doc] of docs.entries()) {
+          decryptedRoundList[i].id = doc.id;
+        }
 
-          for (const [i, doc] of docs.entries()) {
-            decryptedRoundList[i].id = doc.id;
-          }
+        return decryptedRoundList;
+      })
+    ).subscribe((roundsList) => {
+      this.roundsListFirstLoad$.next(false);
+      this.generateLists(roundsList, this.roundsOrder$.value);
+    });
 
-          return decryptedRoundList;
-        })
-      ).subscribe((roundsList) => {
-        this.roundsListFirstLoad$.next(false);
-        this.generateLists(roundsList, this.roundsOrder$.value);
-      });
-
-      this.roundsOrderSub = this.authService.user$.subscribe((user) => {
-        this.roundsOrderFirstLoading$.next(false);
-        this.generateLists(this.roundsList$.value, user?.rounds);
-      });
+    this.roundsOrderSub = this.authService.user$.subscribe((user) => {
+      this.roundsOrderFirstLoading$.next(false);
+      this.generateLists(this.roundsList$.value, user?.rounds);
     });
   }
 
@@ -132,10 +129,8 @@ export class RoundsService {
   }
 
   protected runParamRoundIdSelected(): void {
-    this.authService.isUserLoggedIn$.pipe(filter((isUserLoggedIn) => isUserLoggedIn), take(1)).subscribe(() => {
-      this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.pipe(filter((id) => id !== null)).subscribe((roundParamIdSelected) => {
-        this.checkSelectedRound(this.roundsList$.value, roundParamIdSelected);
-      });
+    this.paramRoundIdSelectedSub = this.paramRoundIdSelected$.pipe(filter((id) => id !== null)).subscribe((roundParamIdSelected) => {
+      this.checkSelectedRound(this.roundsList$.value, roundParamIdSelected);
     });
   }
 
@@ -196,35 +191,20 @@ export class RoundsService {
   }
 
   getRoundById$(roundId: string): Observable<Promise<Round | null>> {
+    const user = this.authService.user$.value;
 
-    return this.authService.isUserLoggedIn$.pipe(
-      filter((isUserLoggedIn) => isUserLoggedIn),
-      take(1),
-      switchMap(() => {
-
-        const user = this.authService.user$.value;
-
-        return this.afs.doc<{ value: string }>(`users/${user.uid}/rounds/${roundId}`).get().pipe(
-          map(async (docSnap) => {
-            const round = docSnap.data();
-            if (round) {
-              return await decryptRound(round, user.cryptoKey);
-            }
-            return null;
-          })
-        );
+    return this.afs.doc<{ value: string }>(`users/${ user.uid }/rounds/${ roundId }`).get().pipe(
+      map(async (docSnap) => {
+        const round = docSnap.data();
+        if (round) {
+          return await decryptRound(round, user.cryptoKey);
+        }
+        return null;
       })
     );
   }
 
   setRoundsOrder(data: { moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
-
-    return this.authService.isUserLoggedIn$.pipe(
-      filter((isUserLoggedIn) => isUserLoggedIn),
-      take(1),
-      switchMap(() => {
-        return this.fns.httpsCallable('setRoundsOrder')(data);
-      })
-    );
+    return this.fns.httpsCallable('setRoundsOrder')(data);
   }
 }

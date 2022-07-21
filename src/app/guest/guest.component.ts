@@ -15,8 +15,8 @@ export class GuestComponent implements OnInit, OnDestroy {
     return this.authService.whileLoginIn;
   }
 
-  isUserLoggedIn: boolean;
-  isUserLoggedInSub: Subscription;
+  isUserDecrypted: boolean;
+  isUserDecryptedSub: Subscription;
 
   constructor(
     private authService: AuthService
@@ -24,10 +24,10 @@ export class GuestComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.isUserLoggedInSub = this.authService.isUserLoggedIn$.subscribe((isUserLoggedIn) => this.isUserLoggedIn = isUserLoggedIn);
+    this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
   }
 
   ngOnDestroy(): void {
-    this.isUserLoggedInSub.unsubscribe();
+    this.isUserDecryptedSub.unsubscribe();
   }
 }

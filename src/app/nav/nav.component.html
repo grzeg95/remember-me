@@ -7,9 +7,9 @@
           <img src="/assets/img/logo.svg" class="logo">
           <span class="example-spacer"></span>
 
-          <div *ngIf="isUserLoggedIn !== undefined">
+          <div *ngIf="isUserDecrypted !== undefined">
 
-            <div *ngIf="!isUserLoggedIn" class="d-flex align-items-center right">
+            <div *ngIf="!isUserDecrypted" class="d-flex align-items-center right">
               <button mat-flat-button
                       color="primary"
                       [matMenuTriggerFor]="menu"
@@ -33,7 +33,7 @@
               </mat-menu>
             </div>
 
-            <div *ngIf="isUserLoggedIn" class="d-flex align-items-center right">
+            <div *ngIf="isUserDecrypted" class="d-flex align-items-center right">
               <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
               <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">

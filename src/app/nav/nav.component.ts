@@ -14,8 +14,8 @@ import { Subscription } from 'rxjs';
 })
 export class NavComponent implements OnInit {
 
-  isUserLoggedIn: boolean;
-  isUserLoggedInSub: Subscription;
+  isUserDecrypted: boolean;
+  isUserDecryptedSub: Subscription;
 
   isOnline: boolean;
   isOnlineSub: Subscription;
@@ -52,7 +52,7 @@ export class NavComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isUserLoggedInSub = this.authService.isUserLoggedIn$.subscribe((isUserLoggedIn) => this.isUserLoggedIn = isUserLoggedIn);
+    this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
     this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 

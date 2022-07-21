@@ -19,7 +19,7 @@ import {Buffer} from 'buffer';
 export class AuthService {
 
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(undefined);
-  isUserLoggedIn$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(undefined);
+  isUserDecrypted$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(undefined);
   userDocSub: Subscription;
   whileLoginIn = false;
   userIntervalReloadSub: Subscription;
@@ -185,7 +185,7 @@ export class AuthService {
         });
       } else {
         this.user$.next(null);
-        this.isUserLoggedIn$.next(false);
+        this.isUserDecrypted$.next(false);
         this.whileLoginIn = false;
         await this.appService.removeAllUsers();
         this.router.navigate(['/']);
@@ -201,7 +201,7 @@ export class AuthService {
 
     this.user$.next(user);
     this.whileLoginIn = false;
-    this.isUserLoggedIn$.next(true);
+    this.isUserDecrypted$.next(true);
   }
 
   async getSymmetricKey(user: firebase.User): Promise<string> {
