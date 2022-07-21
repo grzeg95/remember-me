@@ -7,7 +7,7 @@ import {RouterDict} from '../../../../../../app.constants';
 import {RoundService} from '../../round.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {RoundsService} from '../../../rounds.service';
-import { Round } from 'functions/src/helpers/models';
+import { Round } from 'firebase-functions/src/helpers/models';
 import { TasksListItem } from 'src/app/user/models';
 
 @Component({

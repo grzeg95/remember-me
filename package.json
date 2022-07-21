@@ -11,8 +11,8 @@
     "e2e": "ng e2e",
     "deploy:hosting:dev": "ng build --configuration=dev && firebase use dev && firebase deploy --only hosting",
     "deploy:hosting:prod": "ng build --configuration=production && firebase use default && firebase deploy --only hosting",
-    "deploy:functions:dev": "npm run deploy:dev --prefix functions",
-    "deploy:functions:prod": "npm run deploy:prod --prefix functions"
+    "deploy:functions:dev": "npm run deploy:dev --prefix firebese-functions",
+    "deploy:functions:prod": "npm run deploy:prod --prefix firebese-functions"
   },
   "private": true,
   "dependencies": {

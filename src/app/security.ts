@@ -1,4 +1,4 @@
-import {Today} from '../../functions/src/helpers/models';
+import {Today} from '../../firebase-functions/src/helpers/models';
 import {Round, Task, TodayTask} from './user/models';
 import {Buffer} from 'buffer';
 
