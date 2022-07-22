@@ -1,5 +1,4 @@
 import {ChangeDetectorRef, Component} from '@angular/core';
-import {Subscription} from 'rxjs';
 
 import {AppService} from './app-service';
 import {AuthService} from './auth/auth.service';
@@ -16,9 +15,7 @@ export class AppComponent {
     return this.authService.whileLoginIn;
   }
 
-  isUserDecrypted: boolean;
-  isUserDecryptedSub: Subscription;
-
+  isUserDecrypted$ = this.authService.isUserDecrypted$;
   isOnline$ = this.appService.isOnline$;
 
   constructor(
@@ -32,7 +29,5 @@ export class AppComponent {
         this.cdr.markForCheck();
       }
     });
-
-    this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
   }
 }

@@ -1,6 +1,6 @@
 <app-nav></app-nav>
 
-<mat-spinner *ngIf="isUserDecrypted === undefined || whileLoginIn"
+<mat-spinner *ngIf="(isUserDecrypted$ | async) === undefined || whileLoginIn"
              [strokeWidth]="5"></mat-spinner>
 <router-outlet></router-outlet>
 
