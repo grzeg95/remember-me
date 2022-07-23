@@ -1,24 +1,24 @@
-import {ENTER} from '@angular/cdk/keycodes';
-import {Location} from '@angular/common';
-import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {AngularFireFunctions} from '@angular/fire/compat/functions';
-import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
-import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
-import {MatChipInputEvent} from '@angular/material/chips';
-import {MatDialog} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {ActivatedRoute, Router, UrlTree} from '@angular/router';
-import {asapScheduler, BehaviorSubject, Subscription} from 'rxjs';
+import { ENTER } from '@angular/cdk/keycodes';
+import { Location } from '@angular/common';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AngularFireFunctions } from '@angular/fire/compat/functions';
+import { AbstractControl, FormArray, FormControl, FormGroup } from '@angular/forms';
+import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatChipInputEvent } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute, Router, UrlTree } from '@angular/router';
+import { asapScheduler, BehaviorSubject, Subscription } from 'rxjs';
 import '../../../../../../../../global.prototype';
-import {startWith} from 'rxjs/operators';
-import {AppService} from '../../../../../../app-service';
-import {RouterDict} from '../../../../../../app.constants';
-import {CustomValidators} from '../../../../../../custom-validators';
-import {HTTPError, HTTPSuccess, Round, TaskForm, Task} from '../../../../../models';
-import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
-import {TaskService} from './task.service';
-import {RoundService} from '../../round.service';
-import {RoundsService} from '../../../rounds.service';
+import { startWith } from 'rxjs/operators';
+import { RouterDict } from '../../../../../../app.constants';
+import { ConnectionService } from "../../../../../../connection.service";
+import { CustomValidators } from '../../../../../../custom-validators';
+import { HTTPError, HTTPSuccess, Round, TaskForm, Task } from '../../../../../models';
+import { TaskDialogConfirmDeleteComponent } from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import { TaskService } from './task.service';
+import { RoundService } from '../../round.service';
+import { RoundsService } from '../../../rounds.service';
 
 @Component({
   selector: 'app-task',
@@ -89,19 +89,20 @@ export class TaskComponent implements OnInit, OnDestroy {
     private fns: AngularFireFunctions,
     public dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private appService: AppService,
     private roundService: RoundService,
     private zone: NgZone,
     private taskService: TaskService,
     private roundsService: RoundsService,
     private router: Router,
-    private route: ActivatedRoute
-  ) {}
+    private route: ActivatedRoute,
+    private connectionService: ConnectionService
+  ) {
+  }
 
   ngOnInit(): void {
 
     this.taskForm.enable();
-    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => {
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => {
       if (isOnline) {
         this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
       } else {

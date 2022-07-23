@@ -1,18 +1,19 @@
-import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
-import {AngularFireFunctions} from '@angular/fire/compat/functions';
-import {FormControl, FormGroup} from '@angular/forms';
-import {MatDialog} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {ActivatedRoute, Router} from '@angular/router';
-import {Subscription} from 'rxjs';
-import {finalize} from 'rxjs/operators';
-import {AppService} from '../../../../app-service';
-import {RouterDict} from '../../../../app.constants';
-import {CustomValidators} from '../../../../custom-validators';
-import {HTTPError, HTTPSuccess} from '../../../models';
-import {RoundsService} from '../rounds.service';
-import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
-import {Location} from '@angular/common';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { AngularFireFunctions } from '@angular/fire/compat/functions';
+import { FormControl, FormGroup } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+import { AppService } from '../../../../app-service';
+import { RouterDict } from '../../../../app.constants';
+import { ConnectionService } from "../../../../connection.service";
+import { CustomValidators } from '../../../../custom-validators';
+import { HTTPError, HTTPSuccess } from '../../../models';
+import { RoundsService } from '../rounds.service';
+import { RoundDialogConfirmDeleteComponent } from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-times-of-day-list',
@@ -51,7 +52,8 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private fns: AngularFireFunctions,
     public dialog: MatDialog,
-    public location: Location
+    public location: Location,
+    private connectionService: ConnectionService
   ) {
   }
 
@@ -64,7 +66,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
     this.roundsService.inEditMode = true;
 
-    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   idIsNull(): boolean {

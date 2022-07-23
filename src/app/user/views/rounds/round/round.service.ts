@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { RouterDict } from '../../../../app.constants';
+import { ConnectionService } from "../../../../connection.service";
 import { decryptTask, decryptToday, decryptTodayTask } from '../../../../security';
 import { Round, TasksListItem, TodayItem, Task, EncryptedTodayTask } from '../../../models';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { AuthService } from '../../../../auth/auth.service';
 import { AngularFireFunctions } from '@angular/fire/compat/functions';
-import { AppService } from '../../../../app-service';
 import { filter, map, skip, take } from 'rxjs/operators';
 import { RoundsService } from '../rounds.service';
 
@@ -19,6 +19,7 @@ export class RoundService {
   today$ = new BehaviorSubject<{ [p: string]: TodayItem[] }>(null);
   tasks$ = new BehaviorSubject<TasksListItem[]>(null);
 
+  private isOnlineSub: Subscription;
   private todaySub: Subscription;
   private tasksListSub: Subscription;
   private lastRound: Round;
@@ -28,14 +29,14 @@ export class RoundService {
     private afs: AngularFirestore,
     private authService: AuthService,
     private fns: AngularFireFunctions,
-    private appService: AppService,
     private roundsService: RoundsService,
-    private router: Router
+    private router: Router,
+    private connectionService: ConnectionService
   ) {
   }
 
   init(): void {
-    this.appService.isOnline$.subscribe((isOnline) => {
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {
         this.roundsService.tasksFirstLoading$.next(true);
         this.roundsService.todayFirstLoading$.next(true);
@@ -72,6 +73,7 @@ export class RoundService {
 
   clearCache(): void {
 
+    this.isOnlineSub.unsubscribe();
     this.today$.next(null);
     this.tasks$.next(null);
     this.roundsService.todayFirstLoading$.next(true);
@@ -133,7 +135,7 @@ export class RoundService {
         return;
       }
 
-      if (!this.appService.isOnline$.value) {
+      if (!this.connectionService.isOnline$.value) {
         return;
       }
 

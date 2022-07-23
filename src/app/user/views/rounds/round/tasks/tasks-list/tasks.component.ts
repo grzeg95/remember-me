@@ -1,12 +1,12 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {faEdit} from '@fortawesome/free-regular-svg-icons';
-import {Subscription} from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { faEdit } from '@fortawesome/free-regular-svg-icons';
+import { Subscription } from 'rxjs';
 import '../../../../../../../../global.prototype';
-import {AppService} from '../../../../../../app-service';
-import {RouterDict} from '../../../../../../app.constants';
-import {RoundService} from '../../round.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {RoundsService} from '../../../rounds.service';
+import { RouterDict } from '../../../../../../app.constants';
+import { ConnectionService } from "../../../../../../connection.service";
+import { RoundService } from '../../round.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { RoundsService } from '../../../rounds.service';
 import { Round } from 'firebase-functions/src/helpers/models';
 import { TasksListItem } from 'src/app/user/models';
 
@@ -37,12 +37,13 @@ export class TasksComponent implements OnInit, OnDestroy {
   roundSelected: Round;
 
   constructor(
-      private roundService: RoundService,
-      private roundsService: RoundsService,
-      private appService: AppService,
-      private router: Router,
-      private route: ActivatedRoute
-  ) {}
+    private roundService: RoundService,
+    private roundsService: RoundsService,
+    private connectionService: ConnectionService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
+  }
 
   ngOnInit(): void {
     this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => {
@@ -50,7 +51,7 @@ export class TasksComponent implements OnInit, OnDestroy {
       this.roundSelected = round;
     });
 
-    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
     this.tasksFirstLoadingSub = this.roundsService.tasksFirstLoading$.subscribe((tasksFirstLoading) => this.tasksFirstLoading = tasksFirstLoading);
     this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
     this.tasksSub = this.roundService.tasks$.subscribe((tasks) => this.tasks = tasks);

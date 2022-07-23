@@ -1,13 +1,24 @@
-import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {AfterViewChecked, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, Renderer2, ViewChild} from '@angular/core';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {AppService} from '../../../../app-service';
-import {RoundsService} from '../rounds.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {MatDialog} from '@angular/material/dialog';
-import {RouterDict} from '../../../../app.constants';
-import {Round} from '../../../models';
-import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  HostListener,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  ViewChild
+} from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AppService } from '../../../../app-service';
+import { ConnectionService } from "../../../../connection.service";
+import { RoundsService } from '../rounds.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { RouterDict } from '../../../../app.constants';
+import { Round } from '../../../models';
+import { faEdit } from '@fortawesome/free-regular-svg-icons';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -50,12 +61,13 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     protected appService: AppService,
     protected zone: NgZone,
     protected snackBar: MatSnackBar,
-    protected renderer: Renderer2
+    protected renderer: Renderer2,
+    protected connectionService: ConnectionService
   ) {
   }
 
   ngOnInit(): void {
-    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
     this.roundsListSub = this.roundsService.roundsList$.subscribe((roundsList) => this.roundsList = roundsList);
     this.roundsOrderSub = this.roundsService.roundsOrder$.subscribe((roundsOrder) => this.roundsOrder = roundsOrder);
     this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
@@ -129,7 +141,7 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
         for (const row of Array.from(table.rows) as HTMLTableRowElement[]) {
           for (let i = 0; i < row.cells.length - 1; ++i) {
             const cell = row.cells.item(i);
-            this.renderer.setStyle(cell, 'width', `${cell.offsetWidth}px`);
+            this.renderer.setStyle(cell, 'width', `${ cell.offsetWidth }px`);
           }
         }
       }

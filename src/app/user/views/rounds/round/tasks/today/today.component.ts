@@ -5,8 +5,8 @@ import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {interval, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {RouterDict} from 'src/app/app.constants';
-import {AppService} from '../../../../../../app-service';
 import {AuthService} from '../../../../../../auth/auth.service';
+import { ConnectionService } from "../../../../../../connection.service";
 import {Day, Round, TodayItem} from '../../../../../models';
 import {ActivatedRoute, Router} from '@angular/router';
 import {TaskService} from '../task/task.service';
@@ -25,6 +25,7 @@ export class TodayComponent implements OnInit, OnDestroy {
 
   isOnline: boolean;
   isOnlineSub: Subscription;
+  wasTabInactiveSub: Subscription;
 
   todayFirstLoading: boolean;
   todayFirstLoadingSub: Subscription;
@@ -47,11 +48,11 @@ export class TodayComponent implements OnInit, OnDestroy {
               private roundService: RoundService,
               private roundsService: RoundsService,
               private snackBar: MatSnackBar,
-              private appService: AppService,
               private zone: NgZone,
               private router: Router,
               private route: ActivatedRoute,
-              private taskService: TaskService) {
+              private taskService: TaskService,
+              private connectionService: ConnectionService) {
   }
 
   ngOnInit(): void {
@@ -62,9 +63,15 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.todayItemsViewUpdate(round));
 
-    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => {
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => {
       this.isOnline = isOnline;
       if (isOnline) {
+        this.changeDay();
+      }
+    });
+
+    this.wasTabInactiveSub = this.connectionService.wasTabInactive$.subscribe((wasTabInactive) => {
+      if (wasTabInactive) {
         this.changeDay();
       }
     });
@@ -119,6 +126,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     }
 
     this.isOnlineSub.unsubscribe();
+    this.wasTabInactiveSub.unsubscribe();
     this.todayFirstLoadingSub.unsubscribe();
     this.roundsOrderFirstLoadingSub.unsubscribe();
 

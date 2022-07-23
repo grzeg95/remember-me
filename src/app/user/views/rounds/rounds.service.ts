@@ -1,13 +1,14 @@
-import {Injectable} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/compat/firestore';
-import {AppService} from '../../../app-service';
-import {AuthService} from '../../../auth/auth.service';
-import {BehaviorSubject, Observable, Subscription} from 'rxjs';
-import {filter, map, switchMap} from 'rxjs/operators';
-import {AngularFireFunctions} from '@angular/fire/compat/functions';
-import {decryptRound} from '../../../security';
-import {Round} from '../../models';
-import {ActivatedRoute} from '@angular/router';
+import { Injectable } from '@angular/core';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { AppService } from '../../../app-service';
+import { AuthService } from '../../../auth/auth.service';
+import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { filter, map, switchMap } from 'rxjs/operators';
+import { AngularFireFunctions } from '@angular/fire/compat/functions';
+import { ConnectionService } from "../../../connection.service";
+import { decryptRound } from '../../../security';
+import { Round } from '../../models';
+import { ActivatedRoute } from '@angular/router';
 
 @Injectable()
 export class RoundsService {
@@ -16,6 +17,7 @@ export class RoundsService {
   protected roundsOrderSub: Subscription;
   protected paramRoundIdSelectedSub: Subscription;
   protected nowSub: Subscription;
+  isOnlineSub: Subscription;
 
   roundsList$: BehaviorSubject<Round[]> = new BehaviorSubject<Round[]>([]);
   roundSelected$: BehaviorSubject<Round> = new BehaviorSubject<Round>(null);
@@ -38,9 +40,10 @@ export class RoundsService {
     protected authService: AuthService,
     protected fns: AngularFireFunctions,
     protected route: ActivatedRoute,
-    protected appService: AppService
+    protected appService: AppService,
+    protected connectionsService: ConnectionService
   ) {
-    this.appService.isOnline$.subscribe((isOnline) => {
+    this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {
         this.roundsOrderFirstLoading$.next(true);
         if (this.setRoundsOrderSub && !this.setRoundsOrderSub.closed) {
@@ -64,6 +67,8 @@ export class RoundsService {
   }
 
   clearCache(): void {
+
+    this.isOnlineSub.unsubscribe();
 
     if (this.roundsListSub && !this.roundsListSub.closed) {
       this.roundsListSub.unsubscribe();
@@ -93,7 +98,7 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.roundsListSub = this.afs.collection<{ value: string }>(`users/${user.uid}/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
+    this.roundsListSub = this.afs.collection<{ value: string }>(`users/${ user.uid }/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
       switchMap(async (docs) => {
 
         // decrypt

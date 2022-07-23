@@ -1,19 +1,14 @@
-import {Injectable} from '@angular/core';
-import {ConnectionService} from './connection.service';
-import {BehaviorSubject} from 'rxjs';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable()
 export class AppService {
 
-  isOnline$: BehaviorSubject<boolean> = new BehaviorSubject(true);
   private indexedDB = window['indexedDB'] || window['mozIndexedDB'] || window['webkitIndexedDB'] || window['msIndexedDB'];
-  db: IDBDatabase;
+  private db: IDBDatabase;
   dbIsReady$ = new BehaviorSubject<boolean | 'will not'>(false);
 
-  constructor(private connectionService: ConnectionService) {
-    this.connectionService.stateChange$.subscribe((isOnline) =>
-      this.isOnline$.next(isOnline)
-    );
+  constructor() {
 
     if (!this.indexedDB) {
       this.dbIsReady$.next('will not');
@@ -82,9 +77,7 @@ export class AppService {
     });
   }
 
-  async getMapOfUsersCryptoKeysFromDb(): Promise<{
-    [key in string]: CryptoKey
-  }> {
+  async getMapOfUsersCryptoKeysFromDb(): Promise<{ [key in string]: CryptoKey }> {
     const listOfUsersIds = await this.getListOfIdsUsersFromDb();
     const usersCryptoKeys: {
       [key in string]: CryptoKey
@@ -127,6 +120,7 @@ export class AppService {
       }
 
       await Promise.all(usersToRemovePromise);
-    } catch (e) {}
+    } catch (e) {
+    }
   }
 }

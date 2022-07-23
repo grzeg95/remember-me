@@ -1,10 +1,17 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
-import {MatDialog} from '@angular/material/dialog';
-import {faEllipsisV, faTasks, faUser, faGear, faArrowRightFromBracket, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
-import {AppService} from '../app-service';
-import {AuthService} from '../auth/auth.service';
-import {faGoogle} from '@fortawesome/free-brands-svg-icons';
-import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  faEllipsisV,
+  faTasks,
+  faUser,
+  faGear,
+  faArrowRightFromBracket,
+  faEyeSlash
+} from '@fortawesome/free-solid-svg-icons';
+import { AuthService } from '../auth/auth.service';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import { ConnectionService } from "../connection.service";
+import { UserSettingsComponent } from '../user/views/user-settings/user-settings.component';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -46,14 +53,14 @@ export class NavComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private appService: AppService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private connectionService: ConnectionService
   ) {
   }
 
   ngOnInit(): void {
     this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
-    this.isOnlineSub = this.appService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   googleSignIn(): void {
