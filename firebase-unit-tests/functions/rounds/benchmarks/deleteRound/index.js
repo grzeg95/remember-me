@@ -1,9 +1,10 @@
-const {removeUser, myId, getResult, saveRound, myAuth, saveTask, deleteRound, runTimes, median, avg,
+const {
+  removeUser, myId, getResult, saveRound, myAuth, saveTask, deleteRound, runTimes, median, avg,
   getRandomTimesOfDay, getRandomDaysOfTheWeek, getRandomDescription, getUserJson, getUserJsonEncrypted, insertUser,
-  getRandomRoundName, createUser
-} = require("../../../index");
+  getRandomRoundName
+} = require('../../../index');
 
-describe(`deleteRound`,async function() {
+describe(`deleteRound`, async function () {
 
   this.timeout(100000);
 

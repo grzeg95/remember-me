@@ -9,9 +9,9 @@ const {
   getRandomDaysOfTheWeek,
   getRandomDescription,
   getUserJsonEncrypted, insertUser, deleteTask, runTimes, median, avg
-} = require("../../../index");
+} = require('../../../index');
 
-describe(`deleteTask`,async function() {
+describe(`deleteTask`, async function () {
 
   this.timeout(100000);
 
@@ -69,12 +69,12 @@ describe(`deleteTask`,async function() {
   }
 
   after(() => {
-      const runTime = runTimes['deleteTask'].runTimes;
-      console.log('---------------------------');
-      console.log(`deleteTask`);
-      console.log(`cnt   : ${runTime.length}`);
-      console.log(`median: ${median(runTime)}`);
-      console.log(`avg   : ${avg(runTime)}`);
+    const runTime = runTimes['deleteTask'].runTimes;
+    console.log('---------------------------');
+    console.log(`deleteTask`);
+    console.log(`cnt   : ${runTime.length}`);
+    console.log(`median: ${median(runTime)}`);
+    console.log(`avg   : ${avg(runTime)}`);
   });
 
 });

@@ -164,7 +164,8 @@ module.exports._getUserAllData = async (documentRef, obj) => {
       // maybe decrypted description
       try {
         obj[documentRef.id]['fields']['description'] = await decrypt(obj[documentRef.id]['fields']['description'], module.exports.cryptoKey);
-      } catch (e){}
+      } catch (e) {
+      }
 
     } else if (key === 'timesOfDay') {
 

@@ -14,6 +14,10 @@ export class AppComponent {
     return this.authService.whileLoginIn;
   }
 
+  get isWaitingForCryptoKey(): boolean {
+    return this.authService.isWaitingForCryptoKey;
+  }
+
   isUserDecrypted$ = this.authService.isUserDecrypted$;
   isOnline$ = this.connectionService.isOnline$;
 

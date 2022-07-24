@@ -1,6 +1,7 @@
-const {removeUser, myId, getResult, saveRound, myAuth, saveTask, runTimes, median, avg, chai, getRandomTimesOfDay,
+const {
+  removeUser, myId, getResult, saveRound, myAuth, saveTask, runTimes, median, avg, chai, getRandomTimesOfDay,
   getRandomDaysOfTheWeek, getRandomDescription
-} = require("../../../index");
+} = require('../../../index');
 
 const expect = chai.expect;
 
@@ -33,7 +34,7 @@ describe(`saveTask`, async () => {
   });
 
   for (let i = 0; i < 50; ++i) {
-    it('run' , async () => {
+    it('run', async () => {
       for (const taskId of tasksIds) {
         await getResult(saveTask, {
           task: {

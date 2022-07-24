@@ -104,13 +104,13 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
   }, cryptoKey, encrypted)).toString('utf-8');
 };
 
-export const encryptTask = async (task: Task, cryptoKey: CryptoKey): Promise<{ value: string }> => {
+export const encryptTask = async (task: Task, cryptoKey: CryptoKey): Promise<{value: string}> => {
   return {
     value: await encrypt(task, cryptoKey)
   };
 };
 
-export const decryptTask = async (encryptedTask: { value: string } | undefined, cryptoKey: CryptoKey): Promise<Task> => {
+export const decryptTask = async (encryptedTask: {value: string} | undefined, cryptoKey: CryptoKey): Promise<Task> => {
 
   if (encryptedTask) {
     try {
@@ -126,13 +126,13 @@ export const decryptTask = async (encryptedTask: { value: string } | undefined, 
   };
 };
 
-export const encryptRound = async (round: Round, cryptoKey: CryptoKey): Promise<{ value: string }> => {
+export const encryptRound = async (round: Round, cryptoKey: CryptoKey): Promise<{value: string}> => {
   return {
     value: await encrypt(round, cryptoKey)
   };
 };
 
-export const decryptRound = async (encryptedRound: { value: string } | undefined, cryptoKey: CryptoKey): Promise<Round> => {
+export const decryptRound = async (encryptedRound: {value: string} | undefined, cryptoKey: CryptoKey): Promise<Round> => {
 
   if (encryptedRound) {
 
@@ -176,7 +176,7 @@ export const encryptTodayTask = async (todayTask: TodayTask, cryptoKey: CryptoKe
   };
 };
 
-export const decryptTodayTask = async (encryptedTodayTask: { description: string; timesOfDay: { [key in string]: boolean } }, cryptoKey: CryptoKey): Promise<TodayTask> => {
+export const decryptTodayTask = async (encryptedTodayTask: {description: string; timesOfDay: { [key in string]: boolean }}, cryptoKey: CryptoKey): Promise<TodayTask> => {
 
   const descriptionDecryptPromise = decrypt(encryptedTodayTask.description, cryptoKey);
 
@@ -199,13 +199,13 @@ export const decryptTodayTask = async (encryptedTodayTask: { description: string
   };
 };
 
-export const encryptToday = async (today: Today, cryptoKey: CryptoKey): Promise<{ value: string }> => {
+export const encryptToday = async (today: Today, cryptoKey: CryptoKey): Promise<{value: string}> => {
   return {
     value: await encrypt(today, cryptoKey)
   };
 };
 
-export const decryptToday = async (encryptedToday: { value: string }, cryptoKey: CryptoKey): Promise<Today> => {
+export const decryptToday = async (encryptedToday: {value: string}, cryptoKey: CryptoKey): Promise<Today> => {
 
   if (encryptedToday) {
 

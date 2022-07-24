@@ -11,7 +11,11 @@ import {RoundComponent} from './round/round.component';
 import {RoundsComponent} from './rounds.component';
 
 const routes: Routes = [
-  {path: '', redirectTo: RouterDict.roundsList},
+  {
+    path: '',
+    pathMatch: 'prefix',
+    redirectTo: RouterDict.roundsList
+  },
   {
     path: '',
     component: RoundsComponent,

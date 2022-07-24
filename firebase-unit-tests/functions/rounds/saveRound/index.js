@@ -1,9 +1,9 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 const {
-  getUserJson, chai, removeUser, myId, getResult, myAuth, getKEmptyRounds, saveRound, decryptRound
+  getUserJson, chai, removeUser, myId, getResult, myAuth, getKEmptyRounds, saveRound
 } = require('../../index');
-const testsInvalid = require("./tests.json");
-const {Buffer} = require("buffer");
+const testsInvalid = require('./tests.json');
+const {Buffer} = require('buffer');
 const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
 

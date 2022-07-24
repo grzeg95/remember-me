@@ -121,7 +121,7 @@ export const handler = async (user: UserRecord) => {
         const numbers = crypto.randomBytes(2);
 
         // createSampleUserData
-        const roundId =  await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWriteList);
+        const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWriteList);
 
         transactionWriteAdd(transaction, transactionWriteList, userDocSnap.ref, 'set', new Promise(async (resolve) => {
 
@@ -150,4 +150,4 @@ export const handler = async (user: UserRecord) => {
     console.error(e);
     throw new Error(`user ${user.uid} rsa key creation`);
   }
-}
+};

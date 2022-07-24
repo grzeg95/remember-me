@@ -14,17 +14,18 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 const app = firestore();
 
 /**
- * @function handler
  * Save times of day
- * @param data {
-    roundId: string,
-    name: string
-  }
- * @param callableContext
- * @param internalContext
- * @return Promise<{ created: boolean; details: string; taskId: string }>
+ * @function handler
+ * @param {*} data
+ * {
+ *  roundId: string,
+ *  name: string
+ * }
+ * @param {CallableContext?} callableContext
+ * @param {InternalContext?} internalContext
+ * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = (data: any, callableContext?: CallableContext, internalContext?: InternalContext): Promise<{ created: boolean; details: string; roundId: string }> => {
+export const handler = (data: any, callableContext?: CallableContext, internalContext?: InternalContext): Promise<{created: boolean; details: string; roundId: string}> => {
 
   if (!callableContext) {
     if (!internalContext) {

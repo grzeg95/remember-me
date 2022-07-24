@@ -1,6 +1,6 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import { Task } from '../../helpers/models';
+import {Task} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
@@ -142,14 +142,11 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
 
 /**
  * Read user data about task and remove it
- * @param data {
- *     roundId: string
- *     taskId: string
- * }
- * @param context CallableContext
- * @return Promise<{[key: string]: string}>
+ * @param {any} data
+ * @param {CallableContext} context
+ * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, context: CallableContext): Promise<{ [key: string]: string }> => {
+export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // without app check
   testRequirement(!context.app);
@@ -174,7 +171,7 @@ export const handler = (data: any, context: CallableContext): Promise<{ [key: st
   // data.taskId is not empty string
   testRequirement(typeof data.taskId !== 'string' || data.taskId.length === 0);
 
-  const auth: { uid: string } | undefined = context.auth;
+  const auth: {uid: string} | undefined = context.auth;
 
   return app.runTransaction(async (transaction) => {
 

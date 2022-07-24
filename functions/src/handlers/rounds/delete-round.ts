@@ -2,13 +2,20 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
 import {getUser, writeUser} from '../../helpers/user';
-import {decrypt, decryptRound, decryptSymmetricKey, decryptToday, encrypt, getCryptoKey} from '../../security/security';
+import {
+  decrypt,
+  decryptRound,
+  decryptSymmetricKey,
+  decryptToday,
+  encrypt,
+  getCryptoKey
+} from '../../security/security';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 
-export const handler = (roundId: any, context: CallableContext): Promise<{ [key: string]: string }> => {
+export const handler = (roundId: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // without app check
   testRequirement(!context.app);
@@ -19,7 +26,7 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
   // roundId is not empty string
   testRequirement(typeof roundId !== 'string' || roundId.length === 0);
 
-  const auth: { uid: string } | undefined = context.auth;
+  const auth: {uid: string} | undefined = context.auth;
 
   return app.runTransaction(async (transaction) => {
 
@@ -59,10 +66,10 @@ export const handler = (roundId: any, context: CallableContext): Promise<{ [key:
     const decryptTodaysPromise = [];
     const allTasksListOfDayRefs = await Promise.all(allTasksListOfDayRefsPromise);
     for (const todaySnap of allTasksListOfDayRefs) {
-      docsToRemove.push(new Promise(async (resolve) => {resolve(todaySnap)}));
+      docsToRemove.push(new Promise(async (resolve) => resolve(todaySnap)));
       decryptTodaysPromise.push(decryptToday(todaySnap.data() as {value: string}, cryptoKey).then((decryptedToday) => {
         for (const todayTaskId of decryptedToday.tasksIds) {
-          docsToRemove.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)))
+          docsToRemove.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)));
         }
       }));
     }

@@ -1,6 +1,6 @@
 // DEV
-process.env.GOOGLE_APPLICATION_CREDENTIALS = 'C:/Users/grzeg/Desktop/remember-me-dev-03ec99316d90.json';
-import {initializeApp} from 'firebase-admin';
+process.env.GOOGLE_APPLICATION_CREDENTIALS = 'C:/Projects/remember-me/functions/remember-me-dev-6b6dfda4509e.json';
+import {initializeApp} from 'firebase-admin/app';
 
 initializeApp();
 

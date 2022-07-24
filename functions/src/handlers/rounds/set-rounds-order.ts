@@ -11,16 +11,17 @@ import {
 const app = firestore();
 
 /**
- * @function handler
  * Set rounds order
- * @param data {
- *     roundId: string;
- *     moveBy: number
+ * @function handler
+ * @param {*} data
+ * {
+ *  roundId: string;
+ *  moveBy: number
  * }
- * @param context CallableContext
- * @return Promise<{ [key: string]: string }>
+ * @param {CallableContext} context
+ * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (data: any, context: CallableContext) => {
+export const handler = async (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
 
   // without app check
   testRequirement(!context.app);
@@ -45,7 +46,7 @@ export const handler = async (data: any, context: CallableContext) => {
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  const auth: { uid: string } | undefined = context.auth;
+  const auth: {uid: string} | undefined = context.auth;
 
   return app.runTransaction(async (transaction) => {
 

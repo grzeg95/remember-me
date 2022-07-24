@@ -24,6 +24,7 @@ export class AuthService {
   whileLoginIn = false;
   userIntervalReloadSub: Subscription;
   dbIsReadySub: Subscription;
+  isWaitingForCryptoKey: boolean;
 
   constructor(
     private afAuth: AngularFireAuth,
@@ -85,6 +86,7 @@ export class AuthService {
 
           // wait for user private key
           const cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
+          this.isWaitingForCryptoKey = true;
 
           if (typeof cryptoKeyTest === 'string' && cryptoKeyTest.length) {
 
@@ -135,6 +137,7 @@ export class AuthService {
                     } = JSON.parse(await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey));
 
                     if (cryptoTest.test[0] + cryptoTest.test[1] !== cryptoTest.result) {
+                      this.isWaitingForCryptoKey = false;
                       return new Error(`crypto test error`);
                     }
 
@@ -175,6 +178,7 @@ export class AuthService {
                     } catch (e) {
                     }
                   }).catch((e) => {
+                    this.isWaitingForCryptoKey = false;
                     this.snackBar.open(e);
                     this.signOut();
                   }).then(async () => await this.userPostAction(actionUserDocSnap, user));
@@ -184,6 +188,7 @@ export class AuthService {
           }
         });
       } else {
+        this.isWaitingForCryptoKey = false;
         this.user$.next(null);
         this.isUserDecrypted$.next(false);
         this.whileLoginIn = false;
@@ -194,6 +199,8 @@ export class AuthService {
   }
 
   async userPostAction(actionUserDocSnap, user: User): Promise<void> {
+
+    this.isWaitingForCryptoKey = false;
 
     if (actionUserDocSnap.payload.data()?.rounds) {
       user.rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, user.cryptoKey));
