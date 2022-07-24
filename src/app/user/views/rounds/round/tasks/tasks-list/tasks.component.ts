@@ -3,11 +3,11 @@ import { faEdit } from '@fortawesome/free-regular-svg-icons';
 import { Subscription } from 'rxjs';
 import '../../../../../../../../global.prototype';
 import { RouterDict } from '../../../../../../app.constants';
-import { ConnectionService } from "../../../../../../connection.service";
+import { ConnectionService } from '../../../../../../connection.service';
 import { RoundService } from '../../round.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RoundsService } from '../../../rounds.service';
-import { Round } from 'firebase-functions/src/helpers/models';
+import { Round } from 'functions/src/helpers/models';
 import { TasksListItem } from 'src/app/user/models';
 
 @Component({

@@ -1,5 +1,5 @@
 {
-  "name": "firebase-functions",
+  "name": "functions",
   "scripts": {
     "lint": "tslint --project tsconfig.json",
     "build": "echo removing old generated lib && (if exist lib rmdir /s /q lib) && echo removed && echo tsc: start && tsc && echo tsc: done && python minify.py",
@@ -13,7 +13,7 @@
   "engines": {
     "node": "16"
   },
-  "main": "lib/firebase-functions/src/index.js",
+  "main": "lib/functions/src/index.js",
   "dependencies": {
     "@google-cloud/kms": "~2.11.0",
     "fast-crc32c": "~2.0.0",

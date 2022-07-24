@@ -1,4 +1,4 @@
-import {Day} from '../../../../../../../../firebase-functions/src/helpers/models';
+import {Day} from '../../../../../../../../functions/src/helpers/models';
 
 export class TaskService {
   dayMap: {[key in Day]: number} = {

@@ -7,7 +7,7 @@ import { ConnectionService } from "../../../../../../connection.service";
 import { RoundService } from '../../round.service';
 import { RoundsService } from '../../../rounds.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Round } from 'firebase-functions/src/helpers/models';
+import { Round } from 'functions/src/helpers/models';
 import { Subscription } from 'rxjs';
 
 @Component({
