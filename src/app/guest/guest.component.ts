@@ -1,5 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from "rxjs";
+import { Component } from '@angular/core';
 import { AuthService } from "../auth/auth.service";
 
 @Component({
@@ -7,7 +6,7 @@ import { AuthService } from "../auth/auth.service";
   templateUrl: './guest.component.html',
   styleUrls: ['./guest.component.scss']
 })
-export class GuestComponent implements OnInit, OnDestroy {
+export class GuestComponent {
 
   showUserDataPolicy = false;
 
@@ -15,19 +14,8 @@ export class GuestComponent implements OnInit, OnDestroy {
     return this.authService.whileLoginIn;
   }
 
-  isUserDecrypted: boolean;
-  isUserDecryptedSub: Subscription;
-
   constructor(
     private authService: AuthService
   ) {
-  }
-
-  ngOnInit(): void {
-    this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
-  }
-
-  ngOnDestroy(): void {
-    this.isUserDecryptedSub.unsubscribe();
   }
 }
