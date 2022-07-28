@@ -9,7 +9,7 @@ import { AuthService } from "../auth/auth.service";
 })
 export class GuestComponent implements OnInit, OnDestroy {
 
-  showGuestAboutSecurity = false;
+  showUserDataPolicy = false;
 
   get whileLoginIn(): boolean {
     return this.authService.whileLoginIn;

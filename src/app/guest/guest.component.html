@@ -3,14 +3,14 @@
     <h1>Hello there.</h1>
     <h3>Do you remember?</h3>
     <h6>
-      <a (click)="showGuestAboutSecurity = !showGuestAboutSecurity" class="no-select">
+      <a (click)="showUserDataPolicy = !showUserDataPolicy" class="no-select">
         User data policy
         <img src="/assets/img/incognito.svg" class="icon top-incognito"/>
       </a>
     </h6>
   </div>
 
-  <app-guest-about-security *ngIf="showGuestAboutSecurity"></app-guest-about-security>
+  <app-user-data-policy *ngIf="showUserDataPolicy"></app-user-data-policy>
 
   <div class="features-clean">
     <div class="container">

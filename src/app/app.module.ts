@@ -8,8 +8,8 @@ import {environment} from '../environments/environment';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {CoreModule} from './core.module';
-import {GuestAboutSecurityComponent} from './guest/guest-about-security/guest-about-security.component';
 import {GuestComponent} from './guest/guest.component';
+import {UserDataPolicyComponent} from './guest/user-data-policy/user-data-policy.component';
 import {NavComponent} from './nav/nav.component';
 import {SharedModule} from './shared.module';
 
@@ -18,7 +18,7 @@ import {SharedModule} from './shared.module';
     AppComponent,
     NavComponent,
     GuestComponent,
-    GuestAboutSecurityComponent
+    UserDataPolicyComponent
   ],
   imports: [
     BrowserModule,
