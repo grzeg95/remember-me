@@ -396,7 +396,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     let url: UrlTree;
 
     if (roundSelected) {
-      url = this.router.createUrlTree(['./' + RouterDict.user + '/' + RouterDict.roundsList + '/' + roundSelected.id + '/' + RouterDict.taskEditor], {relativeTo: this.route});
+      url = this.router.createUrlTree(['/' + RouterDict.user + '/' + RouterDict.rounds + '/' + roundSelected.id + '/' + RouterDict.taskEditor], {relativeTo: this.route});
     } else {
       url = this.router.createUrlTree(['/' + RouterDict.user + '/' + RouterDict.roundsList]);
     }
