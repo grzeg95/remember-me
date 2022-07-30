@@ -16,7 +16,7 @@ describe(`setRoundsOrder`, async () => {
   before(async () => {
     cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(myAuth.auth.token.decryptedSymmetricKey, 'hex'),
+      Buffer.from(myAuth.auth.token.secretKey, 'hex'),
       {
         name: 'AES-GCM'
       },

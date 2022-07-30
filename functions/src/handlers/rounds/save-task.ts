@@ -8,12 +8,11 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 import {getUser} from '../../helpers/user';
 import {
   decryptRound,
-  decryptSymmetricKey,
   decryptTask, decryptToday, decryptTodayTask, encrypt, encryptRound,
   encryptTask, encryptToday,
   encryptTodayTask, getCryptoKey
 } from '../../security/security';
-import {EncryptedTodayTask, InternalContext, Round, Task, Today, TodayTask} from '../../helpers/models';
+import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
 import {
   transactionWriteAdd,
   transactionWriteExecute,
@@ -340,25 +339,18 @@ const updateRound = (transaction: Transaction, transactionWriteList: Transaction
  *  taskId: string,
  *  roundId: string
  * }
- * @param {CallableContext?} callableContext
- * @param {InternalContext?} internalContext
+ * @param {CallableContext} callableContext
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = async (data: any, callableContext?: CallableContext, internalContext?: InternalContext): Promise<{created: boolean; details: string; taskId: string}> => {
+export const handler = async (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; taskId: string}> => {
 
-  if (!callableContext) {
-    if (!internalContext) {
-      testRequirement(true);
-    }
-  }
+  const auth = callableContext?.auth;
 
-  if (callableContext) {
-    // without app check
-    testRequirement(!callableContext?.app);
+  // without app check
+  testRequirement(!callableContext.app);
 
-    // not logged in
-    testRequirement(!callableContext?.auth);
-  }
+  // not logged in
+  testRequirement(!auth);
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -427,8 +419,6 @@ export const handler = async (data: any, callableContext?: CallableContext, inte
   // data.task.timesOfDay contains duplicates
   testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
 
-  const auth = callableContext?.auth;
-
   let created = false;
   let taskId: string = data.taskId;
   const roundId: string = data.roundId;
@@ -436,28 +426,16 @@ export const handler = async (data: any, callableContext?: CallableContext, inte
     value: []
   };
 
+  testRequirement(!auth?.token.secretKey);
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
+
   return app.runTransaction(async (transaction) => {
 
-    const userDocSnap = await getUser(app, transaction, auth?.uid || internalContext?.uid as string);
+    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
     // roundSnap must exist
     testRequirement(!roundDocSnap.exists);
-
-    // get crypto key
-    // TODO
-    let cryptoKey: CryptoKey;
-
-    if (auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(auth?.token.decryptedSymmetricKey, auth?.uid);
-    } else {
-
-      if (internalContext) {
-        cryptoKey = await getCryptoKey(internalContext.decryptedSymmetricKey, internalContext.uid);
-      } else {
-        cryptoKey = await decryptSymmetricKey(auth?.token.encryptedSymmetricKey, auth?.uid);
-      }
-    }
 
     const taskDocSnapTmp = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));
 

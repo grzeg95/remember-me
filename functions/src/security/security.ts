@@ -1,73 +1,25 @@
 import {Buffer} from 'buffer';
-import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {
   Round,
   Task,
   Today,
   TodayTask
 } from '../helpers/models';
-import {testRequirement} from '../helpers/test-requirement';
 
-const crc32c = require('fast-crc32c');
 const crypto = require('crypto');
 const {subtle} = require('crypto').webcrypto;
 
-const cryptoKeyBuffer: {
-  [key in string]: CryptoKey
-} = {};
+export const getCryptoKey = async (key: string): Promise<CryptoKey> => {
 
-export const getCryptoKey = async (key: string, uid: string | undefined): Promise<CryptoKey> => {
-
-  if (uid && cryptoKeyBuffer[uid]) {
-    return cryptoKeyBuffer[uid];
-  } else {
-    const cryptoKey = await subtle.importKey(
-      'raw',
-      Buffer.from(key, 'hex'),
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['decrypt', 'encrypt']
-    );
-
-    if (uid) {
-      cryptoKeyBuffer[uid] = cryptoKey;
-    }
-
-    return cryptoKey;
-  }
-};
-
-export const decryptSymmetricKey = async (encryptedSymmetricKey: string, uid: string | undefined): Promise<CryptoKey> => {
-
-  if (uid && cryptoKeyBuffer[uid]) {
-    return cryptoKeyBuffer[uid];
-  }
-
-  // @ts-ignore
-  const ciphertext = new Uint8Array(encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-
-  const ciphertextCrc32c = crc32c.calculate(ciphertext);
-
-  const [decryptResponse] = await keyManagementServiceClient.asymmetricDecrypt({
-    name: cryptoKeyVersionPath,
-    ciphertext,
-    ciphertextCrc32c: {
-      value: ciphertextCrc32c
+  return await subtle.importKey(
+    'raw',
+    Buffer.from(key, 'hex'),
+    {
+      name: 'AES-GCM'
     },
-  });
-
-  testRequirement(
-    !decryptResponse.verifiedCiphertextCrc32c ||
-    crc32c.calculate(decryptResponse.plaintext) !==
-    Number(decryptResponse.plaintextCrc32c?.value),
-    'AsymmetricDecrypt: request corrupted in-transit'
+    false,
+    ['decrypt', 'encrypt']
   );
-
-  const key = (decryptResponse.plaintext || '').toString();
-
-  return await getCryptoKey(key, uid);
 };
 
 export const encrypt = async (data: any, cryptoKey: CryptoKey): Promise<string> => {

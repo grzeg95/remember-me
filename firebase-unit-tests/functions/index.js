@@ -15,7 +15,7 @@ module.exports.myAuth = {
   auth: {
     uid: module.exports.myId,
     token: {
-      decryptedSymmetricKey: crypto.randomBytes(32).toString('hex')
+      secretKey: crypto.randomBytes(32).toString('hex')
     }
   },
   app: {
@@ -138,7 +138,7 @@ module.exports._getUserAllData = async (documentRef, obj) => {
   if (!module.exports.cryptoKey) {
     module.exports.cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey, 'hex'),
+      Buffer.from(module.exports.myAuth.auth.token.secretKey, 'hex'),
       {
         name: 'AES-GCM'
       },

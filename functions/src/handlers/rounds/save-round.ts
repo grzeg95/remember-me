@@ -1,11 +1,9 @@
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {InternalContext} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 import {firestore} from 'firebase-admin';
 import {getUser, writeUser} from '../../helpers/user';
 import {
   decrypt, decryptRound,
-  decryptSymmetricKey,
   encrypt,
   encryptRound, getCryptoKey
 } from '../../security/security';
@@ -21,25 +19,18 @@ const app = firestore();
  *  roundId: string,
  *  name: string
  * }
- * @param {CallableContext?} callableContext
- * @param {InternalContext?} internalContext
+ * @param {CallableContext} callableContext
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = (data: any, callableContext?: CallableContext, internalContext?: InternalContext): Promise<{created: boolean; details: string; roundId: string}> => {
+export const handler = async (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; roundId: string}> => {
 
-  if (!callableContext) {
-    if (!internalContext) {
-      testRequirement(true);
-    }
-  }
+  const auth = callableContext?.auth;
 
-  if (callableContext) {
-    // without app check
-    testRequirement(!callableContext?.app);
+  // without app check
+  testRequirement(!callableContext?.app);
 
-    // not logged in
-    testRequirement(!callableContext?.auth);
-  }
+  // not logged in
+  testRequirement(!auth);
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -62,30 +53,15 @@ export const handler = (data: any, callableContext?: CallableContext, internalCo
   data.name = data.name.trim();
   testRequirement(data.name.length < 1 || data.name.length > 256);
 
-  const auth = callableContext?.auth;
+  testRequirement(!auth?.token.secretKey);
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
   let roundId = data.roundId;
   let created = false;
 
   return app.runTransaction(async (transaction) => {
 
-    const userDocSnap = await getUser(app, transaction, auth?.uid || internalContext?.uid as string);
-
-    // get crypto key
-    // TODO
-    let cryptoKey: CryptoKey;
-
-    if (auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(auth?.token.decryptedSymmetricKey, auth?.uid || internalContext?.uid);
-    } else {
-
-      if (internalContext) {
-        cryptoKey = await getCryptoKey(internalContext.decryptedSymmetricKey, internalContext?.uid);
-      } else {
-        cryptoKey = await decryptSymmetricKey(auth?.token.encryptedSymmetricKey, auth?.uid);
-      }
-    }
-
+    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
     const userDocSnapData = userDocSnap.data();
     const rounds = userDocSnapData?.rounds ? JSON.parse(await decrypt(userDocSnap.data()?.rounds, cryptoKey)) as string[] : [];

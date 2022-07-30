@@ -5,7 +5,7 @@ import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
   decryptRound,
-  decryptSymmetricKey, decryptTask,
+  decryptTask,
   decryptToday, encryptRound,
   encryptToday, getCryptoKey
 } from '../../security/security';
@@ -26,14 +26,8 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   // interrupt if user has not this task
   testRequirement(!taskDocSnap.exists);
 
-  // get crypto key
-  // TODO
-  let cryptoKey: CryptoKey;
-  if (context.auth?.token.decryptedSymmetricKey) {
-    cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
-  } else {
-    cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
-  }
+  testRequirement(!context.auth?.token.secretKey);
+  const cryptoKey = await getCryptoKey(context.auth?.token.secretKey);
 
   /*
   * Read all data
@@ -143,16 +137,18 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
 /**
  * Read user data about task and remove it
  * @param {any} data
- * @param {CallableContext} context
+ * @param {CallableContext} callableContext
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+
+  const auth = callableContext?.auth;
 
   // without app check
-  testRequirement(!context.app);
+  testRequirement(!callableContext.app);
 
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!auth);
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -171,13 +167,11 @@ export const handler = (data: any, context: CallableContext): Promise<{[key: str
   // data.taskId is not empty string
   testRequirement(typeof data.taskId !== 'string' || data.taskId.length === 0);
 
-  const auth: {uid: string} | undefined = context.auth;
-
   return app.runTransaction(async (transaction) => {
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
 
-    return proceedTaskRemoving(context, data.roundId, data.taskId, transaction, userDocSnap);
+    return proceedTaskRemoving(callableContext, data.roundId, data.taskId, transaction, userDocSnap);
 
   }).then(() => ({
     details: 'Your task has been deleted 🤭'

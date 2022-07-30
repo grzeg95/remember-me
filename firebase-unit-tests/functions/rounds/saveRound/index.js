@@ -117,7 +117,7 @@ describe(`saveRound`, async () => {
 
       const cryptoKey = await subtle.importKey(
         'raw',
-        Buffer.from(myAuth.auth.token.decryptedSymmetricKey, 'hex'),
+        Buffer.from(myAuth.auth.token.secretKey, 'hex'),
         {
           name: 'AES-GCM'
         },

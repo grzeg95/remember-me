@@ -1,11 +1,11 @@
 import {runWith} from 'firebase-functions';
 import {regionId} from '../config';
 
-export const getSymmetricKey = runWith({
+export const getSecuredToken = runWith({
   timeoutSeconds: 60,
   memory: '512MB',
   maxInstances: 2
-}).region(regionId).https.onCall(require('./get-symmetric-key').handler);
+}).region(regionId).https.onCall(require('./get-secured-token').handler);
 
 export const userOnCreate = runWith({
   timeoutSeconds: 60,

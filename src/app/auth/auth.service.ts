@@ -4,9 +4,8 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
 import firebase from 'firebase/compat';
-import {BehaviorSubject, interval, lastValueFrom, Subscription} from 'rxjs';
-import {catchError, filter, take} from 'rxjs/operators';
-import {AppService} from '../app-service';
+import {asyncScheduler, BehaviorSubject, iif, interval, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {catchError} from 'rxjs/operators';
 import {decrypt} from '../security';
 import {HTTPError} from '../user/models';
 import {User, EncryptedUser} from './user-data.model';
@@ -14,6 +13,7 @@ import {GoogleAuthProvider} from 'firebase/auth';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 import {Buffer} from 'buffer';
+import UserCredential = firebase.auth.UserCredential;
 
 @Injectable()
 export class AuthService {
@@ -25,14 +25,14 @@ export class AuthService {
   userIntervalReloadSub: Subscription;
   dbIsReadySub: Subscription;
   isWaitingForCryptoKey: boolean;
+  cryptoKeyTest: string;
 
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
     private afs: AngularFirestore,
     private snackBar: MatSnackBar,
-    private fns: AngularFireFunctions,
-    private appService: AppService
+    private fns: AngularFireFunctions
   ) {
     this.afAuth.authState.subscribe(async (firebaseUser) => {
 
@@ -65,8 +65,8 @@ export class AuthService {
           photoURL: firebaseUser.photoURL,
           emailVerified: firebaseUser.emailVerified,
           cryptoKey: null,
-          isAnonymous: firebaseUser.isAnonymous,
-          providerId: firebaseUser.isAnonymous ? 'Anonymous' : firebaseUser.providerData[0].providerId,
+          // isAnonymous: firebaseUser.isAnonymous,
+          // providerId: firebaseUser.isAnonymous ? 'Anonymous' : firebaseUser.providerData[0].providerId,
           firebaseUser
         };
 
@@ -74,8 +74,7 @@ export class AuthService {
           this.userDocSub.unsubscribe();
         }
 
-        // wait until user has rsa private key
-        this.userDocSub = this.afs.doc<EncryptedUser>(`users/${ user.uid }`).snapshotChanges().pipe(
+        this.userDocSub = this.afs.doc<EncryptedUser>(`users/${user.uid}`).snapshotChanges().pipe(
           catchError((error: HTTPError) => {
             if (error.code === 'permission-denied') {
               this.signOut();
@@ -84,107 +83,62 @@ export class AuthService {
           })
         ).subscribe(async (actionUserDocSnap) => {
 
-          // wait for user private key
           const cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
-          this.isWaitingForCryptoKey = true;
+
+          if (cryptoKeyTest === this.cryptoKeyTest) {
+            return;
+          }
+
+          this.cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
 
           if (typeof cryptoKeyTest === 'string' && cryptoKeyTest.length) {
 
-            // check if user has stored
-            if (this.dbIsReadySub && !this.dbIsReadySub.closed) {
-              this.dbIsReadySub.unsubscribe();
-            }
+            this.isWaitingForCryptoKey = true;
 
-            this.dbIsReadySub = this.appService.dbIsReady$
-              .pipe(
-                filter((isReady) => isReady === 'will not' || isReady),
-                take(1)
-              ).subscribe(async () => {
+            this.getIdTokenResult(user).pipe(
+              mergeMap((idTokenResult) => {
 
-                // get key if tre is no db or key in db
+                if (!idTokenResult.claims.secretKey) {
 
-                // get key from db
-                let userFromIndexedDB;
-                try {
-
-                  // get all users and delete others
-                  const usersFromDb = await this.appService.getMapOfUsersCryptoKeysFromDb();
-
-                  if (usersFromDb[user.uid] && usersFromDb[user.uid]) {
-                    userFromIndexedDB = usersFromDb[user.uid];
-                  }
-
-                  const usersToRemovePromise = [];
-
-                  for (const id of Object.getOwnPropertyNames(usersFromDb)) {
-                    if (id !== user.uid && usersFromDb[id]) {
-                      usersToRemovePromise.push(this.appService.deleteFromDb('remember-me-database-keys', id));
-                    }
-                  }
-
-                  await Promise.all(usersToRemovePromise);
-                } catch (e) {
+                  return this.getTokenWithSecretKey().pipe(
+                    mergeMap((token) => {
+                      return this.loginWithSecuredToken(token)
+                    }),
+                    mergeMap((userCredential: UserCredential) => {
+                      user.firebaseUser = userCredential.user;
+                      return this.getReloadedFirebaseUser(user);
+                    }),
+                    mergeMap((firebaseUser: firebase.User) => {
+                      user.firebaseUser = firebaseUser;
+                      return this.getIdTokenResult(user);
+                    }),
+                    mergeMap((idTokenResult: firebase.auth.IdTokenResult) => {
+                      return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
+                        mergeMap((cryptoKey: CryptoKey) => {
+                          return of({cryptoKey, idTokenResult});
+                        })
+                      );
+                    })
+                  )
                 }
 
-                // try to decrypt user uid
-                // remove it if user was e.g. removed and there is new one witch the same id
-                if (userFromIndexedDB) {
-                  try {
+                return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
+                  mergeMap((cryptoKey) => of({cryptoKey, idTokenResult}))
+                )
+              })
+            ).subscribe(async (action: {cryptoKey: CryptoKey, idTokenResult: firebase.auth.IdTokenResult}) => {
 
-                    const cryptoTest: {
-                      test: number[],
-                      result: number
-                    } = JSON.parse(await decrypt(actionUserDocSnap.payload.data().cryptoKeyTest, userFromIndexedDB.cryptoKey));
+              if (action.idTokenResult.claims.isAnonymous) {
+                user.isAnonymous = true;
+                user.providerId = 'Anonymous';
+              } else {
+                user.isAnonymous = user.firebaseUser.isAnonymous;
+                user.providerId = user.firebaseUser.providerData[0].providerId;
+              }
 
-                    if (cryptoTest.test[0] + cryptoTest.test[1] !== cryptoTest.result) {
-                      this.isWaitingForCryptoKey = false;
-                      return new Error(`crypto test error`);
-                    }
-
-                  } catch (e) {
-                    userFromIndexedDB = undefined;
-
-                    try {
-                      await this.appService.deleteFromDb('remember-me-database-keys', user.uid);
-                    } catch (e) {
-                    }
-                  }
-                }
-
-                if (userFromIndexedDB) {
-                  user.cryptoKey = userFromIndexedDB.cryptoKey;
-                  await this.userPostAction(actionUserDocSnap, user);
-                } else {
-                  // request
-                  await this.getSymmetricKey(user.firebaseUser).then(async (key) => {
-
-                    // create crypto key
-
-                    user.cryptoKey = await crypto.subtle.importKey(
-                      'raw',
-                      Buffer.from(key, 'hex'),
-                      {
-                        name: 'AES-GCM'
-                      },
-                      false,
-                      ['decrypt']
-                    );
-
-                    // try to store user crypto key to indexedDB
-                    try {
-                      await this.appService.addToDb('remember-me-database-keys', user.uid, {
-                        cryptoKey: user.cryptoKey
-                      });
-                    } catch (e) {
-                    }
-                  }).catch((e) => {
-                    this.isWaitingForCryptoKey = false;
-                    this.snackBar.open(e);
-                    this.signOut();
-                  }).then(async () => await this.userPostAction(actionUserDocSnap, user));
-                }
-
-              });
+              user.cryptoKey = action.cryptoKey;
+              await this.userPostAction(actionUserDocSnap, user);
+            });
           }
         });
       } else {
@@ -192,10 +146,47 @@ export class AuthService {
         this.user$.next(null);
         this.isUserDecrypted$.next(false);
         this.whileLoginIn = false;
-        await this.appService.removeAllUsers();
-        this.router.navigate(['/']);
+        asyncScheduler.schedule(() => this.router.navigate(['/']));
       }
     });
+  }
+
+  getIdTokenResult(user: User) {
+    return of(user.firebaseUser.getIdTokenResult(true)).pipe(
+      mergeMap(async (promiseIdTokenResult) => {
+        return await promiseIdTokenResult;
+      })
+    );
+  }
+
+  getTokenWithSecretKey(): Observable<string> {
+    return this.fns.httpsCallable<null, string>('getSecuredToken')(null);
+  }
+
+  loginWithSecuredToken(tokenWithSecretKey: string): Observable<UserCredential> {
+    return of(this.afAuth.signInWithCustomToken(tokenWithSecretKey)).pipe(
+      mergeMap((userCredential) => userCredential)
+    );
+  }
+
+  getCryptoKeyFromSecretKey(secretKey: string): Observable<CryptoKey> {
+    return of(crypto.subtle.importKey(
+      'raw',
+      Buffer.from(secretKey, 'hex'),
+      {
+        name: 'AES-GCM'
+      },
+      false,
+      ['decrypt']
+    )).pipe(
+      mergeMap((p) => p)
+    );
+  }
+
+  getReloadedFirebaseUser(user: User): Observable<firebase.User> {
+    return of(user.firebaseUser.reload().then(async () => await this.afAuth.currentUser)).pipe(
+      mergeMap((p) => p)
+    );
   }
 
   async userPostAction(actionUserDocSnap, user: User): Promise<void> {
@@ -209,16 +200,6 @@ export class AuthService {
     this.user$.next(user);
     this.whileLoginIn = false;
     this.isUserDecrypted$.next(true);
-  }
-
-  async getSymmetricKey(user: firebase.User): Promise<string> {
-    return await user.getIdTokenResult(true).then((token) => {
-      if (!token.claims.encryptedSymmetricKey) {
-        throw new Error('user without symmetric key');
-      } else {
-        return lastValueFrom(this.fns.httpsCallable('getSymmetricKey')(null));
-      }
-    });
   }
 
   googleSignIn(): void {

@@ -5,7 +5,6 @@ import {getUser, writeUser} from '../../helpers/user';
 import {
   decrypt,
   decryptRound,
-  decryptSymmetricKey,
   decryptToday,
   encrypt,
   getCryptoKey
@@ -15,29 +14,23 @@ import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 
-export const handler = (roundId: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = async (roundId: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+
+  const auth = callableContext?.auth;
 
   // without app check
-  testRequirement(!context.app);
+  testRequirement(!callableContext.app);
 
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!auth);
 
   // roundId is not empty string
   testRequirement(typeof roundId !== 'string' || roundId.length === 0);
 
-  const auth: {uid: string} | undefined = context.auth;
+  testRequirement(!auth?.token.secretKey);
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
   return app.runTransaction(async (transaction) => {
-
-    // get crypto key
-    // TODO
-    let cryptoKey: CryptoKey;
-    if (context.auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
-    } else {
-      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
-    }
 
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundsInUserDecryptPromise = decrypt(userDocSnap.data()?.rounds, cryptoKey);

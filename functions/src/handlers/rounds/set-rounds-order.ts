@@ -4,7 +4,7 @@ import {testRequirement} from '../../helpers/test-requirement';
 import {getUser} from '../../helpers/user';
 import {
   decrypt,
-  decryptSymmetricKey, encrypt,
+  encrypt,
   getCryptoKey
 } from '../../security/security';
 
@@ -18,16 +18,18 @@ const app = firestore();
  *  roundId: string;
  *  moveBy: number
  * }
- * @param {CallableContext} context
+ * @param {CallableContext} callableContext
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (data: any, context: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = async (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+
+  const auth = callableContext?.auth;
 
   // without app check
-  testRequirement(!context.app);
+  testRequirement(!callableContext.app);
 
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!auth);
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -46,7 +48,8 @@ export const handler = async (data: any, context: CallableContext): Promise<{[ke
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  const auth: {uid: string} | undefined = context.auth;
+  testRequirement(!callableContext.auth?.token.secretKey);
+  const cryptoKey = await getCryptoKey(callableContext.auth?.token.secretKey);
 
   return app.runTransaction(async (transaction) => {
 
@@ -57,15 +60,6 @@ export const handler = async (data: any, context: CallableContext): Promise<{[ke
 
     // check if round exists
     testRequirement(!roundDocSnap.exists);
-
-    // get crypto key
-    // TODO
-    let cryptoKey: CryptoKey;
-    if (context.auth?.token.decryptedSymmetricKey) {
-      cryptoKey = await getCryptoKey(context.auth?.token.decryptedSymmetricKey, context.auth?.uid);
-    } else {
-      cryptoKey = await decryptSymmetricKey(context.auth?.token.encryptedSymmetricKey, context.auth?.uid);
-    }
 
     const rounds = JSON.parse(await decrypt(userDocSnap.data()?.rounds, cryptoKey));
     const toMoveIndex = rounds.indexOf(data.roundId);
