@@ -3,7 +3,7 @@ import {firestore} from 'firebase-admin';
 export interface TransactionWriteListItem {
   transaction: firestore.Transaction,
   docRef: firestore.DocumentReference,
-  type: 'set' | 'create' | 'update',
+  type: 'set' | 'create' | 'update' | 'delete',
   operation: any
 }
 
@@ -15,8 +15,8 @@ export const transactionWriteAdd = (
   transaction: firestore.Transaction,
   transactionWriteList: TransactionWriteList,
   docRef: firestore.DocumentReference,
-  type: 'set' | 'create' | 'update',
-  operation: any
+  type: 'set' | 'create' | 'update' | 'delete',
+  operation?: any
 ) => {
   transactionWriteList.value.push({
     transaction,
@@ -34,12 +34,19 @@ export const transactionWriteExecute = async (transactionWriteList: TransactionW
 
     if (transactionWriteOperation) {
       let writeOperation = transactionWriteOperation.operation;
-      if (transactionWriteOperation.operation.constructor.name === 'Promise') {
-        writeOperation = await transactionWriteOperation.operation;
-      }
+      if (writeOperation) {
 
-      // @ts-ignore
-      transactionWriteOperation.transaction[transactionWriteOperation.type](transactionWriteOperation.docRef, writeOperation);
+        if (writeOperation.constructor.name === 'Promise') {
+          writeOperation = await transactionWriteOperation.operation;
+        }
+
+        // @ts-ignore
+        transactionWriteOperation.transaction[transactionWriteOperation.type](transactionWriteOperation.docRef, writeOperation);
+      } else {
+
+        // @ts-ignore
+        transactionWriteOperation.transaction[transactionWriteOperation.type](transactionWriteOperation.docRef);
+      }
     }
   }
 };
