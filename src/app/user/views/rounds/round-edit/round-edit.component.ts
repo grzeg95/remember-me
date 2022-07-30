@@ -6,7 +6,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { AppService } from '../../../../app-service';
 import { RouterDict } from '../../../../app.constants';
 import { ConnectionService } from "../../../../connection.service";
 import { CustomValidators } from '../../../../custom-validators';
@@ -47,7 +46,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     protected roundsService: RoundsService,
     protected snackBar: MatSnackBar,
     protected zone: NgZone,
-    protected appService: AppService,
     private router: Router,
     private route: ActivatedRoute,
     private fns: AngularFireFunctions,

@@ -4,7 +4,7 @@ import {AngularFirestore} from '@angular/fire/compat/firestore';
 import {AngularFireFunctions} from '@angular/fire/compat/functions';
 import {Router} from '@angular/router';
 import firebase from 'firebase/compat';
-import {asyncScheduler, BehaviorSubject, iif, interval, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {asyncScheduler, BehaviorSubject, interval, mergeMap, Observable, of, Subscription} from 'rxjs';
 import {catchError} from 'rxjs/operators';
 import {decrypt} from '../security';
 import {HTTPError} from '../user/models';
@@ -23,7 +23,6 @@ export class AuthService {
   userDocSub: Subscription;
   whileLoginIn = false;
   userIntervalReloadSub: Subscription;
-  dbIsReadySub: Subscription;
   isWaitingForCryptoKey: boolean;
   cryptoKeyTest: string;
 

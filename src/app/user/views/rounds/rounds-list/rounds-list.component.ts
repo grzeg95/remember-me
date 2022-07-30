@@ -11,7 +11,6 @@ import {
   ViewChild
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AppService } from '../../../../app-service';
 import { ConnectionService } from "../../../../connection.service";
 import { RoundsService } from '../rounds.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -58,7 +57,6 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     protected router: Router,
     public dialog: MatDialog,
     protected route: ActivatedRoute,
-    protected appService: AppService,
     protected zone: NgZone,
     protected snackBar: MatSnackBar,
     protected renderer: Renderer2,

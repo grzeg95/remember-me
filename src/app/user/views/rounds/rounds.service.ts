@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { AppService } from '../../../app-service';
 import { AuthService } from '../../../auth/auth.service';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { filter, map, switchMap } from 'rxjs/operators';
@@ -40,7 +39,6 @@ export class RoundsService {
     protected authService: AuthService,
     protected fns: AngularFireFunctions,
     protected route: ActivatedRoute,
-    protected appService: AppService,
     protected connectionsService: ConnectionService
   ) {
     this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => {

@@ -3,7 +3,6 @@ import {initializeAppCheck, ReCaptchaV3Provider} from '@angular/fire/app-check';
 import {AngularFireFunctions, REGION} from '@angular/fire/compat/functions';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {environment} from '../environments/environment';
-import {AppService} from './app-service';
 import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
 import {AngularFireAuth} from '@angular/fire/compat/auth';
@@ -57,7 +56,6 @@ export function initializeAppCheckPrivate(afAuth: AngularFireAuth): () => Promis
       provide: USE_FIRESTORE_EMULATOR,
       useValue: !environment.production && environment.dev ? [environment.emulators.firestore.host, environment.emulators.firestore.port] : undefined
     },
-    AppService,
     AuthService,
     ConnectionService,
     ExtraParametersGuard,
