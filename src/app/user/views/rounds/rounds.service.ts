@@ -86,7 +86,6 @@ export class RoundsService {
     this.roundSelected$.next(null);
     this.paramRoundIdSelected$.next('');
     this.roundsOrder$.next([]);
-    this.roundsList$.next([]);
     this.roundsOrderFirstLoading$.next(true);
     this.todayFirstLoading$.next(true);
     this.tasksFirstLoading$.next(true);
