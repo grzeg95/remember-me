@@ -196,14 +196,6 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     }
   }
 
-  // get to remove
-  const removeTaskForDaysPromises: Promise<DocumentSnapshot>[] = [];
-  for (const taskFromDayToRemove of toRemove) {
-    removeTaskForDaysPromises.push(transaction.get(
-      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id)
-    ).then((docSnap) => docSnap));
-  }
-
   // get all days from new task
   // create if not exists
   const newTodayItemsForTaskToCreatePromises: Promise<{dayToCreate: string; docSnap: DocumentSnapshot}>[] = [];
@@ -227,29 +219,31 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   // get new today tasks
   // on exist today's
   // on new today's
-  const newTaskForDaysPromises: Promise<{dayToCreate: string, docSnap: DocumentSnapshot}>[] = [];
   for (const dayToCreate of toCreate) {
 
     if (!todayDocRefsMap[dayToCreate]) {
-      newTaskForDaysPromises.push(transaction.get(
-        newTodayItemsMap[dayToCreate].ref.collection(`task`).doc(taskDocSnap.id)
-      ).then((docSnap) => {
-        return ({dayToCreate, docSnap});
-      }));
+      transactionWriteAdd(
+        transaction,
+        transactionWriteList,
+        newTodayItemsMap[dayToCreate].ref.collection(`task`).doc(taskDocSnap.id),
+        'create',
+        encryptedTodayTaskToAddPromise
+      );
     } else {
-      newTaskForDaysPromises.push(transaction.get(
-        todayDocRefsMap[dayToCreate].docSnap.ref.collection(`task`).doc(taskDocSnap.id)
-      ).then((docSnap) => {
-        return ({dayToCreate, docSnap});
-      }));
+      transactionWriteAdd(
+        transaction,
+        transactionWriteList,
+        todayDocRefsMap[dayToCreate].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
+        'create',
+        encryptedTodayTaskToAddPromise
+      );
     }
   }
 
   // prepare
   // create day if not exists
-  const todayDayToCreateEncryptPromise: Promise<{value: string}>[] = [];
   for (const dayToCreate of newTodayItemsForTaskToCreate) {
-    todayDayToCreateEncryptPromise.push(encryptToday({
+    transactionWriteAdd(transaction, transactionWriteList, dayToCreate.docSnap.ref, 'create', encryptToday({
       name: dayToCreate.dayToCreate,
       tasksIds: [taskDocSnap.id]
     }, cryptoKey));
@@ -271,10 +265,19 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     if (!taskDaysOfTheWeek.has(day)) {
       const todayTaskIds = todayDocRefsMap[day].today.tasksIds;
       if (todayTaskIds.length === 1) {
-        transaction.delete(todayDocRefsMap[day].docSnap.ref);
+        transactionWriteAdd(transaction, transactionWriteList, todayDocRefsMap[day].docSnap.ref, 'delete');
         todaysIds.delete(todayDocRefsMap[day].docSnap.ref.id);
       }
     }
+  }
+
+  for (const taskFromDayToRemove of toRemove) {
+    transactionWriteAdd(
+      transaction,
+      transactionWriteList,
+      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
+      'delete'
+    );
   }
 
   // update
@@ -309,25 +312,6 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
       description: task.description,
       timesOfDay: newTimesOfDay
     }, cryptoKey));
-  }
-
-  // execute
-  // create day if not exists
-  const todayDayToCreateEncrypted = await Promise.all(todayDayToCreateEncryptPromise);
-  for (let i = 0; i < newTodayItemsForTaskToCreate.length; ++i) {
-    transaction.create(newTodayItemsForTaskToCreate[i].docSnap.ref, todayDayToCreateEncrypted[i]);
-  }
-
-  // remove
-  const removeTaskForDays = await Promise.all(removeTaskForDaysPromises);
-  for (const taskDayToRemove of removeTaskForDays) {
-    transaction.delete(taskDayToRemove.ref);
-  }
-
-  const newTaskForDays: {dayToCreate: string, docSnap: DocumentSnapshot}[] = await Promise.all(newTaskForDaysPromises);
-  const encryptedTodayTaskToAdd = await encryptedTodayTaskToAddPromise;
-  for (const item of newTaskForDays) {
-    transaction.create(item.docSnap.ref, encryptedTodayTaskToAdd);
   }
 
   return todaysIds.toArray();
