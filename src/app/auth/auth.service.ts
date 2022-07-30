@@ -67,7 +67,8 @@ export class AuthService {
           cryptoKey: null,
           // isAnonymous: firebaseUser.isAnonymous,
           // providerId: firebaseUser.isAnonymous ? 'Anonymous' : firebaseUser.providerData[0].providerId,
-          firebaseUser
+          firebaseUser,
+          idTokenResult: null
         };
 
         if (this.userDocSub && !this.userDocSub.closed) {
@@ -82,6 +83,11 @@ export class AuthService {
             throw error;
           })
         ).subscribe(async (actionUserDocSnap) => {
+
+          if (user.idTokenResult?.claims.secretKey) {
+            await this.userPostAction(actionUserDocSnap, user);
+            return;
+          }
 
           const cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
 
@@ -137,6 +143,7 @@ export class AuthService {
               }
 
               user.cryptoKey = action.cryptoKey;
+              user.idTokenResult = action.idTokenResult;
               await this.userPostAction(actionUserDocSnap, user);
             });
           }

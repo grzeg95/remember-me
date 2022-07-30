@@ -10,7 +10,8 @@ export interface User {
   cryptoKey?: CryptoKey;
   providerId?: string;
   isAnonymous?: boolean;
-  firebaseUser: firebase.User
+  firebaseUser: firebase.User,
+  idTokenResult: firebase.auth.IdTokenResult
 }
 
 export interface EncryptedUser {
