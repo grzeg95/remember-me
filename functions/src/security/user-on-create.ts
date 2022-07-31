@@ -117,27 +117,16 @@ export const handler = async (user: UserRecord) => {
 
         const userDocSnap = await getUser(app, transaction, user.uid);
 
-        // create simple two number adding test
-        const numbers = crypto.randomBytes(2);
-
         // createSampleUserData
         const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWriteList);
 
         transactionWriteAdd(transaction, transactionWriteList, userDocSnap.ref, 'set', new Promise(async (resolve) => {
 
-          const cryptoKeyTest = encrypt({
-            test: [numbers[0], numbers[1]],
-            result: numbers[0] + numbers[1]
-          }, cryptoKey);
-
           const rounds = encrypt([roundId], cryptoKey);
 
-          const userData = {
-            cryptoKeyTest: await cryptoKeyTest,
+          resolve({
             rounds: await rounds
-          };
-
-          resolve(userData);
+          });
         }));
 
         await transactionWriteExecute(transactionWriteList);

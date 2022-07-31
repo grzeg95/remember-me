@@ -24,7 +24,6 @@ export class AuthService {
   whileLoginIn = false;
   userIntervalReloadSub: Subscription;
   isWaitingForCryptoKey: boolean;
-  cryptoKeyTest: string;
 
   constructor(
     private afAuth: AngularFireAuth,
@@ -88,64 +87,53 @@ export class AuthService {
             return;
           }
 
-          const cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
+          this.isWaitingForCryptoKey = true;
 
-          if (cryptoKeyTest === this.cryptoKeyTest) {
-            return;
-          }
+          this.getIdTokenResult(user).pipe(
+            mergeMap((idTokenResult) => {
 
-          this.cryptoKeyTest = actionUserDocSnap.payload.data()?.cryptoKeyTest;
+              if (!idTokenResult.claims.secretKey) {
 
-          if (typeof cryptoKeyTest === 'string' && cryptoKeyTest.length) {
-
-            this.isWaitingForCryptoKey = true;
-
-            this.getIdTokenResult(user).pipe(
-              mergeMap((idTokenResult) => {
-
-                if (!idTokenResult.claims.secretKey) {
-
-                  return this.getTokenWithSecretKey().pipe(
-                    mergeMap((token) => {
-                      return this.loginWithSecuredToken(token)
-                    }),
-                    mergeMap((userCredential: UserCredential) => {
-                      user.firebaseUser = userCredential.user;
-                      return this.getReloadedFirebaseUser(user);
-                    }),
-                    mergeMap((firebaseUser: firebase.User) => {
-                      user.firebaseUser = firebaseUser;
-                      return this.getIdTokenResult(user);
-                    }),
-                    mergeMap((idTokenResult: firebase.auth.IdTokenResult) => {
-                      return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
-                        mergeMap((cryptoKey: CryptoKey) => {
-                          return of({cryptoKey, idTokenResult});
-                        })
-                      );
-                    })
-                  )
-                }
-
-                return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
-                  mergeMap((cryptoKey) => of({cryptoKey, idTokenResult}))
+                return this.getTokenWithSecretKey().pipe(
+                  mergeMap((token) => {
+                    return this.loginWithSecuredToken(token)
+                  }),
+                  mergeMap((userCredential: UserCredential) => {
+                    user.firebaseUser = userCredential.user;
+                    return this.getReloadedFirebaseUser(user);
+                  }),
+                  mergeMap((firebaseUser: firebase.User) => {
+                    user.firebaseUser = firebaseUser;
+                    return this.getIdTokenResult(user);
+                  }),
+                  mergeMap((idTokenResult: firebase.auth.IdTokenResult) => {
+                    return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
+                      mergeMap((cryptoKey: CryptoKey) => {
+                        return of({cryptoKey, idTokenResult});
+                      })
+                    );
+                  })
                 )
-              })
-            ).subscribe(async (action: {cryptoKey: CryptoKey, idTokenResult: firebase.auth.IdTokenResult}) => {
-
-              if (action.idTokenResult.claims.isAnonymous) {
-                user.isAnonymous = true;
-                user.providerId = 'Anonymous';
-              } else {
-                user.isAnonymous = user.firebaseUser.isAnonymous;
-                user.providerId = user.firebaseUser.providerData[0].providerId;
               }
 
-              user.cryptoKey = action.cryptoKey;
-              user.idTokenResult = action.idTokenResult;
-              await this.userPostAction(actionUserDocSnap, user);
-            });
-          }
+              return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
+                mergeMap((cryptoKey) => of({cryptoKey, idTokenResult}))
+              )
+            })
+          ).subscribe(async (action: {cryptoKey: CryptoKey, idTokenResult: firebase.auth.IdTokenResult}) => {
+
+            if (action.idTokenResult.claims.isAnonymous) {
+              user.isAnonymous = true;
+              user.providerId = 'Anonymous';
+            } else {
+              user.isAnonymous = user.firebaseUser.isAnonymous;
+              user.providerId = user.firebaseUser.providerData[0].providerId;
+            }
+
+            user.cryptoKey = action.cryptoKey;
+            user.idTokenResult = action.idTokenResult;
+            await this.userPostAction(actionUserDocSnap, user);
+          });
         });
       } else {
         this.isWaitingForCryptoKey = false;
