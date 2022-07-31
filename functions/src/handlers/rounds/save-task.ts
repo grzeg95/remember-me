@@ -260,10 +260,13 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     }
   }
 
+  // get tasks from day to remove
+  const tasksFromTodayToRemovePromise = [];
+
   for (const taskFromDayToRemove of toRemove) {
-    transactionWrite.delete(
-      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
-    );
+    tasksFromTodayToRemovePromise.push(transaction.get(
+      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id)
+    ));
   }
 
   // update
@@ -298,6 +301,11 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
       description: task.description,
       timesOfDay: newTimesOfDay
     }, cryptoKey));
+  }
+
+  // remove tasks from day to remove
+  for (const taskFromDayToRemove of await Promise.all(tasksFromTodayToRemovePromise)) {
+    transactionWrite.delete(taskFromDayToRemove.ref);
   }
 
   return todaysIds.toArray();
