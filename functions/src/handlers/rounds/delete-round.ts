@@ -1,6 +1,7 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
+import {TransactionWrite} from "../../helpers/transaction-write";
 import {getUser, writeUser} from '../../helpers/user';
 import {
   decrypt,
@@ -32,6 +33,7 @@ export const handler = async (roundId: any, callableContext: CallableContext): P
 
   return app.runTransaction(async (transaction) => {
 
+    const transactionWrite = new TransactionWrite(transaction);
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundsInUserDecryptPromise = decrypt(userDocSnap.data()?.rounds, cryptoKey);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
@@ -71,9 +73,9 @@ export const handler = async (roundId: any, callableContext: CallableContext): P
 
     // remove all documents
     for (const doc of await Promise.all(docsToRemove)) {
-      transaction.delete(doc.ref);
+      transactionWrite.delete(doc.ref);
     }
-    transaction.delete(roundDocSnap.ref);
+    transactionWrite.delete(roundDocSnap.ref);
 
     // update user
     const roundsInUser: string[] = userDocSnap.data()?.rounds ? JSON.parse(await roundsInUserDecryptPromise) as string[] : [];
@@ -87,6 +89,7 @@ export const handler = async (roundId: any, callableContext: CallableContext): P
     };
     writeUser(transaction, userDocSnap, userDataToWrite);
 
+    await transactionWrite.execute();
     return transaction;
 
   }).then(() => ({

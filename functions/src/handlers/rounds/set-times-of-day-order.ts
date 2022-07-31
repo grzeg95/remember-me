@@ -1,6 +1,7 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
+import {TransactionWrite} from "../../helpers/transaction-write";
 import {getUser} from '../../helpers/user';
 import {
   decryptRound,
@@ -57,6 +58,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
 
   return app.runTransaction(async (transaction) => {
 
+    const transactionWrite = new TransactionWrite(transaction);
     const timeOfDay = data.timeOfDay;
     const roundId = data.roundId;
     const moveBy = data.moveBy;
@@ -79,16 +81,15 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
     timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
     // update user
-    const timesOfDayDataToWrite = await encryptRound({
+    transactionWrite.update(roundDocSnap.ref, encryptRound({
       timesOfDay,
       timesOfDayCardinality,
       name: round.name,
       todaysIds: round.todaysIds,
       tasksIds: round.tasksIds
-    }, cryptoKey);
+    }, cryptoKey));
 
-    transaction.update(roundDocSnap.ref, timesOfDayDataToWrite);
-
+    await transactionWrite.execute();
     return transaction;
 
   }).then(() => ({

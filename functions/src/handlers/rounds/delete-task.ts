@@ -2,6 +2,7 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {Task} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
+import {TransactionWrite} from "../../helpers/transaction-write";
 import {getUser} from '../../helpers/user';
 import {
   decryptRound,
@@ -15,6 +16,8 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 const app = firestore();
 
 export const proceedTaskRemoving = async (context: CallableContext, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot): Promise<Transaction> => {
+
+  const transactionWrite = new TransactionWrite(transaction);
 
   const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
@@ -96,12 +99,13 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
     const todayTask = await decryptToday(todayDocSnap.data() as {value: string}, cryptoKey);
 
     if (todayTask.tasksIds.length === 1) {
-      transaction.delete(todayDocSnap.ref);
+      transactionWrite.delete(todayDocSnap.ref);
       todaysIds.delete(todayDocSnap.ref.id);
     } else {
       const todayTasksIds = todayTask.tasksIds.toSet();
       todayTasksIds.delete(taskDocSnap.id);
-      transaction.update(todayDocSnap.ref, await encryptToday({
+
+      transactionWrite.update(todayDocSnap.ref, encryptToday({
         name: todayTask.name,
         tasksIds: todayTasksIds.toArray()
       }, cryptoKey));
@@ -113,23 +117,24 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
   * */
 
   // remove task
-  transaction.delete(taskDocSnap.ref);
+  transactionWrite.delete(taskDocSnap.ref);
   tasksIds.delete(taskDocSnap.id);
 
   // remove todayTasks
   for (const todayTaskDocSnap of todayTasks) {
-    transaction.delete(todayTaskDocSnap.ref);
+    transactionWrite.delete(todayTaskDocSnap.ref);
   }
 
-  const roundDataToWrite = await encryptRound({
+  // roundDataToWrite
+  transactionWrite.update(roundDocSnap.ref, encryptRound({
     timesOfDayCardinality,
     timesOfDay,
     name: round.name,
     todaysIds: todaysIds.toArray(),
     tasksIds: tasksIds.toArray()
-  }, cryptoKey);
+  }, cryptoKey));
 
-  transaction.update(roundDocSnap.ref, roundDataToWrite);
+  await transactionWrite.execute();
 
   return transaction;
 };

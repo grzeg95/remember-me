@@ -1,6 +1,7 @@
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {testRequirement} from '../../helpers/test-requirement';
 import {firestore} from 'firebase-admin';
+import {TransactionWrite} from "../../helpers/transaction-write";
 import {getUser, writeUser} from '../../helpers/user';
 import {
   decrypt, decryptRound,
@@ -61,6 +62,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
 
   return app.runTransaction(async (transaction) => {
 
+    const transactionWrite = new TransactionWrite(transaction);
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
     const userDocSnapData = userDocSnap.data();
@@ -88,7 +90,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       rounds.push(roundId);
       roundsEncryptPromise = encrypt(rounds, cryptoKey);
       created = true;
-      transaction.delete(roundDocSnapTmp.ref);
+      transactionWrite.delete(roundDocSnapTmp.ref);
 
       // update user
       const userDataToWrite = {
@@ -96,7 +98,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       };
       writeUser(transaction, userDocSnap, userDataToWrite);
 
-      transaction.create(roundDocSnap.ref, await roundEncryptPromise);
+      transactionWrite.create(roundDocSnap.ref, await roundEncryptPromise);
     } else {
 
       roundDocSnap = roundDocSnapTmp;
@@ -106,7 +108,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       * */
       testRequirement(round.name === data.name);
 
-      transaction.update(roundDocSnap.ref, await encryptRound({
+      transactionWrite.update(roundDocSnap.ref, await encryptRound({
         name: data.name,
         timesOfDay: round.timesOfDay,
         timesOfDayCardinality: round.timesOfDayCardinality,
@@ -115,6 +117,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       }, cryptoKey));
     }
 
+    await transactionWrite.execute();
     return transaction;
 
   }).then(() =>
