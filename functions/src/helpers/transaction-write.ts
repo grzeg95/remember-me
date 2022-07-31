@@ -1,52 +1,102 @@
 import {firestore} from 'firebase-admin';
 
-export interface TransactionWriteListItem {
-  transaction: firestore.Transaction,
+interface TransactionWriteListItem {
   docRef: firestore.DocumentReference,
-  type: 'set' | 'create' | 'update' | 'delete',
-  operation: any
+  data?: Object | Promise<Object>
 }
 
-export interface TransactionWriteList {
-  value: TransactionWriteListItem[];
-}
+export class TransactionWrite {
 
-export const transactionWriteAdd = (
-  transaction: firestore.Transaction,
-  transactionWriteList: TransactionWriteList,
-  docRef: firestore.DocumentReference,
-  type: 'set' | 'create' | 'update' | 'delete',
-  operation?: any
-) => {
-  transactionWriteList.value.push({
-    transaction,
-    docRef,
-    type,
-    operation
-  });
-};
+  setList: TransactionWriteListItem[] = [];
+  createList: TransactionWriteListItem[] = [];
+  updateList: TransactionWriteListItem[] = [];
+  deleteList: TransactionWriteListItem[] = [];
 
-export const transactionWriteExecute = async (transactionWriteList: TransactionWriteList) => {
-
-  while (transactionWriteList.value.length) {
-
-    const transactionWriteOperation = transactionWriteList.value.pop();
-
-    if (transactionWriteOperation) {
-      let writeOperation = transactionWriteOperation.operation;
-      if (writeOperation) {
-
-        if (writeOperation.constructor.name === 'Promise') {
-          writeOperation = await transactionWriteOperation.operation;
-        }
-
-        // @ts-ignore
-        transactionWriteOperation.transaction[transactionWriteOperation.type](transactionWriteOperation.docRef, writeOperation);
-      } else {
-
-        // @ts-ignore
-        transactionWriteOperation.transaction[transactionWriteOperation.type](transactionWriteOperation.docRef);
-      }
-    }
+  constructor(private transaction: firestore.Transaction) {
   }
-};
+
+  set(docRef: firestore.DocumentReference, data: Object | Promise<Object>) {
+    this.setList.push({
+      docRef,
+      data
+    });
+  }
+
+  create(docRef: firestore.DocumentReference, data: Object | Promise<Object>) {
+    this.createList.push({
+      docRef,
+      data
+    });
+  }
+
+  update(docRef: firestore.DocumentReference, data: Object | Promise<Object>) {
+    this.updateList.push({
+      docRef,
+      data
+    });
+  }
+
+  delete(docRef: firestore.DocumentReference) {
+    this.deleteList.push({
+      docRef
+    });
+  }
+
+  async setExecute() {
+    for (const item of this.setList) {
+      let data: any = item.data;
+
+      if (data?.constructor.name === 'Promise') {
+        data = await data;
+      }
+
+      // @ts-ignore
+      this.transaction.set(item.docRef, data);
+    }
+
+    this.setList = [];
+  }
+
+  async createExecute() {
+    for (const item of this.createList) {
+      let data: any = item.data;
+
+      if (data?.constructor.name === 'Promise') {
+        data = await data;
+      }
+
+      this.transaction.create(item.docRef, data);
+    }
+
+    this.createList = [];
+  }
+
+  async updateExecute() {
+    for (const item of this.updateList) {
+      let data: any = item.data;
+
+      if (data?.constructor.name === 'Promise') {
+        data = await data;
+      }
+
+      this.transaction.update(item.docRef, data);
+    }
+
+    this.updateList = [];
+  }
+
+  async deleteExecute() {
+    for (const item of this.deleteList) {
+      this.transaction.delete(item.docRef);
+    }
+
+    this.deleteList = [];
+  }
+
+  async execute() {
+    await this.setExecute();
+    await this.createExecute();
+    await this.updateExecute();
+    await this.deleteExecute();
+  }
+}

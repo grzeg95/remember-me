@@ -13,11 +13,7 @@ import {
   encryptTodayTask, getCryptoKey
 } from '../../security/security';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
-import {
-  transactionWriteAdd,
-  transactionWriteExecute,
-  TransactionWriteList
-} from '../../helpers/transaction-write';
+import {TransactionWrite} from '../../helpers/transaction-write';
 
 const app = firestore();
 
@@ -96,7 +92,7 @@ export const prepareTimesOfDay = (
   };
 };
 
-export const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, roundDocSnapData: Round, transactionWriteList: TransactionWriteList, cryptoKey: CryptoKey) => {
+export const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, roundDocSnapData: Round, transactionWrite: TransactionWrite, cryptoKey: CryptoKey) => {
 
   // create task for days
   // add task timesOfDay
@@ -221,19 +217,13 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   for (const dayToCreate of toCreate) {
 
     if (!todayDocRefsMap[dayToCreate]) {
-      transactionWriteAdd(
-        transaction,
-        transactionWriteList,
+      transactionWrite.create(
         newTodayItemsMap[dayToCreate].ref.collection(`task`).doc(taskDocSnap.id),
-        'create',
         encryptedTodayTaskToAddPromise
       );
     } else {
-      transactionWriteAdd(
-        transaction,
-        transactionWriteList,
+      transactionWrite.create(
         todayDocRefsMap[dayToCreate].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
-        'create',
         encryptedTodayTaskToAddPromise
       );
     }
@@ -242,7 +232,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   // prepare
   // create day if not exists
   for (const dayToCreate of newTodayItemsForTaskToCreate) {
-    transactionWriteAdd(transaction, transactionWriteList, dayToCreate.docSnap.ref, 'create', encryptToday({
+    transactionWrite.create(dayToCreate.docSnap.ref, encryptToday({
       name: dayToCreate.dayToCreate,
       tasksIds: [taskDocSnap.id]
     }, cryptoKey));
@@ -253,7 +243,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     if (todayDocRefsMap[dayToCreate]) {
       const todayTask = todayDocRefsMap[dayToCreate].today;
 
-      transactionWriteAdd(transaction, transactionWriteList, todayDocRefsMap[dayToCreate].docSnap.ref, 'update', encryptToday({
+      transactionWrite.update(todayDocRefsMap[dayToCreate].docSnap.ref, encryptToday({
         name: todayTask.name,
         tasksIds: [...todayTask.tasksIds, taskDocSnap.id]
       }, cryptoKey));
@@ -264,18 +254,15 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     if (!taskDaysOfTheWeek.has(day)) {
       const todayTaskIds = todayDocRefsMap[day].today.tasksIds;
       if (todayTaskIds.length === 1) {
-        transactionWriteAdd(transaction, transactionWriteList, todayDocRefsMap[day].docSnap.ref, 'delete');
+        transactionWrite.delete(todayDocRefsMap[day].docSnap.ref);
         todaysIds.delete(todayDocRefsMap[day].docSnap.ref.id);
       }
     }
   }
 
   for (const taskFromDayToRemove of toRemove) {
-    transactionWriteAdd(
-      transaction,
-      transactionWriteList,
+    transactionWrite.delete(
       todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
-      'delete'
     );
   }
 
@@ -307,7 +294,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
       }
     }
 
-    transactionWriteAdd(transaction, transactionWriteList, todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, 'set', encryptTodayTask({
+    transactionWrite.set(todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, encryptTodayTask({
       description: task.description,
       timesOfDay: newTimesOfDay
     }, cryptoKey));
@@ -316,12 +303,9 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   return todaysIds.toArray();
 };
 
-const updateRound = (transaction: Transaction, transactionWriteList: TransactionWriteList, userDocSnap: DocumentSnapshot, roundId: string, round: Round, cryptoKey: CryptoKey): void => {
-  transactionWriteAdd(
-    transaction,
-    transactionWriteList,
+const updateRound = (transaction: Transaction, transactionWrite: TransactionWrite, userDocSnap: DocumentSnapshot, roundId: string, round: Round, cryptoKey: CryptoKey): void => {
+  transactionWrite.update(
     userDocSnap.ref.collection('rounds').doc(roundId),
-    'update',
     encryptRound(round, cryptoKey)
   );
 }
@@ -422,15 +406,13 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
   let created = false;
   let taskId: string = data.taskId;
   const roundId: string = data.roundId;
-  const transactionWriteList: TransactionWriteList = {
-    value: []
-  };
 
   testRequirement(!auth?.token.secretKey);
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
   return app.runTransaction(async (transaction) => {
 
+    const transactionWrite = new TransactionWrite(transaction)
     const userDocSnap = await getUser(app, transaction, auth?.uid as string);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
@@ -501,20 +483,20 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
         for (const todayTask of todayTaskDocSnapsToUpdate) {
           testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
 
-          transactionWriteAdd(transaction, transactionWriteList, todayTask.ref, 'update', new Promise(async (resolve) => {
+          transactionWrite.update(todayTask.ref, new Promise(async (resolve) => {
             resolve({
               description: await encrypt(task.description, cryptoKey)
             });
           }));
         }
 
-        transactionWriteAdd(transaction, transactionWriteList, taskDocSnap.ref, 'update', encryptTask({
+        transactionWrite.update(taskDocSnap.ref, encryptTask({
           description: task.description,
           timesOfDay: task.timesOfDay,
           daysOfTheWeek: task.daysOfTheWeek
         }, cryptoKey));
 
-        await transactionWriteExecute(transactionWriteList);
+        await transactionWrite.execute();
         return transaction;
       }
 
@@ -523,25 +505,25 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       * */
       if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-        transactionWriteAdd(transaction, transactionWriteList, taskDocSnap.ref, 'set', encryptTask(task, cryptoKey));
+        transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
 
         // update round
         updateRound(
           transaction,
-          transactionWriteList,
+          transactionWrite,
           userDocSnap,
           roundId,
           {
             timesOfDay: roundDocSnapData.timesOfDay,
             timesOfDayCardinality: roundDocSnapData.timesOfDayCardinality,
             name: roundDocSnapData.name,
-            todaysIds: await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, transactionWriteList, cryptoKey),
+            todaysIds: await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey),
             tasksIds: tasksIds.toArray()
           },
           cryptoKey
         );
 
-        await transactionWriteExecute(transactionWriteList);
+        await transactionWrite.execute();
 
         return transaction;
       }
@@ -551,19 +533,19 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
     const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDay, data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
 
     // update task
-    transactionWriteAdd(transaction, transactionWriteList, taskDocSnap.ref, 'set', encryptTask(task, cryptoKey));
+    transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
 
     // update round
     updateRound(
       transaction,
-      transactionWriteList,
+      transactionWrite,
       userDocSnap,
       roundId,
       {
         timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
         timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
         name: roundDocSnapData.name,
-        todaysIds: await proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWriteList, cryptoKey),
+        todaysIds: await proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey),
         tasksIds: tasksIds.toArray()
       },
       cryptoKey
@@ -571,10 +553,10 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
 
     // delete taskDocSnapTmp if created
     if (created) {
-      transactionWriteAdd(transaction, transactionWriteList, taskDocSnapTmp.ref, 'delete');
+      transactionWrite.delete(taskDocSnapTmp.ref);
     }
 
-    await transactionWriteExecute(transactionWriteList);
+    await transactionWrite.execute();
     return transaction;
 
   }).then(() =>

@@ -5,7 +5,7 @@ import {UserRecord} from 'firebase-admin/lib/auth';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../config';
 import {prepareTimesOfDay, proceedTodayTasks} from '../handlers/rounds/save-task';
 import {testRequirement} from '../helpers/test-requirement';
-import {transactionWriteAdd, transactionWriteExecute, TransactionWriteList} from '../helpers/transaction-write';
+import {TransactionWrite} from "../helpers/transaction-write";
 import {getUser} from '../helpers/user';
 import {encrypt, encryptRound, encryptTask} from './security';
 
@@ -19,7 +19,7 @@ import {Task} from '../helpers/models';
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWriteList: TransactionWriteList) => {
+const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
 
   // get round
   const roundDocSnap: DocumentSnapshot = await transaction.get(userDocSnap.ref.collection('rounds').doc());
@@ -48,10 +48,10 @@ const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: 
     description: '',
     daysOfTheWeek: [],
     timesOfDay: [],
-  }, roundDocSnap, decryptedRound, transactionWriteList, cryptoKey);
+  }, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
 
   // create round
-  transactionWriteAdd(transaction, transactionWriteList, roundDocSnap.ref, 'create', encryptRound({
+  transactionWrite.create(roundDocSnap.ref, encryptRound({
     timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
     timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
     name: 'Daily',
@@ -59,7 +59,7 @@ const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: 
     tasksIds: [taskDocSnap.id]
   }, cryptoKey));
 
-  transactionWriteAdd(transaction, transactionWriteList, taskDocSnap.ref, 'set', encryptTask(task, cryptoKey));
+  transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
 
   return roundId;
 };
@@ -111,16 +111,14 @@ export const handler = async (user: UserRecord) => {
 
       return app.runTransaction(async (transaction) => {
 
-        const transactionWriteList: TransactionWriteList = {
-          value: []
-        };
+        const transactionWrite = new TransactionWrite(transaction);
 
         const userDocSnap = await getUser(app, transaction, user.uid);
 
         // createSampleUserData
-        const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWriteList);
+        const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
 
-        transactionWriteAdd(transaction, transactionWriteList, userDocSnap.ref, 'set', new Promise(async (resolve) => {
+        transactionWrite.set(userDocSnap.ref, new Promise(async (resolve) => {
 
           const rounds = encrypt([roundId], cryptoKey);
 
@@ -129,7 +127,7 @@ export const handler = async (user: UserRecord) => {
           });
         }));
 
-        await transactionWriteExecute(transactionWriteList);
+        await transactionWrite.execute();
 
         return transaction;
       });
