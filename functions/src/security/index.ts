@@ -3,7 +3,7 @@ import {regionId} from '../config';
 
 export const getTokenWithSecretKey = runWith({
   timeoutSeconds: 60,
-  memory: '512MB',
+  memory: '1GB',
   maxInstances: 2
 }).region(regionId).https.onCall(require('./get-token-with-secret-key').handler);
 
