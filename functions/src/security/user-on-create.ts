@@ -123,7 +123,8 @@ export const handler = async (user: UserRecord) => {
           const rounds = encrypt([roundId], cryptoKey);
 
           resolve({
-            rounds: await rounds
+            rounds: await rounds,
+            hasEncryptedSecretKey: true
           });
         }));
 

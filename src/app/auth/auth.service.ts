@@ -80,19 +80,20 @@ export class AuthService {
           })
         ).subscribe(async (actionUserDocSnap) => {
 
-          currentUser = this.user$.value;
+          if (actionUserDocSnap.payload.data()?.hasEncryptedSecretKey) {
 
-          if (!currentUser) {
-            currentUser = user;
+            if (currentUser.idTokenResult?.claims.secretKey) {
+              await this.userPostAction(currentUser, actionUserDocSnap);
+              return;
+            }
+
+            if (this.isWaitingForCryptoKey) {
+              return;
+            }
+
+            this.isWaitingForCryptoKey = true;
+            this.proceedGettingOfCryptoKey(currentUser, actionUserDocSnap);
           }
-
-          if (this.user$.value?.idTokenResult?.claims.secretKey) {
-            await this.userPostAction(currentUser, actionUserDocSnap);
-            return;
-          }
-
-          this.isWaitingForCryptoKey = true;
-          this.proceedGettingOfCryptoKey(currentUser, actionUserDocSnap);
         });
       } else {
         this.isWaitingForCryptoKey = false;
@@ -165,6 +166,7 @@ export class AuthService {
   }
 
   getTokenWithSecretKey(): Observable<string> {
+    console.log('getTokenWithSecretKey');
     return this.fns.httpsCallable<void, string>('getTokenWithSecretKey')();
   }
 

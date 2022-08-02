@@ -16,4 +16,5 @@ export interface User {
 
 export interface EncryptedUser {
   rounds: string;
+  hasEncryptedSecretKey: boolean;
 }
