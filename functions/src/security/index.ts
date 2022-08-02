@@ -1,11 +1,11 @@
 import {runWith} from 'firebase-functions';
 import {regionId} from '../config';
 
-export const getSecuredToken = runWith({
+export const getTokenWithSecretKey = runWith({
   timeoutSeconds: 60,
   memory: '512MB',
   maxInstances: 2
-}).region(regionId).https.onCall(require('./get-secured-token').handler);
+}).region(regionId).https.onCall(require('./get-token-with-secret-key').handler);
 
 export const userOnCreate = runWith({
   timeoutSeconds: 60,

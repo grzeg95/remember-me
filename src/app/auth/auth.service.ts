@@ -165,7 +165,7 @@ export class AuthService {
   }
 
   getTokenWithSecretKey(): Observable<string> {
-    return this.fns.httpsCallable<null, string>('getSecuredToken')(null);
+    return this.fns.httpsCallable<void, string>('getTokenWithSecretKey')();
   }
 
   loginWithSecuredToken(tokenWithSecretKey: string): Observable<UserCredential> {
