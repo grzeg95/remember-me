@@ -10,6 +10,9 @@ export const handler = async (
   context: CallableContext
 ): Promise<string | null> => {
 
+  // with data
+  testRequirement(data !== null)
+
   // without app check
   testRequirement(!context.app);
 
