@@ -9,13 +9,15 @@ import { AuthService } from "../auth/auth.service";
 export class GuestComponent {
 
   showUserDataPolicy = false;
-
-  get whileLoginIn(): boolean {
-    return this.authService.whileLoginIn;
-  }
+  whileLoginIn$ = this.authService.whileLoginIn$;
 
   constructor(
     private authService: AuthService
   ) {
+  }
+
+  renewCookie() {
+    // @ts-ignore
+    Cookiebot.renew();
   }
 }

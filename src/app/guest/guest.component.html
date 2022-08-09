@@ -1,4 +1,4 @@
-<ng-container *ngIf="!whileLoginIn">
+<ng-container *ngIf="!(whileLoginIn$ | async)">
   <div class="container">
     <h1>Hello there.</h1>
     <h3>Do you remember?</h3>
@@ -73,10 +73,17 @@
           </p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
+          <div class="pseudo-img dice">🎲</div>
+          <h3 class="name">Content-security-policy</h3>
+          <p class="description">
+            Protected against data theft, site destruction and malware distribution.
+          </p>
+        </div>
+        <div class="col-sm-6 col-lg-4 item">
           <img src="/assets/img/branding/cookiebot_blue_logo.svg" class="icon cookiebot"/>
           <h3 class="name">Control privacy</h3>
           <p class="description">
-            <a class="cookiebot-renew" onclick="Cookiebot.renew();">Check out your cookies.</a>
+            <a class="cookiebot-renew" (click)="renewCookie()">Check out your cookies.</a>
           </p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
