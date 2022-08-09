@@ -1,18 +1,26 @@
-import { Injectable } from '@angular/core';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { AuthService } from '../../../auth/auth.service';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
-import { filter, map, switchMap } from 'rxjs/operators';
-import { AngularFireFunctions } from '@angular/fire/compat/functions';
-import { ConnectionService } from "../../../connection.service";
-import { decryptRound } from '../../../security';
-import { Round } from '../../models';
-import { ActivatedRoute } from '@angular/router';
+import {Inject, Injectable} from '@angular/core';
+import {AuthService} from '../../../auth/auth.service';
+import {BehaviorSubject, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
+import {ConnectionService} from '../../../connection.service';
+import {basicEncryptedValueConverter, decryptRound} from '../../../security';
+import {Round} from '../../models';
+import {ActivatedRoute} from '@angular/router';
+import {
+  limit,
+  collection,
+  query,
+  Firestore,
+  onSnapshot,
+  doc,
+  getDoc
+} from 'firebase/firestore';
+import {Functions, httpsCallable} from 'firebase/functions';
 
 @Injectable()
 export class RoundsService {
 
-  protected roundsListSub: Subscription;
+  protected roundsListUnsub: () => void;
   protected roundsOrderSub: Subscription;
   protected paramRoundIdSelectedSub: Subscription;
   protected nowSub: Subscription;
@@ -35,11 +43,11 @@ export class RoundsService {
   setRoundsOrderSub: Subscription;
 
   constructor(
-    protected afs: AngularFirestore,
     protected authService: AuthService,
-    protected fns: AngularFireFunctions,
     protected route: ActivatedRoute,
-    protected connectionsService: ConnectionService
+    protected connectionsService: ConnectionService,
+    @Inject('FUNCTIONS') private readonly functions: Functions,
+    @Inject('FIRESTORE') private readonly firestore: Firestore
   ) {
     this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {
@@ -68,8 +76,9 @@ export class RoundsService {
 
     this.isOnlineSub.unsubscribe();
 
-    if (this.roundsListSub && !this.roundsListSub.closed) {
-      this.roundsListSub.unsubscribe();
+    if (this.roundsListUnsub) {
+      this.roundsListUnsub();
+      this.roundsListUnsub = undefined;
     }
 
     if (this.roundsOrderSub && !this.roundsOrderSub.closed) {
@@ -95,27 +104,26 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.roundsListSub = this.afs.collection<{ value: string }>(`users/${ user.uid }/rounds`, (ref) => ref.limit(5)).valueChanges({idField: 'id'}).pipe(
-      switchMap(async (docs) => {
+    this.roundsListUnsub = onSnapshot(query(
+      collection(this.firestore, `users/${user.uid}/rounds`).withConverter(basicEncryptedValueConverter),
+      limit(5)
+    ), async (snap) => {
 
-        // decrypt
-        const roundsDecryptPromise: Promise<Round>[] = [];
+      // decrypt
+      const roundsDecryptPromise: Promise<Round>[] = [];
 
-        for (const doc of docs) {
-          roundsDecryptPromise.push(decryptRound(doc, user.cryptoKey));
-        }
+      for (const doc of snap.docs) {
+        roundsDecryptPromise.push(decryptRound(doc.data(), user.cryptoKey));
+      }
 
-        const decryptedRoundList = await Promise.all(roundsDecryptPromise);
+      const decryptedRoundList = await Promise.all(roundsDecryptPromise);
 
-        for (const [i, doc] of docs.entries()) {
-          decryptedRoundList[i].id = doc.id;
-        }
+      for (const [i, doc] of snap.docs.entries()) {
+        decryptedRoundList[i].id = doc.id;
+      }
 
-        return decryptedRoundList;
-      })
-    ).subscribe((roundsList) => {
       this.roundsListFirstLoad$.next(false);
-      this.generateLists(roundsList, this.roundsOrder$.value);
+      this.generateLists(decryptedRoundList, this.roundsOrder$.value);
     });
 
     this.roundsOrderSub = this.authService.user$.subscribe((user) => {
@@ -185,17 +193,20 @@ export class RoundsService {
     }
   }
 
-  saveRound(name: string, roundId: string = 'null'): Observable<any> {
-    return this.fns.httpsCallable('saveRound')({
-      roundId,
-      name
-    });
+  saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
+    return of(httpsCallable(this.functions, 'saveRound')({roundId, name})).pipe(
+      mergeMap((e) => e),
+      mergeMap(async (e) => e.data as {roundId: string, details: string, created: boolean})
+    );
   }
 
   getRoundById$(roundId: string): Observable<Promise<Round | null>> {
     const user = this.authService.user$.value;
 
-    return this.afs.doc<{ value: string }>(`users/${ user.uid }/rounds/${ roundId }`).get().pipe(
+    return of(getDoc(
+      doc(this.firestore, `users/${user.uid}/rounds/${roundId}`).withConverter(basicEncryptedValueConverter)
+    )).pipe(
+      mergeMap((e) => e),
       map(async (docSnap) => {
         const round = docSnap.data();
         if (round) {
@@ -206,7 +217,10 @@ export class RoundsService {
     );
   }
 
-  setRoundsOrder(data: { moveBy: number, roundId: string }): Observable<{ [key: string]: string }> {
-    return this.fns.httpsCallable('setRoundsOrder')(data);
+  setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
+    return of(httpsCallable(this.functions, 'setRoundsOrder')(data)).pipe(
+      mergeMap((e) => e),
+      mergeMap(async (e) => e.data as {[key: string]: string})
+    );
   }
 }

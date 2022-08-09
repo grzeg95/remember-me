@@ -1,37 +1,51 @@
 import {APP_INITIALIZER, NgModule} from '@angular/core';
-import {initializeAppCheck, ReCaptchaV3Provider} from '@angular/fire/app-check';
-import {AngularFireFunctions, REGION} from '@angular/fire/compat/functions';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {environment} from '../environments/environment';
+import {AuthGuard} from './auth/auth-guard.service';
 import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
-import {AngularFireAuth} from '@angular/fire/compat/auth';
-import {USE_EMULATOR as USE_FIRESTORE_EMULATOR} from '@angular/fire/compat/firestore';
 import {CustomValidators} from './custom-validators';
 import {ExtraParametersGuard} from './extra-parameters-guard.service';
+import {connectAuthEmulator, getAuth} from 'firebase/auth';
+import {initializeAppCheck, ReCaptchaV3Provider} from 'firebase/app-check';
+import {initializeApp, getApps, getApp} from 'firebase/app';
+import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
+import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
+import {getAnalytics} from 'firebase/analytics';
 
-export function initializeEmulators(afAuth: AngularFireAuth, fns: AngularFireFunctions): () => Promise<void> {
-  return () => {
-    return new Promise((resolve) => {
-      if (!environment.production && environment.dev) {
-        Promise.all([
-          afAuth.useEmulator(`${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`),
-          fns.useFunctionsEmulator(`${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}`)
-        ]).then(() => resolve());
-      }
-      return resolve();
-    });
-  };
-}
+const getFirebaseApp = () => {
+  const apps = getApps();
 
-export function initializeAppCheckPrivate(afAuth: AngularFireAuth): () => Promise<void> {
+  if (apps.length === 0) {
+    return initializeApp(environment.firebase);
+  }
+
+  return getApp();
+};
+
+export function initializeFirebase(): () => void {
   return () => {
-    return afAuth.app.then((app) => {
-      initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(environment.recaptcha),
-        isTokenAutoRefreshEnabled: true,
-      });
+
+    const app = getFirebaseApp();
+
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    const functions = getFunctions(app, environment.firebase.locationId);
+
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(environment.recaptcha),
+      isTokenAutoRefreshEnabled: true
     });
+
+    if (!environment.production && environment.dev) {
+      connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
+      connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
+      connectFunctionsEmulator(
+        functions,
+        `${environment.emulators.functions.host}`,
+        environment.emulators.functions.port
+      );
+    }
   };
 }
 
@@ -40,26 +54,27 @@ export function initializeAppCheckPrivate(afAuth: AngularFireAuth): () => Promis
     {
       provide: APP_INITIALIZER,
       multi: true,
-      deps: [AngularFireAuth, AngularFireFunctions],
-      useFactory: initializeEmulators
+      useFactory: initializeFirebase
     },
     {
-      provide: APP_INITIALIZER,
-      multi: true,
-      deps: [AngularFireAuth],
-      useFactory: initializeAppCheckPrivate
+      provide: 'FUNCTIONS', useValue: getFunctions(getFirebaseApp(), environment.firebase.locationId)
     },
-    {provide: REGION, useValue: environment.firebase.locationId},
+    {
+      provide: 'AUTH', useValue: getAuth(getFirebaseApp())
+    },
+    {
+      provide: 'FIRESTORE', useValue: getFirestore(getFirebaseApp())
+    },
+    {
+      provide: 'ANALYTICS', useValue: getAnalytics(getFirebaseApp())
+    },
     {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
     {provide: Window, useValue: window},
-    {
-      provide: USE_FIRESTORE_EMULATOR,
-      useValue: !environment.production && environment.dev ? [environment.emulators.firestore.host, environment.emulators.firestore.port] : undefined
-    },
     AuthService,
     ConnectionService,
     ExtraParametersGuard,
-    CustomValidators
+    CustomValidators,
+    AuthGuard
   ]
 })
 export class CoreModule {

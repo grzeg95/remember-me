@@ -12,7 +12,6 @@ import { AuthService } from '../auth/auth.service';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { ConnectionService } from "../connection.service";
 import { UserSettingsComponent } from '../user/views/user-settings/user-settings.component';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-nav',
@@ -22,10 +21,8 @@ import { Subscription } from 'rxjs';
 export class NavComponent implements OnInit {
 
   isUserDecrypted: boolean;
-  isUserDecryptedSub: Subscription;
-
   isOnline: boolean;
-  isOnlineSub: Subscription;
+  whileLoginIn: boolean;
 
   get userPhoto(): string {
 
@@ -36,10 +33,6 @@ export class NavComponent implements OnInit {
     }
 
     return null;
-  }
-
-  get whileLoginIn(): boolean {
-    return this.authService.whileLoginIn;
   }
 
   faTasks = faTasks;
@@ -59,8 +52,9 @@ export class NavComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isUserDecryptedSub = this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
+    this.authService.whileLoginIn$.subscribe((whileLoginIn) => this.whileLoginIn = whileLoginIn);
+    this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   googleSignIn(): void {

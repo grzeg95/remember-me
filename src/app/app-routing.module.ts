@@ -1,18 +1,16 @@
-import {AngularFireAuthGuard, redirectLoggedInTo} from '@angular/fire/compat/auth-guard';
 import {RouterModule, Routes} from '@angular/router';
 
 import {NgModule} from '@angular/core';
 import {RouterDict} from './app.constants';
 import {ExtraParametersGuard} from './extra-parameters-guard.service';
+import {AuthGuard} from './auth/auth-guard.service';
 import {GuestComponent} from './guest/guest.component';
-
-const redirectLoggedInToUserEnterView = () => redirectLoggedInTo(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
 
 const appRoutes: Routes = [
   {
     path: '',
-    canActivate: [ExtraParametersGuard, AngularFireAuthGuard],
-    data: {authGuardPipe: redirectLoggedInToUserEnterView},
+    canActivate: [ExtraParametersGuard, AuthGuard],
+    data: {redirectLoggedInTo: ['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]},
     component: GuestComponent,
     pathMatch: 'full'
   },

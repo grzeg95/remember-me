@@ -1,4 +1,4 @@
-import firebase from 'firebase/compat/app';
+import {User as FirebaseUser, IdTokenResult} from 'firebase/auth';
 
 export interface User {
   rounds?: string[];
@@ -10,8 +10,8 @@ export interface User {
   cryptoKey?: CryptoKey;
   providerId?: string;
   isAnonymous?: boolean;
-  firebaseUser: firebase.User,
-  idTokenResult: firebase.auth.IdTokenResult
+  firebaseUser: FirebaseUser,
+  idTokenResult: IdTokenResult
 }
 
 export interface EncryptedUser {

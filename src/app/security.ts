@@ -1,6 +1,47 @@
-import {Today} from '../../functions/src/helpers/models';
-import {Round, Task, TodayTask} from './user/models';
+import {DocumentData, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
+import {EncryptedUser} from './auth/user-data.model';
+import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
 import {Buffer} from 'buffer';
+
+export type BasicEncryptedValue = { value: string };
+
+export const basicEncryptedValueConverter = {
+  toFirestore(): DocumentData {
+    return {};
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): BasicEncryptedValue {
+    const data = snapshot.data(options)!;
+    return {
+      value: data.value
+    } as BasicEncryptedValue;
+  }
+};
+
+export const userConverter = {
+  toFirestore(): DocumentData {
+    return {};
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): EncryptedUser {
+    const data = snapshot.data(options)!;
+    return {
+      hasEncryptedSecretKey: data.hasEncryptedSecretKey,
+      rounds: data.rounds
+    } as EncryptedUser;
+  }
+};
+
+export const encryptedTodayTaskConverter = {
+  toFirestore(): DocumentData {
+    return {};
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): EncryptedTodayTask {
+    const data = snapshot.data(options)!;
+    return {
+      description: data.description,
+      timesOfDay: data.timesOfDay
+    } as EncryptedTodayTask;
+  }
+};
 
 export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Promise<string> => {
 
@@ -19,7 +60,7 @@ export const decrypt = async (encryptedData: string, cryptoKey: CryptoKey): Prom
   return null;
 };
 
-export const decryptTask = async (encryptedTask: { value: string } | undefined, cryptoKey: CryptoKey): Promise<Task> => {
+export const decryptTask = async (encryptedTask: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Task> => {
 
   if (encryptedTask) {
     return JSON.parse(await decrypt(encryptedTask.value, cryptoKey));
@@ -32,7 +73,7 @@ export const decryptTask = async (encryptedTask: { value: string } | undefined, 
   };
 };
 
-export const decryptRound = async (encryptedRound: { value: string } | undefined, cryptoKey: CryptoKey): Promise<Round> => {
+export const decryptRound = async (encryptedRound: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Round> => {
 
   if (encryptedRound) {
     return JSON.parse(await decrypt(encryptedRound.value, cryptoKey));
@@ -47,7 +88,7 @@ export const decryptRound = async (encryptedRound: { value: string } | undefined
   };
 };
 
-export const decryptTodayTask = async (encryptedTodayTask: { description: string; timesOfDay: { [key in string]: boolean } }, cryptoKey: CryptoKey): Promise<TodayTask> => {
+export const decryptTodayTask = async (encryptedTodayTask: EncryptedTodayTask, cryptoKey: CryptoKey): Promise<TodayTask> => {
 
   const timesOfDay: { [key in string]: boolean } = {};
   const timesOfDayEncryptedMap: { [key in string]: string } = {};
@@ -65,7 +106,7 @@ export const decryptTodayTask = async (encryptedTodayTask: { description: string
   };
 };
 
-export const decryptToday = async (encryptedToday: { value: string }, cryptoKey: CryptoKey): Promise<Today> => {
+export const decryptToday = async (encryptedToday: BasicEncryptedValue, cryptoKey: CryptoKey): Promise<Today> => {
 
   if (encryptedToday) {
     return JSON.parse(await decrypt(encryptedToday.value, cryptoKey));

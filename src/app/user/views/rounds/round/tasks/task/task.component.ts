@@ -1,24 +1,24 @@
-import { ENTER } from '@angular/cdk/keycodes';
-import { Location } from '@angular/common';
-import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { AngularFireFunctions } from '@angular/fire/compat/functions';
-import { AbstractControl, FormArray, FormControl, FormGroup } from '@angular/forms';
-import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
-import { MatChipInputEvent } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router, UrlTree } from '@angular/router';
-import { asapScheduler, BehaviorSubject, Subscription } from 'rxjs';
+import {ENTER} from '@angular/cdk/keycodes';
+import {Location} from '@angular/common';
+import {Component, ElementRef, Inject, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
+import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
+import {MatChipInputEvent} from '@angular/material/chips';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {ActivatedRoute, Router, UrlTree} from '@angular/router';
+import {asapScheduler, BehaviorSubject, mergeMap, of, Subscription} from 'rxjs';
 import '../../../../../../../../global.prototype';
-import { startWith } from 'rxjs/operators';
-import { RouterDict } from '../../../../../../app.constants';
-import { ConnectionService } from "../../../../../../connection.service";
-import { CustomValidators } from '../../../../../../custom-validators';
-import { HTTPError, HTTPSuccess, Round, TaskForm, Task } from '../../../../../models';
-import { TaskDialogConfirmDeleteComponent } from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
-import { TaskService } from './task.service';
-import { RoundService } from '../../round.service';
-import { RoundsService } from '../../../rounds.service';
+import {startWith} from 'rxjs/operators';
+import {RouterDict} from '../../../../../../app.constants';
+import {ConnectionService} from "../../../../../../connection.service";
+import {CustomValidators} from '../../../../../../custom-validators';
+import {HTTPError, HTTPSuccess, Round, TaskForm, Task} from '../../../../../models';
+import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import {TaskService} from './task.service';
+import {RoundService} from '../../round.service';
+import {RoundsService} from '../../../rounds.service';
+import {httpsCallable, Functions} from 'firebase/functions';
 
 @Component({
   selector: 'app-task',
@@ -86,7 +86,6 @@ export class TaskComponent implements OnInit, OnDestroy {
   constructor(
     private activeRoute: ActivatedRoute,
     private location: Location,
-    private fns: AngularFireFunctions,
     public dialog: MatDialog,
     private snackBar: MatSnackBar,
     private roundService: RoundService,
@@ -95,7 +94,8 @@ export class TaskComponent implements OnInit, OnDestroy {
     private roundsService: RoundsService,
     private router: Router,
     private route: ActivatedRoute,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    @Inject('FUNCTIONS') private readonly functions: Functions
   ) {
   }
 
@@ -344,15 +344,26 @@ export class TaskComponent implements OnInit, OnDestroy {
     task.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
 
-    this.saveTaskSub = this.fns.httpsCallable('saveTask')({
-      task: {
-        description: task.description,
-        daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
-        timesOfDay: task.timesOfDay
-      },
-      taskId: this.id,
-      roundId: this.roundsService.roundSelected$.value.id
-    }).subscribe((success: HTTPSuccess) => {
+    of(httpsCallable(this.functions, 'getTokenWithSecretKey')()).pipe(
+      mergeMap(async (e) => {
+        return await e.then((data) => data.data as string)
+      })
+    );
+
+    this.saveTaskSub = of(
+      httpsCallable(this.functions, 'saveTask')({
+        task: {
+          description: task.description,
+          daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
+          timesOfDay: task.timesOfDay
+        },
+        taskId: this.id,
+        roundId: this.roundsService.roundSelected$.value.id
+      })).pipe(
+      mergeMap(async (e) => {
+        return await e.then((data) => data.data as HTTPSuccess)
+      })
+    ).subscribe((success: HTTPSuccess) => {
       this.zone.run(() => {
         if (success.created) {
           this.location.go(this.router.createUrlTree(['./', success.taskId], {relativeTo: this.route}).toString());
@@ -446,10 +457,13 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.disable();
         this.deletingInProgress = true;
 
-        this.fns.httpsCallable('deleteTask')({
+        of(httpsCallable(this.functions, 'deleteTask')({
           taskId: this.id,
           roundId: this.round.id
-        }).subscribe((success: HTTPSuccess) => {
+        })).pipe(
+          mergeMap((e) => e),
+          mergeMap(async (e) => e.data)
+        ).subscribe((success: HTTPSuccess) => {
           this.zone.run(() => {
             this.snackBar.open(success.details || 'Your operation has been done 😉');
             this.deepResetForm();
@@ -490,13 +504,13 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.applyFilter(this.taskForm.get('timeOfDay').value);
   }
 
-  static daysOfTheWeekValidator(g: FormGroup): { required: boolean } {
+  static daysOfTheWeekValidator(g: FormGroup): {required: boolean} {
     const rawValue = g.getRawValue();
     const some = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].some((checkbox) => rawValue[checkbox]);
     return some ? null : {required: true};
   }
 
-  static timesOfDayValidator(g: FormArray): { required: boolean } {
+  static timesOfDayValidator(g: FormArray): {required: boolean} {
     return g.value.length > 0 && g.value.length <= 10 ? null : {required: true};
   }
 }

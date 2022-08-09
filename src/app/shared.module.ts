@@ -1,8 +1,5 @@
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import {NgModule} from '@angular/core';
-import {AngularFireAuthModule} from '@angular/fire/compat/auth';
-import {AngularFirestoreModule} from '@angular/fire/compat/firestore';
-import {AngularFireFunctionsModule} from '@angular/fire/compat/functions';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatChipsModule} from '@angular/material/chips';
 import {MatExpansionModule} from '@angular/material/expansion';
@@ -25,9 +22,6 @@ import {LoadingTextComponent} from './loading-text/loading-text.component';
 import {CommonModule} from '@angular/common';
 
 const MODULES = [
-  AngularFireAuthModule,
-  AngularFireFunctionsModule,
-  AngularFirestoreModule,
   FontAwesomeModule,
   FormsModule,
   MatButtonModule,

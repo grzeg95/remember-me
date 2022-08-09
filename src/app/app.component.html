@@ -1,6 +1,6 @@
 <app-nav></app-nav>
 
-<mat-spinner *ngIf="(isUserDecrypted$ | async) === undefined || whileLoginIn"
+<mat-spinner *ngIf="(isUserDecrypted$ | async) === undefined || (whileLoginIn$ | async)"
              [strokeWidth]="isWaitingForCryptoKey ? 8 : 5"
              [color]="isWaitingForCryptoKey ? 'accent' : 'primary'"></mat-spinner>
 <router-outlet></router-outlet>

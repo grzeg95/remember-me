@@ -1,38 +1,52 @@
-import {Injectable} from '@angular/core';
-import {AngularFireAuth} from '@angular/fire/compat/auth';
-import {AngularFirestore} from '@angular/fire/compat/firestore';
-import {AngularFireFunctions} from '@angular/fire/compat/functions';
+import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
-import {asyncScheduler, BehaviorSubject, interval, mergeMap, Observable, of, Subscription} from 'rxjs';
-import {catchError} from 'rxjs/operators';
-import {decrypt} from '../security';
-import {HTTPError} from '../user/models';
-import {User, EncryptedUser} from './user-data.model';
+import {asapScheduler, BehaviorSubject, interval, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {decrypt, userConverter} from '../security';
+import {User} from './user-data.model';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 import {Buffer} from 'buffer';
-import firebase from 'firebase/compat/app';
-import GoogleAuthProvider = firebase.auth.GoogleAuthProvider;
-import UserCredential = firebase.auth.UserCredential;
+
+import {httpsCallable, Functions} from 'firebase/functions';
+import {
+  User as FirebaseUser,
+  UserCredential,
+  signOut,
+  signInAnonymously,
+  GoogleAuthProvider,
+  signInWithRedirect,
+  Auth,
+  IdTokenResult,
+  signInWithCustomToken
+} from 'firebase/auth';
+import {
+  Firestore,
+  onSnapshot,
+  doc,
+  DocumentSnapshot,
+  DocumentData,
+  collection
+} from 'firebase/firestore';
 
 @Injectable()
 export class AuthService {
 
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(undefined);
   isUserDecrypted$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(undefined);
-  userDocSub: Subscription;
-  whileLoginIn = false;
+  userDocUnsub: () => void;
+  whileLoginIn$ = new BehaviorSubject<boolean>(false);
   userIntervalReloadSub: Subscription;
-  isWaitingForCryptoKey: boolean;
+  isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
 
   constructor(
-    private afAuth: AngularFireAuth,
     private router: Router,
-    private afs: AngularFirestore,
     private snackBar: MatSnackBar,
-    private fns: AngularFireFunctions
+    @Inject('FUNCTIONS') private readonly functions: Functions,
+    @Inject('AUTH') private readonly auth: Auth,
+    @Inject('FIRESTORE') private readonly firestore: Firestore
   ) {
-    this.afAuth.authState.subscribe(async (firebaseUser) => {
+
+    this.auth.onAuthStateChanged(async (firebaseUser) => {
 
       this.unsubscribeUserIntervalReloadSub();
       this.unsubscribeUserDocSub();
@@ -67,46 +81,48 @@ export class AuthService {
           this.proceedGettingOfCryptoKey(currentUser);
         });
 
-        if (this.userDocSub && !this.userDocSub.closed) {
-          this.userDocSub.unsubscribe();
-        }
+        this.userDocUnsub = onSnapshot(
+          doc(collection(this.firestore, 'users'), `${currentUser.uid}`).withConverter(userConverter),
+          async (snap) => {
 
-        this.userDocSub = this.afs.doc<EncryptedUser>(`users/${currentUser.uid}`).snapshotChanges().pipe(
-          catchError((error: HTTPError) => {
-            if (error.code === 'permission-denied') {
-              this.signOut();
-            }
-            throw error;
-          })
-        ).subscribe(async (actionUserDocSnap) => {
+          currentUser = this.user$.value;
 
-          if (actionUserDocSnap.payload.data()?.hasEncryptedSecretKey) {
+          if (!currentUser) {
+            currentUser = user;
+          }
+
+          if (snap.data()?.hasEncryptedSecretKey) {
 
             if (currentUser.idTokenResult?.claims.secretKey) {
-              await this.userPostAction(currentUser, actionUserDocSnap);
+              await this.userPostAction(currentUser, snap);
               return;
             }
 
-            if (this.isWaitingForCryptoKey) {
+            if (this.isWaitingForCryptoKey$.value) {
               return;
             }
 
-            this.isWaitingForCryptoKey = true;
-            this.proceedGettingOfCryptoKey(currentUser, actionUserDocSnap);
+            this.isWaitingForCryptoKey$.next(true);
+            this.proceedGettingOfCryptoKey(currentUser, snap);
           }
+        }, (error) => {
+          if (error.code === 'permission-denied') {
+            this.signOut();
+          }
+          throw error;
         });
       } else {
-        this.isWaitingForCryptoKey = false;
+        this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
         this.isUserDecrypted$.next(false);
-        this.whileLoginIn = false;
-        asyncScheduler.schedule(() => this.router.navigate(['/']));
+        this.whileLoginIn$.next(false);
+        asapScheduler.schedule(() => this.router.navigate(['/']));
       }
     });
   }
 
   proceedGettingOfCryptoKey(user: User, actionUserDocSnap?): void {
-    this.getSecretKey(user).subscribe(async (action: {cryptoKey: CryptoKey, idTokenResult: firebase.auth.IdTokenResult}) => {
+    this.getSecretKey(user).subscribe(async (action: {cryptoKey: CryptoKey, idTokenResult: IdTokenResult}) => {
 
       if (action.idTokenResult.claims.isAnonymous) {
         user.isAnonymous = true;
@@ -122,8 +138,9 @@ export class AuthService {
     });
   }
 
-  getSecretKey(user: User): Observable<{ cryptoKey: CryptoKey, idTokenResult: firebase.auth.IdTokenResult }> {
-    return this.getIdTokenResult(user).pipe(
+  getSecretKey(user: User): Observable<{cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
+    return of(this.getIdTokenResult(user)).pipe(
+      mergeMap((e) => e),
       mergeMap((idTokenResult) => {
 
         if (!idTokenResult.claims.secretKey) {
@@ -136,12 +153,12 @@ export class AuthService {
               user.firebaseUser = userCredential.user;
               return this.getReloadedFirebaseUser(user);
             }),
-            mergeMap((firebaseUser: firebase.User) => {
+            mergeMap((firebaseUser: FirebaseUser) => {
               user.firebaseUser = firebaseUser;
               return this.getIdTokenResult(user);
             }),
-            mergeMap((idTokenResult: firebase.auth.IdTokenResult) => {
-              return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
+            mergeMap((idTokenResult: IdTokenResult) => {
+              return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string).pipe(
                 mergeMap((cryptoKey: CryptoKey) => {
                   return of({cryptoKey, idTokenResult});
                 })
@@ -150,28 +167,28 @@ export class AuthService {
           )
         }
 
-        return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey).pipe(
+        return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string).pipe(
           mergeMap((cryptoKey) => of({cryptoKey, idTokenResult}))
         )
       })
     );
   }
 
-  getIdTokenResult(user: User): Observable<firebase.auth.IdTokenResult> {
-    return of(user.firebaseUser.getIdTokenResult(true)).pipe(
-      mergeMap(async (promiseIdTokenResult) => {
-        return await promiseIdTokenResult;
-      })
+  loginWithSecuredToken(tokenWithSecretKey: string): Observable<UserCredential> {
+    return of(signInWithCustomToken(this.auth, tokenWithSecretKey)).pipe(
+      mergeMap((e) => e)
     );
   }
 
-  getTokenWithSecretKey(): Observable<string> {
-    return this.fns.httpsCallable<void, string>('getTokenWithSecretKey')();
+  getIdTokenResult(user: User): Promise<IdTokenResult> {
+    return user.firebaseUser.getIdTokenResult(true);
   }
 
-  loginWithSecuredToken(tokenWithSecretKey: string): Observable<UserCredential> {
-    return of(this.afAuth.signInWithCustomToken(tokenWithSecretKey)).pipe(
-      mergeMap((userCredential) => userCredential)
+  getTokenWithSecretKey(): Observable<string> {
+    return of(httpsCallable(this.functions, 'getTokenWithSecretKey')()).pipe(
+      mergeMap(async (e) => {
+        return await e.then((data) => data.data as string)
+      })
     );
   }
 
@@ -189,49 +206,48 @@ export class AuthService {
     );
   }
 
-  getReloadedFirebaseUser(user: User): Observable<firebase.User> {
-    return of(user.firebaseUser.reload().then(async () => await this.afAuth.currentUser)).pipe(
-      mergeMap((p) => p)
-    );
+  getReloadedFirebaseUser(user: User): Promise<FirebaseUser> {
+    return user.firebaseUser.reload().then(() => this.auth.currentUser);
   }
 
-  async userPostAction(user: User, actionUserDocSnap?): Promise<void> {
+  async userPostAction(user: User, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
 
-    this.isWaitingForCryptoKey = false;
+    this.isWaitingForCryptoKey$.next(false);
 
-    if (actionUserDocSnap?.payload.data()?.rounds) {
-      user.rounds = JSON.parse(await decrypt(actionUserDocSnap.payload.data()?.rounds, user.cryptoKey));
+    if (actionUserDocSnap?.data()?.rounds) {
+      user.rounds = JSON.parse(await decrypt(actionUserDocSnap.data()?.rounds, user.cryptoKey));
     }
 
     this.user$.next(user);
-    this.whileLoginIn = false;
+    this.whileLoginIn$.next(false);
     this.isUserDecrypted$.next(true);
   }
 
   googleSignIn(): void {
-    this.whileLoginIn = true;
+    this.whileLoginIn$.next(true);
 
-    this.afAuth.signInWithRedirect(new GoogleAuthProvider()).catch(() => {
+    signInWithRedirect(this.auth, new GoogleAuthProvider()).catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
     }).finally(() => {
-      this.whileLoginIn = false;
+      this.whileLoginIn$.next(false);
     });
   }
 
   anonymouslySignIn(): void {
-    this.whileLoginIn = true;
+    this.whileLoginIn$.next(true);
 
-    this.afAuth.signInAnonymously().catch(() => {
+    signInAnonymously(this.auth).catch(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-      this.whileLoginIn = false;
+      this.whileLoginIn$.next(false);
     }).then(() => {
       this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
     });
   }
 
   unsubscribeUserDocSub(): void {
-    if (this.userDocSub && !this.userDocSub.closed) {
-      this.userDocSub.unsubscribe();
+    if (this.userDocUnsub) {
+      this.userDocUnsub();
+      this.userDocUnsub = null;
     }
   }
 
@@ -242,6 +258,6 @@ export class AuthService {
   }
 
   signOut(): Promise<void> {
-    return this.afAuth.signOut();
+    return signOut(this.auth);
   }
 }

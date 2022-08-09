@@ -1,5 +1,4 @@
-import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
-import {AngularFirestore} from '@angular/fire/compat/firestore';
+import {Component, Inject, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {interval, Subscription} from 'rxjs';
@@ -12,6 +11,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {TaskService} from '../task/task.service';
 import {RoundService} from '../../round.service';
 import {RoundsService} from '../../../rounds.service';
+import {doc, Firestore, updateDoc, FieldPath} from 'firebase/firestore';
 
 @Component({
   selector: 'app-today',
@@ -43,16 +43,18 @@ export class TodayComponent implements OnInit, OnDestroy {
   roundSelectedSub: Subscription;
   roundSelectedChangeDaySub: Subscription;
 
-  constructor(private afs: AngularFirestore,
-              private authService: AuthService,
-              private roundService: RoundService,
-              private roundsService: RoundsService,
-              private snackBar: MatSnackBar,
-              private zone: NgZone,
-              private router: Router,
-              private route: ActivatedRoute,
-              private taskService: TaskService,
-              private connectionService: ConnectionService) {
+  constructor(
+    private authService: AuthService,
+    private roundService: RoundService,
+    private roundsService: RoundsService,
+    private snackBar: MatSnackBar,
+    private zone: NgZone,
+    private router: Router,
+    private route: ActivatedRoute,
+    private taskService: TaskService,
+    private connectionService: ConnectionService,
+    @Inject('FIRESTORE') private readonly firestore: Firestore
+  ) {
   }
 
   ngOnInit(): void {
@@ -175,10 +177,13 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     todayItem.disabled = true;
 
-    const toMerge = JSON.parse(`{"timesOfDay": {"${todayItem.timeOfDayEncrypted}": ${!todayItem.done}}}`);
     const user = this.authService.user$.value;
 
-    this.afs.doc(`/users/${user.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`).set(toMerge, {merge: true}).then(() => {
+    updateDoc(
+      doc(this.firestore, `/users/${user.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`),
+      new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
+      !todayItem.done
+    ).then(() => {
       todayItem.disabled = false;
     }).catch(() => {
       this.zone.run(() => {

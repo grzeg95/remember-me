@@ -1,18 +1,18 @@
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { AngularFireFunctions } from '@angular/fire/compat/functions';
-import { FormControl, FormGroup } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { finalize } from 'rxjs/operators';
-import { RouterDict } from '../../../../app.constants';
-import { ConnectionService } from "../../../../connection.service";
-import { CustomValidators } from '../../../../custom-validators';
-import { HTTPError, HTTPSuccess } from '../../../models';
-import { RoundsService } from '../rounds.service';
-import { RoundDialogConfirmDeleteComponent } from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
-import { Location } from '@angular/common';
+import {Component, Inject, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {FormControl, FormGroup} from '@angular/forms';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {ActivatedRoute, Router} from '@angular/router';
+import {mergeMap, of, Subscription} from 'rxjs';
+import {finalize} from 'rxjs/operators';
+import {RouterDict} from '../../../../app.constants';
+import {ConnectionService} from "../../../../connection.service";
+import {CustomValidators} from '../../../../custom-validators';
+import {HTTPError, HTTPSuccess} from '../../../models';
+import {RoundsService} from '../rounds.service';
+import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
+import {Location} from '@angular/common';
+import {Functions, httpsCallable} from "firebase/functions";
 
 @Component({
   selector: 'app-times-of-day-list',
@@ -48,10 +48,10 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     protected zone: NgZone,
     private router: Router,
     private route: ActivatedRoute,
-    private fns: AngularFireFunctions,
     public dialog: MatDialog,
     public location: Location,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    @Inject('FUNCTIONS') private readonly functions: Functions
   ) {
   }
 
@@ -129,7 +129,12 @@ export class RoundEditComponent implements OnInit, OnDestroy {
           this.deleteRoundSub.unsubscribe();
         }
 
-        this.deleteRoundSub = this.fns.httpsCallable('deleteRound')(this.id).subscribe((success: HTTPSuccess) => {
+        this.deleteRoundSub = of(
+          httpsCallable(this.functions, 'deleteRound')(this.id)
+        ).pipe(
+          mergeMap((e) => e),
+          mergeMap(async (e) => e.data)
+        ).subscribe((success: HTTPSuccess) => {
           this.zone.run(() => {
             this.snackBar.open(success.details || 'Your operation has been done 😉');
             this.deepResetForm();

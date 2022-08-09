@@ -10,14 +10,8 @@ import { ConnectionService } from './connection.service';
 })
 export class AppComponent {
 
-  get whileLoginIn(): boolean {
-    return this.authService.whileLoginIn;
-  }
-
-  get isWaitingForCryptoKey(): boolean {
-    return this.authService.isWaitingForCryptoKey;
-  }
-
+  whileLoginIn$ = this.authService.whileLoginIn$;
+  isWaitingForCryptoKey: boolean;
   isUserDecrypted$ = this.authService.isUserDecrypted$;
   isOnline$ = this.connectionService.isOnline$;
 
@@ -26,6 +20,8 @@ export class AppComponent {
     private connectionService: ConnectionService,
     private cdr: ChangeDetectorRef
   ) {
+
+    this.authService.isWaitingForCryptoKey$.subscribe((isWaitingForCryptoKey) => this.isWaitingForCryptoKey = isWaitingForCryptoKey);
     this.connectionService.wasTabInactive$.subscribe((wasTabInactive) => {
       if (wasTabInactive) {
         this.cdr.markForCheck();
