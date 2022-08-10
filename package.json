@@ -10,8 +10,9 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "deploy:hosting:dev": "ng build --configuration=dev && firebase use dev && firebase deploy --only hosting",
-    "build:hosting:prod": "ng build --configuration=production",
-    "deploy:hosting:prod": "firebase use default && firebase deploy --only hosting",
+    "build:hosting:static:prod": "ng build --configuration=production && node index.nonce-parser.js",
+    "build:hosting:image:prod": "cd public && gcloud builds submit --tag gcr.io/remember-me-4/web-site",
+    "deploy:hosting:image:prod": "cd public && gcloud run deploy web-site --region=europe-central2 --image gcr.io/remember-me-4/web-site",
     "deploy:functions:dev": "npm run deploy:dev --prefix functions",
     "deploy:functions:prod": "npm run deploy:prod --prefix functions"
   },
@@ -50,6 +51,7 @@
     "@angular/cli": "~14.1.0",
     "@angular/compiler-cli": "~14.1.0",
     "@types/node": "^16.11.24",
+    "cheerio": "^1.0.0-rc.12",
     "firebase-tools": "~11.4.1",
     "sass-lint": "~1.13.1",
     "typescript": "~4.7.4"
