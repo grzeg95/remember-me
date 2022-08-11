@@ -1,12 +1,11 @@
 import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
-import {asapScheduler, BehaviorSubject, interval, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {decrypt, userConverter} from '../security';
 import {User} from './user-data.model';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 import {Buffer} from 'buffer';
-
 import {httpsCallable, Functions} from 'firebase/functions';
 import {
   User as FirebaseUser,
@@ -19,14 +18,7 @@ import {
   IdTokenResult,
   signInWithCustomToken
 } from 'firebase/auth';
-import {
-  Firestore,
-  onSnapshot,
-  doc,
-  DocumentSnapshot,
-  DocumentData,
-  collection
-} from 'firebase/firestore';
+import {Firestore, onSnapshot, doc, DocumentSnapshot, DocumentData} from 'firebase/firestore';
 
 @Injectable()
 export class AuthService {
@@ -81,9 +73,8 @@ export class AuthService {
           this.proceedGettingOfCryptoKey(currentUser);
         });
 
-        this.userDocUnsub = onSnapshot(
-          doc(collection(this.firestore, 'users'), `${currentUser.uid}`).withConverter(userConverter),
-          async (snap) => {
+        const userDocRef = doc(this.firestore, `users/${currentUser.uid}`).withConverter(userConverter);
+        this.userDocUnsub = onSnapshot(userDocRef, async (snap) => {
 
           currentUser = this.user$.value;
 
@@ -94,8 +85,7 @@ export class AuthService {
           if (snap.data()?.hasEncryptedSecretKey) {
 
             if (currentUser.idTokenResult?.claims.secretKey) {
-              await this.userPostAction(currentUser, snap);
-              return;
+              return this.userPostAction(currentUser, snap);
             }
 
             if (this.isWaitingForCryptoKey$.value) {
@@ -116,13 +106,13 @@ export class AuthService {
         this.user$.next(null);
         this.isUserDecrypted$.next(false);
         this.whileLoginIn$.next(false);
-        asapScheduler.schedule(() => this.router.navigate(['/']));
+        this.router.navigate(['/']);
       }
     });
   }
 
   proceedGettingOfCryptoKey(user: User, actionUserDocSnap?): void {
-    this.getSecretKey(user).subscribe(async (action: {cryptoKey: CryptoKey, idTokenResult: IdTokenResult}) => {
+    this.getSecretKey(user).then(async (action: {cryptoKey: CryptoKey, idTokenResult: IdTokenResult}) => {
 
       if (action.idTokenResult.claims.isAnonymous) {
         user.isAnonymous = true;
@@ -134,66 +124,61 @@ export class AuthService {
 
       user.cryptoKey = action.cryptoKey;
       user.idTokenResult = action.idTokenResult;
-      await this.userPostAction(user, actionUserDocSnap);
+      return this.userPostAction(user, actionUserDocSnap);
     });
   }
 
-  getSecretKey(user: User): Observable<{cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
-    return of(this.getIdTokenResult(user)).pipe(
-      mergeMap((e) => e),
-      mergeMap((idTokenResult) => {
+  getSecretKey(user: User): Promise<{cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
 
-        if (!idTokenResult.claims.secretKey) {
+    return this.getIdTokenResult(user).then((idTokenResult) => {
 
-          return this.getTokenWithSecretKey().pipe(
-            mergeMap((token) => {
-              return this.loginWithSecuredToken(token)
-            }),
-            mergeMap((userCredential: UserCredential) => {
-              user.firebaseUser = userCredential.user;
-              return this.getReloadedFirebaseUser(user);
-            }),
-            mergeMap((firebaseUser: FirebaseUser) => {
-              user.firebaseUser = firebaseUser;
-              return this.getIdTokenResult(user);
-            }),
-            mergeMap((idTokenResult: IdTokenResult) => {
-              return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string).pipe(
-                mergeMap((cryptoKey: CryptoKey) => {
-                  return of({cryptoKey, idTokenResult});
-                })
-              );
-            })
-          )
-        }
+      if (!idTokenResult.claims.secretKey) {
 
-        return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string).pipe(
-          mergeMap((cryptoKey) => of({cryptoKey, idTokenResult}))
-        )
-      })
-    );
+        return this.getTokenWithSecretKey()
+          .then((idTokenResult) => {
+            return this.loginWithSecuredToken(idTokenResult);
+          })
+          .then((userCredential) => {
+            user.firebaseUser = userCredential.user;
+            return this.getReloadedFirebaseUser(user);
+          })
+          .then((firebaseUser: FirebaseUser) => {
+            user.firebaseUser = firebaseUser;
+            return this.getIdTokenResult(user);
+          })
+          .then((idTokenResult) => {
+            return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string)
+              .then((cryptoKey) => {
+                return {cryptoKey, idTokenResult}
+              });
+          });
+      }
+
+      return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string)
+        .then((cryptoKey) => {
+          return {
+            cryptoKey,
+            idTokenResult
+          }
+        });
+    });
   }
 
-  loginWithSecuredToken(tokenWithSecretKey: string): Observable<UserCredential> {
-    return of(signInWithCustomToken(this.auth, tokenWithSecretKey)).pipe(
-      mergeMap((e) => e)
-    );
+  loginWithSecuredToken(tokenWithSecretKey: string): Promise<UserCredential> {
+    return signInWithCustomToken(this.auth, tokenWithSecretKey);
   }
 
   getIdTokenResult(user: User): Promise<IdTokenResult> {
     return user.firebaseUser.getIdTokenResult(true);
   }
 
-  getTokenWithSecretKey(): Observable<string> {
-    return of(httpsCallable(this.functions, 'getTokenWithSecretKey')()).pipe(
-      mergeMap(async (e) => {
-        return await e.then((data) => data.data as string)
-      })
-    );
+  getTokenWithSecretKey(): Promise<string> {
+    return httpsCallable(this.functions, 'getTokenWithSecretKey')()
+      .then((result) => result.data as string);
   }
 
-  getCryptoKeyFromSecretKey(secretKey: string): Observable<CryptoKey> {
-    return of(crypto.subtle.importKey(
+  getCryptoKeyFromSecretKey(secretKey: string): Promise<CryptoKey> {
+    return crypto.subtle.importKey(
       'raw',
       Buffer.from(secretKey, 'hex'),
       {
@@ -201,8 +186,6 @@ export class AuthService {
       },
       false,
       ['decrypt']
-    )).pipe(
-      mergeMap((p) => p)
     );
   }
 
