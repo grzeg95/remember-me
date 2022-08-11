@@ -12,7 +12,7 @@
     "deploy:hosting:dev": "ng build --configuration=dev && firebase use dev && firebase deploy --only hosting",
     "build:hosting:static:prod": "ng build --configuration=production && node index.nonce-parser.js",
     "build:hosting:image:prod": "cd public && gcloud builds submit --tag gcr.io/remember-me-4/web-site",
-    "deploy:hosting:image:prod": "cd public && gcloud run deploy web-site --region=europe-central2 --image gcr.io/remember-me-4/web-site",
+    "deploy:hosting:image:prod": "cd public && gcloud run deploy web-site --region=europe-west4 --image gcr.io/remember-me-4/web-site",
     "deploy:functions:dev": "npm run deploy:dev --prefix functions",
     "deploy:functions:prod": "npm run deploy:prod --prefix functions"
   },
