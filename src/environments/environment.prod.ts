@@ -7,7 +7,7 @@ export const environment = {
     storageBucket: 'remember-me-4.appspot.com',
     locationId: 'europe-central2',
     apiKey: 'AIzaSyDGXnFNJ--PlLiuwNLjyEqdJBcFawejhfE',
-    authDomain: 'rem.grzeg.pl'
+    authDomain: 'remember-me-4.web.app'
   },
   recaptcha: '6LcjFNMbAAAAALXfc2Ou2VURMC9XJl1-HA_oRgUN',
   dev: false,
