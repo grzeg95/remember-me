@@ -5,7 +5,6 @@ import {AuthGuard} from './auth/auth-guard.service';
 import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
 import {CustomValidators} from './custom-validators';
-import {ExtraParametersGuard} from './extra-parameters-guard.service';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {initializeAppCheck, ReCaptchaV3Provider} from 'firebase/app-check';
 import {initializeApp, getApps, getApp} from 'firebase/app';
@@ -31,6 +30,7 @@ export function initializeFirebase(): () => void {
     const auth = getAuth(app);
     const firestore = getFirestore(app);
     const functions = getFunctions(app, environment.firebase.locationId);
+    getAnalytics(app);
 
     initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(environment.recaptcha),
@@ -66,13 +66,10 @@ export function initializeFirebase(): () => void {
       provide: 'FIRESTORE', useValue: getFirestore(getFirebaseApp())
     },
     {
-      provide: 'ANALYTICS', useValue: getAnalytics(getFirebaseApp())
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}
     },
-    {provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}},
-    {provide: Window, useValue: window},
     AuthService,
     ConnectionService,
-    ExtraParametersGuard,
     CustomValidators,
     AuthGuard
   ]
