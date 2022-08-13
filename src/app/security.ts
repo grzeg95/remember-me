@@ -102,7 +102,7 @@ export const decryptTodayTask = async (encryptedTodayTask: EncryptedTodayTask, c
   return Promise.all(decryptedKeysPromise).then((decryptedKeys) => {
     for (const [i, decryptedKey] of decryptedKeys.entries()) {
       timesOfDay[decryptedKey] = (encryptedTodayTask.timesOfDay as { [key in string]: boolean }) [encryptedKeys[i]];
-      timesOfDayEncryptedMap[decryptedKey] = decryptedKey;
+      timesOfDayEncryptedMap[decryptedKey] = encryptedKeys[i];
     }
     return decryptedDescriptionPromise;
   }).then((description) => {
