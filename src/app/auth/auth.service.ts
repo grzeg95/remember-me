@@ -195,15 +195,22 @@ export class AuthService {
 
   async userPostAction(user: User, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
 
-    this.isWaitingForCryptoKey$.next(false);
+    return new Promise<string>((resolve) => {
+      if (actionUserDocSnap?.data()?.rounds) {
+        return resolve(decrypt(actionUserDocSnap.data()?.rounds, user.cryptoKey));
+      }
+      return resolve(null);
+    }).then((rounds) => {
 
-    if (actionUserDocSnap?.data()?.rounds) {
-      user.rounds = JSON.parse(await decrypt(actionUserDocSnap.data()?.rounds, user.cryptoKey));
-    }
+      if (rounds) {
+        user.rounds = JSON.parse(rounds);
+      }
 
-    this.user$.next(user);
-    this.whileLoginIn$.next(false);
-    this.isUserDecrypted$.next(true);
+      this.isWaitingForCryptoKey$.next(false);
+      this.user$.next(user);
+      this.whileLoginIn$.next(false);
+      this.isUserDecrypted$.next(true);
+    });
   }
 
   googleSignIn(): void {

@@ -1,7 +1,7 @@
 import {Inject, Injectable} from '@angular/core';
 import {AuthService} from '../../../auth/auth.service';
 import {BehaviorSubject, mergeMap, Observable, of, Subscription} from 'rxjs';
-import {filter, map} from 'rxjs/operators';
+import {filter} from 'rxjs/operators';
 import {ConnectionService} from '../../../connection.service';
 import {basicEncryptedValueConverter, decryptRound} from '../../../security';
 import {Round} from '../../models';
@@ -116,14 +116,14 @@ export class RoundsService {
         roundsDecryptPromise.push(decryptRound(doc.data(), user.cryptoKey));
       }
 
-      const decryptedRoundList = await Promise.all(roundsDecryptPromise);
+      Promise.all(roundsDecryptPromise).then((decryptedRoundList) => {
+        for (const [i, doc] of snap.docs.entries()) {
+          decryptedRoundList[i].id = doc.id;
+        }
 
-      for (const [i, doc] of snap.docs.entries()) {
-        decryptedRoundList[i].id = doc.id;
-      }
-
-      this.roundsListFirstLoad$.next(false);
-      this.generateLists(decryptedRoundList, this.roundsOrder$.value);
+        this.roundsListFirstLoad$.next(false);
+        this.generateLists(decryptedRoundList, this.roundsOrder$.value);
+      });
     });
 
     this.roundsOrderSub = this.authService.user$.subscribe((user) => {
@@ -200,21 +200,17 @@ export class RoundsService {
     );
   }
 
-  getRoundById$(roundId: string): Observable<Promise<Round | null>> {
+  getRoundById$(roundId: string): Promise<Round> {
     const user = this.authService.user$.value;
 
-    return of(getDoc(
+    return getDoc(
       doc(this.firestore, `users/${user.uid}/rounds/${roundId}`).withConverter(basicEncryptedValueConverter)
-    )).pipe(
-      mergeMap((e) => e),
-      map(async (docSnap) => {
-        const round = docSnap.data();
-        if (round) {
-          return await decryptRound(round, user.cryptoKey);
-        }
-        return null;
-      })
-    );
+    ).then((snap) => {
+      if (snap.exists()) {
+        return decryptRound(snap.data(), user.cryptoKey);
+      }
+      return null;
+    });
   }
 
   setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {

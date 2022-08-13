@@ -34,7 +34,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   deletingInProgress = false;
   saveRoundSub: Subscription;
   deleteRoundSub: Subscription;
-  getRoundByIdSub: Subscription;
   id = 'null';
   initValues: {
     name: string
@@ -183,12 +182,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
       this.id = roundId;
 
-      if (this.getRoundByIdSub && !this.getRoundByIdSub.closed) {
-        this.getRoundByIdSub.unsubscribe();
-      }
-
-      this.getRoundByIdSub = this.roundsService.getRoundById$(roundId).subscribe(async (roundPromise) => {
-        const round = await roundPromise;
+      this.roundsService.getRoundById$(roundId).then((round) => {
         if (round) {
           this.roundForm.get('name').setValue(round.name);
           this.initValues.name = round.name;
@@ -214,10 +208,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
     if (this.deleteRoundSub && !this.deleteRoundSub.closed) {
       this.deleteRoundSub.unsubscribe();
-    }
-
-    if (this.getRoundByIdSub && !this.getRoundByIdSub.closed) {
-      this.getRoundByIdSub.unsubscribe();
     }
 
     this.roundsService.inEditMode = false;
