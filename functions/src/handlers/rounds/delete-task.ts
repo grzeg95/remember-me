@@ -134,9 +134,7 @@ export const proceedTaskRemoving = async (context: CallableContext, roundId: str
     tasksIds: tasksIds.toArray()
   }, cryptoKey));
 
-  await transactionWrite.execute();
-
-  return transaction;
+  return transactionWrite.execute();
 };
 
 /**

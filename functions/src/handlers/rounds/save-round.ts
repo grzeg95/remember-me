@@ -117,8 +117,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       }, cryptoKey));
     }
 
-    await transactionWrite.execute();
-    return transaction;
+    return transactionWrite.execute();
 
   }).then(() =>
     created ? ({

@@ -504,8 +504,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
           daysOfTheWeek: task.daysOfTheWeek
         }, cryptoKey));
 
-        await transactionWrite.execute();
-        return transaction;
+        return transactionWrite.execute();
       }
 
       /*
@@ -531,9 +530,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
           cryptoKey
         );
 
-        await transactionWrite.execute();
-
-        return transaction;
+        return transactionWrite.execute();
       }
     }
 
@@ -564,8 +561,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       transactionWrite.delete(taskDocSnapTmp.ref);
     }
 
-    await transactionWrite.execute();
-    return transaction;
+    return transactionWrite.execute();
 
   }).then(() =>
     created ? ({

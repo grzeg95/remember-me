@@ -24,28 +24,28 @@ export const handler = async (
 
   const ciphertextCrc32c = crc32c.calculate(ciphertext);
 
-  const [decryptResponse] = await keyManagementServiceClient.asymmetricDecrypt({
+  return keyManagementServiceClient.asymmetricDecrypt({
     name: cryptoKeyVersionPath,
     ciphertext,
     ciphertextCrc32c: {
       value: ciphertextCrc32c
     },
+  }).then(([decryptResponse]) => {
+    testRequirement(
+      !decryptResponse.verifiedCiphertextCrc32c ||
+      crc32c.calculate(decryptResponse.plaintext) !==
+      Number(decryptResponse.plaintextCrc32c?.value),
+      'AsymmetricDecrypt: request corrupted in-transit'
+    );
+
+    // Service account does not have required permissions
+    // https://firebase.google.com/docs/auth/admin/create-custom-tokens#service_account_does_not_have_required_permissions
+
+    return getAuth()
+      .createCustomToken(context.auth?.uid as string, {
+        secretKey: (decryptResponse.plaintext || '').toString(),
+        isAnonymous: context.auth?.token.firebase.sign_in_provider === 'anonymous' ? true : undefined
+      })
+      .then((customToken: string) => customToken);
   });
-
-  testRequirement(
-    !decryptResponse.verifiedCiphertextCrc32c ||
-    crc32c.calculate(decryptResponse.plaintext) !==
-    Number(decryptResponse.plaintextCrc32c?.value),
-    'AsymmetricDecrypt: request corrupted in-transit'
-  );
-
-  // Service account does not have required permissions
-  // https://firebase.google.com/docs/auth/admin/create-custom-tokens#service_account_does_not_have_required_permissions
-
-  return getAuth()
-    .createCustomToken(context.auth?.uid as string, {
-      secretKey: (decryptResponse.plaintext || '').toString(),
-      isAnonymous: context.auth?.token.firebase.sign_in_provider === 'anonymous' ? true : undefined
-    })
-    .then((customToken: string) => customToken);
 };

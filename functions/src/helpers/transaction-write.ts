@@ -42,61 +42,71 @@ export class TransactionWrite {
     });
   }
 
-  async setExecute() {
+  private waitForData(): Promise<[(Object | undefined)[], (Object | undefined)[], {}[]]> {
+
+    const setDataPromise = [];
+    const createDataPromise = [];
+    const updateDataPromise = [];
+
     for (const item of this.setList) {
-      let data: any = item.data;
-
-      if (data?.constructor.name === 'Promise') {
-        data = await data;
-      }
-
-      // @ts-ignore
-      this.transaction.set(item.docRef, data);
+      setDataPromise.push(item.data);
     }
 
-    this.setList = [];
-  }
-
-  async createExecute() {
     for (const item of this.createList) {
-      let data: any = item.data;
-
-      if (data?.constructor.name === 'Promise') {
-        data = await data;
-      }
-
-      this.transaction.create(item.docRef, data);
+      createDataPromise.push(item.data);
     }
 
-    this.createList = [];
-  }
-
-  async updateExecute() {
     for (const item of this.updateList) {
-      let data: any = item.data;
+      updateDataPromise.push(item.data);
+    }
 
-      if (data?.constructor.name === 'Promise') {
-        data = await data;
+    return Promise.all([
+      Promise.all(setDataPromise),
+      Promise.all(createDataPromise),
+      Promise.all(updateDataPromise) as Promise<{}[]>
+    ]);
+  }
+
+  async execute(): Promise<firestore.Transaction> {
+    return this.waitForData().then(([setData,createData,updateData]) => {
+
+      for (const [i, item] of this.setList.entries()) {
+        const data = setData[i];
+        if (data !== undefined) {
+          this.transaction.set(item.docRef, data);
+        } else {
+          throw new Error('data is undefined');
+        }
       }
 
-      this.transaction.update(item.docRef, data);
-    }
+      for (const [i, item] of this.createList.entries()) {
+        const data = createData[i];
+        if (data !== undefined) {
+          this.transaction.create(item.docRef, data);
+        } else {
+          throw new Error('data is undefined');
+        }
+      }
 
-    this.updateList = [];
-  }
+      for (const [i, item] of this.updateList.entries()) {
+        const data = updateData[i];
+        if (data !== undefined) {
+          this.transaction.update(item.docRef, data);
+        } else {
+          throw new Error('data is undefined');
+        }
+      }
 
-  async deleteExecute() {
-    for (const item of this.deleteList) {
-      this.transaction.delete(item.docRef);
-    }
+      for (const item of this.deleteList) {
+        this.transaction.delete(item.docRef);
+      }
 
-    this.deleteList = [];
-  }
+      this.deleteList = [];
+      this.setList = [];
+      this.updateList = [];
+      this.createList = [];
 
-  async execute() {
-    await this.setExecute();
-    await this.createExecute();
-    await this.updateExecute();
-    await this.deleteExecute();
+      return this.transaction;
+    });
   }
 }

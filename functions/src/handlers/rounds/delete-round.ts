@@ -89,8 +89,7 @@ export const handler = async (roundId: any, callableContext: CallableContext): P
     };
     writeUser(transaction, userDocSnap, userDataToWrite);
 
-    await transactionWrite.execute();
-    return transaction;
+    return transactionWrite.execute();
 
   }).then(() => ({
     details: 'Your round has been deleted 🤭'

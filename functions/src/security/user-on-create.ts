@@ -128,9 +128,7 @@ export const handler = async (user: UserRecord) => {
           });
         }));
 
-        await transactionWrite.execute();
-
-        return transaction;
+        return transactionWrite.execute();
       });
     });
   } catch (e) {

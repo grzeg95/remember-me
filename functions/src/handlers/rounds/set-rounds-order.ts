@@ -77,8 +77,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
       rounds: await encrypt(rounds, cryptoKey)
     });
 
-    await transactionWrite.execute();
-    return transaction;
+    return transactionWrite.execute();
 
   }).then(() => ({
     details: 'Order has been updated 🙃'
