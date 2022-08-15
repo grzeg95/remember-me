@@ -12,7 +12,7 @@ import {
   encryptTask, encryptToday,
   encryptTodayTask, getCryptoKey
 } from '../../security/security';
-import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
+import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
 import {TransactionWrite} from '../../helpers/transaction-write';
 
 const app = firestore();
@@ -118,223 +118,226 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   } = {};
 
   const docsSnapsPromises: Promise<DocumentSnapshot>[] = [];
-
-  for (const todayId of todaysIds.toArray()) {
-    docsSnapsPromises.push(transaction.get(roundDocSnap.ref.collection('today').doc(todayId)));
-  }
-
-  const docsSnaps = await Promise.all(docsSnapsPromises);
-
-  const decryptedTodayPromise: Promise<Today>[] = [];
-
-  for (const docSnap of docsSnaps) {
-    decryptedTodayPromise.push(decryptToday(docSnap.data() as {value: string}, cryptoKey));
-  }
-
-  const decryptedToday = await Promise.all(decryptedTodayPromise);
-  for (const [i, docSnap] of docsSnaps.entries()) {
-    todayDocRefsMap[decryptedToday[i].name] = {
-      docSnap,
-      today: decryptedToday[i]
-    };
-  }
-
-  // get all days task from existed task
-  const todayTaskDocSnapsDayPackPromise = [];
-
-  for (const day of taskDocSnapData.daysOfTheWeek || []) {
-    todayTaskDocSnapsDayPackPromise.push(
-      transaction.get(todayDocRefsMap[day].docSnap.ref.collection(`task`).doc(`${taskDocSnap.id}`))
-        .then((docSnap) => ({day, docSnap})));
-  }
-
-  const todayTaskDocSnapsDayPack = await Promise.all(todayTaskDocSnapsDayPackPromise);
+  let decryptedToday: Today[];
+  let docsSnaps: DocumentSnapshot[];
+  let todayTaskDocSnapsDayPack: {day: Day, docSnap: firestore.DocumentSnapshot<firestore.DocumentData>}[];
+  let decryptedTodayTaskDocSnaps: TodayTask[];
   const todayTaskDocSnapsMap: {
     [key in string]: {
       docSnap: DocumentSnapshot,
       todayTask: TodayTask
     }
   } = {};
-  const decryptedTodayTaskDocSnapsPromise = [];
-
-  for (const docSnapPack of todayTaskDocSnapsDayPack) {
-    decryptedTodayTaskDocSnapsPromise.push(decryptTodayTask(docSnapPack.docSnap.data() as EncryptedTodayTask, cryptoKey));
-  }
-
-  const decryptedTodayTaskDocSnaps = await Promise.all(decryptedTodayTaskDocSnapsPromise);
-  for (const [i, docSnapPack] of (todayTaskDocSnapsDayPack).entries()) {
-    todayTaskDocSnapsMap[docSnapPack.day] = {
-      docSnap: docSnapPack.docSnap,
-      todayTask: decryptedTodayTaskDocSnaps[i]
-    };
-  }
-
+  let newTodayItemsForTaskToCreate: {dayToCreate: string, docSnap: DocumentSnapshot}[];
   const toUpdate: Set<string> = new Set();
   const toRemove: Set<string> = new Set();
   const toCreate: Set<string> = new Set();
-  const taskDocSnapDaysOfTheWeek = (taskDocSnapData.daysOfTheWeek || []).toSet();
   const taskDaysOfTheWeek = (task.daysOfTheWeek || []).toSet();
 
-  for (const day of task.daysOfTheWeek || []) {
-    if (taskDocSnapDaysOfTheWeek.has(day)) {
-      toUpdate.add(day);
-    } else {
-      toCreate.add(day);
-    }
+  for (const todayId of todaysIds.toArray()) {
+    docsSnapsPromises.push(transaction.get(roundDocSnap.ref.collection('today').doc(todayId)));
   }
 
-  for (const day of taskDocSnapData.daysOfTheWeek || []) {
-    if (taskDaysOfTheWeek.has(day)) {
-      toUpdate.add(day);
-    } else {
-      toRemove.add(day);
-    }
-  }
+  return Promise.all(docsSnapsPromises).then((_docsSnaps) => {
 
-  // get all days from new task
-  // create if not exists
-  const newTodayItemsForTaskToCreatePromises: Promise<{dayToCreate: string; docSnap: DocumentSnapshot}>[] = [];
-  for (const dayToCreate of toCreate) {
-    if (!todayDocRefsMap[dayToCreate]) {
-      newTodayItemsForTaskToCreatePromises.push(
-        transaction.get(roundDocSnap.ref.collection(`today`).doc()).then((docSnap) => {
-          return {dayToCreate, docSnap};
-        }));
-    }
-  }
+    docsSnaps = _docsSnaps;
+    const decryptedTodayPromise = [];
 
-  const newTodayItemsForTaskToCreate = await Promise.all(newTodayItemsForTaskToCreatePromises);
-  const newTodayItemsMap: { [key in string]: DocumentSnapshot } = {};
-
-  for (const item of newTodayItemsForTaskToCreate) {
-    newTodayItemsMap[item.dayToCreate] = item.docSnap;
-    todaysIds.add(item.docSnap.id);
-  }
-
-  // get new today tasks
-  // on exist today's
-  // on new today's
-  for (const dayToCreate of toCreate) {
-
-    if (!todayDocRefsMap[dayToCreate]) {
-      transactionWrite.create(
-        newTodayItemsMap[dayToCreate].ref.collection(`task`).doc(taskDocSnap.id),
-        encryptedTodayTaskToAddPromise
-      );
-    } else {
-      transactionWrite.create(
-        todayDocRefsMap[dayToCreate].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
-        encryptedTodayTaskToAddPromise
+    for (const docSnap of docsSnaps) {
+      decryptedTodayPromise.push(
+        decryptToday(docSnap.data() as {value: string}, cryptoKey)
       );
     }
-  }
 
-  // prepare
-  // create day if not exists
-  for (const dayToCreate of newTodayItemsForTaskToCreate) {
-    transactionWrite.create(dayToCreate.docSnap.ref, encryptToday({
-      name: dayToCreate.dayToCreate,
-      tasksIds: [taskDocSnap.id]
-    }, cryptoKey));
-  }
+    return Promise.all(decryptedTodayPromise);
+  }).then(async (_decryptedToday) => {
+    decryptedToday = _decryptedToday;
 
-  // increment taskSize if new task is in today
-  for (const dayToCreate of toCreate) {
-    if (todayDocRefsMap[dayToCreate]) {
-      const todayTask = todayDocRefsMap[dayToCreate].today;
+    for (const [i, docSnap] of docsSnaps.entries()) {
+      todayDocRefsMap[decryptedToday[i].name] = {
+        docSnap,
+        today: decryptedToday[i]
+      };
+    }
 
-      transactionWrite.update(todayDocRefsMap[dayToCreate].docSnap.ref, encryptToday({
-        name: todayTask.name,
-        tasksIds: [...todayTask.tasksIds, taskDocSnap.id]
+    const todayTaskDocSnapsDayPackPromise = [];
+    for (const day of (taskDocSnapData.daysOfTheWeek || [])) {
+      todayTaskDocSnapsDayPackPromise.push(
+        transaction.get(todayDocRefsMap[day].docSnap.ref.collection(`task`).doc(`${taskDocSnap.id}`))
+          .then((docSnap) => ({day, docSnap}))
+      )
+    }
+
+    // get all days task from existed task
+    return Promise.all(todayTaskDocSnapsDayPackPromise);
+
+  }).then(async (_todayTaskDocSnapsDayPack) => {
+
+    todayTaskDocSnapsDayPack = _todayTaskDocSnapsDayPack;
+    const decryptedTodayTaskDocSnapsPromise = [];
+
+    for (const docSnapPack of todayTaskDocSnapsDayPack) {
+      decryptedTodayTaskDocSnapsPromise.push(decryptTodayTask(docSnapPack.docSnap.data() as EncryptedTodayTask, cryptoKey));
+    }
+
+    return Promise.all(decryptedTodayTaskDocSnapsPromise);
+  }).then((_decryptedTodayTaskDocSnaps) => {
+
+    decryptedTodayTaskDocSnaps = _decryptedTodayTaskDocSnaps;
+
+    for (const [i, docSnapPack] of (todayTaskDocSnapsDayPack).entries()) {
+      todayTaskDocSnapsMap[docSnapPack.day] = {
+        docSnap: docSnapPack.docSnap,
+        todayTask: decryptedTodayTaskDocSnaps[i]
+      };
+    }
+
+    const taskDocSnapDaysOfTheWeek = (taskDocSnapData.daysOfTheWeek || []).toSet();
+
+    for (const day of task.daysOfTheWeek || []) {
+      if (taskDocSnapDaysOfTheWeek.has(day)) {
+        toUpdate.add(day);
+      } else {
+        toCreate.add(day);
+      }
+    }
+
+    for (const day of taskDocSnapData.daysOfTheWeek || []) {
+      if (taskDaysOfTheWeek.has(day)) {
+        toUpdate.add(day);
+      } else {
+        toRemove.add(day);
+      }
+    }
+
+    // get all days from new task
+    // create if not exists
+    const newTodayItemsForTaskToCreatePromises: Promise<{dayToCreate: string; docSnap: DocumentSnapshot}>[] = [];
+    for (const dayToCreate of toCreate) {
+      if (!todayDocRefsMap[dayToCreate]) {
+        newTodayItemsForTaskToCreatePromises.push(
+          transaction.get(roundDocSnap.ref.collection(`today`).doc()).then((docSnap) => {
+            return {dayToCreate, docSnap};
+          }));
+      }
+    }
+
+    return Promise.all(newTodayItemsForTaskToCreatePromises);
+  }).then((_newTodayItemsForTaskToCreate) => {
+
+    newTodayItemsForTaskToCreate = _newTodayItemsForTaskToCreate;
+
+    const newTodayItemsMap: { [key in string]: DocumentSnapshot } = {};
+
+    for (const item of newTodayItemsForTaskToCreate) {
+      newTodayItemsMap[item.dayToCreate] = item.docSnap;
+      todaysIds.add(item.docSnap.id);
+    }
+
+    // get new today tasks
+    // on exist today's
+    // on new today's
+    for (const dayToCreate of toCreate) {
+
+      if (!todayDocRefsMap[dayToCreate]) {
+        transactionWrite.create(
+          newTodayItemsMap[dayToCreate].ref.collection(`task`).doc(taskDocSnap.id),
+          encryptedTodayTaskToAddPromise
+        );
+      } else {
+        transactionWrite.create(
+          todayDocRefsMap[dayToCreate].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
+          encryptedTodayTaskToAddPromise
+        );
+      }
+    }
+
+    // prepare
+    // create day if not exists
+    for (const dayToCreate of newTodayItemsForTaskToCreate) {
+      transactionWrite.create(dayToCreate.docSnap.ref, encryptToday({
+        name: dayToCreate.dayToCreate,
+        tasksIds: [taskDocSnap.id]
       }, cryptoKey));
     }
-  }
 
-  for (const day of taskDocSnapData.daysOfTheWeek || []) {
-    if (!taskDaysOfTheWeek.has(day)) {
-      const todayTaskIds = todayDocRefsMap[day].today.tasksIds;
-      if (todayTaskIds.length === 1) {
-        transactionWrite.delete(todayDocRefsMap[day].docSnap.ref);
-        todaysIds.delete(todayDocRefsMap[day].docSnap.ref.id);
-      }
-    }
-  }
+    // increment taskSize if new task is in today
+    for (const dayToCreate of toCreate) {
+      if (todayDocRefsMap[dayToCreate]) {
+        const todayTask = todayDocRefsMap[dayToCreate].today;
 
-  // get tasks from day to remove
-  const tasksFromTodayToRemovePromise = [];
-
-  for (const taskFromDayToRemove of toRemove) {
-    tasksFromTodayToRemovePromise.push(transaction.get(
-      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id)
-    ));
-  }
-
-  // update
-  // add task timesOfDay to newTimesOfDay
-  const newTimesOfDayRaw: { [key in string]: boolean } = {};
-
-  // select inserted task timesOfDay to newTimesOfDayRaw
-  for (const timeOfDay of task.timesOfDay) {
-    newTimesOfDayRaw[timeOfDay] = false;
-  }
-
-  for (const dayToUpdate of toUpdate) {
-
-    // select current stored task timesOfDay to oldTimesOfDay
-    // there can be selected true value
-    const oldTimesOfDay: { [key in string]: boolean } = {};
-
-    const todayTask = todayTaskDocSnapsMap[dayToUpdate].todayTask;
-    for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
-      oldTimesOfDay[timeOfDay] = todayTask.timesOfDay[timeOfDay];
-    }
-
-    // maybe there exist selected timesOfDay
-    const newTimesOfDay = {...newTimesOfDayRaw};
-    for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
-      if (oldTimesOfDay[newTimeOfDay]) {
-        newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
+        transactionWrite.update(todayDocRefsMap[dayToCreate].docSnap.ref, encryptToday({
+          name: todayTask.name,
+          tasksIds: [...todayTask.tasksIds, taskDocSnap.id]
+        }, cryptoKey));
       }
     }
 
-    transactionWrite.set(todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, encryptTodayTask({
-      description: task.description,
-      timesOfDay: newTimesOfDay
-    }, cryptoKey));
-  }
+    for (const day of taskDocSnapData.daysOfTheWeek || []) {
+      if (!taskDaysOfTheWeek.has(day)) {
+        const todayTaskIds = todayDocRefsMap[day].today.tasksIds;
+        if (todayTaskIds.length === 1) {
+          transactionWrite.delete(todayDocRefsMap[day].docSnap.ref);
+          todaysIds.delete(todayDocRefsMap[day].docSnap.ref.id);
+        }
+      }
+    }
 
-  // remove tasks from day to remove
-  for (const taskFromDayToRemove of await Promise.all(tasksFromTodayToRemovePromise)) {
-    transactionWrite.delete(taskFromDayToRemove.ref);
-  }
+    // get tasks from day to remove
+    const tasksFromTodayToRemovePromise = [];
 
-  return todaysIds.toArray();
+    for (const taskFromDayToRemove of toRemove) {
+      tasksFromTodayToRemovePromise.push(transaction.get(
+        todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id)
+      ));
+    }
+
+    // update
+    // add task timesOfDay to newTimesOfDay
+    const newTimesOfDayRaw: { [key in string]: boolean } = {};
+
+    // select inserted task timesOfDay to newTimesOfDayRaw
+    for (const timeOfDay of task.timesOfDay) {
+      newTimesOfDayRaw[timeOfDay] = false;
+    }
+
+    for (const dayToUpdate of toUpdate) {
+
+      // select current stored task timesOfDay to oldTimesOfDay
+      // there can be selected true value
+      const oldTimesOfDay: { [key in string]: boolean } = {};
+
+      const todayTask = todayTaskDocSnapsMap[dayToUpdate].todayTask;
+      for (const timeOfDay of Object.keys(todayTask.timesOfDay)) {
+        oldTimesOfDay[timeOfDay] = todayTask.timesOfDay[timeOfDay];
+      }
+
+      // maybe there exist selected timesOfDay
+      const newTimesOfDay = {...newTimesOfDayRaw};
+      for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
+        if (oldTimesOfDay[newTimeOfDay]) {
+          newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
+        }
+      }
+
+      transactionWrite.set(todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, encryptTodayTask({
+        description: task.description,
+        timesOfDay: newTimesOfDay
+      }, cryptoKey));
+    }
+
+    // remove tasks from day to remove
+    return Promise.all(tasksFromTodayToRemovePromise);
+  }).then((tasksFromDayToRemove) => {
+    for (const taskFromDayToRemove of tasksFromDayToRemove) {
+      transactionWrite.delete(taskFromDayToRemove.ref);
+    }
+
+    return todaysIds.toArray();
+  });
 };
 
-const updateRound = (transaction: Transaction, transactionWrite: TransactionWrite, userDocSnap: DocumentSnapshot, roundId: string, round: Round, cryptoKey: CryptoKey): void => {
-  transactionWrite.update(
-    userDocSnap.ref.collection('rounds').doc(roundId),
-    encryptRound(round, cryptoKey)
-  );
-}
-
-/**
- * Save task
- * @function handler
- * @param {*} data
- * {
- *  task: {
- *   timesOfDay: string[],
- *   daysOfTheWeek: not null like ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
- *   description: string
- *  },
- *  taskId: string,
- *  roundId: string
- * }
- * @param {CallableContext} callableContext
- * @return {Promise<{created: boolean, details: string, roundId: string}>}
- **/
-export const handler = async (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; taskId: string}> => {
+const checkEntryRequirements = (data: any, callableContext: CallableContext) => {
 
   const auth = callableContext?.auth;
 
@@ -411,167 +414,220 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
   // data.task.timesOfDay contains duplicates
   testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
 
+  testRequirement(!auth?.token.secretKey);
+
+};
+
+const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firestore.Transaction, roundDocSnapData: Round, roundDocSnap: firestore.DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
+  return transaction.get(roundDocSnap.ref.collection('task').doc(taskId)).then((taskDocSnap) => {
+    if (!taskDocSnap.exists) {
+      testRequirement(roundDocSnapData.todaysIds.length + 1 > 25, `You can own up tp 25 tasks but merge has ${roundDocSnapData.todaysIds.length + 1} 🤔`);
+      transactionWrite.delete(taskDocSnap.ref);
+      return transaction.get(roundDocSnap.ref.collection('task').doc());
+    } else {
+      return taskDocSnap;
+    }
+  });
+};
+
+/**
+ * Save task
+ * @function handler
+ * @param {*} data
+ * {
+ *  task: {
+ *   timesOfDay: string[],
+ *   daysOfTheWeek: not null like ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+ *   description: string
+ *  },
+ *  taskId: string,
+ *  roundId: string
+ * }
+ * @param {CallableContext} callableContext
+ * @return {Promise<{created: boolean, details: string, roundId: string}>}
+ **/
+export const handler = async (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; taskId: string}> => {
+
+  checkEntryRequirements(data, callableContext);
+
   let created = false;
   let taskId: string = data.taskId;
   const roundId: string = data.roundId;
 
-  testRequirement(!auth?.token.secretKey);
-  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
+  let cryptoKey: CryptoKey;
+  const task = data.task as Task;
+  task.description = task.description.trim();
+  let taskDocSnap: DocumentSnapshot;
+  let userDocSnap: DocumentSnapshot;
+  let roundDocSnap: DocumentSnapshot;
+  let taskDocSnapData: Task;
+  let decryptedTask: Task;
+  let transactionWrite: TransactionWrite;
+  let roundDocSnapData: Round;
 
-  return app.runTransaction(async (transaction) => {
+  return getCryptoKey(callableContext?.auth?.token.secretKey).then((_cryptoKey) => {
+    cryptoKey = _cryptoKey;
 
-    const transactionWrite = new TransactionWrite(transaction)
-    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
-    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    return app.runTransaction((transaction) => {
 
-    // roundSnap must exist
-    testRequirement(!roundDocSnap.exists);
+      transactionWrite = new TransactionWrite(transaction)
 
-    const taskDocSnapTmp = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));
+      return getUser(app, transaction, callableContext?.auth?.uid as string).then(async (_userDocSnap) => {
+        userDocSnap = _userDocSnap;
 
-    const task = data.task as Task;
-    task.description = task.description.trim();
+        return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
-    const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-    const timesOfDay = roundDocSnapData.timesOfDay;
-    const timesOfDayCardinality = roundDocSnapData.timesOfDayCardinality;
-    const tasksIds = roundDocSnapData.tasksIds.toSet();
+      }).then((_roundDocSnap) => {
+        roundDocSnap = _roundDocSnap;
 
-    /*
-    * Read all data
-    * */
+        // roundSnap must exist
+        testRequirement(!roundDocSnap.exists);
 
-    // read task or create it
-    let taskDocSnap: DocumentSnapshot;
-    if (!taskDocSnapTmp.exists) {
-      testRequirement(roundDocSnapData.todaysIds.length + 1 > 25, `You can own up tp 25 tasks but merge has ${roundDocSnapData.todaysIds.length + 1} 🤔`);
-      created = true;
-      taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
-      taskId = taskDocSnap.id;
-      tasksIds.add(taskId);
-    } else {
-      taskDocSnap = taskDocSnapTmp;
-      const taskDocSnapData = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+        return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+      }).then((_roundDocSnapData) => {
 
-      /*
-      * Check if nothing changed or only description was changed
-      * */
-      const taskChange = getTaskChange(taskDocSnapData, task);
+        roundDocSnapData = _roundDocSnapData;
 
-      /*
-      * Check if nothing was changed
-      * */
-      testRequirement(!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay);
+        const timesOfDay = roundDocSnapData.timesOfDay;
+        const timesOfDayCardinality = roundDocSnapData.timesOfDayCardinality;
+        const tasksIds = roundDocSnapData.tasksIds.toSet();
 
-      /*
-      * Only description was changed
-      * */
-      if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+        return getTaskDocSnap(transactionWrite, transaction, roundDocSnapData, roundDocSnap, taskId).then((_taskDocSnap) => {
+          taskDocSnap = _taskDocSnap;
+          return decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+        }).then(async (_taskDocSnapData) => {
 
-        // read all task for user/{userId}/today/{day}/task/{taskId}
-        const todayTaskDocSnapsToUpdatePromises = [];
-        const docRefsMap: { [key in string]: DocumentSnapshot } = {};
-        for (const todayId of roundDocSnapData.todaysIds) {
-          const docSnap = await transaction.get(roundDocSnap.ref.collection('today').doc(todayId));
-          const todayTask = await decryptToday(docSnap.data() as {value: string}, cryptoKey);
-          docRefsMap[todayTask.name] = docSnap;
-        }
+          taskDocSnapData = _taskDocSnapData;
 
-        for (const day of task.daysOfTheWeek) {
-          todayTaskDocSnapsToUpdatePromises.push(
-            transaction.get(docRefsMap[day].ref.collection('task').doc(`${taskDocSnap.id}`))
-          );
-        }
+          if (!taskDocSnap.exists) {
+            created = true;
+            taskId = taskDocSnap.id;
+            tasksIds.add(taskId);
+          } else {
+            /*
+            * Check if nothing changed or only description was changed
+            * */
+            const taskChange = getTaskChange(taskDocSnapData, task);
 
-        const todayTaskDocSnapsToUpdate = await Promise.all(todayTaskDocSnapsToUpdatePromises);
-        /*
-        * Proceed all data
-        * */
+            /*
+            * Check if nothing was changed
+            * */
+            testRequirement(!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay);
 
-        for (const todayTask of todayTaskDocSnapsToUpdate) {
-          testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
+            /*
+            * Only description was changed
+            * */
+            if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-          transactionWrite.update(todayTask.ref, new Promise(async (resolve) => {
-            resolve({
-              description: await encrypt(task.description, cryptoKey)
-            });
-          }));
-        }
+              // read all task for user/{userId}/today/{day}/task/{taskId}
 
-        transactionWrite.update(taskDocSnap.ref, encryptTask({
-          description: task.description,
-          timesOfDay: task.timesOfDay,
-          daysOfTheWeek: task.daysOfTheWeek
-        }, cryptoKey));
+              return Promise.all(
+                roundDocSnapData.todaysIds
+                  .map((todayId) => transaction.get(roundDocSnap.ref.collection('today').doc(todayId)))
+              ).then((docSnaps) => {
 
-        return transactionWrite.execute();
-      }
+                const todayTaskDocSnapsToUpdatePromises = [];
 
-      /*
-      * Only daysOfTheWeek was changed
-      * */
-      if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+                for (const docSnap of docSnaps) {
+                  todayTaskDocSnapsToUpdatePromises.push(
+                    transaction.get(docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
+                  );
+                }
 
-        transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+                return Promise.all(todayTaskDocSnapsToUpdatePromises).then((todayTaskDocSnapsToUpdate) => {
 
-        // update round
-        updateRound(
-          transaction,
-          transactionWrite,
-          userDocSnap,
-          roundId,
-          {
-            timesOfDay: roundDocSnapData.timesOfDay,
-            timesOfDayCardinality: roundDocSnapData.timesOfDayCardinality,
-            name: roundDocSnapData.name,
-            todaysIds: await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey),
-            tasksIds: tasksIds.toArray()
-          },
-          cryptoKey
-        );
+                  /*
+                  * Proceed all data
+                  * */
 
-        return transactionWrite.execute();
-      }
-    }
+                  for (const todayTask of todayTaskDocSnapsToUpdate) {
+                    testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
 
-    const decryptedTask = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
-    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDay, data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
+                    transactionWrite.update(todayTask.ref, encrypt(task.description, cryptoKey).then((description) => {
+                      return {description}
+                    }));
+                  }
 
-    // update task
-    transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+                  transactionWrite.update(taskDocSnap.ref, encryptTask({
+                    description: task.description,
+                    timesOfDay: task.timesOfDay,
+                    daysOfTheWeek: task.daysOfTheWeek
+                  }, cryptoKey));
 
-    // update round
-    updateRound(
-      transaction,
-      transactionWrite,
-      userDocSnap,
-      roundId,
-      {
-        timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
-        timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-        name: roundDocSnapData.name,
-        todaysIds: await proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey),
-        tasksIds: tasksIds.toArray()
-      },
-      cryptoKey
+                  return transactionWrite.execute();
+                });
+              });
+            }
+
+            /*
+            * Only daysOfTheWeek was changed
+            * */
+            if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+
+              transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+
+              // update round
+              return proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey).then((todaysIds) => {
+                transactionWrite.update(
+                  userDocSnap.ref.collection('rounds').doc(roundId),
+                  encryptRound({
+                    timesOfDay: roundDocSnapData.timesOfDay,
+                    timesOfDayCardinality: roundDocSnapData.timesOfDayCardinality,
+                    name: roundDocSnapData.name,
+                    todaysIds,
+                    tasksIds: tasksIds.toArray()
+                  }, cryptoKey)
+                );
+
+                return transactionWrite.execute();
+              });
+            }
+          }
+
+          return decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+        }).then((_decryptedTask: Transaction | Task) => {
+
+          // impostor
+          if (_decryptedTask.constructor.name === 'Transaction') {
+            return _decryptedTask;
+          }
+
+          decryptedTask = _decryptedTask as Task;
+
+          const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDay, data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
+
+          // update task
+          transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+
+          // update round
+          return proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey).then((todaysIds) => {
+
+            transactionWrite.update(
+              userDocSnap.ref.collection('rounds').doc(roundId),
+              encryptRound({
+                timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
+                timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
+                name: roundDocSnapData.name,
+                todaysIds,
+                tasksIds: tasksIds.toArray()
+              }, cryptoKey)
+            );
+
+            return transactionWrite.execute();
+          });
+        })
+      })
+
+    }).then(() =>
+      created ? ({
+        'created': true,
+        'details': 'Your task has been created 😉',
+        'taskId': taskId
+      }) : ({
+        'created': false,
+        'details': 'Your task has been updated 🙃',
+        'taskId': taskId
+      })
     );
-
-    // delete taskDocSnapTmp if created
-    if (created) {
-      transactionWrite.delete(taskDocSnapTmp.ref);
-    }
-
-    return transactionWrite.execute();
-
-  }).then(() =>
-    created ? ({
-      'created': true,
-      'details': 'Your task has been created 😉',
-      'taskId': taskId
-    }) : ({
-      'created': false,
-      'details': 'Your task has been updated 🙃',
-      'taskId': taskId
-    })
-  );
+  });
 };

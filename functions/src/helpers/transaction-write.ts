@@ -42,7 +42,7 @@ export class TransactionWrite {
     });
   }
 
-  private waitForData(): Promise<[(Object | undefined)[], (Object | undefined)[], {}[]]> {
+  async execute(): Promise<firestore.Transaction> {
 
     const setDataPromise = [];
     const createDataPromise = [];
@@ -64,18 +64,14 @@ export class TransactionWrite {
       Promise.all(setDataPromise),
       Promise.all(createDataPromise),
       Promise.all(updateDataPromise) as Promise<{}[]>
-    ]);
-  }
-
-  async execute(): Promise<firestore.Transaction> {
-    return this.waitForData().then(([setData,createData,updateData]) => {
+    ]).then(([setData,createData,updateData]) => {
 
       for (const [i, item] of this.setList.entries()) {
         const data = setData[i];
         if (data !== undefined) {
           this.transaction.set(item.docRef, data);
         } else {
-          throw new Error('data is undefined');
+          throw new Error('data for set is undefined');
         }
       }
 
@@ -84,7 +80,7 @@ export class TransactionWrite {
         if (data !== undefined) {
           this.transaction.create(item.docRef, data);
         } else {
-          throw new Error('data is undefined');
+          throw new Error('data for create is undefined');
         }
       }
 
@@ -93,7 +89,7 @@ export class TransactionWrite {
         if (data !== undefined) {
           this.transaction.update(item.docRef, data);
         } else {
-          throw new Error('data is undefined');
+          throw new Error('data for update is undefined');
         }
       }
 

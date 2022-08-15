@@ -1,7 +1,8 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {Round} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
+import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
 import {
   decryptRound,
@@ -23,7 +24,7 @@ const app = firestore();
  * @param {CallableContext} callableContext
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
 
   const auth = callableContext?.auth;
 
@@ -54,45 +55,60 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
   testRequirement(!auth?.token.secretKey);
-  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-  return app.runTransaction(async (transaction) => {
+  let cryptoKey: CryptoKey;
+  let userDocSnap: firestore.DocumentSnapshot;
+  let roundDocSnap: firestore.DocumentSnapshot;
+  let round: Round;
 
-    const transactionWrite = new TransactionWrite(transaction);
-    const timeOfDay = data.timeOfDay;
-    const roundId = data.roundId;
-    const moveBy = data.moveBy;
-    const userDocSnap = await getUser(app, transaction, auth?.uid as string);
-    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+  return getCryptoKey(callableContext.auth?.token.secretKey).then((_cryptoKey) => {
+    cryptoKey = _cryptoKey;
 
-    // check if timeOfDay exists
-    testRequirement(!roundDocSnap.exists);
+    return app.runTransaction((transaction) => {
 
-    const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-    const timesOfDay = round.timesOfDay;
-    const timesOfDayCardinality = round.timesOfDayCardinality;
-    const toMoveIndex = timesOfDay.indexOf(timeOfDay);
+      const transactionWrite = new TransactionWrite(transaction);
+      const timeOfDay = data.timeOfDay;
+      const roundId = data.roundId;
+      const moveBy = data.moveBy;
 
-    testRequirement(toMoveIndex === -1);
-    testRequirement(moveBy > 0 && toMoveIndex + moveBy >= timesOfDay.length);
-    testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
+      return getUser(app, transaction, auth?.uid as string).then((_userDocSnap) => {
+        userDocSnap = _userDocSnap;
 
-    timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);
-    timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
+        return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+      }).then((_roundDocSnap) => {
+        roundDocSnap = _roundDocSnap;
 
-    // update user
-    transactionWrite.update(roundDocSnap.ref, encryptRound({
-      timesOfDay,
-      timesOfDayCardinality,
-      name: round.name,
-      todaysIds: round.todaysIds,
-      tasksIds: round.tasksIds
-    }, cryptoKey));
+        // check if timeOfDay exists
+        testRequirement(!roundDocSnap.exists);
 
-    return transactionWrite.execute();
+        return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+      }).then((_round) => {
+        round = _round;
 
-  }).then(() => ({
-    details: 'Order has been updated 🙃'
-  }));
+        const timesOfDay = round.timesOfDay;
+        const timesOfDayCardinality = round.timesOfDayCardinality;
+        const toMoveIndex = timesOfDay.indexOf(timeOfDay);
 
+        testRequirement(toMoveIndex === -1);
+        testRequirement(moveBy > 0 && toMoveIndex + moveBy >= timesOfDay.length);
+        testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
+
+        timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);
+        timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
+
+        // update user
+        transactionWrite.update(roundDocSnap.ref, encryptRound({
+          timesOfDay,
+          timesOfDayCardinality,
+          name: round.name,
+          todaysIds: round.todaysIds,
+          tasksIds: round.tasksIds
+        }, cryptoKey));
+
+        return transactionWrite.execute();
+      });
+    }).then(() => ({
+      details: 'Order has been updated 🙃'
+    }));
+  });
 };

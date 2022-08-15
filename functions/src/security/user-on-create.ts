@@ -19,10 +19,12 @@ import {Task} from '../helpers/models';
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
+const createSampleUserData = (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
 
-  // get round
-  const roundDocSnap: DocumentSnapshot = await transaction.get(userDocSnap.ref.collection('rounds').doc());
+  let roundDocSnap: firestore.DocumentSnapshot;
+  let taskDocSnap: firestore.DocumentSnapshot;
+  let roundId: string;
+
   const decryptedRound = {
     timesOfDay: [],
     timesOfDayCardinality: [],
@@ -31,37 +33,48 @@ const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: 
     tasksIds: []
   };
 
-  const roundId = roundDocSnap.id;
-
-  // get task
-  const taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
-
-  const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, [], ['Before start'], [], []);
-
   const task: Task = {
     timesOfDay: ['Before start'],
     daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
     description: 'Drink coffee 🤠'
   };
 
-  const todaysIds = await proceedTodayTasks(transaction, task, taskDocSnap, {
-    description: '',
-    daysOfTheWeek: [],
-    timesOfDay: [],
-  }, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
+  // get round
+  return transaction.get(userDocSnap.ref.collection('rounds').doc()).then((_roundDocSnap) => {
 
-  // create round
-  transactionWrite.create(roundDocSnap.ref, encryptRound({
-    timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
-    timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-    name: 'Daily',
-    todaysIds,
-    tasksIds: [taskDocSnap.id]
-  }, cryptoKey));
+    roundDocSnap = _roundDocSnap;
+    roundId = roundDocSnap.id;
 
-  transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+    // get task
+    return transaction.get(roundDocSnap.ref.collection('task').doc());
 
-  return roundId;
+  }).then((_taskDocSnap) => {
+
+    taskDocSnap = _taskDocSnap;
+
+    return proceedTodayTasks(transaction, task, taskDocSnap, {
+      description: '',
+      daysOfTheWeek: [],
+      timesOfDay: [],
+    }, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
+
+  }).then((todaysIds) => {
+
+    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, [], ['Before start'], [], []);
+
+    // create round
+    transactionWrite.create(roundDocSnap.ref, encryptRound({
+      timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
+      timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
+      name: 'Daily',
+      todaysIds,
+      tasksIds: [taskDocSnap.id]
+    }, cryptoKey));
+
+    transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+
+    return roundId;
+  });
 };
 
 export const handler = async (user: UserRecord) => {
@@ -95,7 +108,9 @@ export const handler = async (user: UserRecord) => {
       encryptedSymmetricKey
     };
 
-    const cryptoKey = await subtle.importKey(
+    let userDocSnap: firestore.DocumentSnapshot;
+
+    return subtle.importKey(
       'raw',
       key,
       {
@@ -103,36 +118,36 @@ export const handler = async (user: UserRecord) => {
       },
       false,
       ['encrypt']
-    );
+    ).then((cryptoKey: CryptoKey) => {
 
-    return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
+      return getAuth().setCustomUserClaims(user.uid, customUserClaims).then(() => {
 
-      const app = firestore();
+        const app = firestore();
 
-      return app.runTransaction(async (transaction) => {
+        return app.runTransaction(async (transaction) => {
 
-        const transactionWrite = new TransactionWrite(transaction);
+          const transactionWrite = new TransactionWrite(transaction);
 
-        const userDocSnap = await getUser(app, transaction, user.uid);
+          return getUser(app, transaction, user.uid).then((_userDocSnap) => {
+            userDocSnap = _userDocSnap;
 
-        // createSampleUserData
-        const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
+            // createSampleUserData
+            return createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
+          }).then((roundId) => {
 
-        transactionWrite.set(userDocSnap.ref, new Promise(async (resolve) => {
+            transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
+              return {
+                rounds,
+                hasEncryptedSecretKey: true
+              }
+            }));
 
-          const rounds = encrypt([roundId], cryptoKey);
-
-          resolve({
-            rounds: await rounds,
-            hasEncryptedSecretKey: true
+            return transactionWrite.execute();
           });
-        }));
-
-        return transactionWrite.execute();
+        });
       });
     });
   } catch (e) {
-    publicKey = null;
     console.error(e);
     throw new Error(`user ${user.uid} rsa key creation`);
   }
