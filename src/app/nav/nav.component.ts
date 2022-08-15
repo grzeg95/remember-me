@@ -65,8 +65,8 @@ export class NavComponent implements OnInit {
     this.authService.anonymouslySignIn();
   }
 
-  async signOut(): Promise<void> {
-    await this.authService.signOut();
+  signOut(): void {
+    this.authService.signOut();
   }
 
   openUserSetting() {

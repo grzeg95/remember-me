@@ -75,13 +75,11 @@ export class TaskComponent implements OnInit, OnDestroy {
   @ViewChild('basicInput') basicInput: ElementRef<HTMLInputElement>;
   lastTwoInputs = [];
   round: Round;
-  getTaskByIdSub: Subscription;
   roundSelectedSub: Subscription;
   isConnectedSub: Subscription;
   roundsOrderSub: Subscription;
   timeOfDayValueChanges: Subscription;
   asapSchedulerForDayToApplySub: Subscription;
-  saveTaskSub: Subscription;
 
   constructor(
     private activeRoute: ActivatedRoute,
@@ -244,10 +242,6 @@ export class TaskComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.isOnlineSub.unsubscribe();
 
-    if (this.getTaskByIdSub && !this.getTaskByIdSub.closed) {
-      this.getTaskByIdSub.unsubscribe();
-    }
-
     if (this.roundsOrderSub && !this.roundsOrderSub.closed) {
       this.roundsOrderSub.unsubscribe();
     }
@@ -260,10 +254,6 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     if (this.asapSchedulerForDayToApplySub && !this.asapSchedulerForDayToApplySub.closed) {
       this.asapSchedulerForDayToApplySub.unsubscribe();
-    }
-
-    if (this.saveTaskSub && !this.saveTaskSub.closed) {
-      this.saveTaskSub.unsubscribe();
     }
   }
 
@@ -290,15 +280,11 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       this.id = taskId;
 
-      if (this.getTaskByIdSub && !this.getTaskByIdSub.closed) {
-        this.getTaskByIdSub.unsubscribe();
-      }
-
-      this.getTaskByIdSub = this.roundService.getTaskById$(this.id, this.round.id).subscribe(async (task) => {
+      this.roundService.getTaskById$(this.id, this.round.id).then(async (task) => {
         if (typeof task === 'undefined') {
           this.deepResetForm();
         } else if (task) {
-          this.setAll(await task);
+          this.setAll(task);
         }
         this.savingInProgress = false;
       });
@@ -344,26 +330,17 @@ export class TaskComponent implements OnInit, OnDestroy {
     task.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
 
-    of(httpsCallable(this.functions, 'getTokenWithSecretKey')()).pipe(
-      mergeMap(async (e) => {
-        return await e.then((data) => data.data as string)
-      })
-    );
+    httpsCallable(this.functions, 'saveTask')({
+      task: {
+        description: task.description,
+        daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
+        timesOfDay: task.timesOfDay
+      },
+      taskId: this.id,
+      roundId: this.roundsService.roundSelected$.value.id
+    }).then((result) => {
+      const success = result.data as HTTPSuccess;
 
-    this.saveTaskSub = of(
-      httpsCallable(this.functions, 'saveTask')({
-        task: {
-          description: task.description,
-          daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
-          timesOfDay: task.timesOfDay
-        },
-        taskId: this.id,
-        roundId: this.roundsService.roundSelected$.value.id
-      })).pipe(
-      mergeMap(async (e) => {
-        return await e.then((data) => data.data as HTTPSuccess)
-      })
-    ).subscribe((success: HTTPSuccess) => {
       this.zone.run(() => {
         if (success.created) {
           this.location.go(this.router.createUrlTree(['./', success.taskId], {relativeTo: this.route}).toString());
@@ -375,7 +352,7 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.enable();
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
-    }, (error: HTTPError) => {
+    }).catch((error: HTTPError) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         this.refreshTaskByParamId(this.id);

@@ -11,7 +11,7 @@ import {
 } from '../../../../security';
 import {Round, TasksListItem, TodayItem, Task} from '../../../models';
 import {AuthService} from '../../../../auth/auth.service';
-import {filter, map, skip, take} from 'rxjs/operators';
+import {filter, skip, take} from 'rxjs/operators';
 import {RoundsService} from '../rounds.service';
 import {
   collection,
@@ -136,65 +136,69 @@ export class RoundService {
       collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today`).withConverter(basicEncryptedValueConverter)
     ), async (snap) => {
 
-      const todayName = this.roundsService.todayName$.value;
+      Promise.all(snap.docs.map((doc) => decryptToday(doc.data(), user.cryptoKey))).then((todays) => {
+        const todayName = this.roundsService.todayName$.value;
 
-      let today;
-      for (const doc of snap.docs) {
-        const name = (await decryptToday(doc.data(), user.cryptoKey)).name;
+        let today;
+        for (const [i, doc] of snap.docs.entries()) {
+          const name = todays[i].name;
 
-        if (name === todayName) {
-          today = doc;
-          break;
+          if (name === todayName) {
+            today = doc;
+            break;
+          }
         }
-      }
 
-      if (!today) {
-        this.today$.next({});
-        this.roundsService.todayFirstLoading$.next(false);
-        return;
-      }
+        if (!today) {
+          this.today$.next({});
+          this.roundsService.todayFirstLoading$.next(false);
+          return;
+        }
 
-      if (!this.connectionService.isOnline$.value) {
-        return;
-      }
+        if (!this.connectionService.isOnline$.value) {
+          return;
+        }
 
-      if (this.todayUnsub) {
-        this.todayUnsub();
-        this.todayUnsub = null;
-      }
+        if (this.todayUnsub) {
+          this.todayUnsub();
+          this.todayUnsub = null;
+        }
 
-      this.todayUnsub = onSnapshot(query(
-        collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`).withConverter(encryptedTodayTaskConverter),
-        limit(25)
-      ), async (snap) => {
+        this.todayUnsub = onSnapshot(query(
+          collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`).withConverter(encryptedTodayTaskConverter),
+          limit(25)
+        ), async (snap) => {
 
-        const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
-        const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
-        const todayTaskArr = await Promise.all(todayTaskArrPromise);
+          const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
+          const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
 
-        for (const [i, todayTask] of todayTaskArr.entries()) {
+          Promise.all(todayTaskArrPromise).then((todayTaskArr) => {
+            for (const [i, todayTask] of todayTaskArr.entries()) {
 
-          Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
-            if (!todayTasksByTimeOfDay[timeOfDay]) {
-              todayTasksByTimeOfDay[timeOfDay] = [];
+              Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
+                if (!todayTasksByTimeOfDay[timeOfDay]) {
+                  todayTasksByTimeOfDay[timeOfDay] = [];
+                }
+                todayTasksByTimeOfDay[timeOfDay].push({
+                  description: todayTask.description,
+                  done: todayTask.timesOfDay[timeOfDay],
+                  id: snap.docs[i].id,
+                  disabled: false,
+                  dayOfTheWeekId: today.id,
+                  timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
+                });
+              });
             }
-            todayTasksByTimeOfDay[timeOfDay].push({
-              description: todayTask.description,
-              done: todayTask.timesOfDay[timeOfDay],
-              id: snap.docs[i].id,
-              disabled: false,
-              dayOfTheWeekId: today.id,
-              timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
-            });
+
+            if (todayTasksByTimeOfDay) {
+              this.today$.next(todayTasksByTimeOfDay);
+            }
+
+            this.roundsService.todayFirstLoading$.next(false);
           });
-        }
-
-        if (todayTasksByTimeOfDay) {
-          this.today$.next(todayTasksByTimeOfDay);
-        }
-
-        this.roundsService.todayFirstLoading$.next(false);
+        });
       });
+
     });
   }
 
@@ -212,42 +216,40 @@ export class RoundService {
     ), async (snap) => {
 
       const taskArrPromise = snap.docs.map((encryptTask) => decryptTask(encryptTask.data(), user.cryptoKey));
-      const taskArr = await Promise.all(taskArrPromise);
 
-      const tasks = taskArr.map((task, index) => {
-        return {
-          description: task.description,
-          timesOfDay: task.timesOfDay,
-          daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
-          id: snap.docs[index].id
-        } as TasksListItem;
+      Promise.all(taskArrPromise).then((taskArr) => {
+        const tasks = taskArr.map((task, index) => {
+          return {
+            description: task.description,
+            timesOfDay: task.timesOfDay,
+            daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
+            id: snap.docs[index].id
+          } as TasksListItem;
+        });
+
+        if (tasks) {
+          this.tasks$.next(tasks);
+        }
+        this.roundsService.tasksFirstLoading$.next(false);
       });
-
-      if (tasks) {
-        this.tasks$.next(tasks);
-      }
-      this.roundsService.tasksFirstLoading$.next(false);
     });
   }
 
-  getTaskById$(id: string, roundId: string): Observable<Promise<Task | null>> {
+  getTaskById$(id: string, roundId: string): Promise<Task | null> {
 
     const user = this.authService.user$.value;
 
-    return of(getDoc(
+    return getDoc(
       doc(this.firestore, `users/${user.uid}/rounds/${roundId}/task/${id}`).withConverter(basicEncryptedValueConverter)
-    )).pipe(
-      mergeMap((e) => e),
-      map(async (taskDocSnap) => {
-        const encryptedTask = taskDocSnap.data();
+    ).then((taskDocSnap) => {
+      const encryptedTask = taskDocSnap.data();
 
-        if (encryptedTask) {
-          return await decryptTask(encryptedTask, user.cryptoKey);
-        }
+      if (encryptedTask) {
+        return decryptTask(encryptedTask, user.cryptoKey);
+      }
 
-        return null;
-      })
-    );
+      return null;
+    });
   }
 
   updateTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
