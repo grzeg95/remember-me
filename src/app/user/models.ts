@@ -55,10 +55,6 @@ export interface TimesOfDay {
   timesOfDayCardinality?: number[];
 }
 
-export interface User {
-  rounds?: string[];
-}
-
 export interface TodayTask {
   description: string;
   timesOfDay: {[key in string]: boolean};

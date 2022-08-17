@@ -1,4 +1,6 @@
-import {User as FirebaseUser, IdTokenResult} from 'firebase/auth';
+import {User as _FirebaseUser} from 'firebase/auth';
+
+export interface FirebaseUser extends _FirebaseUser {}
 
 export interface User {
   rounds?: string[];
@@ -10,8 +12,6 @@ export interface User {
   cryptoKey?: CryptoKey;
   providerId?: string;
   isAnonymous?: boolean;
-  firebaseUser: FirebaseUser,
-  idTokenResult: IdTokenResult
 }
 
 export interface EncryptedUser {

@@ -2,21 +2,19 @@ import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {decrypt, userConverter} from '../security';
-import {User} from './user-data.model';
+import {FirebaseUser, User} from './user-data.model';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 import {Buffer} from 'buffer';
 import {httpsCallable, Functions} from 'firebase/functions';
 import {
-  User as FirebaseUser,
-  UserCredential,
   signOut,
   signInAnonymously,
   GoogleAuthProvider,
   signInWithRedirect,
   Auth,
-  IdTokenResult,
-  signInWithCustomToken
+  signInWithCustomToken,
+  IdTokenResult
 } from 'firebase/auth';
 import {Firestore, onSnapshot, doc, DocumentSnapshot, DocumentData} from 'firebase/firestore';
 
@@ -24,6 +22,8 @@ import {Firestore, onSnapshot, doc, DocumentSnapshot, DocumentData} from 'fireba
 export class AuthService {
 
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(undefined);
+  firebaseUser: FirebaseUser;
+
   isUserDecrypted$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(undefined);
   userDocUnsub: () => void;
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
@@ -45,55 +45,26 @@ export class AuthService {
 
       if (firebaseUser) {
 
+        this.firebaseUser = firebaseUser;
+
         if (!crypto.subtle) {
           this.signOut();
           this.snackBar.open('Stop using IE lol');
           return;
         }
 
-        const user: User = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          emailVerified: firebaseUser.emailVerified,
-          cryptoKey: null,
-          firebaseUser,
-          idTokenResult: null
-        };
-
-        let currentUser = this.user$.value;
-
-        if (!currentUser) {
-          currentUser = user;
-        }
-
         // pre 30 min
         this.userIntervalReloadSub = interval(1800000).subscribe(() => {
-          this.proceedGettingOfCryptoKey(currentUser);
+          this.isWaitingForCryptoKey$.next(true);
+          this.proceedGettingOfCryptoKey(this.firebaseUser);
         });
 
-        const userDocRef = doc(this.firestore, `users/${currentUser.uid}`).withConverter(userConverter);
+        const userDocRef = doc(this.firestore, `users/${firebaseUser.uid}`).withConverter(userConverter);
         this.userDocUnsub = onSnapshot(userDocRef, async (snap) => {
 
-          currentUser = this.user$.value;
-
-          if (!currentUser) {
-            currentUser = user;
-          }
-
           if (snap.data()?.hasEncryptedSecretKey) {
-
-            if (currentUser.idTokenResult?.claims.secretKey) {
-              return this.userPostAction(currentUser, snap);
-            }
-
-            if (this.isWaitingForCryptoKey$.value) {
-              return;
-            }
-
             this.isWaitingForCryptoKey$.next(true);
-            this.proceedGettingOfCryptoKey(currentUser, snap);
+            this.proceedGettingOfCryptoKey(this.firebaseUser, snap);
           }
         }, (error) => {
           if (error.code === 'permission-denied') {
@@ -104,6 +75,7 @@ export class AuthService {
       } else {
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
+        this.firebaseUser = null;
         this.isUserDecrypted$.next(false);
         this.whileLoginIn$.next(false);
         this.router.navigate(['/']);
@@ -111,45 +83,38 @@ export class AuthService {
     });
   }
 
-  proceedGettingOfCryptoKey(user: User, actionUserDocSnap?): void {
-    this.getSecretKey(user).then(async (action: {cryptoKey: CryptoKey, idTokenResult: IdTokenResult}) => {
-
-      if (action.idTokenResult.claims.isAnonymous) {
-        user.isAnonymous = true;
-        user.providerId = 'Anonymous';
-      } else {
-        user.isAnonymous = user.firebaseUser.isAnonymous;
-        user.providerId = user.firebaseUser.providerData[0].providerId;
-      }
-
-      user.cryptoKey = action.cryptoKey;
-      user.idTokenResult = action.idTokenResult;
-      return this.userPostAction(user, actionUserDocSnap);
+  proceedGettingOfCryptoKey(firebaseUser: FirebaseUser, actionUserDocSnap?): void {
+    this.getSecretKey(firebaseUser).then(async ({cryptoKey, firebaseUser, idTokenResult}) => {
+      return this.userPostAction(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap);
+    }).catch(() => {
+      this.signOut();
     });
   }
 
-  getSecretKey(user: User): Promise<{cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
+  getSecretKey(currentFirebaseUser: FirebaseUser): Promise<{firebaseUser: FirebaseUser, cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
 
-    return this.getIdTokenResult(user).then((idTokenResult) => {
+    return currentFirebaseUser.getIdTokenResult(true).then((idTokenResult) => {
 
       if (!idTokenResult.claims.secretKey) {
 
+        let firebaseUser: FirebaseUser;
+
         return this.getTokenWithSecretKey()
           .then((idTokenResult) => {
-            return this.loginWithSecuredToken(idTokenResult);
+            return signInWithCustomToken(this.auth, idTokenResult);
           })
           .then((userCredential) => {
-            user.firebaseUser = userCredential.user;
-            return this.getReloadedFirebaseUser(user);
+            firebaseUser = userCredential.user;
+            return firebaseUser.getIdTokenResult(true);
           })
-          .then((firebaseUser: FirebaseUser) => {
-            user.firebaseUser = firebaseUser;
-            return this.getIdTokenResult(user);
-          })
-          .then((idTokenResult) => {
-            return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string)
+          .then((newIdTokenResult) => {
+            return this.getCryptoKeyFromSecretKey(newIdTokenResult.claims.secretKey as string)
               .then((cryptoKey) => {
-                return {cryptoKey, idTokenResult}
+                return {
+                  idTokenResult: newIdTokenResult,
+                  cryptoKey,
+                  firebaseUser
+                }
               });
           });
       }
@@ -157,19 +122,12 @@ export class AuthService {
       return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string)
         .then((cryptoKey) => {
           return {
+            idTokenResult,
             cryptoKey,
-            idTokenResult
+            firebaseUser: currentFirebaseUser
           }
         });
     });
-  }
-
-  loginWithSecuredToken(tokenWithSecretKey: string): Promise<UserCredential> {
-    return signInWithCustomToken(this.auth, tokenWithSecretKey);
-  }
-
-  getIdTokenResult(user: User): Promise<IdTokenResult> {
-    return user.firebaseUser.getIdTokenResult(true);
   }
 
   getTokenWithSecretKey(): Promise<string> {
@@ -189,11 +147,24 @@ export class AuthService {
     );
   }
 
-  getReloadedFirebaseUser(user: User): Promise<FirebaseUser> {
-    return user.firebaseUser.reload().then(() => this.auth.currentUser);
-  }
+  async userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
 
-  async userPostAction(user: User, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
+    const user: User = {
+      cryptoKey,
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: firebaseUser.displayName,
+      emailVerified: firebaseUser.emailVerified,
+      photoURL: firebaseUser.photoURL
+    };
+
+    if (idTokenResult.claims.isAnonymous) {
+      user.isAnonymous = true;
+      user.providerId = 'Anonymous';
+    } else {
+      user.isAnonymous = firebaseUser.isAnonymous;
+      user.providerId = firebaseUser.providerData[0].providerId;
+    }
 
     return new Promise<string>((resolve) => {
       if (actionUserDocSnap?.data()?.rounds) {
@@ -207,6 +178,7 @@ export class AuthService {
       }
 
       this.isWaitingForCryptoKey$.next(false);
+      this.firebaseUser = firebaseUser;
       this.user$.next(user);
       this.whileLoginIn$.next(false);
       this.isUserDecrypted$.next(true);
@@ -249,5 +221,9 @@ export class AuthService {
 
   signOut(): Promise<void> {
     return signOut(this.auth);
+  }
+
+  deleteUser() {
+    return this.firebaseUser.delete();
   }
 }

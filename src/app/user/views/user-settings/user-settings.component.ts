@@ -42,7 +42,7 @@ export class UserSettingsComponent implements OnInit {
 
       if (isConfirmed) {
         if (this.user) {
-          this.user.firebaseUser.delete().then(() => this.authService.signOut()).finally(() => {
+          this.authService.deleteUser().then(() => this.authService.signOut()).finally(() => {
             this.dialogRef.close();
           });
         } else {
