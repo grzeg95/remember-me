@@ -1,27 +1,28 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Round} from '../../helpers/models';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
-import {getUser, writeUser} from '../../helpers/user';
+import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
+import {Round} from '../../../helpers/models';
+import {testRequirement} from '../../../helpers/test-requirement';
+import {TransactionWrite} from '../../../helpers/transaction-write';
+import {getUser, writeUser} from '../../../helpers/user';
 import {
   decrypt,
   decryptRound,
   decryptToday,
   encrypt,
   getCryptoKey
-} from '../../helpers/security';
+} from '../../../helpers/security';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentData = firestore.DocumentData;
 
 const app = firestore();
 
-export const handler = (roundId: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (request: CallableRequest): Promise<{[key: string]: string}> => {
 
-  const auth = callableContext?.auth;
+  const auth = request.auth;
+  const roundId = request.data;
 
   // without app check
-  testRequirement(!callableContext.app);
+  testRequirement(!request.app);
 
   // not logged in
   testRequirement(!auth);

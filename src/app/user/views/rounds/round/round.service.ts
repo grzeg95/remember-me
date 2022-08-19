@@ -1,6 +1,8 @@
 import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
-import {BehaviorSubject, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {getString, RemoteConfig} from "firebase/remote-config";
+import {BehaviorSubject, Subscription} from 'rxjs';
+import {Day} from "../../../../../../functions/src/helpers/models";
 import {RouterDict} from '../../../../app.constants';
 import {ConnectionService} from '../../../../connection.service';
 import {
@@ -9,7 +11,7 @@ import {
   decryptToday,
   decryptTodayTask, encryptedTodayTaskConverter
 } from '../../../../security';
-import {Round, TasksListItem, TodayItem, Task} from '../../../models';
+import {Round, TasksListItem, TodayItem, Task, HTTPSuccess} from '../../../models';
 import {AuthService} from '../../../../auth/auth.service';
 import {filter, skip, take} from 'rxjs/operators';
 import {RoundsService} from '../rounds.service';
@@ -22,7 +24,7 @@ import {
   onSnapshot,
   query
 } from 'firebase/firestore';
-import {Functions, httpsCallable} from 'firebase/functions';
+import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
 
 @Injectable()
 export class RoundService {
@@ -44,7 +46,8 @@ export class RoundService {
     private router: Router,
     private connectionService: ConnectionService,
     @Inject('FUNCTIONS') private readonly functions: Functions,
-    @Inject('FIRESTORE') private readonly firestore: Firestore
+    @Inject('FIRESTORE') private readonly firestore: Firestore,
+    @Inject('REMOTE-CONFIG') private readonly remoteConfig: RemoteConfig
   ) {
   }
 
@@ -252,10 +255,39 @@ export class RoundService {
     });
   }
 
-  updateTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
-    return of(httpsCallable(this.functions, 'setTimesOfDayOrder')(data)).pipe(
-      mergeMap((e) => e),
-      mergeMap(async (e) => e.data as {[key: string]: string})
-    );
+  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Promise<HTTPSuccess> {
+
+    const setTimesOfDayOrderUrl = getString(this.remoteConfig, 'setTimesOfDayOrderUrl');
+    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-setTimesOfDayOrder');
+
+    if (setTimesOfDayOrderUrl) {
+      httpsCallableFunction = httpsCallableFromURL(this.functions, setTimesOfDayOrderUrl);
+    }
+
+    return httpsCallableFunction(data).then((e) => e.data as HTTPSuccess);
+  }
+
+  saveTask(data: {task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}): Promise<HTTPSuccess> {
+
+    const saveTaskUrl = getString(this.remoteConfig, 'saveTaskUrl');
+    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-saveTask');
+
+    if (saveTaskUrl) {
+      httpsCallableFunction = httpsCallableFromURL(this.functions, saveTaskUrl);
+    }
+
+    return httpsCallableFunction(data).then((e) => e.data as HTTPSuccess);
+  }
+
+  deleteTask(data: {taskId: string, roundId: string}): Promise<HTTPSuccess> {
+
+    const deleteTaskUrl = getString(this.remoteConfig, 'deleteTaskUrl');
+    let httpsCallableFunction = httpsCallable<{taskId: string, roundId: string}, HTTPSuccess>(this.functions, 'rounds-deleteTask');
+
+    if (deleteTaskUrl) {
+      httpsCallableFunction = httpsCallableFromURL<{taskId: string, roundId: string}, HTTPSuccess>(this.functions, deleteTaskUrl);
+    }
+
+    return httpsCallableFunction(data).then((e) => e.data as HTTPSuccess);
   }
 }

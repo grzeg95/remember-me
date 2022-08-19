@@ -1,33 +1,33 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
-import {getUser} from '../../helpers/user';
+import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
+import {testRequirement} from '../../../helpers/test-requirement';
+import {TransactionWrite} from '../../../helpers/transaction-write';
+import {getUser} from '../../../helpers/user';
 import {
   decrypt,
   encrypt,
   getCryptoKey
-} from '../../helpers/security';
+} from '../../../helpers/security';
 
 const app = firestore();
 
 /**
  * Set rounds order
  * @function handler
- * @param {*} data
  * {
  *  roundId: string;
  *  moveBy: number
  * }
- * @param {CallableContext} callableContext
+ * @param {CallableRequest} request
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = async (request: CallableRequest): Promise<{[key: string]: string}> => {
 
-  const auth = callableContext?.auth;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
-  testRequirement(!callableContext.app);
+  testRequirement(!request.app);
 
   // not logged in
   testRequirement(!auth);
@@ -49,7 +49,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  testRequirement(!callableContext.auth?.token.secretKey);
+  testRequirement(!auth?.token.secretKey);
 
   let transactionWrite: TransactionWrite;
   let transaction: firestore.Transaction;
@@ -58,7 +58,7 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
   const moveBy = data.moveBy;
   let cryptoKey: CryptoKey;
 
-  return getCryptoKey(callableContext.auth?.token.secretKey).then((_cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
     cryptoKey = _cryptoKey;
 
     return app.runTransaction((_transaction) => {

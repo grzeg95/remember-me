@@ -1,12 +1,13 @@
 import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
+import {getString, RemoteConfig} from 'firebase/remote-config';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
 import {decrypt, userConverter} from '../security';
 import {FirebaseUser, User} from './user-data.model';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {RouterDict} from '../app.constants';
 import {Buffer} from 'buffer';
-import {httpsCallable, Functions} from 'firebase/functions';
+import {httpsCallable, Functions, httpsCallableFromURL} from 'firebase/functions';
 import {
   signOut,
   signInAnonymously,
@@ -35,7 +36,8 @@ export class AuthService {
     private snackBar: MatSnackBar,
     @Inject('FUNCTIONS') private readonly functions: Functions,
     @Inject('AUTH') private readonly auth: Auth,
-    @Inject('FIRESTORE') private readonly firestore: Firestore
+    @Inject('FIRESTORE') private readonly firestore: Firestore,
+    @Inject('REMOTE-CONFIG') private readonly remoteConfig: RemoteConfig
   ) {
 
     this.auth.onAuthStateChanged(async (firebaseUser) => {
@@ -131,8 +133,15 @@ export class AuthService {
   }
 
   getTokenWithSecretKey(): Promise<string> {
-    return httpsCallable(this.functions, 'getTokenWithSecretKey')()
-      .then((result) => result.data as string);
+
+    const getTokenWithSecretKeyUrl = getString(this.remoteConfig, 'getTokenWithSecretKeyUrl');
+    let httpsCallableFunction = httpsCallable(this.functions, 'auth-getTokenWithSecretKey');
+
+    if (getTokenWithSecretKeyUrl) {
+      httpsCallableFunction = httpsCallableFromURL(this.functions, getTokenWithSecretKeyUrl);
+    }
+
+    return httpsCallableFunction().then((result) => result.data as string);
   }
 
   getCryptoKeyFromSecretKey(secretKey: string): Promise<CryptoKey> {

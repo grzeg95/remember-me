@@ -27,7 +27,14 @@ import { Subscription } from 'rxjs';
 })
 export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked {
 
-  setRoundsOrderSub = this.roundsService.setRoundsOrderSub;
+  get setRoundsOrderIsPending(): boolean {
+    return this.roundsService.setRoundsOrderIsPending;
+  }
+
+  set setRoundsOrderIsPending(setRoundsOrderIsPending: boolean) {
+    this.roundsService.setRoundsOrderIsPending = setRoundsOrderIsPending;
+  }
+
   displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
   faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper: ElementRef;
@@ -116,7 +123,8 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
     this.roundsService.roundsOrder$.next(roundsOrder);
 
-    this.setRoundsOrderSub = this.roundsService.setRoundsOrder({moveBy, roundId}).subscribe((success) => {
+    this.setRoundsOrderIsPending = true;
+    this.roundsService.setRoundsOrder({moveBy, roundId}).then((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
@@ -126,7 +134,7 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
         moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
         this.roundsService.roundsOrder$.next(roundsOrder);
       });
-    });
+    }).finally(() => this.setRoundsOrderIsPending = false);
   }
 
   applyCellsWidths(): void {

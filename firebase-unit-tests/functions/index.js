@@ -110,26 +110,10 @@ module.exports.removeUser = async (userId) => {
 
 module.exports.createUser = async (userId) => {
 
-  if (!module.exports.cryptoKey) {
-    module.exports.cryptoKey = await subtle.importKey(
-      'raw',
-      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey, 'hex'),
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['encrypt', 'decrypt']
-    );
-  }
-
   const firestore = module.exports.firestore;
-  const numbers = crypto.randomBytes(2);
 
   await firestore.collection('users').doc(userId).set({
-    cryptoKeyTest: await encrypt({
-      test: [numbers[0], numbers[1]],
-      result: numbers[0] + numbers[1]
-    }, module.exports.cryptoKey)
+    hasEncryptedSecretKey: true
   });
 };
 
@@ -240,7 +224,7 @@ module.exports._getDocEncrypted = async (documentRef, obj) => {
   if (!module.exports.cryptoKey) {
     module.exports.cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(module.exports.myAuth.auth.token.decryptedSymmetricKey, 'hex'),
+      Buffer.from(module.exports.myAuth.auth.token.secretKey, 'hex'),
       {
         name: 'AES-GCM'
       },
@@ -497,3 +481,61 @@ describe(`My functions tests`, () => {
 describe(`My functions benchmarks`, () => {
   require('./rounds/benchmarks/saveTask');
 });
+
+// function getRandomString(length) {
+//   var result           = '';
+//   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+//   var charactersLength = characters.length;
+//   for ( var i = 0; i < length; i++ ) {
+//     result += characters.charAt(Math.floor(Math.random() *
+//       charactersLength));
+//   }
+//   return result;
+// }
+//
+// function getRandomIntInclusive(min, max) {
+//   min = Math.ceil(min);
+//   max = Math.floor(max);
+//   return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
+// }
+//
+// (async () => {
+//   await module.exports.removeUser(module.exports.myId);
+//   await module.exports.createUser(module.exports.myId);
+//
+//   for (let i = 0; i < 5; ++i) {
+//
+//     console.log(i);
+//
+//     const round = await module.exports.getResult(module.exports.saveRound, {
+//       roundId: 'null',
+//       name: getRandomString(getRandomIntInclusive(100, 256))
+//     }, module.exports.myAuth);
+//
+//     for (let j = 0; j < getRandomIntInclusive(15, 25); ++j) {
+//
+//       console.log(i + ',' + j);
+//
+//       const timesOfDay = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].shuffle();
+//       const daysOfTheWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].shuffle();
+//
+//       timesOfDay.length = getRandomIntInclusive(5, 10);
+//       daysOfTheWeek.length = getRandomIntInclusive(1, 7);
+//
+//       await module.exports.getResult(module.exports.saveTask, {
+//         task: {
+//           timesOfDay,
+//           daysOfTheWeek,
+//           description: getRandomString(getRandomIntInclusive(100, 256))
+//         },
+//         taskId: 'null',
+//         roundId: round.roundId
+//       }, module.exports.myAuth);
+//     }
+//   }
+//
+//   const fs = require('fs');
+//   fs.writeFileSync('myId.json', JSON.stringify(await module.exports.getUserJsonEncrypted(module.exports.myId)));
+//
+//
+// })();

@@ -11,6 +11,7 @@ import {initializeApp, getApps, getApp} from 'firebase/app';
 import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
 import {getAnalytics} from 'firebase/analytics';
+import {getRemoteConfig, fetchAndActivate} from 'firebase/remote-config';
 
 const getFirebaseApp = () => {
   const apps = getApps();
@@ -22,30 +23,40 @@ const getFirebaseApp = () => {
   return getApp();
 };
 
-export function initializeFirebase(): () => void {
+export function initializeFirebase(): () => Promise<void> {
   return () => {
 
-    const app = getFirebaseApp();
+    return new Promise((resolve) => {
 
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const functions = getFunctions(app, environment.firebase.locationId);
-    getAnalytics(app);
+      const promises = [];
 
-    initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(environment.recaptcha),
-      isTokenAutoRefreshEnabled: true
+      const app = getFirebaseApp();
+
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      const functions = getFunctions(app, environment.firebase.locationId);
+      getAnalytics(app);
+      const remoteConfig = getRemoteConfig(app);
+      remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+      promises.push(fetchAndActivate(remoteConfig));
+
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(environment.recaptcha),
+        isTokenAutoRefreshEnabled: true
+      });
+
+      if (!environment.production && environment.dev) {
+        connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
+        connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
+        connectFunctionsEmulator(
+          functions,
+          `${environment.emulators.functions.host}`,
+          environment.emulators.functions.port
+        );
+      }
+
+      return Promise.all(promises).then(() => resolve()).catch(() => resolve());
     });
-
-    if (!environment.production && environment.dev) {
-      connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
-      connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
-      connectFunctionsEmulator(
-        functions,
-        `${environment.emulators.functions.host}`,
-        environment.emulators.functions.port
-      );
-    }
   };
 }
 
@@ -64,6 +75,9 @@ export function initializeFirebase(): () => void {
     },
     {
       provide: 'FIRESTORE', useValue: getFirestore(getFirebaseApp())
+    },
+    {
+      provide: 'REMOTE-CONFIG', useValue: getRemoteConfig(getFirebaseApp())
     },
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}

@@ -1,19 +1,19 @@
 // tslint:disable-next-line:no-import-side-effect
-import '../../../../global.prototype';
+import '../../../../../global.prototype';
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {testRequirement} from '../../helpers/test-requirement';
+import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
+import {testRequirement} from '../../../helpers/test-requirement';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
-import {getUser} from '../../helpers/user';
+import {getUser} from '../../../helpers/user';
 import {
   decryptRound,
   decryptTask, decryptToday, decryptTodayTask, encrypt, encryptRound,
   encryptTask, encryptToday,
   encryptTodayTask, getCryptoKey
-} from '../../helpers/security';
-import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
-import {TransactionWrite} from '../../helpers/transaction-write';
+} from '../../../helpers/security';
+import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../../helpers/models';
+import {TransactionWrite} from '../../../helpers/transaction-write';
 
 const app = firestore();
 
@@ -337,12 +337,13 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   });
 };
 
-const checkEntryRequirements = (data: any, callableContext: CallableContext) => {
+const checkEntryRequirements = (request: CallableRequest) => {
 
-  const auth = callableContext?.auth;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
-  testRequirement(!callableContext.app);
+  testRequirement(!request.app);
 
   // not logged in
   testRequirement(!auth);
@@ -433,7 +434,6 @@ const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firesto
 /**
  * Save task
  * @function handler
- * @param {*} data
  * {
  *  task: {
  *   timesOfDay: string[],
@@ -443,12 +443,15 @@ const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firesto
  *  taskId: string,
  *  roundId: string
  * }
- * @param {CallableContext} callableContext
+ * @param {CallableRequest} request
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; taskId: string}> => {
+export const handler = async (request: CallableRequest): Promise<{created: boolean; details: string; taskId: string}> => {
 
-  checkEntryRequirements(data, callableContext);
+  checkEntryRequirements(request);
+
+  const auth = request.auth;
+  const data = request.data;
 
   let created = false;
   let taskId: string = data.taskId;
@@ -465,14 +468,14 @@ export const handler = async (data: any, callableContext: CallableContext): Prom
   let transactionWrite: TransactionWrite;
   let roundDocSnapData: Round;
 
-  return getCryptoKey(callableContext?.auth?.token.secretKey).then((_cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
     cryptoKey = _cryptoKey;
 
     return app.runTransaction((transaction) => {
 
       transactionWrite = new TransactionWrite(transaction)
 
-      return getUser(app, transaction, callableContext?.auth?.uid as string).then(async (_userDocSnap) => {
+      return getUser(app, transaction, auth?.uid as string).then(async (_userDocSnap) => {
         userDocSnap = _userDocSnap;
 
         return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));

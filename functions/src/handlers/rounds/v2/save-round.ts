@@ -1,34 +1,34 @@
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Round} from '../../helpers/models';
-import {testRequirement} from '../../helpers/test-requirement';
+import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
+import {Round} from '../../../helpers/models';
+import {testRequirement} from '../../../helpers/test-requirement';
 import {firestore} from 'firebase-admin';
-import {TransactionWrite} from "../../helpers/transaction-write";
-import {getUser, writeUser} from '../../helpers/user';
+import {TransactionWrite} from '../../../helpers/transaction-write';
+import {getUser, writeUser} from '../../../helpers/user';
 import {
   decrypt, decryptRound,
   encrypt,
   encryptRound, getCryptoKey
-} from '../../helpers/security';
+} from '../../../helpers/security';
 
 const app = firestore();
 
 /**
  * Save times of day
  * @function handler
- * @param {*} data
  * {
  *  roundId: string,
  *  name: string
  * }
- * @param {CallableContext} callableContext
+ * @param {CallableRequest} request
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; roundId: string}> => {
+export const handler = (request: CallableRequest): Promise<{created: boolean; details: string; roundId: string}> => {
 
-  const auth = callableContext?.auth;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
-  testRequirement(!callableContext?.app);
+  testRequirement(!request.app);
 
   // not logged in
   testRequirement(!auth);

@@ -4,7 +4,7 @@ import {
   Task,
   Today,
   TodayTask
-} from '../helpers/models';
+} from './models';
 
 const crypto = require('crypto');
 

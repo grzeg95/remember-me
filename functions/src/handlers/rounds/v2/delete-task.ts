@@ -1,15 +1,15 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Round, Task} from '../../helpers/models';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
-import {getUser} from '../../helpers/user';
+import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
+import {Round, Task} from '../../../helpers/models';
+import {testRequirement} from '../../../helpers/test-requirement';
+import {TransactionWrite} from '../../../helpers/transaction-write';
+import {getUser} from '../../../helpers/user';
 import {
   decryptRound,
   decryptTask,
   decryptToday, encryptRound,
   encryptToday, getCryptoKey
-} from '../../helpers/security';
+} from '../../../helpers/security';
 import Transaction = firestore.Transaction;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
@@ -161,16 +161,16 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
 
 /**
  * Read user data about task and remove it
- * @param {any} data
- * @param {CallableContext} callableContext
+ * @param {CallableRequest} request
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (request: CallableRequest): Promise<{[key: string]: string}> => {
 
-  const auth = callableContext?.auth;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
-  testRequirement(!callableContext.app);
+  testRequirement(!request.app);
 
   // not logged in
   testRequirement(!auth);
@@ -192,9 +192,9 @@ export const handler = (data: any, callableContext: CallableContext): Promise<{[
   // data.taskId is not empty string
   testRequirement(typeof data.taskId !== 'string' || data.taskId.length === 0);
 
-  testRequirement(!callableContext.auth?.token.secretKey);
+  testRequirement(!auth?.token.secretKey);
 
-  return getCryptoKey(callableContext.auth?.token.secretKey).then((cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
 
       return getUser(app, transaction, auth?.uid as string).then((userDocSnap) => {

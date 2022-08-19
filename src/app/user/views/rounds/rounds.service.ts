@@ -1,10 +1,10 @@
 import {Inject, Injectable} from '@angular/core';
 import {AuthService} from '../../../auth/auth.service';
-import {BehaviorSubject, mergeMap, Observable, of, Subscription} from 'rxjs';
+import {BehaviorSubject, Subscription} from 'rxjs';
 import {filter} from 'rxjs/operators';
 import {ConnectionService} from '../../../connection.service';
 import {basicEncryptedValueConverter, decryptRound} from '../../../security';
-import {Round} from '../../models';
+import {HTTPSuccess, Round} from '../../models';
 import {ActivatedRoute} from '@angular/router';
 import {
   limit,
@@ -15,7 +15,8 @@ import {
   doc,
   getDoc
 } from 'firebase/firestore';
-import {Functions, httpsCallable} from 'firebase/functions';
+import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
+import {RemoteConfig, getString} from 'firebase/remote-config';
 
 @Injectable()
 export class RoundsService {
@@ -40,21 +41,19 @@ export class RoundsService {
   roundsListFirstLoad$ = new BehaviorSubject<boolean>(true);
   inEditMode: boolean;
   editedRound$: BehaviorSubject<Round> = new BehaviorSubject<Round>(null);
-  setRoundsOrderSub: Subscription;
+  setRoundsOrderIsPending: boolean;
 
   constructor(
     protected authService: AuthService,
     protected route: ActivatedRoute,
     protected connectionsService: ConnectionService,
     @Inject('FUNCTIONS') private readonly functions: Functions,
-    @Inject('FIRESTORE') private readonly firestore: Firestore
+    @Inject('FIRESTORE') private readonly firestore: Firestore,
+    @Inject('REMOTE-CONFIG') private readonly remoteConfig: RemoteConfig
   ) {
     this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {
         this.roundsOrderFirstLoading$.next(true);
-        if (this.setRoundsOrderSub && !this.setRoundsOrderSub.closed) {
-          this.setRoundsOrderSub.unsubscribe();
-        }
       }
     });
   }
@@ -193,11 +192,28 @@ export class RoundsService {
     }
   }
 
-  saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
-    return of(httpsCallable(this.functions, 'saveRound')({roundId, name})).pipe(
-      mergeMap((e) => e),
-      mergeMap(async (e) => e.data as {roundId: string, details: string, created: boolean})
-    );
+  saveRound(name: string, roundId: string = 'null'): Promise<{roundId: string, details: string, created: boolean}> {
+
+    const saveRoundUrl = getString(this.remoteConfig, 'saveRoundUrl');
+    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-saveRound');
+
+    if (saveRoundUrl) {
+      httpsCallableFunction = httpsCallableFromURL(this.functions, saveRoundUrl);
+    }
+
+    return httpsCallableFunction({roundId, name}).then((e) => e.data as {roundId: string, details: string, created: boolean});
+  }
+
+  deleteRound(id: string): Promise<HTTPSuccess> {
+
+    const deleteRoundUrl = getString(this.remoteConfig, 'deleteRoundUrl');
+    let httpsCallableFunction = httpsCallable<string, HTTPSuccess>(this.functions, 'rounds-deleteRound');
+
+    if (deleteRoundUrl) {
+      httpsCallableFunction = httpsCallableFromURL<string, HTTPSuccess>(this.functions, deleteRoundUrl);
+    }
+
+    return httpsCallableFunction(id).then((e) => e.data as HTTPSuccess);
   }
 
   getRoundById$(roundId: string): Promise<Round> {
@@ -213,10 +229,17 @@ export class RoundsService {
     });
   }
 
-  setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
-    return of(httpsCallable(this.functions, 'setRoundsOrder')(data)).pipe(
-      mergeMap((e) => e),
-      mergeMap(async (e) => e.data as {[key: string]: string})
-    );
+  setRoundsOrder(data: {moveBy: number, roundId: string}): Promise<{[key: string]: string}> {
+
+    const setRoundsOrderUrl = getString(this.remoteConfig, 'setRoundsOrderUrl');
+    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-setRoundsOrder');
+
+    console.log(setRoundsOrderUrl);
+
+    if (setRoundsOrderUrl) {
+      httpsCallableFunction = httpsCallableFromURL(this.functions, setRoundsOrderUrl);
+    }
+
+    return httpsCallableFunction(data).then((e) => e.data as {[key: string]: string});
   }
 }

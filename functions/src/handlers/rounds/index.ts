@@ -1,38 +1,20 @@
 import {runWith} from 'firebase-functions';
-import {regionId} from '../../config';
+import {regionId} from '../../config'
 
-export const deleteTask = runWith({
-  timeoutSeconds: 30,
+const https = runWith({
+  timeoutSeconds: 60,
   memory: '512MB',
-  maxInstances: 2
-}).region(regionId).https.onCall(require('./delete-task').handler);
+  maxInstances: 10
+}).region(regionId).https;
 
-export const saveTask = runWith({
-  timeoutSeconds: 30,
-  memory: '512MB',
-  maxInstances: 2
-}).region(regionId).https.onCall(require('./save-task').handler);
+export const deleteTask = https.onCall(require('./save-task').handler);
 
-export const setTimesOfDayOrder = runWith({
-  timeoutSeconds: 30,
-  memory: '512MB',
-  maxInstances: 2
-}).region(regionId).https.onCall(require('./set-times-of-day-order').handler);
+export const saveTask = https.onCall(require('./save-task').handler);
 
-export const saveRound = runWith({
-  timeoutSeconds: 30,
-  memory: '512MB',
-  maxInstances: 2
-}).region(regionId).https.onCall(require('./save-round').handler);
+export const setTimesOfDayOrder = https.onCall(require('./set-times-of-day-order').handler);
 
-export const deleteRound = runWith({
-  timeoutSeconds: 30,
-  memory: '512MB',
-  maxInstances: 2
-}).region(regionId).https.onCall(require('./delete-round').handler);
+export const saveRound = https.onCall(require('./save-round').handler);
 
-export const setRoundsOrder = runWith({
-  timeoutSeconds: 30,
-  memory: '512MB',
-  maxInstances: 2
-}).region(regionId).https.onCall(require('./set-rounds-order').handler);
+export const deleteRound = https.onCall(require('./delete-round').handler);
+
+export const setRoundsOrder = https.onCall(require('./set-rounds-order').handler);

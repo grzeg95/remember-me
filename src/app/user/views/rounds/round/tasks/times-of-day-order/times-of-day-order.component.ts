@@ -8,7 +8,7 @@ import { RoundService } from '../../round.service';
 import { RoundsService } from '../../../rounds.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Round } from 'functions/src/helpers/models';
-import { Subscription } from 'rxjs';
+import {mergeMap, of, Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-times-of-day-order',
@@ -62,11 +62,13 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
     moveItemInArray(this.roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
 
-    this.roundService.setTimesOfDayOrderSub = this.roundService.updateTimesOfDayOrder({
+    this.roundService.setTimesOfDayOrderSub = of(this.roundService.setTimesOfDayOrder({
       timeOfDay,
       moveBy,
       roundId: this.roundsService.roundSelected$.value.id
-    }).subscribe((success) => {
+    })).pipe(
+      mergeMap((e) => e)
+    ).subscribe((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });

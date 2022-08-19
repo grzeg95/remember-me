@@ -1,13 +1,13 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
-import {Component, ElementRef, Inject, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, UrlTree} from '@angular/router';
-import {asapScheduler, BehaviorSubject, mergeMap, of, Subscription} from 'rxjs';
+import {asapScheduler, BehaviorSubject, Subscription} from 'rxjs';
 import '../../../../../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {RouterDict} from '../../../../../../app.constants';
@@ -18,7 +18,6 @@ import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/tas
 import {TaskService} from './task.service';
 import {RoundService} from '../../round.service';
 import {RoundsService} from '../../../rounds.service';
-import {httpsCallable, Functions} from 'firebase/functions';
 
 @Component({
   selector: 'app-task',
@@ -92,8 +91,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     private roundsService: RoundsService,
     private router: Router,
     private route: ActivatedRoute,
-    private connectionService: ConnectionService,
-    @Inject('FUNCTIONS') private readonly functions: Functions
+    private connectionService: ConnectionService
   ) {
   }
 
@@ -330,7 +328,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     task.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
 
-    httpsCallable(this.functions, 'saveTask')({
+    this.roundService.saveTask({
       task: {
         description: task.description,
         daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
@@ -338,8 +336,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       },
       taskId: this.id,
       roundId: this.roundsService.roundSelected$.value.id
-    }).then((result) => {
-      const success = result.data as HTTPSuccess;
+    }).then((success) => {
 
       this.zone.run(() => {
         if (success.created) {
@@ -434,26 +431,22 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.disable();
         this.deletingInProgress = true;
 
-        of(httpsCallable(this.functions, 'deleteTask')({
+        this.roundService.deleteTask({
           taskId: this.id,
           roundId: this.round.id
-        })).pipe(
-          mergeMap((e) => e),
-          mergeMap(async (e) => e.data)
-        ).subscribe((success: HTTPSuccess) => {
+        }).then((success: HTTPSuccess) => {
           this.zone.run(() => {
             this.snackBar.open(success.details || 'Your operation has been done 😉');
             this.deepResetForm();
             this.deletingInProgress = false;
           });
-        }, (error: HTTPError) => {
+        }).catch((error: HTTPError) => {
           this.zone.run(() => {
             this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
             this.refreshTaskByParamId(this.id);
           });
         });
       }
-
     });
 
   }

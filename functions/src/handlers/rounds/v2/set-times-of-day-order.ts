@@ -1,38 +1,38 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Round} from '../../helpers/models';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
+import {Round} from '../../../helpers/models';
+import {testRequirement} from '../../../helpers/test-requirement';
+import {TransactionWrite} from '../../../helpers/transaction-write';
+import {getUser} from '../../../helpers/user';
 import {
   decryptRound,
   encryptRound,
   getCryptoKey
-} from '../../helpers/security';
+} from '../../../helpers/security';
 
 const app = firestore();
 
 /**
  * Set times of day order
  * @function handler
- * @param {*} data
  * {
  *  roundId: string;
  *  timeOfDay: string;
  *  moveBy: number
  * }
- * @param {CallableContext} callableContext
+ * @param {CallableRequest} request
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (request: CallableRequest): Promise<{[key: string]: string}> => {
 
-  const auth = callableContext?.auth;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
-  testRequirement(!callableContext.app);
+  testRequirement(!request.app);
 
   // not logged in
-  testRequirement(!callableContext.auth);
+  testRequirement(!auth);
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -61,7 +61,7 @@ export const handler = (data: any, callableContext: CallableContext): Promise<{[
   let roundDocSnap: firestore.DocumentSnapshot;
   let round: Round;
 
-  return getCryptoKey(callableContext.auth?.token.secretKey).then((_cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
     cryptoKey = _cryptoKey;
 
     return app.runTransaction((transaction) => {

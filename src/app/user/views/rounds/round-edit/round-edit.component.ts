@@ -1,18 +1,16 @@
-import {Component, Inject, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
-import {mergeMap, of, Subscription} from 'rxjs';
-import {finalize} from 'rxjs/operators';
+import {Subscription} from 'rxjs';
 import {RouterDict} from '../../../../app.constants';
 import {ConnectionService} from "../../../../connection.service";
 import {CustomValidators} from '../../../../custom-validators';
-import {HTTPError, HTTPSuccess} from '../../../models';
+import {HTTPError} from '../../../models';
 import {RoundsService} from '../rounds.service';
 import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 import {Location} from '@angular/common';
-import {Functions, httpsCallable} from "firebase/functions";
 
 @Component({
   selector: 'app-times-of-day-list',
@@ -32,8 +30,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
   savingInProgress = false;
   deletingInProgress = false;
-  saveRoundSub: Subscription;
-  deleteRoundSub: Subscription;
   id = 'null';
   initValues: {
     name: string
@@ -49,8 +45,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     public dialog: MatDialog,
     public location: Location,
-    private connectionService: ConnectionService,
-    @Inject('FUNCTIONS') private readonly functions: Functions
+    private connectionService: ConnectionService
   ) {
   }
 
@@ -79,13 +74,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     this.savingInProgress = true;
     this.roundForm.disable();
 
-    if (this.saveRoundSub && !this.saveRoundSub.closed) {
-      this.saveRoundSub.unsubscribe();
-    }
-
-    this.saveRoundSub = this.roundsService.saveRound(this.name.value, this.id).pipe(
-      finalize(() => this.savingInProgress = false)
-    ).subscribe((success) => {
+    this.roundsService.saveRound(this.name.value, this.id).then((success) => {
       this.zone.run(() => {
         if (success.created) {
           this.location.go(this.router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, success.roundId]).toString());
@@ -107,7 +96,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
-    }, (error) => {
+    }).catch((error) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         this.refreshRoundByParamId(this.id);
@@ -124,22 +113,13 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.roundForm.disable();
         this.deletingInProgress = true;
 
-        if (this.deleteRoundSub && !this.deleteRoundSub.closed) {
-          this.deleteRoundSub.unsubscribe();
-        }
-
-        this.deleteRoundSub = of(
-          httpsCallable(this.functions, 'deleteRound')(this.id)
-        ).pipe(
-          mergeMap((e) => e),
-          mergeMap(async (e) => e.data)
-        ).subscribe((success: HTTPSuccess) => {
+        this.roundsService.deleteRound(this.id).then((success) => {
           this.zone.run(() => {
             this.snackBar.open(success.details || 'Your operation has been done 😉');
             this.deepResetForm();
             this.deletingInProgress = false;
           });
-        }, (error: HTTPError) => {
+        }).catch((error: HTTPError) => {
           this.zone.run(() => {
             this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
             this.refreshRoundByParamId(this.id);
@@ -201,15 +181,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-
-    if (this.saveRoundSub && !this.saveRoundSub.closed) {
-      this.saveRoundSub.unsubscribe();
-    }
-
-    if (this.deleteRoundSub && !this.deleteRoundSub.closed) {
-      this.deleteRoundSub.unsubscribe();
-    }
-
     this.roundsService.inEditMode = false;
     this.roundsService.editedRound$.next(null);
     this.isOnlineSub.unsubscribe();
