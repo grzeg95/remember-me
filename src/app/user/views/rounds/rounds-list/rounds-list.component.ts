@@ -39,10 +39,10 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
   faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper: ElementRef;
 
-  roundsList: Round[];
+  roundsList: Round[] = [];
   roundsListSub: Subscription;
 
-  roundsOrder: string[];
+  roundsOrder: string[] = [];
   roundsOrderSub: Subscription;
 
   isOnline: boolean;
