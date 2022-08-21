@@ -1,4 +1,4 @@
-<router-outlet *ngIf="isUserDecrypted$ | async"></router-outlet>
+<router-outlet *ngIf="user$ | async"></router-outlet>
 
 <div class="nude-user" *ngIf="isNudeUser">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1920">

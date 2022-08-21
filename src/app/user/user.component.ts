@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { RouterDict } from '../app.constants';
-import { AuthService } from '../auth/auth.service';
+import {Component} from '@angular/core';
+import {Router} from '@angular/router';
+import {RouterDict} from '../app.constants';
+import {AuthService} from '../auth/auth.service';
 
 @Component({
   selector: 'app-user',
@@ -10,7 +10,7 @@ import { AuthService } from '../auth/auth.service';
 })
 export class UserComponent {
 
-  isUserDecrypted$ = this.authService.isUserDecrypted$;
+  user$ = this.authService.user$;
 
   get isNudeUser(): boolean {
     return this.router.isActive('/' + RouterDict.user, true);

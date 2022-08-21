@@ -1,7 +1,7 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import {ChangeDetectorRef, Component} from '@angular/core';
 
-import { AuthService } from './auth/auth.service';
-import { ConnectionService } from './connection.service';
+import {AuthService} from './auth/auth.service';
+import {ConnectionService} from './connection.service';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +12,7 @@ export class AppComponent {
 
   whileLoginIn$ = this.authService.whileLoginIn$;
   isWaitingForCryptoKey: boolean;
-  isUserDecrypted$ = this.authService.isUserDecrypted$;
+  user$ = this.authService.user$;
   isOnline$ = this.connectionService.isOnline$;
 
   constructor(

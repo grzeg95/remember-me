@@ -24,8 +24,6 @@ export class AuthService {
 
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(undefined);
   firebaseUser: FirebaseUser;
-
-  isUserDecrypted$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(undefined);
   userDocUnsub: () => void;
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
   userIntervalReloadSub: Subscription;
@@ -78,7 +76,6 @@ export class AuthService {
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
         this.firebaseUser = null;
-        this.isUserDecrypted$.next(false);
         this.whileLoginIn$.next(false);
         this.router.navigate(['/']);
       }
@@ -156,7 +153,7 @@ export class AuthService {
     );
   }
 
-  async userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
+  userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
 
     const user: User = {
       cryptoKey,
@@ -190,7 +187,6 @@ export class AuthService {
       this.firebaseUser = firebaseUser;
       this.user$.next(user);
       this.whileLoginIn$.next(false);
-      this.isUserDecrypted$.next(true);
     });
   }
 
@@ -232,7 +228,7 @@ export class AuthService {
     return signOut(this.auth);
   }
 
-  deleteUser() {
+  deleteUser(): Promise<void> {
     return this.firebaseUser.delete();
   }
 }

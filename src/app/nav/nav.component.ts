@@ -1,5 +1,5 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {MatDialog} from '@angular/material/dialog';
 import {
   faEllipsisV,
   faTasks,
@@ -8,10 +8,11 @@ import {
   faArrowRightFromBracket,
   faEyeSlash
 } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '../auth/auth.service';
-import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import { ConnectionService } from "../connection.service";
-import { UserSettingsComponent } from '../user/views/user-settings/user-settings.component';
+import {AuthService} from '../auth/auth.service';
+import {faGoogle} from '@fortawesome/free-brands-svg-icons';
+import {User} from '../auth/user-data.model';
+import {ConnectionService} from '../connection.service';
+import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
@@ -20,20 +21,9 @@ import { UserSettingsComponent } from '../user/views/user-settings/user-settings
 })
 export class NavComponent implements OnInit {
 
-  isUserDecrypted: boolean;
+  user: User;
   isOnline: boolean;
   whileLoginIn: boolean;
-
-  get userPhoto(): string {
-
-    const user = this.authService.user$.value;
-
-    if (user) {
-      return user.photoURL;
-    }
-
-    return null;
-  }
 
   faTasks = faTasks;
   faUser = faUser;
@@ -52,7 +42,7 @@ export class NavComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.authService.isUserDecrypted$.subscribe((isUserDecrypted) => this.isUserDecrypted = isUserDecrypted);
+    this.authService.user$.subscribe((user) => this.user = user);
     this.authService.whileLoginIn$.subscribe((whileLoginIn) => this.whileLoginIn = whileLoginIn);
     this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }

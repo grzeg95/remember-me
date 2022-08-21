@@ -7,9 +7,9 @@
           <img src="/assets/img/logo.svg" class="logo">
           <span class="example-spacer"></span>
 
-          <div *ngIf="isUserDecrypted !== undefined">
+          <div *ngIf="user !== undefined">
 
-            <div *ngIf="!isUserDecrypted" class="d-flex align-items-center right">
+            <div *ngIf="!user" class="d-flex align-items-center right">
               <button mat-flat-button
                       color="primary"
                       [matMenuTriggerFor]="menu"
@@ -33,9 +33,9 @@
               </mat-menu>
             </div>
 
-            <div *ngIf="isUserDecrypted" class="d-flex align-items-center right">
-              <img *ngIf="userPhoto" [matMenuTriggerFor]="menu" [src]="userPhoto"/>
-              <div *ngIf="!userPhoto" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
+            <div *ngIf="user" class="d-flex align-items-center right">
+              <img *ngIf="user.photoURL" [matMenuTriggerFor]="menu" [src]="user.photoURL"/>
+              <div *ngIf="!user.photoURL" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item (click)="signOut()"><fa-icon [icon]="faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</button>
                 <button mat-menu-item (click)="openUserSetting()"><fa-icon [icon]="faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</button>
