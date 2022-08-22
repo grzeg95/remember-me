@@ -23,7 +23,6 @@ import {RemoteConfig, getString} from 'firebase/remote-config';
 export class RoundsService {
 
   protected roundsListUnsub: () => void;
-  protected userSub: Subscription;
   protected paramRoundIdSelectedSub: Subscription;
   protected nowSub: Subscription;
   isOnlineSub: Subscription;
@@ -81,10 +80,6 @@ export class RoundsService {
       this.roundsListUnsub = undefined;
     }
 
-    if (this.userSub && !this.userSub.closed) {
-      this.userSub.unsubscribe();
-    }
-
     if (this.paramRoundIdSelectedSub && !this.paramRoundIdSelectedSub.closed) {
       this.paramRoundIdSelectedSub.unsubscribe();
     }
@@ -102,43 +97,38 @@ export class RoundsService {
 
   protected runRoundsList(): void {
 
-    if (this.userSub && !this.userSub.closed) {
-      this.userSub.unsubscribe();
+    const user = this.authService.user$.value;
+
+    if (this.roundsListUnsub) {
+      this.roundsListUnsub();
+      this.roundsListUnsub = undefined;
     }
 
-    this.userSub = this.authService.user$.subscribe((user) => {
+    this.roundsListUnsub = onSnapshot(query(
+      collection(this.firestore, `users/${user.uid}/rounds`).withConverter(basicEncryptedValueConverter),
+      limit(5)
+    ), async (snap) => {
 
-      if (this.roundsListUnsub) {
-        this.roundsListUnsub();
-        this.roundsListUnsub = undefined;
+      // decrypt
+      const roundsDecryptPromise: Promise<Round>[] = [];
+
+      for (const doc of snap.docs) {
+        roundsDecryptPromise.push(decryptRound(doc.data(), user.cryptoKey));
       }
 
-      this.roundsListUnsub = onSnapshot(query(
-        collection(this.firestore, `users/${user.uid}/rounds`).withConverter(basicEncryptedValueConverter),
-        limit(5)
-      ), async (snap) => {
-
-        // decrypt
-        const roundsDecryptPromise: Promise<Round>[] = [];
-
-        for (const doc of snap.docs) {
-          roundsDecryptPromise.push(decryptRound(doc.data(), user.cryptoKey));
+      Promise.all(roundsDecryptPromise).then((decryptedRoundList) => {
+        for (const [i, doc] of snap.docs.entries()) {
+          decryptedRoundList[i].id = doc.id;
         }
 
-        Promise.all(roundsDecryptPromise).then((decryptedRoundList) => {
-          for (const [i, doc] of snap.docs.entries()) {
-            decryptedRoundList[i].id = doc.id;
-          }
-
-          this.roundsListFirstLoad$.next(false);
-          this.generateLists(decryptedRoundList, this.roundsOrder$.value);
-        });
+        this.roundsListFirstLoad$.next(false);
+        this.generateLists(decryptedRoundList, this.roundsOrder$.value);
       });
-
-      // from user
-      this.roundsOrderFirstLoading$.next(false);
-      this.generateLists(this.roundsList$.value, user?.rounds);
     });
+
+    // from user
+    this.roundsOrderFirstLoading$.next(false);
+    this.generateLists(this.roundsList$.value, user?.rounds);
   }
 
   protected generateLists(roundsList: Round[], roundsOrder: string[]): void {
@@ -211,7 +201,10 @@ export class RoundsService {
       httpsCallableFunction = httpsCallableFromURL(this.functions, saveRoundUrl);
     }
 
-    return httpsCallableFunction({roundId, name}).then((e) => e.data as {roundId: string, details: string, created: boolean});
+    return httpsCallableFunction({
+      roundId,
+      name
+    }).then((e) => e.data as {roundId: string, details: string, created: boolean});
   }
 
   deleteRound(id: string): Promise<HTTPSuccess> {
