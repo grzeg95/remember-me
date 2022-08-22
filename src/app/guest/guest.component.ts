@@ -2,6 +2,7 @@ import {Component, Inject} from '@angular/core';
 import {doc, DocumentData, Firestore, QueryDocumentSnapshot, SnapshotOptions, getDoc} from 'firebase/firestore';
 import {AuthService} from '../auth/auth.service';
 import {defaultGuestComponentConfig, GuestComponentConfig} from '../config.model';
+import {FIRESTORE} from '../injectors';
 
 @Component({
   selector: 'app-guest',
@@ -16,7 +17,7 @@ export class GuestComponent {
 
   constructor(
     private authService: AuthService,
-    @Inject('FIRESTORE') private readonly firestore: Firestore
+    @Inject(FIRESTORE) private readonly firestore: Firestore
   ) {
     getDoc(doc(this.firestore, 'config/guestComponent').withConverter({
       toFirestore(): DocumentData {

@@ -1,83 +1,38 @@
-import {APP_INITIALIZER, NgModule} from '@angular/core';
+import {NgModule} from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {environment} from '../environments/environment';
 import {AuthGuard} from './auth/auth-guard.service';
 import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
 import {CustomValidators} from './custom-validators';
-import {connectAuthEmulator, getAuth} from 'firebase/auth';
-import {initializeAppCheck, ReCaptchaV3Provider} from 'firebase/app-check';
-import {initializeApp, getApps, getApp} from 'firebase/app';
-import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
-import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
-import {getAnalytics} from 'firebase/analytics';
-import {getRemoteConfig, fetchAndActivate} from 'firebase/remote-config';
-
-const getFirebaseApp = () => {
-  const apps = getApps();
-
-  if (apps.length === 0) {
-    return initializeApp(environment.firebase);
-  }
-
-  return getApp();
-};
-
-export function initializeFirebase(): () => Promise<void> {
-  return () => {
-
-    return new Promise((resolve) => {
-
-      const promises = [];
-
-      const app = getFirebaseApp();
-
-      const auth = getAuth(app);
-      const firestore = getFirestore(app);
-      const functions = getFunctions(app, environment.firebase.locationId);
-      getAnalytics(app);
-      const remoteConfig = getRemoteConfig(app);
-      remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
-      promises.push(fetchAndActivate(remoteConfig));
-
-      initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(environment.recaptcha),
-        isTokenAutoRefreshEnabled: true
-      });
-
-      if (!environment.production && environment.dev) {
-        connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
-        connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
-        connectFunctionsEmulator(
-          functions,
-          `${environment.emulators.functions.host}`,
-          environment.emulators.functions.port
-        );
-      }
-
-      return Promise.all(promises).then(() => resolve()).catch(() => resolve());
-    });
-  };
-}
+import {getAuth} from 'firebase/auth';
+import {FirebaseApp} from 'firebase/app';
+import {getFunctions} from 'firebase/functions';
+import {getFirestore} from 'firebase/firestore';
+import {getRemoteConfig} from 'firebase/remote-config';
+import {AUTH, FIREBASE_APP, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from './injectors';
 
 @NgModule({
   providers: [
     {
-      provide: APP_INITIALIZER,
-      multi: true,
-      useFactory: initializeFirebase
+      provide: FUNCTIONS,
+      useFactory: (firebaseApp: FirebaseApp) => getFunctions(firebaseApp, environment.firebase.locationId),
+      deps: [FIREBASE_APP]
     },
     {
-      provide: 'FUNCTIONS', useValue: getFunctions(getFirebaseApp(), environment.firebase.locationId)
+      provide: AUTH,
+      useFactory: (firebaseApp: FirebaseApp) => getAuth(firebaseApp),
+      deps: [FIREBASE_APP]
     },
     {
-      provide: 'AUTH', useValue: getAuth(getFirebaseApp())
+      provide: FIRESTORE,
+      useFactory: (firebaseApp: FirebaseApp) => getFirestore(firebaseApp),
+      deps: [FIREBASE_APP]
     },
     {
-      provide: 'FIRESTORE', useValue: getFirestore(getFirebaseApp())
-    },
-    {
-      provide: 'REMOTE-CONFIG', useValue: getRemoteConfig(getFirebaseApp())
+      provide: REMOTE_CONFIG,
+      useFactory: (firebaseApp: FirebaseApp) => getRemoteConfig(firebaseApp),
+      deps: [FIREBASE_APP]
     },
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}

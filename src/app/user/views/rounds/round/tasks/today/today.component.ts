@@ -6,6 +6,7 @@ import {filter, take} from 'rxjs/operators';
 import {RouterDict} from 'src/app/app.constants';
 import {AuthService} from '../../../../../../auth/auth.service';
 import { ConnectionService } from "../../../../../../connection.service";
+import {FIRESTORE} from '../../../../../../injectors';
 import {Day, Round, TodayItem} from '../../../../../models';
 import {ActivatedRoute, Router} from '@angular/router';
 import {TaskService} from '../task/task.service';
@@ -53,7 +54,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private taskService: TaskService,
     private connectionService: ConnectionService,
-    @Inject('FIRESTORE') private readonly firestore: Firestore
+    @Inject(FIRESTORE) private readonly firestore: Firestore
   ) {
   }
 

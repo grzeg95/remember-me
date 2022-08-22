@@ -2,6 +2,7 @@ import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {getString, RemoteConfig} from 'firebase/remote-config';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
+import {AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
 import {decrypt, userConverter} from '../security';
 import {FirebaseUser, User} from './user-data.model';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -32,10 +33,10 @@ export class AuthService {
   constructor(
     private router: Router,
     private snackBar: MatSnackBar,
-    @Inject('FUNCTIONS') private readonly functions: Functions,
-    @Inject('AUTH') private readonly auth: Auth,
-    @Inject('FIRESTORE') private readonly firestore: Firestore,
-    @Inject('REMOTE-CONFIG') private readonly remoteConfig: RemoteConfig
+    @Inject(FUNCTIONS) private readonly functions: Functions,
+    @Inject(AUTH) private readonly auth: Auth,
+    @Inject(FIRESTORE) private readonly firestore: Firestore,
+    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig
   ) {
 
     this.auth.onAuthStateChanged(async (firebaseUser) => {

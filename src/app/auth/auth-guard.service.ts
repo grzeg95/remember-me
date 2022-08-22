@@ -1,13 +1,14 @@
 import {Inject, Injectable} from "@angular/core";
 import {ActivatedRouteSnapshot, CanActivate, Router, UrlTree} from "@angular/router";
 import {Auth} from "firebase/auth";
+import {AUTH} from '../injectors';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
 
   constructor(
     private router: Router,
-    @Inject('AUTH') private readonly auth: Auth
+    @Inject(AUTH) private readonly auth: Auth
   ) {
   }
 

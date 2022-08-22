@@ -3,6 +3,7 @@ import {AuthService} from '../../../auth/auth.service';
 import {BehaviorSubject, Subscription} from 'rxjs';
 import {filter} from 'rxjs/operators';
 import {ConnectionService} from '../../../connection.service';
+import {FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../../../injectors';
 import {basicEncryptedValueConverter, decryptRound} from '../../../security';
 import {HTTPSuccess, Round} from '../../models';
 import {ActivatedRoute} from '@angular/router';
@@ -47,9 +48,9 @@ export class RoundsService {
     protected authService: AuthService,
     protected route: ActivatedRoute,
     protected connectionsService: ConnectionService,
-    @Inject('FUNCTIONS') private readonly functions: Functions,
-    @Inject('FIRESTORE') private readonly firestore: Firestore,
-    @Inject('REMOTE-CONFIG') private readonly remoteConfig: RemoteConfig
+    @Inject(FUNCTIONS) private readonly functions: Functions,
+    @Inject(FIRESTORE) private readonly firestore: Firestore,
+    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig
   ) {
     this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => {
       if (!isOnline) {

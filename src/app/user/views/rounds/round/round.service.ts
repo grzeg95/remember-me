@@ -5,6 +5,7 @@ import {BehaviorSubject, Subscription} from 'rxjs';
 import {Day} from "../../../../../../functions/src/helpers/models";
 import {RouterDict} from '../../../../app.constants';
 import {ConnectionService} from '../../../../connection.service';
+import {FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../../../../injectors';
 import {
   basicEncryptedValueConverter,
   decryptTask,
@@ -45,9 +46,9 @@ export class RoundService {
     private roundsService: RoundsService,
     private router: Router,
     private connectionService: ConnectionService,
-    @Inject('FUNCTIONS') private readonly functions: Functions,
-    @Inject('FIRESTORE') private readonly firestore: Firestore,
-    @Inject('REMOTE-CONFIG') private readonly remoteConfig: RemoteConfig
+    @Inject(FUNCTIONS) private readonly functions: Functions,
+    @Inject(FIRESTORE) private readonly firestore: Firestore,
+    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig
   ) {
   }
 
