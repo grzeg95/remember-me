@@ -7,7 +7,12 @@ import {getAnalytics} from 'firebase/analytics';
 import {initializeApp, FirebaseApp} from 'firebase/app';
 import {initializeAppCheck, ReCaptchaV3Provider} from 'firebase/app-check';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
-import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  enableIndexedDbPersistence,
+  clearIndexedDbPersistence
+} from 'firebase/firestore';
 import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
 import {fetchAndActivate, getRemoteConfig} from 'firebase/remote-config';
 
@@ -46,6 +51,7 @@ const initializeFirebase = (): Promise<FirebaseApp> => {
       );
     }
 
+    promises.push(clearIndexedDbPersistence(firestore).then(() => enableIndexedDbPersistence(firestore)));
     return Promise.all(promises).then(() => resolve(app)).catch(() => resolve(app));
   });
 }
