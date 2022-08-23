@@ -4,18 +4,12 @@ __webpack_nonce__ = 'random-csp-nonce';
 import {enableProdMode} from '@angular/core';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import {getAnalytics} from 'firebase/analytics';
-import {initializeApp, FirebaseApp} from 'firebase/app';
+import {FirebaseApp, initializeApp} from 'firebase/app';
 import {initializeAppCheck, ReCaptchaV3Provider} from 'firebase/app-check';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
-import {
-  connectFirestoreEmulator,
-  getFirestore,
-  enableIndexedDbPersistence,
-  clearIndexedDbPersistence
-} from 'firebase/firestore';
+import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
 import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
 import {fetchAndActivate, getRemoteConfig} from 'firebase/remote-config';
-
 import {AppModule} from './app/app.module';
 import {FIREBASE_APP} from './app/injectors';
 import {environment} from './environments/environment';
@@ -51,7 +45,6 @@ const initializeFirebase = (): Promise<FirebaseApp> => {
       );
     }
 
-    promises.push(clearIndexedDbPersistence(firestore).then(() => enableIndexedDbPersistence(firestore)));
     return Promise.all(promises).then(() => resolve(app)).catch(() => resolve(app));
   });
 }

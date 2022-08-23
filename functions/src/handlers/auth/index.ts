@@ -1,4 +1,4 @@
-import {runWith, RuntimeOptions} from 'firebase-functions';
+import {RuntimeOptions, runWith} from 'firebase-functions';
 import {regionId} from '../../config';
 
 const https = runWith({

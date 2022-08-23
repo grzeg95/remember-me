@@ -1,14 +1,13 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { faEdit } from '@fortawesome/free-regular-svg-icons';
-import { Subscription } from 'rxjs';
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import {Subscription} from 'rxjs';
 import '../../../../../../../../global.prototype';
-import { RouterDict } from '../../../../../../app.constants';
-import { ConnectionService } from '../../../../../../connection.service';
-import { RoundService } from '../../round.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { RoundsService } from '../../../rounds.service';
-import { Round } from 'functions/src/helpers/models';
-import { TasksListItem } from 'src/app/user/models';
+import {RouterDict} from '../../../../../../app.constants';
+import {ConnectionService} from '../../../../../../connection.service';
+import {ActivatedRoute, Router} from '@angular/router';
+import {RoundsService} from '../../../rounds.service';
+import {Round} from 'functions/src/helpers/models';
+import {TasksListItem} from 'src/app/user/models';
 
 @Component({
   selector: 'app-tasks',
@@ -20,12 +19,6 @@ export class TasksComponent implements OnInit, OnDestroy {
   isOnline: boolean;
   isOnlineSub: Subscription;
 
-  tasksFirstLoading: boolean;
-  tasksFirstLoadingSub: Subscription;
-
-  roundsOrderFirstLoading: boolean;
-  roundsOrderFirstLoadingSub: Subscription;
-
   tasks: TasksListItem[];
   tasksSub: Subscription;
 
@@ -33,11 +26,12 @@ export class TasksComponent implements OnInit, OnDestroy {
   faEdit = faEdit;
   displayedColumns: string[] = ['description', 'daysOfTheWeek', 'timesOfDays', 'edit'];
 
-  roundSelectedSub: Subscription;
-  roundSelected: Round;
+  selectedRoundSub: Subscription;
+  selectedRound: Round;
+
+  tasksListViewFirstLoading$ = this.roundsService.tasksListViewFirstLoading$;
 
   constructor(
-    private roundService: RoundService,
     private roundsService: RoundsService,
     private connectionService: ConnectionService,
     private router: Router,
@@ -46,15 +40,13 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => {
-      this.roundService.runTasksList(round);
-      this.roundSelected = round;
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => {
+      this.roundsService.runTasksList(round);
+      this.selectedRound = round;
     });
 
     this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
-    this.tasksFirstLoadingSub = this.roundsService.tasksFirstLoading$.subscribe((tasksFirstLoading) => this.tasksFirstLoading = tasksFirstLoading);
-    this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
-    this.tasksSub = this.roundService.tasks$.subscribe((tasks) => this.tasks = tasks);
+    this.tasksSub = this.roundsService.tasks$.subscribe((tasks) => this.tasks = tasks);
   }
 
   getTimesOfDay(timesOfDayOrder: string[], taskTimesOfDay: string[]): string[] {
@@ -71,10 +63,8 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.roundSelectedSub.unsubscribe();
+    this.selectedRoundSub.unsubscribe();
     this.isOnlineSub.unsubscribe();
-    this.tasksFirstLoadingSub.unsubscribe();
-    this.roundsOrderFirstLoadingSub.unsubscribe();
     this.tasksSub.unsubscribe();
   }
 }

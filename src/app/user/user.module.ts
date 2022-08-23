@@ -2,10 +2,9 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {SharedModule} from '../shared.module';
-import {TaskService} from './views/rounds/round/tasks/task/task.service';
 import {UserRoutingModule} from './user-routing.module';
 import {UserComponent} from './user.component';
-import {RoundService} from './views/rounds/round/round.service';
+import {TaskService} from './views/rounds/round/tasks/task/task.service';
 import {RoundsService} from './views/rounds/rounds.service';
 import {
   UserDialogConfirmDeleteComponent
@@ -15,8 +14,8 @@ import {UserSettingsComponent} from './views/user-settings/user-settings.compone
 @NgModule({
   declarations: [
     UserComponent,
-    UserSettingsComponent,
-    UserDialogConfirmDeleteComponent
+    UserDialogConfirmDeleteComponent,
+    UserSettingsComponent
   ],
   imports: [
     RouterModule,
@@ -26,10 +25,12 @@ import {UserSettingsComponent} from './views/user-settings/user-settings.compone
   ],
   providers: [
     TaskService,
-    RoundService,
     RoundsService
   ],
-  entryComponents: [UserSettingsComponent, UserDialogConfirmDeleteComponent]
+  entryComponents: [
+    UserDialogConfirmDeleteComponent,
+    UserSettingsComponent
+  ]
 })
 export class UserModule {
 }

@@ -55,12 +55,10 @@ export const handler = (request: CallableRequest): Promise<{[key: string]: strin
       }).then((_roundDocSnapData) => {
         roundDocSnapData = _roundDocSnapData;
 
-
         // check if round exists
         testRequirement(!roundDocSnap.exists);
 
         // get all documents
-
 
         // get all tasks
         for (const taskId of roundDocSnapData.tasksIds) {
@@ -128,5 +126,4 @@ export const handler = (request: CallableRequest): Promise<{[key: string]: strin
       }));
     })
   });
-
 };

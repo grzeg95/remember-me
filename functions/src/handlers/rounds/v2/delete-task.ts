@@ -47,13 +47,14 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
     * Read all data
     * */
 
-    return decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+    return Promise.all([
+      decryptTask(taskDocSnap.data() as {value: string}, cryptoKey),
+      decryptRound(roundDocSnap.data() as {value: string}, cryptoKey)
+    ]);
 
-  }).then((_task) => {
+  }).then(([_task, _round]) => {
+
     task = _task;
-
-    return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-  }).then((_round) => {
     round = _round;
 
     timesOfDay = round.timesOfDay;

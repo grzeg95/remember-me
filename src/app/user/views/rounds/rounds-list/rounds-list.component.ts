@@ -1,4 +1,4 @@
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {
   AfterViewChecked,
   Component,
@@ -10,15 +10,16 @@ import {
   Renderer2,
   ViewChild
 } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ConnectionService } from "../../../../connection.service";
-import { RoundsService } from '../rounds.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { RouterDict } from '../../../../app.constants';
-import { Round } from '../../../models';
-import { faEdit } from '@fortawesome/free-regular-svg-icons';
-import { Subscription } from 'rxjs';
+import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {ActivatedRoute, Router} from '@angular/router';
+import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import {Subscription} from 'rxjs';
+import {RouterDict} from '../../../../app.constants';
+import {AuthService} from '../../../../auth/auth.service';
+import {ConnectionService} from '../../../../connection.service';
+import {Round} from '../../../models';
+import {RoundsService} from '../rounds.service';
 
 @Component({
   selector: 'app-rounds-list',
@@ -27,32 +28,25 @@ import { Subscription } from 'rxjs';
 })
 export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked {
 
-  get setRoundsOrderIsPending(): boolean {
-    return this.roundsService.setRoundsOrderIsPending;
-  }
-
-  set setRoundsOrderIsPending(setRoundsOrderIsPending: boolean) {
-    this.roundsService.setRoundsOrderIsPending = setRoundsOrderIsPending;
-  }
-
   displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
   faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper: ElementRef;
 
-  roundsList: Round[] = [];
   roundsListSub: Subscription;
+  roundsList: Round[];
+  sortedRoundList: Round[];
 
-  roundsOrder: string[] = [];
   roundsOrderSub: Subscription;
+  roundsOrder: string[];
 
-  isOnline: boolean;
   isOnlineSub: Subscription;
+  isOnline: boolean;
 
-  roundsOrderFirstLoading: boolean;
-  roundsOrderFirstLoadingSub: Subscription;
+  setRoundsOrderIsPending = false;
+  roundsListFirstLoading$ = this.roundsService.roundsListFirstLoading$;
 
-  roundsListFirstLoad: boolean;
-  roundsListFirstLoadSub: Subscription;
+  selectedRound: Round;
+  selectedRoundSub: Subscription;
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -60,31 +54,50 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   constructor(
-    protected roundsService: RoundsService,
-    protected router: Router,
+    private roundsService: RoundsService,
+    private router: Router,
     public dialog: MatDialog,
-    protected route: ActivatedRoute,
-    protected zone: NgZone,
-    protected snackBar: MatSnackBar,
-    protected renderer: Renderer2,
-    protected connectionService: ConnectionService
+    private route: ActivatedRoute,
+    private zone: NgZone,
+    private snackBar: MatSnackBar,
+    private renderer: Renderer2,
+    private authService: AuthService,
+    private connectionsService: ConnectionService
   ) {
   }
 
   ngOnInit(): void {
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
-    this.roundsListSub = this.roundsService.roundsList$.subscribe((roundsList) => this.roundsList = roundsList);
-    this.roundsOrderSub = this.roundsService.roundsOrder$.subscribe((roundsOrder) => this.roundsOrder = roundsOrder);
-    this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
-    this.roundsListFirstLoadSub = this.roundsService.roundsListFirstLoad$.subscribe((roundsListFirstLoad) => this.roundsListFirstLoad = roundsListFirstLoad);
+    this.roundsService.runRoundsList();
+    this.roundsListSub = this.roundsService.roundsList$.subscribe((roundsList) => {
+      this.roundsList = roundsList;
+      this.sortRoundList();
+    });
+    this.roundsOrderSub = this.authService.user$.subscribe((user) => {
+      if (user) {
+        this.roundsOrder = user.rounds;
+        this.sortRoundList();
+      }
+    });
+    this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((selectedRound) => this.selectedRound = selectedRound);
   }
 
   ngOnDestroy(): void {
-    this.isOnlineSub.unsubscribe();
     this.roundsListSub.unsubscribe();
     this.roundsOrderSub.unsubscribe();
-    this.roundsOrderFirstLoadingSub.unsubscribe();
-    this.roundsListFirstLoadSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
+    this.selectedRoundSub.unsubscribe();
+  }
+
+  sortRoundList(): void {
+
+    const roundsMap: { [key in string]: Round } = {};
+
+    for (const round of this.roundsList || []) {
+      roundsMap[round.id] = round;
+    }
+
+    this.sortedRoundList = (this.roundsOrder || []).filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
   }
 
   addRound(): void {
@@ -99,31 +112,20 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.router.navigate(['../', roundId, RouterDict.todayTasks], {relativeTo: this.route});
   }
 
-  sortRoundList(rounds: Round[], roundsOrder: string[]): Round[] {
-
-    const roundsMap: { [key in string]: Round } = {};
-
-    for (const round of rounds) {
-      roundsMap[round.id] = round;
-    }
-
-    return roundsOrder.filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
-  }
-
   drop(event: CdkDragDrop<any, any>): void {
 
     if (event.previousIndex === event.currentIndex) {
       return;
     }
 
-    const roundsOrder = this.roundsService.roundsOrder$.value;
+    this.setRoundsOrderIsPending = true;
+    const roundsOrder = this.roundsOrder;
     const moveBy = event.currentIndex - event.previousIndex;
     const roundId = roundsOrder[event.previousIndex];
 
     moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
-    this.roundsService.roundsOrder$.next(roundsOrder);
+    this.sortRoundList();
 
-    this.setRoundsOrderIsPending = true;
     this.roundsService.setRoundsOrder({moveBy, roundId}).then((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
@@ -132,9 +134,11 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
-        this.roundsService.roundsOrder$.next(roundsOrder);
+        this.sortRoundList();
       });
-    }).finally(() => this.setRoundsOrderIsPending = false);
+    }).finally(() => {
+      this.setRoundsOrderIsPending = false;
+    });
   }
 
   applyCellsWidths(): void {
@@ -147,7 +151,7 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
         for (const row of Array.from(table.rows) as HTMLTableRowElement[]) {
           for (let i = 0; i < row.cells.length - 1; ++i) {
             const cell = row.cells.item(i);
-            this.renderer.setStyle(cell, 'width', `${ cell.offsetWidth }px`);
+            this.renderer.setStyle(cell, 'width', `${cell.offsetWidth}px`);
           }
         }
       }

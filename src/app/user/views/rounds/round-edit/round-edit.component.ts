@@ -1,3 +1,4 @@
+import {Location} from '@angular/common';
 import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
@@ -5,12 +6,11 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Subscription} from 'rxjs';
 import {RouterDict} from '../../../../app.constants';
-import {ConnectionService} from "../../../../connection.service";
+import {ConnectionService} from '../../../../connection.service';
 import {CustomValidators} from '../../../../custom-validators';
 import {HTTPError} from '../../../models';
 import {RoundsService} from '../rounds.service';
 import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
-import {Location} from '@angular/common';
 
 @Component({
   selector: 'app-times-of-day-list',
@@ -38,9 +38,9 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   };
 
   constructor(
-    protected roundsService: RoundsService,
-    protected snackBar: MatSnackBar,
-    protected zone: NgZone,
+    private roundsService: RoundsService,
+    private snackBar: MatSnackBar,
+    private zone: NgZone,
     private router: Router,
     private route: ActivatedRoute,
     public dialog: MatDialog,
@@ -55,8 +55,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.refreshRoundByParamId(paramMap.get('id'));
       }
     });
-
-    this.roundsService.inEditMode = true;
 
     this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
@@ -130,10 +128,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     });
   }
 
-  resetId(): void {
-    this.id = 'null';
-  }
-
   restartForm(): void {
     this.roundForm.reset({
       name: ''
@@ -143,7 +137,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
   deepResetForm(): void {
     this.roundForm.disable();
-    this.resetId();
+    this.id = 'null'
     this.restartForm();
     this.location.go(this.router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]).toString());
     this.roundForm.enable();
@@ -162,7 +156,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
       this.id = roundId;
 
-      this.roundsService.getRoundById$(roundId).then((round) => {
+      this.roundsService.getRoundById(roundId).then((round) => {
         if (round) {
           this.roundForm.get('name').setValue(round.name);
           this.initValues.name = round.name;
@@ -181,7 +175,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.roundsService.inEditMode = false;
     this.roundsService.editedRound$.next(null);
     this.isOnlineSub.unsubscribe();
   }

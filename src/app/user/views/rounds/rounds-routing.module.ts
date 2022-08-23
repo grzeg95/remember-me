@@ -1,13 +1,13 @@
+import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {RouterDict} from '../../../app.constants';
 import {RoundEditComponent} from './round-edit/round-edit.component';
-import {TodayComponent} from './round/tasks/today/today.component';
-import {TasksComponent} from './round/tasks/tasks-list/tasks.component';
-import {TaskComponent} from './round/tasks/task/task.component';
-import {TimesOfDayOrderComponent} from './round/tasks/times-of-day-order/times-of-day-order.component';
-import {NgModule} from '@angular/core';
-import {RoundsListComponent} from './rounds-list/rounds-list.component';
 import {RoundComponent} from './round/round.component';
+import {TaskComponent} from './round/tasks/task/task.component';
+import {TasksComponent} from './round/tasks/tasks-list/tasks.component';
+import {TimesOfDayOrderComponent} from './round/tasks/times-of-day-order/times-of-day-order.component';
+import {TodayComponent} from './round/tasks/today/today.component';
+import {RoundsListComponent} from './rounds-list/rounds-list.component';
 import {RoundsComponent} from './rounds.component';
 
 const routes: Routes = [
@@ -45,7 +45,7 @@ const routes: Routes = [
       }
     ]
   },
-  {path: '**', redirectTo: 'list'}
+  {path: '**', redirectTo: RouterDict.roundsList}
 ];
 
 @NgModule({

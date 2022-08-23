@@ -1,19 +1,26 @@
-// tslint:disable-next-line:no-import-side-effect
-import '../../../../../global.prototype';
 import {firestore} from 'firebase-admin';
 import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
-import {testRequirement} from '../../../helpers/test-requirement';
-import Transaction = firestore.Transaction;
-import DocumentSnapshot = firestore.DocumentSnapshot;
-import {getUser} from '../../../helpers/user';
-import {
-  decryptRound,
-  decryptTask, decryptToday, decryptTodayTask, encrypt, encryptRound,
-  encryptTask, encryptToday,
-  encryptTodayTask, getCryptoKey
-} from '../../../helpers/security';
+// tslint:disable-next-line:no-import-side-effect
+import '../../../../../global.prototype';
 import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../../helpers/models';
+import {
+  BasicEncryptedValue,
+  decryptRound,
+  decryptTask,
+  decryptToday,
+  decryptTodayTask,
+  encrypt,
+  encryptRound,
+  encryptTask,
+  encryptToday,
+  encryptTodayTask,
+  getCryptoKey
+} from '../../../helpers/security';
+import {testRequirement} from '../../../helpers/test-requirement';
 import {TransactionWrite} from '../../../helpers/transaction-write';
+import {getUser} from '../../../helpers/user';
+import DocumentSnapshot = firestore.DocumentSnapshot;
+import Transaction = firestore.Transaction;
 
 const app = firestore();
 
@@ -464,7 +471,6 @@ export const handler = async (request: CallableRequest): Promise<{created: boole
   let userDocSnap: DocumentSnapshot;
   let roundDocSnap: DocumentSnapshot;
   let taskDocSnapData: Task;
-  let decryptedTask: Task;
   let transactionWrite: TransactionWrite;
   let roundDocSnapData: Round;
 
@@ -522,43 +528,52 @@ export const handler = async (request: CallableRequest): Promise<{created: boole
             * */
             if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
-              // read all task for user/{userId}/today/{day}/task/{taskId}
+              // read all task for user/{userId}/rounds/{roundId}/today/{day}/task/{taskId}
 
               return Promise.all(
                 roundDocSnapData.todaysIds
                   .map((todayId) => transaction.get(roundDocSnap.ref.collection('today').doc(todayId)))
               ).then((docSnaps) => {
 
-                const todayTaskDocSnapsToUpdatePromises = [];
+                const todayTaskDocSnapsToUpdatePromises: any[] = [];
+                const decryptTodayPromises = [];
 
                 for (const docSnap of docSnaps) {
-                  todayTaskDocSnapsToUpdatePromises.push(
-                    transaction.get(docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
-                  );
+
+                  decryptTodayPromises.push(decryptToday(docSnap.data() as BasicEncryptedValue, cryptoKey).then((today) => {
+                      if (today.tasksIds.find((id) => id === taskDocSnap.id)) {
+                        todayTaskDocSnapsToUpdatePromises.push(
+                          transaction.get(docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
+                        );
+                      }
+                    })
+                  )
                 }
 
-                return Promise.all(todayTaskDocSnapsToUpdatePromises).then((todayTaskDocSnapsToUpdate) => {
+                return Promise.all(decryptTodayPromises).then(() => {
+                  return Promise.all(todayTaskDocSnapsToUpdatePromises).then((todayTaskDocSnapsToUpdate) => {
 
-                  /*
-                  * Proceed all data
-                  * */
+                    /*
+                    * Proceed all data
+                    * */
 
-                  for (const todayTask of todayTaskDocSnapsToUpdate) {
-                    testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
+                    for (const todayTask of todayTaskDocSnapsToUpdate) {
+                      testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
 
-                    transactionWrite.update(todayTask.ref, encrypt(task.description, cryptoKey).then((description) => {
-                      return {description}
-                    }));
-                  }
+                      transactionWrite.update(todayTask.ref, encrypt(task.description, cryptoKey).then((description) => {
+                        return {description}
+                      }));
+                    }
 
-                  transactionWrite.update(taskDocSnap.ref, encryptTask({
-                    description: task.description,
-                    timesOfDay: task.timesOfDay,
-                    daysOfTheWeek: task.daysOfTheWeek
-                  }, cryptoKey));
+                    transactionWrite.update(taskDocSnap.ref, encryptTask({
+                      description: task.description,
+                      timesOfDay: task.timesOfDay,
+                      daysOfTheWeek: task.daysOfTheWeek
+                    }, cryptoKey));
 
-                  return transactionWrite.execute();
-                });
+                    return transactionWrite.execute();
+                  });
+                })
               });
             }
 
@@ -587,40 +602,33 @@ export const handler = async (request: CallableRequest): Promise<{created: boole
             }
           }
 
-          return decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
-        }).then((_decryptedTask: Transaction | Task) => {
+          return decryptTask(taskDocSnap.data() as {value: string}, cryptoKey)
+            .then((decryptedTask) => {
 
-          // impostor
-          if (_decryptedTask.constructor.name === 'Transaction') {
-            return _decryptedTask;
-          }
+              const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDay, data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
 
-          decryptedTask = _decryptedTask as Task;
+              // update task
+              transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
 
-          const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDay, data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
+              // update round
+              return proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey).then((todaysIds) => {
 
-          // update task
-          transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+                transactionWrite.update(
+                  userDocSnap.ref.collection('rounds').doc(roundId),
+                  encryptRound({
+                    timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
+                    timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
+                    name: roundDocSnapData.name,
+                    todaysIds,
+                    tasksIds: tasksIds.toArray()
+                  }, cryptoKey)
+                );
 
-          // update round
-          return proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey).then((todaysIds) => {
-
-            transactionWrite.update(
-              userDocSnap.ref.collection('rounds').doc(roundId),
-              encryptRound({
-                timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
-                timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-                name: roundDocSnapData.name,
-                todaysIds,
-                tasksIds: tasksIds.toArray()
-              }, cryptoKey)
-            );
-
-            return transactionWrite.execute();
-          });
-        })
-      })
-
+                return transactionWrite.execute();
+              });
+            });
+        });
+      });
     }).then(() =>
       created ? ({
         'created': true,

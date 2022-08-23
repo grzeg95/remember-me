@@ -2,6 +2,7 @@ const {getAuth} = require('firebase-admin/auth');
 import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../../config';
 import {testRequirement} from '../../../helpers/test-requirement';
+
 const crc32c = require('fast-crc32c');
 
 export const handler = (request: CallableRequest): Promise<string> => {

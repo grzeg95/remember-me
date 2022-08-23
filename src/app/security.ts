@@ -1,9 +1,9 @@
+import {Buffer} from 'buffer';
 import {DocumentData, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
 import {EncryptedUser} from './auth/user-data.model';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
-import {Buffer} from 'buffer';
 
-export type BasicEncryptedValue = { value: string };
+export type BasicEncryptedValue = {value: string};
 
 export const basicEncryptedValueConverter = {
   toFirestore(): DocumentData {

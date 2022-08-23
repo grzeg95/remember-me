@@ -1,13 +1,9 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {decrypt, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
+import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {
-  decrypt,
-  encrypt,
-  getCryptoKey
-} from '../../helpers/security';
 
 const app = firestore();
 

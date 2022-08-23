@@ -1,6 +1,6 @@
-import {Inject, Injectable} from "@angular/core";
-import {ActivatedRouteSnapshot, CanActivate, Router, UrlTree} from "@angular/router";
-import {Auth} from "firebase/auth";
+import {Inject, Injectable} from '@angular/core';
+import {ActivatedRouteSnapshot, CanActivate, Router, UrlTree} from '@angular/router';
+import {Auth} from 'firebase/auth';
 import {AUTH} from '../injectors';
 
 @Injectable()

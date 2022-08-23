@@ -1,15 +1,15 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
+import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {
-  faEllipsisV,
-  faTasks,
-  faUser,
-  faGear,
   faArrowRightFromBracket,
-  faEyeSlash
+  faEllipsisV,
+  faEyeSlash,
+  faGear,
+  faTasks,
+  faUser
 } from '@fortawesome/free-solid-svg-icons';
 import {AuthService} from '../auth/auth.service';
-import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {User} from '../auth/user-data.model';
 import {ConnectionService} from '../connection.service';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';

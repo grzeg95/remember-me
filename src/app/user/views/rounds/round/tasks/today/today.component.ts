@@ -1,18 +1,17 @@
 import {Component, Inject, NgZone, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {ActivatedRoute, Router} from '@angular/router';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
+import {doc, FieldPath, Firestore, updateDoc} from 'firebase/firestore';
 import {interval, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {RouterDict} from 'src/app/app.constants';
 import {AuthService} from '../../../../../../auth/auth.service';
-import { ConnectionService } from "../../../../../../connection.service";
+import {ConnectionService} from '../../../../../../connection.service';
 import {FIRESTORE} from '../../../../../../injectors';
-import {Day, Round, TodayItem} from '../../../../../models';
-import {ActivatedRoute, Router} from '@angular/router';
-import {TaskService} from '../task/task.service';
-import {RoundService} from '../../round.service';
+import {Day, TodayItem} from '../../../../../models';
 import {RoundsService} from '../../../rounds.service';
-import {doc, Firestore, updateDoc, FieldPath} from 'firebase/firestore';
+import {TaskService} from '../task/task.service';
 
 @Component({
   selector: 'app-today',
@@ -27,33 +26,32 @@ export class TodayComponent implements OnInit, OnDestroy {
   isOnline: boolean;
   isOnlineSub: Subscription;
   wasTabInactiveSub: Subscription;
-
-  todayFirstLoading: boolean;
-  todayFirstLoadingSub: Subscription;
-
-  roundsOrderFirstLoading: boolean;
-  roundsOrderFirstLoadingSub: Subscription;
+  wasOffline: boolean;
 
   RouterDict = RouterDict;
   faCheckCircle = faCheckCircle;
   destroyed = false;
-  todayItemsView: { timeOfDay: string, tasks: TodayItem[] }[] = null;
+
   changeDayIntervalSub: Subscription;
-  todayItemsViewSub: Subscription;
   timesOfDayListSub: Subscription;
-  roundSelectedSub: Subscription;
-  roundSelectedChangeDaySub: Subscription;
+  selectedRoundSub: Subscription;
+
+  selectedRoundChangeDaySub: Subscription;
+
+  todayItemsViewFirstLoading$ = this.roundsService.todayItemsViewFirstLoading$;
+  todayItemsSub: Subscription;
+  todayItemsViewSub: Subscription;
+  todayItemsView: { timeOfDay: string, tasks: TodayItem[] }[];
 
   constructor(
     private authService: AuthService,
-    private roundService: RoundService,
     private roundsService: RoundsService,
     private snackBar: MatSnackBar,
     private zone: NgZone,
     private router: Router,
     private route: ActivatedRoute,
-    private taskService: TaskService,
     private connectionService: ConnectionService,
+    private taskService: TaskService,
     @Inject(FIRESTORE) private readonly firestore: Firestore
   ) {
   }
@@ -62,14 +60,18 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     this.destroyed = false;
 
-    this.todayItemsViewSub = this.roundService.today$.subscribe(() => this.todayItemsViewUpdate(this.roundsService.roundSelected$.value));
+    this.todayItemsSub = this.roundsService.todayItems$.pipe(filter((todayItems) => !!todayItems)).subscribe(() => this.roundsService.todayItemsViewUpdate(this.roundsService.selectedRound$.value));
 
-    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.todayItemsViewUpdate(round));
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => this.roundsService.todayItemsViewUpdate(round));
+
+    this.todayItemsViewSub = this.roundsService.todayItemsView$.subscribe((todayItemsView) => this.todayItemsView = todayItemsView);
 
     this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => {
       this.isOnline = isOnline;
       if (isOnline) {
         this.changeDay();
+      } else {
+        this.wasOffline = true;
       }
     });
 
@@ -78,69 +80,35 @@ export class TodayComponent implements OnInit, OnDestroy {
         this.changeDay();
       }
     });
-
-    this.todayFirstLoadingSub = this.roundsService.todayFirstLoading$.subscribe((todayFirstLoading) => this.todayFirstLoading = todayFirstLoading);
-    this.roundsOrderFirstLoadingSub = this.roundsService.roundsOrderFirstLoading$.subscribe((roundsOrderFirstLoading) => this.roundsOrderFirstLoading = roundsOrderFirstLoading);
   }
 
   ngOnDestroy(): void {
-    this.clearCache();
-  }
-
-  todayItemsViewUpdate(round: Round): void {
-
-    if (!round) {
-      return;
-    }
-
-    const order = round.timesOfDay;
-    const today = this.roundService.today$.getValue();
-
-    if (!today) {
-      return;
-    }
-
-    this.todayItemsView = order.filter((timeOfDay) => today[timeOfDay]).map((timeOfDay) => ({
-      timeOfDay,
-      tasks: today[timeOfDay]
-    }));
-  }
-
-  clearCache(): void {
+    this.todayItemsSub.unsubscribe();
+    this.selectedRoundSub.unsubscribe();
+    this.todayItemsViewSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
+    this.wasTabInactiveSub.unsubscribe();
 
     if (this.changeDayIntervalSub && !this.changeDayIntervalSub.closed) {
       this.changeDayIntervalSub.unsubscribe();
-    }
-
-    if (this.todayItemsViewSub && !this.todayItemsViewSub.closed) {
-      this.todayItemsViewSub.unsubscribe();
     }
 
     if (this.timesOfDayListSub && !this.timesOfDayListSub.closed) {
       this.timesOfDayListSub.unsubscribe();
     }
 
-    if (this.roundSelectedSub && !this.roundSelectedSub.closed) {
-      this.roundSelectedSub.unsubscribe();
+    if (this.selectedRoundChangeDaySub && !this.selectedRoundChangeDaySub.closed) {
+      this.selectedRoundChangeDaySub.unsubscribe();
     }
-
-    if (this.roundSelectedChangeDaySub && !this.roundSelectedChangeDaySub.closed) {
-      this.roundSelectedChangeDaySub.unsubscribe();
-    }
-
-    this.isOnlineSub.unsubscribe();
-    this.wasTabInactiveSub.unsubscribe();
-    this.todayFirstLoadingSub.unsubscribe();
-    this.roundsOrderFirstLoadingSub.unsubscribe();
 
     this.destroyed = true;
   }
 
   todayItemIsDone(timeOfDay: string): boolean {
-    return !this.roundService.today$.getValue()[timeOfDay].some((task) => !task.done);
+    return !this.roundsService.todayItems$.getValue()[timeOfDay].some((task) => !task.done);
   }
 
-  trackByTodayItems(index: number, item: { timeOfDay: string, tasks: TodayItem[] }): string {
+  trackByTodayItems(index: number, item: {timeOfDay: string, tasks: TodayItem[]}): string {
     return index + item.timeOfDay;
   }
 
@@ -150,13 +118,14 @@ export class TodayComponent implements OnInit, OnDestroy {
 
   changeDay(): void {
 
-    if (this.roundSelectedChangeDaySub && !this.roundSelectedChangeDaySub.closed) {
-      this.roundSelectedChangeDaySub.unsubscribe();
+    if (this.selectedRoundChangeDaySub && !this.selectedRoundChangeDaySub.closed) {
+      this.selectedRoundChangeDaySub.unsubscribe();
     }
 
-    this.roundSelectedChangeDaySub = this.roundsService.roundSelected$.pipe(filter((round) => !!round), take(1)).subscribe((round) => {
-      this.roundService.runToday(round);
-      const now = this.roundsService.now$.getValue();
+    this.selectedRoundChangeDaySub = this.roundsService.selectedRound$.pipe(filter((round) => !!round), take(1)).subscribe((round) => {
+      this.roundsService.runToday(round);
+      const now = new Date();
+      this.roundsService.now$.next(now);
       const todayPast: number = now.getSeconds() + (now.getMinutes() * 60) + (now.getHours() * 60 * 60);
       const toNextDay = (86400 - todayPast) * 1000;
 
@@ -181,7 +150,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     const user = this.authService.user$.value;
 
     updateDoc(
-      doc(this.firestore, `/users/${user.uid}/rounds/${this.roundsService.roundSelected$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`),
+      doc(this.firestore, `/users/${user.uid}/rounds/${this.roundsService.selectedRound$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`),
       new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
       !todayItem.done
     ).then(() => {
@@ -196,6 +165,10 @@ export class TodayComponent implements OnInit, OnDestroy {
       });
     });
 
+    if (!this.isOnline) {
+      todayItem.disabled = false;
+      todayItem.done = !todayItem.done;
+    }
   }
 
   addNewTask(): void {

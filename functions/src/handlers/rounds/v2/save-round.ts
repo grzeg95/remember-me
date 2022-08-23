@@ -1,14 +1,10 @@
+import {firestore} from 'firebase-admin';
 import {CallableRequest} from 'firebase-functions/lib/common/providers/https';
 import {Round} from '../../../helpers/models';
+import {decrypt, decryptRound, encrypt, encryptRound, getCryptoKey} from '../../../helpers/security';
 import {testRequirement} from '../../../helpers/test-requirement';
-import {firestore} from 'firebase-admin';
 import {TransactionWrite} from '../../../helpers/transaction-write';
 import {getUser, writeUser} from '../../../helpers/user';
-import {
-  decrypt, decryptRound,
-  encrypt,
-  encryptRound, getCryptoKey
-} from '../../../helpers/security';
 
 const app = firestore();
 
@@ -77,7 +73,6 @@ export const handler = (request: CallableRequest): Promise<{created: boolean; de
       }).then((_roundDocSnapTmp) => {
         roundDocSnapTmp = _roundDocSnapTmp;
 
-
         if (userDocSnapData?.rounds) {
           return decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
         }
@@ -130,8 +125,8 @@ export const handler = (request: CallableRequest): Promise<{created: boolean; de
             round = _round;
 
             /*
-          * Check if name was changed
-          * */
+            * Check if name was changed
+            * */
             testRequirement(round.name === data.name);
 
             transactionWrite.update(roundDocSnap.ref, encryptRound({

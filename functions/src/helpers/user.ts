@@ -1,9 +1,9 @@
 import {firestore} from 'firebase-admin';
 import {HttpsError} from 'firebase-functions/lib/providers/https';
-import {TransactionWrite} from "./transaction-write";
-import Transaction = firestore.Transaction;
+import {TransactionWrite} from './transaction-write';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Firestore = firestore.Firestore;
+import Transaction = firestore.Transaction;
 
 export const getUser = async (app: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot> => {
 

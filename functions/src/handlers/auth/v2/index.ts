@@ -1,4 +1,4 @@
-import {onCall, HttpsOptions} from 'firebase-functions/v2/https';
+import {HttpsOptions, onCall} from 'firebase-functions/v2/https';
 
 const opts: HttpsOptions = {
   timeoutSeconds: 60,

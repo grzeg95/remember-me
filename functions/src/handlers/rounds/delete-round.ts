@@ -1,18 +1,12 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {Round} from '../../helpers/models';
+import {decrypt, decryptRound, decryptToday, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
+import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser, writeUser} from '../../helpers/user';
-import {
-  decrypt,
-  decryptRound,
-  decryptToday,
-  encrypt,
-  getCryptoKey
-} from '../../helpers/security';
-import DocumentSnapshot = firestore.DocumentSnapshot;
 import DocumentData = firestore.DocumentData;
+import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
 
@@ -54,12 +48,10 @@ export const handler = (roundId: any, callableContext: CallableContext): Promise
       }).then((_roundDocSnapData) => {
         roundDocSnapData = _roundDocSnapData;
 
-
         // check if round exists
         testRequirement(!roundDocSnap.exists);
 
         // get all documents
-
 
         // get all tasks
         for (const taskId of roundDocSnapData.tasksIds) {
@@ -127,5 +119,4 @@ export const handler = (roundId: any, callableContext: CallableContext): Promise
       }));
     })
   });
-
 };

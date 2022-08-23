@@ -8,6 +8,8 @@ import {RoundsService} from '../rounds.service';
 })
 export class RoundComponent implements OnInit {
 
+  selectedRound$ = this.roundsService.selectedRound$;
+
   constructor(
       private route: ActivatedRoute,
       private roundsService: RoundsService
@@ -18,8 +20,9 @@ export class RoundComponent implements OnInit {
 
     this.route.paramMap.subscribe((paramMap) => {
       if (paramMap.get('id')) {
-        this.roundsService.paramRoundIdSelected$.next(paramMap.get('id'));
+        this.roundsService.selectRound(paramMap.get('id'));
       }
     });
+    this.roundsService.runRoundsList();
   }
 }

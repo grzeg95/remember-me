@@ -1,9 +1,8 @@
 import {Component} from '@angular/core';
-import {Router} from '@angular/router';
 import {RouterDict} from '../../../../../app.constants';
 
 @Component({
-  selector: 'app-nav-second',
+  selector: 'app-round-nav',
   templateUrl: './round-nav.component.html',
   styleUrls: ['./round-nav.component.scss']
 })
@@ -28,7 +27,6 @@ export class RoundNavComponent {
     }
   ];
 
-  constructor(protected router: Router) {
+  constructor() {
   }
-
 }

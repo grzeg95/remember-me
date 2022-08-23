@@ -1,4 +1,4 @@
-const {decrypt, decryptRound, encrypt} = require("../../functions/lib/functions/src/security/security");
+const {decrypt, decryptRound, encrypt} = require("../../functions/lib/functions/src/helpers/security");
 const {Buffer} = require("buffer");
 const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
@@ -27,32 +27,32 @@ module.exports.myAuth = {
 module.exports.cryptoKey = null;
 
 module.exports.saveRound = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.saveRound),
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.saveRound),
   name: 'saveRound'
 };
 
 module.exports.deleteRound = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.deleteRound),
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.deleteRound),
   name: 'deleteRound'
 };
 
 module.exports.saveTask = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.saveTask),
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.saveTask),
   name: 'saveTask'
 };
 
 module.exports.deleteTask = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.deleteTask),
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.deleteTask),
   name: 'deleteTask'
 };
 
 module.exports.setTimesOfDayOrder = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.setTimesOfDayOrder),
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.setTimesOfDayOrder),
   name: 'setTimesOfDayOrder'
 };
 
 module.exports.setRoundsOrder = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.setRoundsOrder),
+  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.setRoundsOrder),
   name: 'setRoundsOrder'
 };
 

@@ -11,12 +11,11 @@ import {asapScheduler, BehaviorSubject, Subscription} from 'rxjs';
 import '../../../../../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
 import {RouterDict} from '../../../../../../app.constants';
-import {ConnectionService} from "../../../../../../connection.service";
+import {ConnectionService} from '../../../../../../connection.service';
 import {CustomValidators} from '../../../../../../custom-validators';
 import {HTTPError, HTTPSuccess, Round, TaskForm, Task} from '../../../../../models';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskService} from './task.service';
-import {RoundService} from '../../round.service';
 import {RoundsService} from '../../../rounds.service';
 
 @Component({
@@ -74,8 +73,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   @ViewChild('basicInput') basicInput: ElementRef<HTMLInputElement>;
   lastTwoInputs = [];
   round: Round;
-  roundSelectedSub: Subscription;
-  isConnectedSub: Subscription;
+  selectedRoundSub: Subscription;
   roundsOrderSub: Subscription;
   timeOfDayValueChanges: Subscription;
   asapSchedulerForDayToApplySub: Subscription;
@@ -85,7 +83,6 @@ export class TaskComponent implements OnInit, OnDestroy {
     private location: Location,
     public dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private roundService: RoundService,
     private zone: NgZone,
     private taskService: TaskService,
     private roundsService: RoundsService,
@@ -109,13 +106,13 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     this.timeOfDayValueChanges = (this.taskForm.get('timesOfDay') as FormArray).valueChanges.subscribe((timesOfDay: string[]) => {
 
-      if (!this.roundsService.roundSelected$.value) {
+      if (!this.roundsService.selectedRound$.value) {
         this.options = timesOfDay;
         this.applyFilter(this.taskForm.get('timeOfDay').value);
         return;
       }
 
-      const roundsOrderNext = this.roundsService.roundSelected$.value?.timesOfDay;
+      const roundsOrderNext = this.roundsService.selectedRound$.value?.timesOfDay;
       const roundsOrderSet = roundsOrderNext.map((val) => val).toSet().difference(timesOfDay.toSet());
       const roundsOrder = [];
 
@@ -140,7 +137,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.applyFilter(value);
     });
 
-    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => {
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => {
       this.round = round;
       if (!round) {
         this.taskForm.disable();
@@ -248,7 +245,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.timeOfDayValueChanges.unsubscribe();
     }
 
-    this.roundSelectedSub.unsubscribe();
+    this.selectedRoundSub.unsubscribe();
 
     if (this.asapSchedulerForDayToApplySub && !this.asapSchedulerForDayToApplySub.closed) {
       this.asapSchedulerForDayToApplySub.unsubscribe();
@@ -278,7 +275,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       this.id = taskId;
 
-      this.roundService.getTaskById$(this.id, this.round.id).then(async (task) => {
+      this.roundsService.getTaskById(this.id, this.round.id).then(async (task) => {
         if (typeof task === 'undefined') {
           this.deepResetForm();
         } else if (task) {
@@ -316,7 +313,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.roundsService.roundSelected$.value) {
+    if (!this.roundsService.selectedRound$.value) {
       return;
     }
 
@@ -328,14 +325,14 @@ export class TaskComponent implements OnInit, OnDestroy {
     task.description = trimDescription;
     this.taskForm.get('description').setValue(trimDescription);
 
-    this.roundService.saveTask({
+    this.roundsService.saveTask({
       task: {
         description: task.description,
         daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
         timesOfDay: task.timesOfDay
       },
       taskId: this.id,
-      roundId: this.roundsService.roundSelected$.value.id
+      roundId: this.roundsService.selectedRound$.value.id
     }).then((success) => {
 
       this.zone.run(() => {
@@ -377,11 +374,11 @@ export class TaskComponent implements OnInit, OnDestroy {
     this.resetId();
     this.restartForm();
 
-    const roundSelected = this.roundsService.roundSelected$.value;
+    const selectedRound = this.roundsService.selectedRound$.value;
     let url: UrlTree;
 
-    if (roundSelected) {
-      url = this.router.createUrlTree(['/' + RouterDict.user + '/' + RouterDict.rounds + '/' + roundSelected.id + '/' + RouterDict.taskEditor], {relativeTo: this.route});
+    if (selectedRound) {
+      url = this.router.createUrlTree(['/' + RouterDict.user + '/' + RouterDict.rounds + '/' + selectedRound.id + '/' + RouterDict.taskEditor], {relativeTo: this.route});
     } else {
       url = this.router.createUrlTree(['/' + RouterDict.user + '/' + RouterDict.roundsList]);
     }
@@ -431,7 +428,7 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.taskForm.disable();
         this.deletingInProgress = true;
 
-        this.roundService.deleteTask({
+        this.roundsService.deleteTask({
           taskId: this.id,
           roundId: this.round.id
         }).then((success: HTTPSuccess) => {

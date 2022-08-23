@@ -3,12 +3,11 @@ import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { faGripLines } from '@fortawesome/free-solid-svg-icons';
 import { RouterDict } from 'src/app/app.constants';
-import { ConnectionService } from "../../../../../../connection.service";
-import { RoundService } from '../../round.service';
+import { ConnectionService } from '../../../../../../connection.service';
 import { RoundsService } from '../../../rounds.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Round } from 'functions/src/helpers/models';
-import {mergeMap, of, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-times-of-day-order',
@@ -17,12 +16,8 @@ import {mergeMap, of, Subscription} from 'rxjs';
 })
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
-  get setTimesOfDayOrderSub() {
-    return this.roundService.setTimesOfDayOrderSub;
-  }
-
-  roundSelected: Round;
-  roundSelectedSub: Subscription;
+  selectedRound: Round;
+  selectedRoundSub: Subscription;
 
   isOnline: boolean;
   isOnlineSub: Subscription;
@@ -30,8 +25,9 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
   faGripLines = faGripLines;
   RouterDict = RouterDict;
 
+  setTimesOfDayOrderInProgress = false;
+
   constructor(
-    private roundService: RoundService,
     private roundsService: RoundsService,
     private snackBar: MatSnackBar,
     private zone: NgZone,
@@ -42,12 +38,12 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.roundSelectedSub = this.roundsService.roundSelected$.subscribe((round) => this.roundSelected = round);
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => this.selectedRound = round);
     this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   ngOnDestroy(): void {
-    this.roundSelectedSub.unsubscribe();
+    this.selectedRoundSub.unsubscribe();
     this.isOnlineSub.unsubscribe();
   }
 
@@ -57,26 +53,27 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const timeOfDay = this.roundSelected.timesOfDay[event.previousIndex];
+    const timeOfDay = this.selectedRound.timesOfDay[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
-    moveItemInArray(this.roundSelected.timesOfDay, event.previousIndex, event.currentIndex);
+    moveItemInArray(this.selectedRound.timesOfDay, event.previousIndex, event.currentIndex);
 
-    this.roundService.setTimesOfDayOrderSub = of(this.roundService.setTimesOfDayOrder({
+    this.setTimesOfDayOrderInProgress = true;
+    this.roundsService.setTimesOfDayOrder({
       timeOfDay,
       moveBy,
-      roundId: this.roundsService.roundSelected$.value.id
-    })).pipe(
-      mergeMap((e) => e)
-    ).subscribe((success) => {
+      roundId: this.roundsService.selectedRound$.value.id
+    }).then((success) => {
       this.zone.run(() => {
         this.snackBar.open(success.details || 'Your operation has been done 😉');
       });
     }, (error) => {
       this.zone.run(() => {
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(this.roundSelected.timesOfDay, event.currentIndex, event.previousIndex);
+        moveItemInArray(this.selectedRound.timesOfDay, event.currentIndex, event.previousIndex);
       });
+    }).finally(() => {
+      this.setTimesOfDayOrderInProgress = false;
     });
 
   }

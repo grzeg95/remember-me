@@ -1,10 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {faUser, faGear} from '@fortawesome/free-solid-svg-icons';
-import { Subscription } from "rxjs";
+import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
+import {Subscription} from 'rxjs';
 import {AuthService} from '../../../auth/auth.service';
 import {User} from '../../../auth/user-data.model';
-
 import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/user-dialog-confirm-delete.component';
 
 @Component({

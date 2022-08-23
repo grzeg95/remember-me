@@ -5,7 +5,7 @@ const {
 
 const expect = chai.expect;
 const tests = require('./tests.json');
-const {encryptRound} = require('../../../../functions/lib/functions/src/security/security');
+const {encryptRound} = require('../../../../functions/lib/functions/src/helpers/security');
 const {Buffer} = require('buffer');
 const {subtle} = require('crypto').webcrypto;
 

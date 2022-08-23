@@ -1,24 +1,24 @@
 import {Inject, Injectable} from '@angular/core';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
+import {Buffer} from 'buffer';
+import {
+  Auth,
+  GoogleAuthProvider,
+  IdTokenResult,
+  signInAnonymously,
+  signInWithCustomToken,
+  signInWithRedirect,
+  signOut
+} from 'firebase/auth';
+import {doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot} from 'firebase/firestore';
+import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
 import {getString, RemoteConfig} from 'firebase/remote-config';
 import {BehaviorSubject, interval, Subscription} from 'rxjs';
+import {RouterDict} from '../app.constants';
 import {AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
 import {decrypt, userConverter} from '../security';
 import {FirebaseUser, User} from './user-data.model';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {RouterDict} from '../app.constants';
-import {Buffer} from 'buffer';
-import {httpsCallable, Functions, httpsCallableFromURL} from 'firebase/functions';
-import {
-  signOut,
-  signInAnonymously,
-  GoogleAuthProvider,
-  signInWithRedirect,
-  Auth,
-  signInWithCustomToken,
-  IdTokenResult
-} from 'firebase/auth';
-import {Firestore, onSnapshot, doc, DocumentSnapshot, DocumentData} from 'firebase/firestore';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +29,7 @@ export class AuthService {
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
   userIntervalReloadSub: Subscription;
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
+  onSnapshotUnsubList: (() => void)[] = [];
 
   constructor(
     private router: Router,
@@ -73,7 +74,16 @@ export class AuthService {
           }
           throw error;
         });
+        this.onSnapshotUnsubList.push(this.userDocUnsub);
       } else {
+
+        for (const unsub of this.onSnapshotUnsubList) {
+          if (unsub) {
+            unsub();
+          }
+        }
+        this.onSnapshotUnsubList = [];
+
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
         this.firebaseUser = null;

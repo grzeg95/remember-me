@@ -13,19 +13,21 @@ import {SharedModule} from './shared.module';
 @NgModule({
   declarations: [
     AppComponent,
-    NavComponent,
     GuestComponent,
+    NavComponent,
     UserDataPolicyComponent
   ],
   imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
     AppRoutingModule,
-    SharedModule,
+    BrowserAnimationsModule,
+    BrowserModule,
     CoreModule,
-    HttpClientModule
+    HttpClientModule,
+    SharedModule
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [
+    AppComponent
+  ]
 })
 export class AppModule {
 }

@@ -1,17 +1,19 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 import {Round, Task} from '../../helpers/models';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from "../../helpers/transaction-write";
-import {getUser} from '../../helpers/user';
 import {
   decryptRound,
   decryptTask,
-  decryptToday, encryptRound,
-  encryptToday, getCryptoKey
+  decryptToday,
+  encryptRound,
+  encryptToday,
+  getCryptoKey
 } from '../../helpers/security';
-import Transaction = firestore.Transaction;
+import {testRequirement} from '../../helpers/test-requirement';
+import {TransactionWrite} from '../../helpers/transaction-write';
+import {getUser} from '../../helpers/user';
 import DocumentSnapshot = firestore.DocumentSnapshot;
+import Transaction = firestore.Transaction;
 
 const app = firestore();
 
@@ -47,13 +49,14 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
     * Read all data
     * */
 
-    return decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+    return Promise.all([
+      decryptTask(taskDocSnap.data() as {value: string}, cryptoKey),
+      decryptRound(roundDocSnap.data() as {value: string}, cryptoKey)
+    ]);
 
-  }).then((_task) => {
+  }).then(([_task, _round]) => {
+
     task = _task;
-
-    return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-  }).then((_round) => {
     round = _round;
 
     timesOfDay = round.timesOfDay;

@@ -19,12 +19,12 @@ export interface Round {
 
 export interface TodayTask {
   description: string;
-  timesOfDay: { [key in string]: boolean };
+  timesOfDay: {[key in string]: boolean};
 }
 
 export interface EncryptedTodayTask {
   description: string;
-  timesOfDay: { [key in string]: boolean };
+  timesOfDay: {[key in string]: boolean};
 }
 
 export interface Today {

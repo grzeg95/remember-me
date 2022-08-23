@@ -1,6 +1,7 @@
 import {User as _FirebaseUser} from 'firebase/auth';
 
-export interface FirebaseUser extends _FirebaseUser {}
+export interface FirebaseUser extends _FirebaseUser {
+}
 
 export interface User {
   rounds?: string[];

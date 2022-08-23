@@ -64,7 +64,7 @@ export class TransactionWrite {
       Promise.all(setDataPromise),
       Promise.all(createDataPromise),
       Promise.all(updateDataPromise) as Promise<{}[]>
-    ]).then(([setData,createData,updateData]) => {
+    ]).then(([setData, createData, updateData]) => {
 
       for (const [i, item] of this.setList.entries()) {
         const data = setData[i];

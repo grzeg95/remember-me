@@ -17,7 +17,7 @@ const routes: Routes = [
       }
     ]
   },
-  { path: '**', redirectTo: RouterDict.rounds }
+  {path: '**', redirectTo: RouterDict.rounds}
 ];
 
 @NgModule({

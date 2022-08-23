@@ -2,37 +2,65 @@
   <div class="row">
     <div class="col">
 
-      <!--
-
-      !isOnline ? wait for connection but I also can have items before I went offline then show them but only when I loaded then before
-
-      check if I loaded items
-      false ? show loading...
-      true ? check if there is anybody
-        true ? show them
-        false ? show loading...
-
-      -->
-
-      <div class="row message" *ngIf="!isOnline && todayItemsView === null">
-        <div class="col">
-          <span>You are offline. Waiting for connection...</span>
+      <ng-container *ngIf="!isOnline && !todayItemsView">
+        <div class="row message">
+          <div class="col">
+            <span>You are offline. Waiting for connection...</span>
+          </div>
         </div>
-      </div>
+      </ng-container>
 
-      <ng-template *ngIf="!isOnline && todayItemsView !== null && todayItemsView.length > 0; then showItems"></ng-template>
+      <ng-template *ngIf="!isOnline && todayItemsView; then showItems"></ng-template>
 
-      <ng-container *ngIf="isOnline">
+      <ng-container *ngIf="isOnline && todayItemsViewFirstLoading$ | async">
+        <div class="row message">
+          <div class="col">
+            <app-loading-text></app-loading-text>
+          </div>
+        </div>
+      </ng-container>
 
-        <ng-container *ngIf="todayFirstLoading || roundsOrderFirstLoading || todayItemsView === null">
-          <div class="row message">
-            <div class="col">
-              <app-loading-text></app-loading-text>
+      <ng-template *ngIf="isOnline && todayItemsView && !(todayItemsViewFirstLoading$ | async); then showItems"></ng-template>
+
+      <ng-template #showItems>
+
+        <ng-container *ngIf="todayItemsView.length > 0">
+          <div class="time-of-day-row"
+               *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
+
+            <div class="row">
+              <div class="col">
+              <span><fa-icon [hidden]="!todayItemIsDone(todayItem.timeOfDay)" [icon]="faCheckCircle"></fa-icon>
+                {{todayItem.timeOfDay}}</span>
+              </div>
             </div>
+
+            <div class="row tasks">
+              <div class="col">
+                <div class="form-check" *ngFor="let button of todayItem.tasks; let j = index; trackBy: trackByTodayItem">
+
+                  <button *ngIf="button.done"
+                          mat-flat-button
+                          [color]="'primary'"
+                          [disabled]="false"
+                          (click)="setProgress(button, $event)">
+                    {{ button.description }}
+                  </button>
+
+                  <button *ngIf="!button.done"
+                          mat-stroked-button
+                          [disabled]="false"
+                          (click)="setProgress(button, $event)">
+                    {{ button.description }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </ng-container>
 
-        <ng-container *ngIf="!todayFirstLoading && !roundsOrderFirstLoading && todayItemsView !== null && todayItemsView.length === 0">
+        <ng-container *ngIf="todayItemsView.length === 0">
           <div class="row message">
             <div class="col">
               <span>Add some tasks for {{todayFullName$ | async}}</span>
@@ -47,49 +75,7 @@
             </div>
           </div>
         </ng-container>
-
-        <ng-template *ngIf="!todayFirstLoading && !roundsOrderFirstLoading && todayItemsView !== null && todayItemsView.length > 0; then showItems"></ng-template>
-
-      </ng-container>
-
-      <ng-template #showItems>
-
-        <div class="time-of-day-row"
-             *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
-
-          <div class="row">
-            <div class="col">
-              <span><fa-icon [hidden]="!todayItemIsDone(todayItem.timeOfDay)" [icon]="faCheckCircle"></fa-icon>
-                {{todayItem.timeOfDay}}</span>
-            </div>
-          </div>
-
-          <div class="row tasks">
-            <div class="col">
-              <div class="form-check" *ngFor="let button of todayItem.tasks; let j = index; trackBy: trackByTodayItem">
-
-                <button *ngIf="button.done"
-                        mat-flat-button
-                        [color]="'primary'"
-                        [disabled]="false"
-                        (click)="setProgress(button, $event)">
-                  {{ button.description }}
-                </button>
-
-                <button *ngIf="!button.done"
-                        mat-stroked-button
-                        [disabled]="false"
-                        (click)="setProgress(button, $event)">
-                  {{ button.description }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
       </ng-template>
-
     </div>
   </div>
 </div>
