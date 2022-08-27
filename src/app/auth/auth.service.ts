@@ -6,9 +6,15 @@ import {
   Auth,
   GoogleAuthProvider,
   IdTokenResult,
+  UserCredential,
   signInAnonymously,
   signInWithCustomToken,
   signInWithRedirect,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  updatePassword,
   signOut
 } from 'firebase/auth';
 import {doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot} from 'firebase/firestore';
@@ -30,6 +36,7 @@ export class AuthService {
   userIntervalReloadSub: Subscription;
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
   onSnapshotUnsubList: (() => void)[] = [];
+  createdAMomentAgoUserWithEmailAndPassword = false;
 
   constructor(
     private router: Router,
@@ -46,6 +53,12 @@ export class AuthService {
       this.unsubscribeUserDocSub();
 
       if (firebaseUser) {
+
+        if (this.createdAMomentAgoUserWithEmailAndPassword) {
+          this.createdAMomentAgoUserWithEmailAndPassword = false;
+          this.signOut();
+          return;
+        }
 
         this.firebaseUser = firebaseUser;
 
@@ -96,7 +109,10 @@ export class AuthService {
   proceedGettingOfCryptoKey(firebaseUser: FirebaseUser, actionUserDocSnap?): void {
     this.getSecretKey(firebaseUser).then(async ({cryptoKey, firebaseUser, idTokenResult}) => {
       return this.userPostAction(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap);
-    }).catch(() => {
+    }).catch((error) => {
+      if (error && error.code === 'email-not-verified') {
+        this.snackBar.open('Please verify you email 🤫 and try again 🙂');
+      }
       this.signOut();
     });
   }
@@ -104,6 +120,16 @@ export class AuthService {
   getSecretKey(currentFirebaseUser: FirebaseUser): Promise<{firebaseUser: FirebaseUser, cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
 
     return currentFirebaseUser.getIdTokenResult(true).then((idTokenResult) => {
+
+      if (
+        !currentFirebaseUser.emailVerified &&
+        !idTokenResult.claims.isAnonymous &&
+        idTokenResult.claims.firebase.sign_in_provider !== 'anonymous'
+      ) {
+        throw {
+          code: 'email-not-verified'
+        };
+      }
 
       if (!idTokenResult.claims.secretKey) {
 
@@ -197,28 +223,129 @@ export class AuthService {
       this.isWaitingForCryptoKey$.next(false);
       this.firebaseUser = firebaseUser;
       this.user$.next(user);
-      this.whileLoginIn$.next(false);
+
+      if (this.router.routerState.snapshot.url === '/') {
+        this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]).then(() => {
+          this.whileLoginIn$.next(false);
+        });
+      }
     });
   }
 
   googleSignIn(): void {
-    this.whileLoginIn$.next(true);
 
-    signInWithRedirect(this.auth, new GoogleAuthProvider()).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-    }).finally(() => {
-      this.whileLoginIn$.next(false);
-    });
+    // is not logged in
+    if (!this.user$.value) {
+      this.whileLoginIn$.next(true);
+
+      signInWithRedirect(this.auth, new GoogleAuthProvider()).catch(() => {
+        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+      }).finally(() => {
+        this.whileLoginIn$.next(false);
+      });
+    }
   }
 
   anonymouslySignIn(): void {
-    this.whileLoginIn$.next(true);
 
-    signInAnonymously(this.auth).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-      this.whileLoginIn$.next(false);
-    }).then(() => {
-      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
+    // is not logged in
+    if (!this.user$.value) {
+      this.whileLoginIn$.next(true);
+
+      signInAnonymously(this.auth).catch(() => {
+        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+        this.whileLoginIn$.next(false);
+      });
+    }
+  }
+
+  signInWithEmailAndPassword(email: string, password: string): Promise<UserCredential | void> {
+
+    // is not logged in
+    if (!this.user$.value) {
+      return signInWithEmailAndPassword(this.auth, email, password);
+    }
+
+    return Promise.reject();
+  }
+
+  createUserWithEmailAndPassword(email: string, password: string): Promise<{code: string, message: string}> {
+
+    // is not logged in
+    if (!this.user$.value) {
+      return createUserWithEmailAndPassword(this.auth, email, password).then((userCredential) => {
+        this.createdAMomentAgoUserWithEmailAndPassword = true;
+        return sendEmailVerification(userCredential.user).then(() => {
+          return {
+            code: 'user-created',
+            message: 'User has been created 🤗 To login verify your email address by link in that has been sent to you 🧐'
+          };
+        }).catch(() => {
+          return {
+            code: 'user-created',
+            message: 'User has been created 🤗 Please try to login 🙈'
+          }
+        });
+      }).catch((error: {code: string, message: string}) => {
+
+        if (error.code === 'auth/weak-password') {
+          error.message = 'Password should has at least 6 characters 😩';
+        }
+
+        if (error.code === 'auth/email-already-in-use') {
+          error.message = 'Email already in use 😕 Try other 🧐';
+        }
+
+        return error;
+      });
+    }
+
+    return Promise.reject();
+  }
+
+  sendEmailVerification(user: FirebaseUser): Promise<void> {
+
+    // is not logged in
+    if (!this.user$.value) {
+      return sendEmailVerification(user);
+    }
+
+    return Promise.reject();
+  }
+
+  sendPasswordResetEmail(email: string): Promise<void> {
+
+    // is not logged in
+    if (!this.user$.value) {
+      return sendPasswordResetEmail(this.auth, email);
+    }
+
+    return Promise.reject();
+  }
+
+  updatePassword(newPassword: string): Promise<{ code: string; message: string; }> {
+
+    // is not logged in
+    // was created by email password
+    if (!this.user$.value && !this.firebaseUser && this.firebaseUser.providerData[0]?.providerId !== 'password') {
+      return Promise.resolve({
+        code: 'auth/unauthorized',
+        message: `Password hasn't been updated 🤫`
+      });
+    }
+
+    return updatePassword(this.firebaseUser, newPassword).then(() => {
+      return {
+        code: 'auth/password-updated',
+        message: 'Password has been updated 🤫'
+      }
+    }).catch((error: {code: string, message: string}) => {
+
+      if (error.code === 'auth/weak-password') {
+        error.message = 'Password should has at least 6 characters 😩';
+      }
+
+      return error;
     });
   }
 
@@ -240,6 +367,10 @@ export class AuthService {
   }
 
   deleteUser(): Promise<void> {
-    return this.firebaseUser.delete();
+
+    // is logged in
+    if (this.user$.value) {
+      return this.firebaseUser.delete();
+    }
   }
 }

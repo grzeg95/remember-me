@@ -14,4 +14,10 @@ export class CustomValidators {
       return (typeof c.value === 'string') && (c.value.trim().length > 0) && (c.value.trim().length < val) ? null : {maxRequired: true};
     }
   }
+
+  static equalsToOtherFormControl(otherFormControl: FormControl): ValidatorFn {
+    return (c: FormControl): {notEquals: boolean} | null => {
+      return c.value === otherFormControl.value ? null : {notEquals: true};
+    }
+  }
 }

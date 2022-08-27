@@ -355,6 +355,13 @@ const checkEntryRequirements = (request: CallableRequest) => {
   // not logged in
   testRequirement(!auth);
 
+  // email not verified, not for anonymous
+  testRequirement(
+    !auth?.token.email_verified &&
+    auth?.token.provider_id !== 'anonymous' &&
+    !auth?.token.isAnonymous
+  );
+
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
 

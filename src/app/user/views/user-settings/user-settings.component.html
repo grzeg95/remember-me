@@ -33,6 +33,19 @@
     </div>
   </div>
 
+  <!-- User by password -->
+  <ng-container *ngIf="!user.isAnonymous && user.providerId === 'password'">
+  <mat-expansion-panel class="section">
+    <mat-expansion-panel-header class="title advanced">
+      <mat-panel-title>Change password</mat-panel-title>
+    </mat-expansion-panel-header>
+    <div class="items">
+      <div class="item">
+        <app-new-password-component></app-new-password-component>
+      </div>
+    </div>
+  </mat-expansion-panel>
+  </ng-container>
 </ng-container>
 
 <div class="section">

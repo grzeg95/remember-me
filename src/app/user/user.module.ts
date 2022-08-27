@@ -6,6 +6,7 @@ import {UserRoutingModule} from './user-routing.module';
 import {UserComponent} from './user.component';
 import {TaskService} from './views/rounds/round/tasks/task/task.service';
 import {RoundsService} from './views/rounds/rounds.service';
+import {NewPasswordComponent} from './views/user-settings/new-password/new-password.component';
 import {
   UserDialogConfirmDeleteComponent
 } from './views/user-settings/user-dialog-confirm-delete/user-dialog-confirm-delete.component';
@@ -15,7 +16,8 @@ import {UserSettingsComponent} from './views/user-settings/user-settings.compone
   declarations: [
     UserComponent,
     UserDialogConfirmDeleteComponent,
-    UserSettingsComponent
+    UserSettingsComponent,
+    NewPasswordComponent
   ],
   imports: [
     RouterModule,

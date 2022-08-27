@@ -7,6 +7,8 @@ const crc32c = require('fast-crc32c');
 
 export const handler = (data: any, context: CallableContext): Promise<string> => {
 
+  const auth = context.auth;
+
   // with data
   testRequirement(data !== null)
 
@@ -14,10 +16,17 @@ export const handler = (data: any, context: CallableContext): Promise<string> =>
   testRequirement(!context.app);
 
   // not logged in
-  testRequirement(!context.auth);
+  testRequirement(!auth);
+
+  // email not verified, not for anonymous
+  testRequirement(
+    !auth?.token.email_verified &&
+    auth?.token.provider_id !== 'anonymous' &&
+    !auth?.token.isAnonymous
+  );
 
   // @ts-ignore
-  const ciphertext = new Uint8Array(context.auth?.token.encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(auth?.token.encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
   const ciphertextCrc32c = crc32c.calculate(ciphertext);
 
@@ -39,9 +48,9 @@ export const handler = (data: any, context: CallableContext): Promise<string> =>
     // https://firebase.google.com/docs/auth/admin/create-custom-tokens#service_account_does_not_have_required_permissions
 
     return getAuth()
-      .createCustomToken(context.auth?.uid as string, {
+      .createCustomToken(auth?.uid as string, {
         secretKey: (decryptResponse.plaintext || '').toString(),
-        isAnonymous: context.auth?.token.firebase.sign_in_provider === 'anonymous' ? true : undefined
+        isAnonymous: auth?.token.firebase.sign_in_provider === 'anonymous' ? true : undefined
       });
   });
 };

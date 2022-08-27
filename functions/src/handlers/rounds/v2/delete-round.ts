@@ -27,6 +27,13 @@ export const handler = (request: CallableRequest): Promise<{[key: string]: strin
   // not logged in
   testRequirement(!auth);
 
+  // email not verified, not for anonymous
+  testRequirement(
+    !auth?.token.email_verified &&
+    auth?.token.provider_id !== 'anonymous' &&
+    !auth?.token.isAnonymous
+  );
+
   // roundId is not empty string
   testRequirement(typeof roundId !== 'string' || roundId.length === 0);
 

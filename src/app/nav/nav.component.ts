@@ -7,8 +7,11 @@ import {
   faEyeSlash,
   faGear,
   faTasks,
-  faUser
+  faUser,
+  faAt,
+  faArrowRightToBracket
 } from '@fortawesome/free-solid-svg-icons';
+import {AuthFormComponent} from '../auth/auth-form/auth-form.component';
 import {AuthService} from '../auth/auth.service';
 import {User} from '../auth/user-data.model';
 import {ConnectionService} from '../connection.service';
@@ -32,6 +35,8 @@ export class NavComponent implements OnInit {
   faGear = faGear;
   faArrowRightFromBracket = faArrowRightFromBracket;
   faEyeSlash = faEyeSlash;
+  faAt = faAt;
+  faArrowRightToBracket = faArrowRightToBracket;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
 
   constructor(
@@ -57,6 +62,16 @@ export class NavComponent implements OnInit {
 
   signOut(): void {
     this.authService.signOut();
+  }
+
+  openAuthFormComponent(): void {
+    this.dialog.open(AuthFormComponent, {
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      height: '100%',
+      width: '100%',
+      panelClass: ['full-screen-modal', 'full-screen-modal-without-padding']
+    });
   }
 
   openUserSetting() {

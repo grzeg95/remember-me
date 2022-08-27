@@ -23,7 +23,13 @@
                         [disabled]="!isOnline || whileLoginIn"
                         (click)="googleSignIn()">
                   <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
-              </button>
+                </button>
+
+                <button mat-menu-item
+                        [disabled]="!isOnline || whileLoginIn"
+                        (click)="openAuthFormComponent()">
+                  <span><fa-icon [icon]="faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</span>
+                </button>
 
                 <button mat-menu-item
                         [disabled]="!isOnline || whileLoginIn"
