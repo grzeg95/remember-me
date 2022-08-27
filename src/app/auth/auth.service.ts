@@ -4,18 +4,18 @@ import {Router} from '@angular/router';
 import {Buffer} from 'buffer';
 import {
   Auth,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   IdTokenResult,
-  UserCredential,
-  signInAnonymously,
-  signInWithCustomToken,
-  signInWithRedirect,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
+  signInAnonymously,
+  signInWithCustomToken,
+  signInWithEmailAndPassword,
+  signInWithRedirect,
+  signOut,
   updatePassword,
-  signOut
+  UserCredential
 } from 'firebase/auth';
 import {doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot} from 'firebase/firestore';
 import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
@@ -36,7 +36,7 @@ export class AuthService {
   userIntervalReloadSub: Subscription;
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
   onSnapshotUnsubList: (() => void)[] = [];
-  createdAMomentAgoUserWithEmailAndPassword = false;
+  creatingUserWithEmailAndPassword = false;
 
   constructor(
     private router: Router,
@@ -54,8 +54,8 @@ export class AuthService {
 
       if (firebaseUser) {
 
-        if (this.createdAMomentAgoUserWithEmailAndPassword) {
-          this.createdAMomentAgoUserWithEmailAndPassword = false;
+        if (this.creatingUserWithEmailAndPassword) {
+          this.creatingUserWithEmailAndPassword = false;
           this.signOut();
           return;
         }
@@ -273,8 +273,8 @@ export class AuthService {
 
     // is not logged in
     if (!this.user$.value) {
+      this.creatingUserWithEmailAndPassword = true;
       return createUserWithEmailAndPassword(this.auth, email, password).then((userCredential) => {
-        this.createdAMomentAgoUserWithEmailAndPassword = true;
         return sendEmailVerification(userCredential.user).then(() => {
           return {
             code: 'user-created',
