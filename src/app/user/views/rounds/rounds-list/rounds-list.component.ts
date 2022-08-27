@@ -4,7 +4,6 @@ import {
   Component,
   ElementRef,
   HostListener,
-  NgZone,
   OnDestroy,
   OnInit,
   Renderer2,
@@ -58,7 +57,6 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     private router: Router,
     public dialog: MatDialog,
     private route: ActivatedRoute,
-    private zone: NgZone,
     private snackBar: MatSnackBar,
     private renderer: Renderer2,
     private authService: AuthService,
@@ -127,17 +125,13 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     this.sortRoundList();
 
     this.roundsService.setRoundsOrder({moveBy, roundId}).then((success) => {
-      this.zone.run(() => {
-        this.snackBar.open(success.details || 'Your operation has been done 😉');
-      });
-    }, (error) => {
-      this.zone.run(() => {
-        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
-        this.sortRoundList();
-      });
-    }).finally(() => {
       this.setRoundsOrderIsPending = false;
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
+    }, (error) => {
+      this.setRoundsOrderIsPending = false;
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
+      this.sortRoundList();
     });
   }
 

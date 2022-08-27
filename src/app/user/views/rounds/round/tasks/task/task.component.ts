@@ -1,6 +1,6 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
-import {Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatChipInputEvent} from '@angular/material/chips';
@@ -8,15 +8,15 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, UrlTree} from '@angular/router';
 import {asapScheduler, BehaviorSubject, Subscription} from 'rxjs';
-import '../../../../../../../../global.prototype';
 import {startWith} from 'rxjs/operators';
+import '../../../../../../../../global.prototype';
 import {RouterDict} from '../../../../../../app.constants';
 import {ConnectionService} from '../../../../../../connection.service';
 import {CustomValidators} from '../../../../../../custom-validators';
-import {HTTPError, HTTPSuccess, Round, TaskForm, Task} from '../../../../../models';
+import {HTTPError, HTTPSuccess, Round, Task, TaskForm} from '../../../../../models';
+import {RoundsService} from '../../../rounds.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskService} from './task.service';
-import {RoundsService} from '../../../rounds.service';
 
 @Component({
   selector: 'app-task',
@@ -83,7 +83,6 @@ export class TaskComponent implements OnInit, OnDestroy {
     private location: Location,
     public dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private zone: NgZone,
     private taskService: TaskService,
     private roundsService: RoundsService,
     private router: Router,
@@ -335,22 +334,20 @@ export class TaskComponent implements OnInit, OnDestroy {
       roundId: this.roundsService.selectedRound$.value.id
     }).then((success) => {
 
-      this.zone.run(() => {
-        if (success.created) {
-          this.location.go(this.router.createUrlTree(['./', success.taskId], {relativeTo: this.route}).toString());
-        }
+      if (success.created) {
+        this.location.go(this.router.createUrlTree(['./', success.taskId], {relativeTo: this.route}).toString());
+      }
 
-        this.id = success.taskId;
-        this.savingInProgress = false;
-        this.initValues = this.taskForm.getRawValue();
-        this.taskForm.enable();
-        this.snackBar.open(success.details || 'Your operation has been done 😉');
-      });
+      this.id = success.taskId;
+      this.savingInProgress = false;
+      this.initValues = this.taskForm.getRawValue();
+      this.taskForm.enable();
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
+
     }).catch((error: HTTPError) => {
-      this.zone.run(() => {
-        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        this.refreshTaskByParamId(this.id);
-      });
+      this.savingInProgress = false;
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      this.refreshTaskByParamId(this.id);
     });
   }
 
@@ -432,16 +429,13 @@ export class TaskComponent implements OnInit, OnDestroy {
           taskId: this.id,
           roundId: this.round.id
         }).then((success: HTTPSuccess) => {
-          this.zone.run(() => {
-            this.snackBar.open(success.details || 'Your operation has been done 😉');
-            this.deepResetForm();
-            this.deletingInProgress = false;
-          });
+          this.deletingInProgress = false;
+          this.snackBar.open(success.details || 'Your operation has been done 😉');
+          this.deepResetForm();
         }).catch((error: HTTPError) => {
-          this.zone.run(() => {
-            this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-            this.refreshTaskByParamId(this.id);
-          });
+          this.deletingInProgress = false;
+          this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+          this.refreshTaskByParamId(this.id);
         });
       }
     });

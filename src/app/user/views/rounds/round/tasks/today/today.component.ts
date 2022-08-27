@@ -1,4 +1,4 @@
-import {Component, Inject, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
@@ -41,13 +41,12 @@ export class TodayComponent implements OnInit, OnDestroy {
   todayItemsViewFirstLoading$ = this.roundsService.todayItemsViewFirstLoading$;
   todayItemsSub: Subscription;
   todayItemsViewSub: Subscription;
-  todayItemsView: { timeOfDay: string, tasks: TodayItem[] }[];
+  todayItemsView: {timeOfDay: string, tasks: TodayItem[]}[];
 
   constructor(
     private authService: AuthService,
     private roundsService: RoundsService,
     private snackBar: MatSnackBar,
-    private zone: NgZone,
     private router: Router,
     private route: ActivatedRoute,
     private connectionService: ConnectionService,
@@ -156,13 +155,11 @@ export class TodayComponent implements OnInit, OnDestroy {
     ).then(() => {
       todayItem.disabled = false;
     }).catch(() => {
-      this.zone.run(() => {
-        if (!this.destroyed) {
-          todayItem.disabled = false;
-          this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-          this.changeDay();
-        }
-      });
+      if (!this.destroyed) {
+        todayItem.disabled = false;
+        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+        this.changeDay();
+      }
     });
 
     if (!this.isOnline) {

@@ -1,5 +1,5 @@
 import {Location} from '@angular/common';
-import {Component, NgZone, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -40,7 +40,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
   constructor(
     private roundsService: RoundsService,
     private snackBar: MatSnackBar,
-    private zone: NgZone,
     private router: Router,
     private route: ActivatedRoute,
     public dialog: MatDialog,
@@ -73,33 +72,30 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     this.roundForm.disable();
 
     this.roundsService.saveRound(this.name.value, this.id).then((success) => {
-      this.zone.run(() => {
-        if (success.created) {
-          this.location.go(this.router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, success.roundId]).toString());
-        }
 
-        this.name.setValue(this.name.value.trim());
-        this.roundsService.editedRound$.next({
-          timesOfDayCardinality: [],
-          timesOfDay: [],
-          name: this.name.value,
-          id: success.roundId,
-          todaysIds: [],
-          tasksIds: []
-        });
-        this.id = success.roundId;
-        this.savingInProgress = false;
-        this.initValues.name = this.name.value;
-        this.roundForm.enable();
+      if (success.created) {
+        this.location.go(this.router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, success.roundId]).toString());
+      }
 
-        this.snackBar.open(success.details || 'Your operation has been done 😉');
+      this.name.setValue(this.name.value.trim());
+      this.roundsService.editedRound$.next({
+        timesOfDayCardinality: [],
+        timesOfDay: [],
+        name: this.name.value,
+        id: success.roundId,
+        todaysIds: [],
+        tasksIds: []
       });
+      this.id = success.roundId;
+      this.savingInProgress = false;
+      this.initValues.name = this.name.value;
+      this.roundForm.enable();
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
+
     }).catch((error) => {
-      this.zone.run(() => {
-        this.savingInProgress = false;
-        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        this.refreshRoundByParamId(this.id);
-      });
+      this.savingInProgress = false;
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      this.refreshRoundByParamId(this.id);
     });
   }
 
@@ -113,20 +109,15 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.deletingInProgress = true;
 
         this.roundsService.deleteRound(this.id).then((success) => {
-          this.zone.run(() => {
-            this.snackBar.open(success.details || 'Your operation has been done 😉');
-            this.deepResetForm();
-            this.deletingInProgress = false;
-          });
+          this.deletingInProgress = false;
+          this.snackBar.open(success.details || 'Your operation has been done 😉');
+          this.deepResetForm();
         }).catch((error: HTTPError) => {
-          this.zone.run(() => {
-            this.deletingInProgress = false;
-            this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-            this.refreshRoundByParamId(this.id);
-          });
+          this.deletingInProgress = false;
+          this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+          this.refreshRoundByParamId(this.id);
         });
       }
-
     });
   }
 

@@ -1,13 +1,13 @@
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { faGripLines } from '@fortawesome/free-solid-svg-icons';
-import { RouterDict } from 'src/app/app.constants';
-import { ConnectionService } from '../../../../../../connection.service';
-import { RoundsService } from '../../../rounds.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Round } from 'functions/src/helpers/models';
+import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {ActivatedRoute, Router} from '@angular/router';
+import {faGripLines} from '@fortawesome/free-solid-svg-icons';
+import {Round} from 'functions/src/helpers/models';
 import {Subscription} from 'rxjs';
+import {RouterDict} from 'src/app/app.constants';
+import {ConnectionService} from '../../../../../../connection.service';
+import {RoundsService} from '../../../rounds.service';
 
 @Component({
   selector: 'app-times-of-day-order',
@@ -30,7 +30,6 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
   constructor(
     private roundsService: RoundsService,
     private snackBar: MatSnackBar,
-    private zone: NgZone,
     private route: ActivatedRoute,
     private router: Router,
     private connectionService: ConnectionService
@@ -64,18 +63,13 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       moveBy,
       roundId: this.roundsService.selectedRound$.value.id
     }).then((success) => {
-      this.zone.run(() => {
-        this.snackBar.open(success.details || 'Your operation has been done 😉');
-      });
-    }, (error) => {
-      this.zone.run(() => {
-        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(this.selectedRound.timesOfDay, event.currentIndex, event.previousIndex);
-      });
-    }).finally(() => {
       this.setTimesOfDayOrderInProgress = false;
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
+    }, (error) => {
+      this.setTimesOfDayOrderInProgress = false;
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      moveItemInArray(this.selectedRound.timesOfDay, event.currentIndex, event.previousIndex);
     });
-
   }
 
   addNewTask(): void {
