@@ -96,6 +96,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
       });
     }).catch((error) => {
       this.zone.run(() => {
+        this.savingInProgress = false;
         this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         this.refreshRoundByParamId(this.id);
       });
@@ -119,6 +120,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
           });
         }).catch((error: HTTPError) => {
           this.zone.run(() => {
+            this.deletingInProgress = false;
             this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
             this.refreshRoundByParamId(this.id);
           });
