@@ -39,6 +39,12 @@ service cloud.firestore {
 
     allow get: if isOwner() && isNotDisabled();
 
+    allow update: if (
+      isUserVerifiedForModules() &&
+      request.resource.data.diff(resource.data).affectedKeys() == ['photoUrl'].toSet() &&
+      request.resource.data.diff(resource.data).removedKeys().size() == 1
+    );
+
     match /rounds/{roundId} {
 
       allow get: if isUserVerifiedForModules();

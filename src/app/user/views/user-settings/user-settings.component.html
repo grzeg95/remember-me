@@ -11,16 +11,25 @@
         <div class="name">Provider</div>
         <div class="data" [innerHTML]="user.providerId"></div>
       </div>
-      <ng-container *ngIf="!user.isAnonymous">
-        <div class="item photo">
-          <div class="name">Photo</div>
-          <div class="data">
-            <img *ngIf="user.photoURL" [src]="user.photoURL"/>
-            <div *ngIf="!user.photoURL" class="no-photo">
-              <fa-icon [icon]="faUser"></fa-icon>
-            </div>
+      <div class="item photo">
+        <div class="name">
+          <span>Photo</span>
+          <div *ngIf="user.hasCustomPhoto && !isPhotoUploading" (click)="removePhoto()" class="mat-chip-close">
+            <img src="assets/img/chip-close.svg">
           </div>
         </div>
+        <div class="data photo">
+          <label [ngClass]="{'photo-uploading': isPhotoUploading}">
+            <img *ngIf="user.photoURL" [src]="user.photoURL"/>
+            <div *ngIf="!user.photoURL">
+              <fa-icon [icon]="faUser"></fa-icon>
+            </div>
+            <input hidden [disabled]="isPhotoUploading" type="file" (change)="fileChange($event)" accept=".jpg,.jpeg,.png">
+            <mat-spinner *ngIf="isPhotoUploading" [diameter]="40"></mat-spinner>
+          </label>
+        </div>
+      </div>
+      <ng-container *ngIf="!user.isAnonymous">
         <div class="item">
           <div class="name">Name</div>
           <div class="data" [innerHTML]="user.displayName"></div>

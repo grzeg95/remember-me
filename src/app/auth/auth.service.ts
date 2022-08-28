@@ -1,7 +1,10 @@
+import {HttpClient} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
+import {getToken} from '@firebase/app-check';
 import {Buffer} from 'buffer';
+import {AppCheck} from 'firebase/app-check';
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -17,13 +20,14 @@ import {
   updatePassword,
   UserCredential
 } from 'firebase/auth';
-import {doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot} from 'firebase/firestore';
+import {doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot, updateDoc, deleteField} from 'firebase/firestore';
 import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
 import {getString, RemoteConfig} from 'firebase/remote-config';
-import {BehaviorSubject, interval, Subscription} from 'rxjs';
+import {BehaviorSubject, interval, lastValueFrom, Subscription} from 'rxjs';
+import {environment} from "../../environments/environment";
 import {RouterDict} from '../app.constants';
-import {AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
-import {decrypt, userConverter} from '../security';
+import {APP_CHECK, AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
+import {decryptUser, userConverter} from '../security';
 import {FirebaseUser, User} from './user-data.model';
 
 @Injectable()
@@ -44,7 +48,9 @@ export class AuthService {
     @Inject(FUNCTIONS) private readonly functions: Functions,
     @Inject(AUTH) private readonly auth: Auth,
     @Inject(FIRESTORE) private readonly firestore: Firestore,
-    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig
+    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig,
+    @Inject(APP_CHECK) private readonly appCheck: AppCheck,
+    private http: HttpClient
   ) {
 
     this.auth.onAuthStateChanged(async (firebaseUser) => {
@@ -198,7 +204,8 @@ export class AuthService {
       email: firebaseUser.email,
       displayName: firebaseUser.displayName,
       emailVerified: firebaseUser.emailVerified,
-      photoURL: firebaseUser.photoURL
+      photoURL: firebaseUser.photoURL,
+      hasCustomPhoto: false
     };
 
     if (idTokenResult.claims.isAnonymous) {
@@ -209,15 +216,19 @@ export class AuthService {
       user.providerId = firebaseUser.providerData[0].providerId;
     }
 
-    return new Promise<string>((resolve) => {
-      if (actionUserDocSnap?.data()?.rounds) {
-        return resolve(decrypt(actionUserDocSnap.data()?.rounds, user.cryptoKey));
-      }
-      return resolve(null);
-    }).then((rounds) => {
+    return decryptUser({
+      rounds: actionUserDocSnap.data()?.rounds,
+      photoUrl: actionUserDocSnap.data()?.photoUrl,
+      hasEncryptedSecretKey: actionUserDocSnap.data()?.hasEncryptedSecretKey
+    }, cryptoKey).then((decryptedUser) => {
 
-      if (rounds) {
-        user.rounds = JSON.parse(rounds);
+      if (decryptedUser.rounds) {
+        user.rounds = decryptedUser.rounds;
+      }
+
+      if (decryptedUser.photoUrl) {
+        user.photoURL = decryptedUser.photoUrl;
+        user.hasCustomPhoto = true;
       }
 
       this.isWaitingForCryptoKey$.next(false);
@@ -371,6 +382,53 @@ export class AuthService {
     // is logged in
     if (this.user$.value) {
       return this.firebaseUser.delete();
+    }
+  }
+
+  uploadProfileImage(file: File): Promise<{message: string}> {
+
+    // is logged in
+    if (this.user$.value) {
+      return Promise.all([
+        this.firebaseUser.getIdToken(),
+        getToken(this.appCheck).then((token) => token.token)
+      ]).then(([userToken, xFirebaseAppCheckToken]) => {
+
+        let url: string = '';
+
+        if (!environment.production) {
+          url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/europe-west4/userv2-uploadprofileimage`;
+        }
+
+        if (environment.production) {
+          url = 'https://userv2-uploadprofileimage-yhy2fc7udq-ez.a.run.app';
+        }
+
+        const uploadProfileImageUrl = getString(this.remoteConfig, 'uploadProfileImageUrl');
+        if (uploadProfileImageUrl) {
+          url = uploadProfileImageUrl;
+        }
+
+        const headers = {
+          'Content-Type': file.type,
+          'authorization': `Bearer ${userToken}`,
+          'X-Firebase-AppCheck': xFirebaseAppCheckToken
+        };
+
+        return lastValueFrom(
+          this.http.post<{message: string}>(url, file, {headers})
+        );
+      });
+    }
+  }
+
+  removePhoto(): Promise<void> {
+
+    // is logged in
+    if (this.user$.value) {
+      return updateDoc(doc(this.firestore, `users/${this.firebaseUser.uid}`), {
+        photoUrl: deleteField()
+      });
     }
   }
 }

@@ -9,6 +9,7 @@ export interface User {
   email: string;
   displayName: string;
   photoURL: string;
+  hasCustomPhoto: boolean;
   emailVerified: boolean;
   cryptoKey?: CryptoKey;
   providerId?: string;
@@ -18,4 +19,11 @@ export interface User {
 export interface EncryptedUser {
   rounds: string;
   hasEncryptedSecretKey: boolean;
+  photoUrl?: string;
+}
+
+export interface DecryptedUser {
+  rounds: string[];
+  hasEncryptedSecretKey: boolean;
+  photoUrl?: string;
 }

@@ -75,28 +75,62 @@
         font-weight: 600;
         flex-basis: 160px;
         color: black;
+        display: flex;
       }
 
       .data {
         display: block;
         word-break: break-all;
+        position: relative;
 
-        img {
-          width: 1.5rem;
-          height: 1.5rem;
-          border: solid 1px rgba(212, 212, 212, 0.5);
+        &.photo {
+          width: 40px;
+          height: 40px;
           border-radius: 100%;
-        }
 
-        .no-photo {
-          width: 1.5rem;
-          height: 1.5rem;
-          font-size: 1.5rem;
+          img {
+            width: 40px;
+            height: 40px;
+            border-radius: 100%;
+            border: solid 1px rgba(212, 212, 212, 0.5);
+          }
 
-          ::ng-deep svg {
+          fa-icon {
+            font-size: 1.5rem;
+          }
+
+          fa-icon ::ng-deep svg {
             display: block;
             margin: auto;
             color: #212529;
+          }
+
+          .mat-spinner {
+            position: absolute;
+            top: 0;
+            left: 0;
+          }
+
+          label {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 100%;
+
+            &.photo-uploading {
+              img, fa-icon {
+                opacity: 0.1;
+              }
+              &:hover {
+                cursor: default;
+              }
+            }
+
+            &:hover {
+              cursor: pointer;
+            }
           }
         }
       }
@@ -125,5 +159,25 @@ mat-expansion-panel {
     .mat-expansion-panel-header {
       height: auto;
     }
+  }
+}
+
+.mat-chip-close {
+  width: 16px;
+  height: 16px;
+  opacity: 0.348;
+  display: inline-block;
+  margin-left: 1rem;
+  background: transparent;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &:hover {
+    opacity: 0.87*57/100;
   }
 }

@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../../auth/auth.service';
@@ -19,15 +20,21 @@ export class UserSettingsComponent implements OnInit {
   user: User;
   userSub: Subscription;
 
+  isPhotoUploading: boolean;
+
   constructor(
     public dialogRef: MatDialogRef<UserSettingsComponent>,
     private authService: AuthService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {
   }
 
   ngOnInit(): void {
-    this.userSub = this.authService.user$.subscribe((user) => this.user = user);
+    this.userSub = this.authService.user$.subscribe((user) => {
+      this.user = user;
+      this.isPhotoUploading = false;
+    });
   }
 
   ngOnDestroy(): void {
@@ -49,5 +56,27 @@ export class UserSettingsComponent implements OnInit {
         }
       }
     });
+  }
+
+  fileChange(event) {
+
+    const input: HTMLInputElement = event.target;
+    const fileList: FileList = input.files;
+
+    if (fileList.length > 0) {
+      this.isPhotoUploading = true;
+      this.authService.uploadProfileImage(fileList[0]).then((success) => {
+        input.value = '';
+        this.snackBar.open(success.message || 'Your operation has been done 😉');
+      }).catch((error) => {
+        this.isPhotoUploading = false;
+        input.value = '';
+        this.snackBar.open(error.error.details || 'Some went wrong 🤫 Try again 🙂');
+      });
+    }
+  }
+
+  removePhoto() {
+    this.authService.removePhoto();
   }
 }

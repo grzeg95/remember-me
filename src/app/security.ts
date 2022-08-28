@@ -1,6 +1,6 @@
 import {Buffer} from 'buffer';
 import {DocumentData, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
-import {EncryptedUser} from './auth/user-data.model';
+import {DecryptedUser, EncryptedUser} from './auth/user-data.model';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
 
 export type BasicEncryptedValue = {value: string};
@@ -25,7 +25,8 @@ export const userConverter = {
     const data = snapshot.data(options)!;
     return {
       hasEncryptedSecretKey: data.hasEncryptedSecretKey,
-      rounds: data.rounds
+      rounds: data.rounds,
+      photoUrl: data.photoUrl
     } as EncryptedUser;
   }
 };
@@ -56,6 +57,30 @@ export const decrypt = (encryptedData: string, cryptoKey: CryptoKey): Promise<st
   }, cryptoKey, encrypted)
     .then((text) => Buffer.from(text).toString('utf-8'))
     .catch(() => null);
+};
+
+export const decryptUser = (encryptedUser: EncryptedUser, cryptoKey: CryptoKey): Promise<DecryptedUser> => {
+
+  let decryptedRoundsPromise = undefined;
+
+  if (encryptedUser.rounds) {
+    decryptedRoundsPromise = decrypt(encryptedUser.rounds, cryptoKey);
+  }
+
+  let decryptedPhotoUrlPromise = undefined;
+
+  if (encryptedUser.photoUrl) {
+    decryptedPhotoUrlPromise = decrypt(encryptedUser.photoUrl, cryptoKey);
+  }
+
+  return Promise.all([decryptedRoundsPromise, decryptedPhotoUrlPromise])
+    .then(([rounds, photoUrl]) => {
+      return {
+        rounds: JSON.parse(rounds || []),
+        photoUrl,
+        hasEncryptedSecretKey: encryptedUser.hasEncryptedSecretKey
+      }
+    });
 };
 
 export const decryptTask = async (encryptedTask: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Task> => {
