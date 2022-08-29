@@ -2,9 +2,8 @@ import {Component, OnInit} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
+import {AuthService, User} from 'auth';
 import {Subscription} from 'rxjs';
-import {AuthService} from '../../../auth/auth.service';
-import {User} from '../../../auth/user-data.model';
 import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/user-dialog-confirm-delete.component';
 
 @Component({
@@ -32,6 +31,10 @@ export class UserSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.userSub = this.authService.user$.subscribe((user) => {
+      if (!user) {
+        this.dialogRef.close();
+        return;
+      }
       this.user = user;
       this.isPhotoUploading = false;
     });
@@ -48,11 +51,9 @@ export class UserSettingsComponent implements OnInit {
 
       if (isConfirmed) {
         if (this.user) {
-          this.authService.deleteUser().then(() => this.authService.signOut()).finally(() => {
-            this.dialogRef.close();
+          this.authService.deleteUser().catch(() => {
+            this.snackBar.open('Some went wrong 🤫 Try again 🙂');
           });
-        } else {
-          this.dialogRef.close();
         }
       }
     });

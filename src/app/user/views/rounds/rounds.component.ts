@@ -24,6 +24,7 @@ export class RoundsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.roundsService.init();
     this.selectedRoundSub = this.roundsService.selectedRound$
       .pipe(skip(1))
       .subscribe((selectedRound) => {

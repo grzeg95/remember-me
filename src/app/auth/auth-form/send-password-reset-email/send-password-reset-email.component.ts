@@ -1,9 +1,9 @@
 import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {AuthService} from 'auth';
 import {Subscription} from "rxjs";
 import {ConnectionService} from '../../../connection.service';
-import {AuthService} from '../../auth.service';
 
 @Component({
   selector: 'app-send-password-reset-email',

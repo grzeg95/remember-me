@@ -1,5 +1,6 @@
 import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
+import {AuthService} from 'auth';
 import {collection, doc, Firestore, getDoc, limit, onSnapshot, query} from 'firebase/firestore';
 import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
 import {getString, RemoteConfig} from 'firebase/remote-config';
@@ -7,7 +8,6 @@ import {BehaviorSubject, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {Day} from '../../../../../functions/src/helpers/models';
 import {RouterDict} from '../../../app.constants';
-import {AuthService} from '../../../auth/auth.service';
 import {ConnectionService} from '../../../connection.service';
 import {FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../../../injectors';
 import {
@@ -38,7 +38,7 @@ export class RoundsService {
   roundsListFirstLoading$ = new BehaviorSubject<boolean>(true);
 
   todayItems$ = new BehaviorSubject<{[p: string]: TodayItem[]}>(null);
-  todayItemsView$ = new BehaviorSubject<{ timeOfDay: string, tasks: TodayItem[] }[]>(null);
+  todayItemsView$ = new BehaviorSubject<{timeOfDay: string, tasks: TodayItem[]}[]>(null);
   todayItemsViewFirstLoading$ = new BehaviorSubject<boolean>(true);
 
   nowSub: Subscription;
@@ -60,7 +60,11 @@ export class RoundsService {
     private router: Router,
     private connectionService: ConnectionService
   ) {
+  }
+
+  init() {
     this.userSub = this.authService.user$.subscribe((user) => {
+
       // after log out user will be null
       if (user) {
         this.roundsOrder$.next(user.rounds);

@@ -1,10 +1,10 @@
 import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {AuthService} from 'auth';
 import {Subscription} from "rxjs";
 import {ConnectionService} from '../../../connection.service';
 import {CustomValidators} from '../../../custom-validators';
-import {AuthService} from '../../auth.service';
 
 @Component({
   selector: 'app-register',
@@ -53,18 +53,18 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   register(): void {
     this.registerForm.disable();
-    this.authService.createUserWithEmailAndPassword(this.email.value, this.password.value).then((action) => {
+    this.authService.createUserWithEmailAndPassword(this.email.value, this.password.value).then((r) => {
       this.registerForm.enable();
-      if (action) {
+      if (r) {
 
-        this.snackBar.open(action.message, 'X', {duration: 20000});
+        this.snackBar.open(r.message, 'X', {duration: 20000});
 
-        if (action.code === 'user-created') {
+        if (r.code === 'user-created') {
           this.doneEmitter.next();
         }
       }
-    }).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    }).catch((e) => {
+      this.snackBar.open(e.message, 'X', {duration: 20000});
       this.registerForm.enable();
     })
   }

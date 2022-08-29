@@ -1,19 +1,18 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {
   faArrowRightFromBracket,
+  faArrowRightToBracket,
+  faAt,
   faEllipsisV,
   faEyeSlash,
   faGear,
   faTasks,
-  faUser,
-  faAt,
-  faArrowRightToBracket
+  faUser
 } from '@fortawesome/free-solid-svg-icons';
-import {AuthFormComponent} from '../auth/auth-form/auth-form.component';
-import {AuthService} from '../auth/auth.service';
-import {User} from '../auth/user-data.model';
+import {AuthFormComponent, AuthService, User} from 'auth';
 import {ConnectionService} from '../connection.service';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 
@@ -42,7 +41,8 @@ export class NavComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private dialog: MatDialog,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    private snackBar: MatSnackBar
   ) {
   }
 
@@ -53,11 +53,15 @@ export class NavComponent implements OnInit {
   }
 
   googleSignIn(): void {
-    this.authService.googleSignIn();
+    this.authService.googleSignIn().catch(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    });
   }
 
   anonymouslySignIn(): void {
-    this.authService.anonymouslySignIn();
+    this.authService.anonymouslySignIn().catch(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    });
   }
 
   signOut(): void {

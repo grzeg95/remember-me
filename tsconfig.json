@@ -22,7 +22,10 @@
       "es2019",
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "auth": ["./src/app/auth/index"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

@@ -1,6 +1,6 @@
+import {DecryptedUser, EncryptedUser} from 'auth';
 import {Buffer} from 'buffer';
 import {DocumentData, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
-import {DecryptedUser, EncryptedUser} from './auth/user-data.model';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
 
 export type BasicEncryptedValue = {value: string};

@@ -28,6 +28,7 @@ import {environment} from "../../environments/environment";
 import {RouterDict} from '../app.constants';
 import {APP_CHECK, AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
 import {decryptUser, userConverter} from '../security';
+import {onAuthStateChanged$} from './index';
 import {FirebaseUser, User} from './user-data.model';
 
 @Injectable()
@@ -66,8 +67,7 @@ export class AuthService {
       }
     });
 
-    this.auth.onAuthStateChanged(async (firebaseUser: FirebaseUser) => {
-
+    onAuthStateChanged$(this.auth).subscribe((firebaseUser: FirebaseUser) => {
       if (firebaseUser) {
 
         if (this.creatingUserWithEmailAndPassword) {
@@ -75,8 +75,6 @@ export class AuthService {
           this.signOut();
           return;
         }
-
-        this.firebaseUser = firebaseUser;
 
         if (!crypto.subtle) {
           this.signOut();
@@ -93,9 +91,19 @@ export class AuthService {
           this.wasTriedToLogInAMomentAgo = false;
         }
 
-        this.unsubscribeUserDocSub();
+        const isAnonymous = firebaseUser.isAnonymous || !firebaseUser.providerData.length;
 
-        const userDocRef = doc(this.firestore, `users/${firebaseUser.uid}`).withConverter(userConverter);
+        // check if email was verified but not anonymous
+        if (!isAnonymous && !firebaseUser.emailVerified) {
+          this.snackBar.open('Please verify you email 🤫 and try again 🙂');
+          this.signOut();
+          return;
+        }
+
+        this.unsubscribeUserDocSub();
+        this.firebaseUser = firebaseUser;
+
+        const userDocRef = doc(this.firestore, `users/${this.firebaseUser.uid}`).withConverter(userConverter);
         this.userDocUnsub = onSnapshot(userDocRef, async (snap) => {
 
           if (snap.data()?.hasEncryptedSecretKey) {
@@ -108,7 +116,7 @@ export class AuthService {
           }
           throw error;
         });
-        this.onSnapshotUnsubList.push(this.userDocUnsub);
+
       } else {
 
         for (const unsub of this.onSnapshotUnsubList) {
@@ -118,6 +126,7 @@ export class AuthService {
         }
         this.onSnapshotUnsubList = [];
 
+        this.unsubscribeUserDocSub();
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
         this.firebaseUser = null;
@@ -258,18 +267,19 @@ export class AuthService {
     });
   }
 
-  googleSignIn(): void {
+  googleSignIn(): Promise<void> {
 
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
 
-      signInWithRedirect(this.auth, new GoogleAuthProvider()).catch(() => {
-        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-      }).finally(() => {
+      return signInWithRedirect(this.auth, new GoogleAuthProvider()).catch((e) => {
         this.whileLoginIn$.next(false);
+        throw e;
       });
     }
+
+    return Promise.reject();
   }
 
   anonymouslySignIn(): Promise<UserCredential | void> {
@@ -279,9 +289,9 @@ export class AuthService {
       this.whileLoginIn$.next(true);
       this.wasTriedToLogInAMomentAgo = true;
 
-      signInAnonymously(this.auth).catch(() => {
-        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+      return signInAnonymously(this.auth).catch((e) => {
         this.whileLoginIn$.next(false);
+        throw e;
       });
     }
 
@@ -295,11 +305,9 @@ export class AuthService {
       this.whileLoginIn$.next(true);
       this.wasTriedToLogInAMomentAgo = true;
 
-      return signInWithEmailAndPassword(this.auth, email, password).then((userCredential) => {
-        return userCredential;
-      }).catch(() => {
-        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+      return signInWithEmailAndPassword(this.auth, email, password).catch((e) => {
         this.whileLoginIn$.next(false);
+        throw e;
       });
     }
 
@@ -318,7 +326,7 @@ export class AuthService {
             message: 'User has been created 🤗 To login verify your email address by link in that has been sent to you 🧐'
           };
         }).catch(() => {
-          return {
+          throw {
             code: 'user-created',
             message: 'User has been created 🤗 Please try to login 🙈'
           }
@@ -333,7 +341,7 @@ export class AuthService {
           error.message = 'Email already in use 😕 Try other 🧐';
         }
 
-        return error;
+        throw error;
       });
     }
 
@@ -365,7 +373,7 @@ export class AuthService {
     // is not logged in
     // was created by email password
     if (!this.user$.value && !this.firebaseUser && this.firebaseUser.providerData[0]?.providerId !== 'password') {
-      return Promise.resolve({
+      return Promise.reject({
         code: 'auth/unauthorized',
         message: `Password hasn't been updated 🤫`
       });
@@ -382,7 +390,7 @@ export class AuthService {
         error.message = 'Password should has at least 6 characters 😩';
       }
 
-      return error;
+      throw error;
     });
   }
 
@@ -403,6 +411,8 @@ export class AuthService {
     if (this.user$.value) {
       return this.firebaseUser.delete();
     }
+
+    return Promise.reject();
   }
 
   uploadProfileImage(file: File): Promise<{message: string}> {
@@ -440,6 +450,8 @@ export class AuthService {
         );
       });
     }
+
+    return Promise.reject();
   }
 
   removePhoto(): Promise<void> {

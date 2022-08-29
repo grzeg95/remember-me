@@ -1,14 +1,16 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
+import {AuthGuard, redirectUnauthorizedTo} from 'auth';
 import {RouterDict} from '../app.constants';
-import {AuthGuard} from '../auth/auth-guard.service';
 import {UserComponent} from './user.component';
+
+const redirectUnauthorizedToGuestEnterView = () => redirectUnauthorizedTo(['/']);
 
 const routes: Routes = [
   {
     path: '',
     canActivate: [AuthGuard],
-    data: {redirectUnauthorizedTo: ['/']},
+    data: {authGuardPipe: redirectUnauthorizedToGuestEnterView},
     component: UserComponent,
     children: [
       {

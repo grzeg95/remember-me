@@ -1,6 +1,6 @@
 import {Component, Inject} from '@angular/core';
 import {doc, DocumentData, Firestore, getDoc, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
-import {AuthService} from '../auth/auth.service';
+import {AuthService} from 'auth';
 import {defaultGuestComponentConfig, GuestComponentConfig} from '../config.model';
 import {FIRESTORE} from '../injectors';
 

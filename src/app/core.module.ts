@@ -1,13 +1,12 @@
 import {NgModule} from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
+import {AuthGuard, AuthService} from 'auth';
 import {FirebaseApp} from 'firebase/app';
 import {getAuth} from 'firebase/auth';
 import {getFirestore} from 'firebase/firestore';
 import {getFunctions} from 'firebase/functions';
 import {getRemoteConfig} from 'firebase/remote-config';
 import {environment} from '../environments/environment';
-import {AuthGuard} from './auth/auth-guard.service';
-import {AuthService} from './auth/auth.service';
 import {ConnectionService} from './connection.service';
 import {CustomValidators} from './custom-validators';
 import {AUTH, FIREBASE_APP, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from './injectors';

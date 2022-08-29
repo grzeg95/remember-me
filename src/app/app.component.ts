@@ -1,5 +1,5 @@
 import {ChangeDetectorRef, Component} from '@angular/core';
-import {AuthService} from './auth/auth.service';
+import {AuthService} from 'auth';
 import {ConnectionService} from './connection.service';
 
 @Component({
