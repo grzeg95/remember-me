@@ -20,10 +20,10 @@ import {
   updatePassword,
   UserCredential
 } from 'firebase/auth';
-import {doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot, updateDoc, deleteField} from 'firebase/firestore';
+import {deleteField, doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot, updateDoc} from 'firebase/firestore';
 import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
 import {getString, RemoteConfig} from 'firebase/remote-config';
-import {BehaviorSubject, interval, lastValueFrom, Subscription} from 'rxjs';
+import {BehaviorSubject, lastValueFrom} from 'rxjs';
 import {environment} from "../../environments/environment";
 import {RouterDict} from '../app.constants';
 import {APP_CHECK, AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
@@ -37,10 +37,12 @@ export class AuthService {
   firebaseUser: FirebaseUser;
   userDocUnsub: () => void;
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
-  userIntervalReloadSub: Subscription;
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
   onSnapshotUnsubList: (() => void)[] = [];
   creatingUserWithEmailAndPassword = false;
+  wasReloaded = false;
+  wasTriedToLogInAMomentAgo = false;
+  firstTimeOfPageLoading = true;
 
   constructor(
     private router: Router,
@@ -53,10 +55,18 @@ export class AuthService {
     private http: HttpClient
   ) {
 
-    this.auth.onAuthStateChanged(async (firebaseUser) => {
+    this.auth.beforeAuthStateChanged(async (firebaseUser: FirebaseUser) => {
+      if (firebaseUser && !this.firstTimeOfPageLoading) {
+        return firebaseUser.reload().then(() => {
+          this.wasReloaded = true;
+        });
+      }
+      if (this.firstTimeOfPageLoading) {
+        this.firstTimeOfPageLoading = false;
+      }
+    });
 
-      this.unsubscribeUserIntervalReloadSub();
-      this.unsubscribeUserDocSub();
+    this.auth.onAuthStateChanged(async (firebaseUser: FirebaseUser) => {
 
       if (firebaseUser) {
 
@@ -74,11 +84,16 @@ export class AuthService {
           return;
         }
 
-        // pre 30 min
-        this.userIntervalReloadSub = interval(1800000).subscribe(() => {
-          this.isWaitingForCryptoKey$.next(true);
-          this.proceedGettingOfCryptoKey(this.firebaseUser);
-        });
+        if (this.wasReloaded && !this.wasTriedToLogInAMomentAgo) {
+          this.wasReloaded = false;
+          return;
+        }
+
+        if (this.wasTriedToLogInAMomentAgo) {
+          this.wasTriedToLogInAMomentAgo = false;
+        }
+
+        this.unsubscribeUserDocSub();
 
         const userDocRef = doc(this.firestore, `users/${firebaseUser.uid}`).withConverter(userConverter);
         this.userDocUnsub = onSnapshot(userDocRef, async (snap) => {
@@ -257,24 +272,35 @@ export class AuthService {
     }
   }
 
-  anonymouslySignIn(): void {
+  anonymouslySignIn(): Promise<UserCredential | void> {
 
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
+      this.wasTriedToLogInAMomentAgo = true;
 
       signInAnonymously(this.auth).catch(() => {
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
         this.whileLoginIn$.next(false);
       });
     }
+
+    return Promise.reject();
   }
 
   signInWithEmailAndPassword(email: string, password: string): Promise<UserCredential | void> {
 
     // is not logged in
     if (!this.user$.value) {
-      return signInWithEmailAndPassword(this.auth, email, password);
+      this.whileLoginIn$.next(true);
+      this.wasTriedToLogInAMomentAgo = true;
+
+      return signInWithEmailAndPassword(this.auth, email, password).then((userCredential) => {
+        return userCredential;
+      }).catch(() => {
+        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+        this.whileLoginIn$.next(false);
+      });
     }
 
     return Promise.reject();
@@ -334,7 +360,7 @@ export class AuthService {
     return Promise.reject();
   }
 
-  updatePassword(newPassword: string): Promise<{ code: string; message: string; }> {
+  updatePassword(newPassword: string): Promise<{code: string; message: string;}> {
 
     // is not logged in
     // was created by email password
@@ -364,12 +390,6 @@ export class AuthService {
     if (this.userDocUnsub) {
       this.userDocUnsub();
       this.userDocUnsub = null;
-    }
-  }
-
-  unsubscribeUserIntervalReloadSub(): void {
-    if (this.userIntervalReloadSub && !this.userIntervalReloadSub.closed) {
-      this.userIntervalReloadSub.unsubscribe();
     }
   }
 

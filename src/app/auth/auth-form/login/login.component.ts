@@ -69,12 +69,10 @@ export class LoginComponent implements OnInit, OnDestroy {
         }
 
         if (userCredential.user.emailVerified) {
-          this.authService.whileLoginIn$.next(true);
           this.doneEmitter.next();
         }
       }
     }).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.loginForm.enable();
     });
   }
