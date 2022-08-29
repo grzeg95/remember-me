@@ -56,7 +56,7 @@ export class AuthService {
     private http: HttpClient
   ) {
 
-    this.auth.beforeAuthStateChanged(async (firebaseUser: FirebaseUser) => {
+    this.auth.beforeAuthStateChanged((firebaseUser: FirebaseUser) => {
       if (firebaseUser && !this.firstTimeOfPageLoading) {
         return firebaseUser.reload().then(() => {
           this.wasReloaded = true;
@@ -104,7 +104,7 @@ export class AuthService {
         this.firebaseUser = firebaseUser;
 
         const userDocRef = doc(this.firestore, `users/${this.firebaseUser.uid}`).withConverter(userConverter);
-        this.userDocUnsub = onSnapshot(userDocRef, async (snap) => {
+        this.userDocUnsub = onSnapshot(userDocRef, (snap) => {
 
           if (snap.data()?.hasEncryptedSecretKey) {
             this.isWaitingForCryptoKey$.next(true);
@@ -137,7 +137,7 @@ export class AuthService {
   }
 
   proceedGettingOfCryptoKey(firebaseUser: FirebaseUser, actionUserDocSnap?): void {
-    this.getSecretKey(firebaseUser).then(async ({cryptoKey, firebaseUser, idTokenResult}) => {
+    this.getSecretKey(firebaseUser).then(({cryptoKey, firebaseUser, idTokenResult}) => {
       return this.userPostAction(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap);
     }).catch((error) => {
       if (error && error.code === 'email-not-verified') {

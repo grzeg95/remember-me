@@ -92,7 +92,7 @@ export class RoundsService {
     this.roundsListUnsub = onSnapshot(query(
       collection(this.firestore, `users/${user.uid}/rounds`).withConverter(basicEncryptedValueConverter),
       limit(5)
-    ), async (snap) => {
+    ), (snap) => {
 
       // decrypt
       const roundsDecryptPromise: Promise<Round>[] = [];
@@ -138,7 +138,7 @@ export class RoundsService {
 
     this.todayDocsUnsub = onSnapshot(query(
       collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today`).withConverter(basicEncryptedValueConverter)
-    ), async (snap) => {
+    ), (snap) => {
 
       Promise.all(snap.docs.map((doc) => decryptToday(doc.data(), user.cryptoKey))).then((todays) => {
         const todayName = this.todayName$.value;
@@ -167,7 +167,7 @@ export class RoundsService {
         this.todayUnsub = onSnapshot(query(
           collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`).withConverter(encryptedTodayTaskConverter),
           limit(25)
-        ), async (snap) => {
+        ), (snap) => {
 
           const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
           const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
@@ -241,7 +241,7 @@ export class RoundsService {
     this.tasksListUnsub = onSnapshot(query(
       collection(this.firestore, `users/${user.uid}/rounds/${round.id}/task`).withConverter(basicEncryptedValueConverter),
       limit(25)
-    ), async (snap) => {
+    ), (snap) => {
 
       const taskArrPromise = snap.docs.map((encryptTask) => decryptTask(encryptTask.data(), user.cryptoKey));
 

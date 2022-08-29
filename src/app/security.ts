@@ -83,35 +83,35 @@ export const decryptUser = (encryptedUser: EncryptedUser, cryptoKey: CryptoKey):
     });
 };
 
-export const decryptTask = async (encryptedTask: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Task> => {
+export const decryptTask = (encryptedTask: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Task> => {
 
   if (encryptedTask) {
     return decrypt(encryptedTask.value, cryptoKey).then((task) => JSON.parse(task) as Task);
   }
 
-  return {
+  return Promise.resolve({
     description: '',
     daysOfTheWeek: [],
     timesOfDay: [],
-  };
+  });
 };
 
-export const decryptRound = async (encryptedRound: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Round> => {
+export const decryptRound = (encryptedRound: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Promise<Round> => {
 
   if (encryptedRound) {
     return decrypt(encryptedRound.value, cryptoKey).then((round) => JSON.parse(round) as Round);
   }
 
-  return {
+  return Promise.resolve({
     timesOfDay: [],
     name: '',
     timesOfDayCardinality: [],
     todaysIds: [],
     tasksIds: []
-  };
+  });
 };
 
-export const decryptTodayTask = async (encryptedTodayTask: EncryptedTodayTask, cryptoKey: CryptoKey): Promise<TodayTask> => {
+export const decryptTodayTask = (encryptedTodayTask: EncryptedTodayTask, cryptoKey: CryptoKey): Promise<TodayTask> => {
 
   const timesOfDay: { [key in string]: boolean } = {};
   const timesOfDayEncryptedMap: { [key in string]: string } = {};
@@ -139,14 +139,14 @@ export const decryptTodayTask = async (encryptedTodayTask: EncryptedTodayTask, c
   })
 };
 
-export const decryptToday = async (encryptedToday: BasicEncryptedValue, cryptoKey: CryptoKey): Promise<Today> => {
+export const decryptToday = (encryptedToday: BasicEncryptedValue, cryptoKey: CryptoKey): Promise<Today> => {
 
   if (encryptedToday) {
     return decrypt(encryptedToday.value, cryptoKey).then((today) => JSON.parse(today) as Today);
   }
 
-  return {
+  return Promise.resolve({
     name: '',
     tasksIds: []
-  };
+  });
 };

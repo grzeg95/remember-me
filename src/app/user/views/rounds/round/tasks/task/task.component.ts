@@ -274,7 +274,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       this.id = taskId;
 
-      this.roundsService.getTaskById(this.id, this.round.id).then(async (task) => {
+      this.roundsService.getTaskById(this.id, this.round.id).then((task) => {
         if (typeof task === 'undefined') {
           this.deepResetForm();
         } else if (task) {
