@@ -50,7 +50,7 @@ export const handler = (data: any, context: CallableContext): Promise<string> =>
     return getAuth()
       .createCustomToken(auth?.uid as string, {
         secretKey: (decryptResponse.plaintext || '').toString(),
-        isAnonymous: auth?.token.firebase.sign_in_provider === 'anonymous' ? true : undefined
+        isAnonymous: auth?.token.firebase.sign_in_provider === 'anonymous'
       });
   });
 };

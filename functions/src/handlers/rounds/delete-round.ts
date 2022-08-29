@@ -1,6 +1,6 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Round} from '../../helpers/models';
+import {FunctionResult, Round} from '../../helpers/models';
 import {decrypt, decryptRound, decryptToday, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
@@ -10,7 +10,7 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
 
-export const handler = (roundId: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (roundId: any, callableContext: CallableContext): FunctionResult => {
 
   const auth = callableContext?.auth;
 

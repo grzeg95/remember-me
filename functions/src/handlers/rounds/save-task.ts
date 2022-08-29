@@ -2,7 +2,7 @@ import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
 // tslint:disable-next-line:no-import-side-effect
 import '../../../../global.prototype';
-import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../helpers/models';
+import {Day, EncryptedTodayTask, FunctionResult, Round, Task, Today, TodayTask} from '../../helpers/models';
 import {
   BasicEncryptedValue,
   decryptRound,
@@ -460,7 +460,7 @@ const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firesto
  * @param {CallableContext} callableContext
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): Promise<{created: boolean; details: string; taskId: string}> => {
+export const handler = async (data: any, callableContext: CallableContext): FunctionResult => {
 
   checkEntryRequirements(data, callableContext);
 

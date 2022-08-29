@@ -31,3 +31,5 @@ export interface Today {
   name: string;
   tasksIds: string[];
 }
+
+export type FunctionResult = Promise<{[key: string]: string | boolean}>;

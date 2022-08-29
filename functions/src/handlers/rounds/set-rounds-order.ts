@@ -1,5 +1,6 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
+import {FunctionResult} from '../../helpers/models';
 import {decrypt, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
@@ -18,7 +19,7 @@ const app = firestore();
  * @param {CallableContext} callableContext
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = async (data: any, callableContext: CallableContext): FunctionResult => {
 
   const auth = callableContext?.auth;
 

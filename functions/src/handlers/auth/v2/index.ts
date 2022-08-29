@@ -11,4 +11,4 @@ const opts: HttpsOptions = {
   invoker: 'public'
 };
 
-export const gettokenwithsecretkey = onCall(opts, require('./get-token-with-secret-key').handler);
+export const gettokenwithsecretkey = onCall(opts, (request) => require('../get-token-with-secret-key').handler(request.data, request));

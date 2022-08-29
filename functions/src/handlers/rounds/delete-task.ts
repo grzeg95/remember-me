@@ -1,6 +1,6 @@
 import {firestore} from 'firebase-admin';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {Round, Task} from '../../helpers/models';
+import {FunctionResult, Round, Task} from '../../helpers/models';
 import {
   decryptRound,
   decryptTask,
@@ -168,7 +168,7 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
  * @param {CallableContext} callableContext
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, callableContext: CallableContext): Promise<{[key: string]: string}> => {
+export const handler = (data: any, callableContext: CallableContext): FunctionResult => {
 
   const auth = callableContext?.auth;
 
