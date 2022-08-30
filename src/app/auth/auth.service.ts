@@ -100,8 +100,11 @@ export class AuthService {
           return;
         }
 
-        this.unsubscribeUserDocSub();
+        if (!this.firebaseUser) {
+          this.whileLoginIn$.next(true);
+        }
         this.firebaseUser = firebaseUser;
+        this.unsubscribeUserDocSub();
 
         const userDocRef = doc(this.firestore, `users/${this.firebaseUser.uid}`).withConverter(userConverter);
         this.userDocUnsub = onSnapshot(userDocRef, (snap) => {
@@ -263,6 +266,8 @@ export class AuthService {
         this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]).then(() => {
           this.whileLoginIn$.next(false);
         });
+      } else {
+        this.whileLoginIn$.next(false);
       }
     });
   }

@@ -1,6 +1,6 @@
 <app-nav></app-nav>
 
-<mat-spinner *ngIf="(user$ | async) === undefined || (whileLoginIn$ | async)"
+<mat-spinner *ngIf="whileLoginIn$ | async"
              [strokeWidth]="isWaitingForCryptoKey ? 8 : 5"
              [color]="isWaitingForCryptoKey ? 'accent' : 'primary'"></mat-spinner>
 <router-outlet></router-outlet>
