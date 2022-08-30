@@ -17,8 +17,8 @@ export const savetask = onCall(opts, (request) => require('../save-task').handle
 
 export const settimesofdayorder = onCall(opts, (request) => require('../set-times-of-day-order').handler(request.data, request));
 
-export const saveround = onCall(opts, (request) => require('./save-round').handler.handler(request.data, request));
+export const saveround = onCall(opts, (request) => require('../save-round').handler(request.data, request));
 
-export const deleteround = onCall(opts, (request) => require('./delete-round').handler.handler(request.data, request));
+export const deleteround = onCall(opts, (request) => require('../delete-round').handler(request.data, request));
 
-export const setroundsorder = onCall(opts, (request) => require('./set-rounds-order').handler.handler(request.data, request));
+export const setroundsorder = onCall(opts, (request) => require('../set-rounds-order').handler(request.data, request));
