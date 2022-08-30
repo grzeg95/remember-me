@@ -3,7 +3,7 @@ import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
 import {AuthService, User} from 'auth';
-import {Subscription} from 'rxjs';
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/user-dialog-confirm-delete.component';
 
 @Component({
@@ -51,9 +51,10 @@ export class UserSettingsComponent implements OnInit {
 
       if (isConfirmed) {
         if (this.user) {
-          this.authService.deleteUser().catch(() => {
+          this.authService.deleteUser$().pipe(catchError(() => {
             this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-          });
+            return NEVER;
+          })).subscribe();
         }
       }
     });
@@ -66,18 +67,19 @@ export class UserSettingsComponent implements OnInit {
 
     if (fileList.length > 0) {
       this.isPhotoUploading = true;
-      this.authService.uploadProfileImage(fileList[0]).then((success) => {
-        input.value = '';
-        this.snackBar.open(success.message || 'Your operation has been done 😉');
-      }).catch((error) => {
+      this.authService.uploadProfileImage$(fileList[0]).pipe(catchError((error) => {
         this.isPhotoUploading = false;
         input.value = '';
         this.snackBar.open(error.error.details || 'Some went wrong 🤫 Try again 🙂');
+        return NEVER;
+      })).subscribe((success) => {
+        input.value = '';
+        this.snackBar.open(success.message || 'Your operation has been done 😉');
       });
     }
   }
 
   removePhoto() {
-    this.authService.removePhoto();
+    this.authService.removePhoto$().subscribe();
   }
 }

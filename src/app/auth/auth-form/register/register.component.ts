@@ -2,7 +2,7 @@ import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core'
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
-import {Subscription} from "rxjs";
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService} from '../../../connection.service';
 import {CustomValidators} from '../../../custom-validators';
 
@@ -53,7 +53,11 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   register(): void {
     this.registerForm.disable();
-    this.authService.createUserWithEmailAndPassword(this.email.value, this.password.value).then((r) => {
+    this.authService.createUserWithEmailAndPassword$(this.email.value, this.password.value).pipe(catchError((e) => {
+      this.snackBar.open(e.message, 'X', {duration: 20000});
+      this.registerForm.enable();
+      return NEVER;
+    })).subscribe((r) => {
       this.registerForm.enable();
       if (r) {
 
@@ -63,9 +67,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
           this.doneEmitter.next();
         }
       }
-    }).catch((e) => {
-      this.snackBar.open(e.message, 'X', {duration: 20000});
-      this.registerForm.enable();
-    })
+    });
   }
 }

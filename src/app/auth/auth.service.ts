@@ -2,34 +2,33 @@ import {HttpClient} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
-import {Analytics, logEvent} from "@firebase/analytics";
-import {getToken} from '@firebase/app-check';
-import {Buffer} from 'buffer';
-import {AppCheck} from 'firebase/app-check';
 import {
-  Auth,
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  IdTokenResult,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  signInAnonymously,
-  signInWithCustomToken,
-  signInWithEmailAndPassword,
-  signInWithRedirect,
-  signOut,
-  updatePassword,
-  UserCredential
-} from 'firebase/auth';
-import {deleteField, doc, DocumentData, DocumentSnapshot, Firestore, onSnapshot, updateDoc} from 'firebase/firestore';
-import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
-import {getString, RemoteConfig} from 'firebase/remote-config';
-import {BehaviorSubject, lastValueFrom} from 'rxjs';
-import {environment} from "../../environments/environment";
+  AngularFirebaseAnalyticsService,
+  AngularFirebaseAppCheckService,
+  AngularFirebaseAuthService,
+  AngularFirebaseFirestoreService,
+  AngularFirebaseFunctionsService,
+  AngularFirebaseRemoteConfigService,
+  FIRESTORE
+} from 'angular-firebase';
+import {GoogleAuthProvider, IdTokenResult, UserCredential} from 'firebase/auth';
+import {deleteField, doc, DocumentData, DocumentSnapshot, Firestore} from 'firebase/firestore';
+import {
+  BehaviorSubject,
+  catchError,
+  forkJoin,
+  lastValueFrom,
+  mergeMap,
+  NEVER,
+  Observable,
+  Subscription,
+  throwError
+} from 'rxjs';
+import {map} from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 import {RouterDict} from '../app.constants';
-import {ANALYTICS, APP_CHECK, AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
-import {decryptUser, userConverter} from '../security';
-import {onAuthStateChanged$} from './index';
+import {SecurityService} from '../security.service';
+import {EncryptedUser} from './index';
 import {FirebaseUser, User} from './user-data.model';
 
 @Injectable()
@@ -37,42 +36,43 @@ export class AuthService {
 
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(undefined);
   firebaseUser: FirebaseUser;
-  userDocUnsub: () => void;
+  userDocSub: Subscription;
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
-  onSnapshotUnsubList: (() => void)[] = [];
+  onSnapshotSubs: Subscription[] = [];
   creatingUserWithEmailAndPassword = false;
   wasReloaded = false;
   wasTriedToLogInAMomentAgo = false;
   firstTimeOfPageLoading = true;
+  userUpdatesWhileIsWaitingForCryptoKey: DocumentSnapshot<EncryptedUser>;
 
   constructor(
     private router: Router,
     private snackBar: MatSnackBar,
-    @Inject(FUNCTIONS) private readonly functions: Functions,
-    @Inject(AUTH) private readonly auth: Auth,
     @Inject(FIRESTORE) private readonly firestore: Firestore,
-    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig,
-    @Inject(APP_CHECK) private readonly appCheck: AppCheck,
-    @Inject(ANALYTICS) private readonly analytics: Analytics,
-    private http: HttpClient
+    private http: HttpClient,
+    private angularFirebaseAuthService: AngularFirebaseAuthService,
+    private angularFirebaseFunctionService: AngularFirebaseFunctionsService,
+    private angularFirebaseAppCheckService: AngularFirebaseAppCheckService,
+    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
+    private angularFirebaseAnalyticsService: AngularFirebaseAnalyticsService,
+    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
+    private securityService: SecurityService
   ) {
 
-    this.auth.beforeAuthStateChanged((firebaseUser: FirebaseUser) => {
+    this.angularFirebaseAuthService.beforeAuthStateChanged((firebaseUser) => {
       if (firebaseUser && !this.firstTimeOfPageLoading) {
-        return firebaseUser.reload().then(() => {
-          this.wasReloaded = true;
-        });
+        return lastValueFrom(this.angularFirebaseAuthService.reload$(firebaseUser, () => this.wasReloaded = true));
       }
       if (this.firstTimeOfPageLoading) {
         this.firstTimeOfPageLoading = false;
       }
     });
 
-    onAuthStateChanged$(this.auth).subscribe((firebaseUser: FirebaseUser) => {
+    this.angularFirebaseAuthService.onAuthStateChanged$().subscribe((firebaseUser) => {
 
       // TMP
-      logEvent(this.analytics, 'onAuthStateChanged', {
+      this.angularFirebaseAnalyticsService.logEvent('on_auth_state_changed', {
         value: [!!firebaseUser,
           this.creatingUserWithEmailAndPassword,
           !crypto.subtle,
@@ -87,12 +87,12 @@ export class AuthService {
 
         if (this.creatingUserWithEmailAndPassword) {
           this.creatingUserWithEmailAndPassword = false;
-          this.signOut();
+          this.signOut$().subscribe();
           return;
         }
 
         if (!crypto.subtle) {
-          this.signOut();
+          this.signOut$().subscribe();
           this.snackBar.open('Stop using IE lol');
           return;
         }
@@ -111,7 +111,7 @@ export class AuthService {
         // check if email was verified but not anonymous
         if (!isAnonymous && !firebaseUser.emailVerified) {
           this.snackBar.open('Please verify you email 🤫 and try again 🙂');
-          this.signOut();
+          this.signOut$().subscribe();
           return;
         }
 
@@ -121,28 +121,67 @@ export class AuthService {
         this.firebaseUser = firebaseUser;
         this.unsubscribeUserDocSub();
 
-        const userDocRef = doc(this.firestore, `users/${this.firebaseUser.uid}`).withConverter(userConverter);
-        this.userDocUnsub = onSnapshot(userDocRef, (snap) => {
+        const userDocRef = doc(this.firestore, `users/${this.firebaseUser.uid}`).withConverter(securityService.userConverter);
 
-          if (snap.data()?.hasEncryptedSecretKey) {
+        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(userDocRef).pipe(catchError((error) => {
+          if (error.code === 'permission-denied') {
+            this.signOut$().subscribe();
+          }
+          throw error;
+        })).subscribe((snap) => {
+
+          // check if user has crypto key
+          // decrypt
+          // return
+          const user = this.user$.value
+          const cryptoKey = user?.cryptoKey;
+          const isWaitingForCryptoKey = this.isWaitingForCryptoKey$.value;
+
+          if (cryptoKey) {
+
+            this.securityService.decryptUser({
+              rounds: snap.data()?.rounds,
+              photoUrl: snap.data()?.photoUrl,
+              hasEncryptedSecretKey: snap.data()?.hasEncryptedSecretKey
+            }, cryptoKey).subscribe((decryptedUser) => {
+
+              if (decryptedUser.rounds) {
+                user.rounds = decryptedUser.rounds;
+              }
+
+              if (decryptedUser.photoUrl) {
+                user.photoURL = decryptedUser.photoUrl;
+                user.hasCustomPhoto = true;
+              } else {
+                user.photoURL = this.firebaseUser.photoURL;
+                user.hasCustomPhoto = false;
+              }
+
+              this.user$.next(user);
+            });
+
+            return;
+          }
+
+          // check if user has encrypted key
+          if (snap.data()?.hasEncryptedSecretKey && !isWaitingForCryptoKey) {
             this.isWaitingForCryptoKey$.next(true);
             this.proceedGettingOfCryptoKey(this.firebaseUser, snap);
           }
-        }, (error) => {
-          if (error.code === 'permission-denied') {
-            this.signOut();
+
+          if (isWaitingForCryptoKey) {
+            this.userUpdatesWhileIsWaitingForCryptoKey = snap;
           }
-          throw error;
         });
 
       } else {
 
-        for (const unsub of this.onSnapshotUnsubList) {
-          if (unsub) {
-            unsub();
+        for (const sub of this.onSnapshotSubs) {
+          if (sub && !sub.closed) {
+            sub.unsubscribe();
           }
         }
-        this.onSnapshotUnsubList = [];
+        this.onSnapshotSubs = [];
 
         this.unsubscribeUserDocSub();
         this.isWaitingForCryptoKey$.next(false);
@@ -150,95 +189,84 @@ export class AuthService {
         this.firebaseUser = null;
         this.whileLoginIn$.next(false);
         this.router.navigate(['/']);
+
+        this.creatingUserWithEmailAndPassword = false;
+        this.wasReloaded = false;
+        this.wasTriedToLogInAMomentAgo = false;
+        this.firstTimeOfPageLoading = false;
       }
     });
+  }
+
+  unsubscribeUserDocSub(): void {
+    if (this.userDocSub && !this.userDocSub.closed) {
+      this.userDocSub.unsubscribe();
+    }
   }
 
   proceedGettingOfCryptoKey(firebaseUser: FirebaseUser, actionUserDocSnap?): void {
-    this.getSecretKey(firebaseUser).then(({cryptoKey, firebaseUser, idTokenResult}) => {
-      return this.userPostAction(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap);
-    }).catch((error) => {
+    this.getSecretKey$(firebaseUser).pipe(catchError((error) => {
       if (error && error.code === 'email-not-verified') {
         this.snackBar.open('Please verify you email 🤫 and try again 🙂');
       }
-      this.signOut();
+      this.signOut$().subscribe();
+      throw NEVER;
+    })).subscribe(({cryptoKey, firebaseUser, idTokenResult}) => {
+      return this.userPostAction$(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap).subscribe();
     });
   }
 
-  getSecretKey(currentFirebaseUser: FirebaseUser): Promise<{firebaseUser: FirebaseUser, cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
+  getSecretKey$(currentFirebaseUser: FirebaseUser): Observable<{firebaseUser: FirebaseUser, cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
 
-    return currentFirebaseUser.getIdTokenResult(true).then((idTokenResult) => {
+    return this.angularFirebaseAuthService.getIdTokenResult$(currentFirebaseUser, true).pipe(
+      mergeMap((idTokenResult) => {
 
-      if (
-        !currentFirebaseUser.emailVerified &&
-        !idTokenResult.claims.isAnonymous &&
-        idTokenResult.claims.firebase.sign_in_provider !== 'anonymous'
-      ) {
-        throw {
-          code: 'email-not-verified'
-        };
-      }
+        if (!idTokenResult.claims.secretKey) {
 
-      if (!idTokenResult.claims.secretKey) {
+          let firebaseUser: FirebaseUser;
 
-        let firebaseUser: FirebaseUser;
-
-        return this.getTokenWithSecretKey()
-          .then((idTokenResult) => {
-            return signInWithCustomToken(this.auth, idTokenResult);
-          })
-          .then((userCredential) => {
-            firebaseUser = userCredential.user;
-            return firebaseUser.getIdTokenResult(true);
-          })
-          .then((newIdTokenResult) => {
-            return this.getCryptoKeyFromSecretKey(newIdTokenResult.claims.secretKey as string)
-              .then((cryptoKey) => {
+          return this.getTokenWithSecretKey$().pipe(
+            mergeMap((idTokenResult) => this.angularFirebaseAuthService.signInWithCustomToken$(idTokenResult)),
+            mergeMap((userCredential) => {
+              firebaseUser = userCredential.user;
+              return this.angularFirebaseAuthService.getIdTokenResult$(firebaseUser, true);
+            }),
+            mergeMap((newIdTokenResult) => {
+              return this.securityService.getCryptoKey$(newIdTokenResult.claims.secretKey as string).pipe(map((cryptoKey) => {
                 return {
                   idTokenResult: newIdTokenResult,
                   cryptoKey,
                   firebaseUser
                 }
-              });
-          });
-      }
+              }))
+            })
+          );
+        }
 
-      return this.getCryptoKeyFromSecretKey(idTokenResult.claims.secretKey as string)
-        .then((cryptoKey) => {
+        return this.securityService.getCryptoKey$(idTokenResult.claims.secretKey as string).pipe(map((cryptoKey) => {
           return {
             idTokenResult,
             cryptoKey,
             firebaseUser: currentFirebaseUser
           }
-        });
-    });
-  }
-
-  getTokenWithSecretKey(): Promise<string> {
-
-    const getTokenWithSecretKeyUrl = getString(this.remoteConfig, 'getTokenWithSecretKeyUrl');
-    let httpsCallableFunction = httpsCallable(this.functions, 'auth-getTokenWithSecretKey');
-
-    if (getTokenWithSecretKeyUrl) {
-      httpsCallableFunction = httpsCallableFromURL(this.functions, getTokenWithSecretKeyUrl);
-    }
-
-    return httpsCallableFunction().then((result) => result.data as string);
-  }
-
-  getCryptoKeyFromSecretKey(secretKey: string): Promise<CryptoKey> {
-    return crypto.subtle.importKey(
-      'raw',
-      Buffer.from(secretKey, 'hex'),
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['decrypt']
+        }));
+      })
     );
   }
 
-  userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap?: DocumentSnapshot<DocumentData>): Promise<void> {
+  getTokenWithSecretKey$(): Observable<string> {
+
+    const getTokenWithSecretKeyUrl = this.angularFirebaseRemoteConfigService.getString('getTokenWithSecretKeyUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<undefined, string>('auth-getTokenWithSecretKey');
+
+    if (getTokenWithSecretKeyUrl) {
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<undefined, string>(getTokenWithSecretKeyUrl);
+    }
+
+    return httpsCallableFunction();
+  }
+
+  userPostAction$(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap: DocumentSnapshot<DocumentData>): Observable<void> {
 
     const user: User = {
       cryptoKey,
@@ -258,11 +286,17 @@ export class AuthService {
       user.providerId = firebaseUser.providerData[0].providerId;
     }
 
-    return decryptUser({
-      rounds: actionUserDocSnap.data()?.rounds,
-      photoUrl: actionUserDocSnap.data()?.photoUrl,
-      hasEncryptedSecretKey: actionUserDocSnap.data()?.hasEncryptedSecretKey
-    }, cryptoKey).then((decryptedUser) => {
+    let snap = actionUserDocSnap;
+
+    if (this.userUpdatesWhileIsWaitingForCryptoKey) {
+      snap = this.userUpdatesWhileIsWaitingForCryptoKey;
+    }
+
+    return this.securityService.decryptUser({
+      rounds: snap.data()?.rounds,
+      photoUrl: snap.data()?.photoUrl,
+      hasEncryptedSecretKey: snap.data()?.hasEncryptedSecretKey
+    }, cryptoKey).pipe(map((decryptedUser) => {
 
       if (decryptedUser.rounds) {
         user.rounds = decryptedUser.rounds;
@@ -284,203 +318,205 @@ export class AuthService {
       } else {
         this.whileLoginIn$.next(false);
       }
+    }));
+  }
+
+  googleSignIn$(): Observable<void> {
+
+    // is not logged in
+    if (!this.user$.value) {
+      this.whileLoginIn$.next(true);
+
+      return this.angularFirebaseAuthService.signInWithRedirect$(new GoogleAuthProvider()).pipe(catchError((e) => {
+        this.whileLoginIn$.next(false);
+        throw e;
+      }));
+    }
+
+    return throwError(() => {
     });
   }
 
-  googleSignIn(): Promise<void> {
-
-    // is not logged in
-    if (!this.user$.value) {
-      this.whileLoginIn$.next(true);
-
-      return signInWithRedirect(this.auth, new GoogleAuthProvider()).catch((e) => {
-        this.whileLoginIn$.next(false);
-        throw e;
-      });
-    }
-
-    return Promise.reject();
-  }
-
-  anonymouslySignIn(): Promise<UserCredential | void> {
+  anonymouslySignIn$(): Observable<UserCredential | void> {
 
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
       this.wasTriedToLogInAMomentAgo = true;
 
-      return signInAnonymously(this.auth).catch((e) => {
+      return this.angularFirebaseAuthService.signInAnonymously$().pipe(catchError((e) => {
         this.whileLoginIn$.next(false);
         throw e;
-      });
+      }));
     }
 
-    return Promise.reject();
+    return throwError(() => {
+    });
   }
 
-  signInWithEmailAndPassword(email: string, password: string): Promise<UserCredential | void> {
+  signInWithEmailAndPassword$(email: string, password: string): Observable<UserCredential | void> {
 
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
       this.wasTriedToLogInAMomentAgo = true;
 
-      return signInWithEmailAndPassword(this.auth, email, password).catch((e) => {
+      return this.angularFirebaseAuthService.signInWithEmailAndPassword$(email, password).pipe(catchError((e) => {
         this.whileLoginIn$.next(false);
         throw e;
-      });
+      }));
     }
 
-    return Promise.reject();
+    return throwError(() => {
+    });
   }
 
-  createUserWithEmailAndPassword(email: string, password: string): Promise<{code: string, message: string}> {
+  createUserWithEmailAndPassword$(email: string, password: string): Observable<{code: string, message: string}> {
 
     // is not logged in
     if (!this.user$.value) {
       this.creatingUserWithEmailAndPassword = true;
-      return createUserWithEmailAndPassword(this.auth, email, password).then((userCredential) => {
-        return sendEmailVerification(userCredential.user).then(() => {
-          return {
-            code: 'user-created',
-            message: 'User has been created 🤗 To login verify your email address by link in that has been sent to you 🧐'
-          };
-        }).catch(() => {
-          throw {
-            code: 'user-created',
-            message: 'User has been created 🤗 Please try to login 🙈'
+
+      return this.angularFirebaseAuthService.createUserWithEmailAndPassword$(email, password).pipe(
+        catchError((error: {code: string, message: string}) => {
+          if (error.code === 'auth/weak-password') {
+            error.message = 'Password should has at least 6 characters 😩';
           }
-        });
-      }).catch((error: {code: string, message: string}) => {
 
-        if (error.code === 'auth/weak-password') {
-          error.message = 'Password should has at least 6 characters 😩';
-        }
+          if (error.code === 'auth/email-already-in-use') {
+            error.message = 'Email already in use 😕 Try other 🧐';
+          }
 
-        if (error.code === 'auth/email-already-in-use') {
-          error.message = 'Email already in use 😕 Try other 🧐';
-        }
-
-        throw error;
-      });
+          throw error;
+        }),
+        mergeMap((userCredential) => {
+          return this.angularFirebaseAuthService.sendEmailVerification$(userCredential.user).pipe(
+            catchError(() => {
+              throw {
+                code: 'user-created',
+                message: 'User has been created 🤗 Please try to login 🙈'
+              }
+            }),
+            map(() => {
+              return {
+                code: 'user-created',
+                message: 'User has been created 🤗 To login verify your email address by link in that has been sent to you 🧐'
+              };
+            })
+          )
+        }));
     }
 
-    return Promise.reject();
+    return throwError(() => {
+    });
   }
 
-  sendEmailVerification(user: FirebaseUser): Promise<void> {
+  sendEmailVerification$(user: FirebaseUser): Observable<void> {
 
     // is not logged in
     if (!this.user$.value) {
-      return sendEmailVerification(user);
+      return this.angularFirebaseAuthService.sendEmailVerification$(user);
     }
 
-    return Promise.reject();
+    return throwError(() => {
+    });
   }
 
-  sendPasswordResetEmail(email: string): Promise<void> {
+  sendPasswordResetEmail$(email: string): Observable<void> {
 
     // is not logged in
     if (!this.user$.value) {
-      return sendPasswordResetEmail(this.auth, email);
+      return this.angularFirebaseAuthService.sendPasswordResetEmail$(email);
     }
 
-    return Promise.reject();
+    return throwError(() => {
+    });
   }
 
-  updatePassword(newPassword: string): Promise<{code: string; message: string;}> {
+  updatePassword$(newPassword: string): Observable<{code: string; message: string;}> {
 
     // is not logged in
     // was created by email password
     if (!this.user$.value && !this.firebaseUser && this.firebaseUser.providerData[0]?.providerId !== 'password') {
-      return Promise.reject({
-        code: 'auth/unauthorized',
-        message: `Password hasn't been updated 🤫`
+
+      return throwError(() => {
+        return {
+          code: 'auth/unauthorized',
+          message: `Password hasn't been updated 🤫`
+        }
       });
     }
 
-    return updatePassword(this.firebaseUser, newPassword).then(() => {
-      return {
-        code: 'auth/password-updated',
-        message: 'Password has been updated 🤫'
-      }
-    }).catch((error: {code: string, message: string}) => {
+    return this.angularFirebaseAuthService.updatePassword$(this.firebaseUser, newPassword);
+  }
 
-      if (error.code === 'auth/weak-password') {
-        error.message = 'Password should has at least 6 characters 😩';
-      }
+  signOut$(): Observable<void> {
+    return this.angularFirebaseAuthService.signOut$();
+  }
 
-      throw error;
+  deleteUser$(): Observable<void> {
+
+    // is logged in
+    if (this.user$.value) {
+      return this.angularFirebaseAuthService.deleteUser$(this.firebaseUser);
+    }
+
+    return throwError(() => {
     });
   }
 
-  unsubscribeUserDocSub(): void {
-    if (this.userDocUnsub) {
-      this.userDocUnsub();
-      this.userDocUnsub = null;
-    }
-  }
-
-  signOut(): Promise<void> {
-    return signOut(this.auth);
-  }
-
-  deleteUser(): Promise<void> {
+  uploadProfileImage$(file: File): Observable<{message: string}> {
 
     // is logged in
     if (this.user$.value) {
-      return this.firebaseUser.delete();
+
+      return forkJoin([
+        this.angularFirebaseAuthService.getIdToken$(this.firebaseUser),
+        this.angularFirebaseAppCheckService.getToken$()
+      ]).pipe(
+        mergeMap(([userToken, xFirebaseAppCheckToken]) => {
+          let url: string = '';
+
+          if (!environment.production) {
+            url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/europe-west4/userv2-uploadprofileimage`;
+          }
+
+          if (environment.production) {
+            url = 'https://userv2-uploadprofileimage-yhy2fc7udq-ez.a.run.app';
+          }
+
+          const uploadProfileImageUrl = this.angularFirebaseRemoteConfigService.getString('uploadProfileImageUrl');
+          if (uploadProfileImageUrl) {
+            url = uploadProfileImageUrl;
+          }
+
+          const headers = {
+            'Content-Type': file.type,
+            'authorization': `Bearer ${userToken}`,
+            'X-Firebase-AppCheck': xFirebaseAppCheckToken
+          };
+
+          return lastValueFrom(
+            this.http.post<{message: string}>(url, file, {headers})
+          );
+        })
+      )
     }
 
-    return Promise.reject();
+    return throwError(() => {
+    });
   }
 
-  uploadProfileImage(file: File): Promise<{message: string}> {
+  removePhoto$(): Observable<void> {
 
     // is logged in
     if (this.user$.value) {
-      return Promise.all([
-        this.firebaseUser.getIdToken(),
-        getToken(this.appCheck).then((token) => token.token)
-      ]).then(([userToken, xFirebaseAppCheckToken]) => {
-
-        let url: string = '';
-
-        if (!environment.production) {
-          url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/europe-west4/userv2-uploadprofileimage`;
-        }
-
-        if (environment.production) {
-          url = 'https://userv2-uploadprofileimage-yhy2fc7udq-ez.a.run.app';
-        }
-
-        const uploadProfileImageUrl = getString(this.remoteConfig, 'uploadProfileImageUrl');
-        if (uploadProfileImageUrl) {
-          url = uploadProfileImageUrl;
-        }
-
-        const headers = {
-          'Content-Type': file.type,
-          'authorization': `Bearer ${userToken}`,
-          'X-Firebase-AppCheck': xFirebaseAppCheckToken
-        };
-
-        return lastValueFrom(
-          this.http.post<{message: string}>(url, file, {headers})
-        );
-      });
-    }
-
-    return Promise.reject();
-  }
-
-  removePhoto(): Promise<void> {
-
-    // is logged in
-    if (this.user$.value) {
-      return updateDoc(doc(this.firestore, `users/${this.firebaseUser.uid}`), {
+      return this.angularFirebaseFirestoreService.updateDoc$(this.angularFirebaseFirestoreService.doc(`users/${this.firebaseUser.uid}`), {
         photoUrl: deleteField()
       });
     }
+
+    return throwError(() => {
+    });
   }
 }

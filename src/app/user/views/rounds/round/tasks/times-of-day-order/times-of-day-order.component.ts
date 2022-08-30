@@ -4,7 +4,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {Round} from 'functions/src/helpers/models';
-import {Subscription} from 'rxjs';
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {RouterDict} from 'src/app/app.constants';
 import {ConnectionService} from '../../../../../../connection.service';
 import {RoundsService} from '../../../rounds.service';
@@ -62,13 +62,15 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       timeOfDay,
       moveBy,
       roundId: this.roundsService.selectedRound$.value.id
-    }).then((success) => {
-      this.setTimesOfDayOrderInProgress = false;
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
-    }, (error) => {
+    }).pipe(catchError((error) => {
       this.setTimesOfDayOrderInProgress = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       moveItemInArray(this.selectedRound.timesOfDay, event.currentIndex, event.previousIndex);
+
+      return NEVER;
+    })).subscribe((success) => {
+      this.setTimesOfDayOrderInProgress = false;
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }
 

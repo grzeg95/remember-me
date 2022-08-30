@@ -2,7 +2,7 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
-import {Subscription} from "rxjs";
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService} from '../../../../connection.service';
 import {CustomValidators} from '../../../../custom-validators';
 
@@ -46,7 +46,10 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
   }
 
   changePassword(): void {
-    this.authService.updatePassword(this.newPassword.value).then((r) => {
+    this.authService.updatePassword$(this.newPassword.value).pipe(catchError((e) => {
+      this.snackBar.open(e.message);
+      return NEVER;
+    })).subscribe((r) => {
       this.snackBar.open(r.message);
       if (r.code === 'auth/password-updated') {
         this.newPasswordForm.reset();
@@ -54,8 +57,6 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
         this.newPasswordForm.markAsUntouched();
         this.newPasswordForm.updateValueAndValidity();
       }
-    }).catch((e) => {
-      this.snackBar.open(e.message);
     });
   }
 }

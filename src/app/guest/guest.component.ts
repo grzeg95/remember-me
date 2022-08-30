@@ -1,8 +1,8 @@
 import {Component, Inject} from '@angular/core';
-import {doc, DocumentData, Firestore, getDoc, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
+import {FIRESTORE} from 'angular-firebase';
 import {AuthService} from 'auth';
+import {doc, DocumentData, Firestore, getDoc, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
 import {defaultGuestComponentConfig, GuestComponentConfig} from '../config.model';
-import {FIRESTORE} from '../injectors';
 
 @Component({
   selector: 'app-guest',

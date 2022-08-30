@@ -24,7 +24,8 @@
       "dom"
     ],
     "paths": {
-      "auth": ["./src/app/auth/index"]
+      "auth": ["./src/app/auth/index"],
+      "angular-firebase": ["./src/app/angular-firebase/index"]
     }
   },
   "angularCompilerOptions": {

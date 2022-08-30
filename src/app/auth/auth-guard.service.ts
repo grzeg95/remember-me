@@ -1,22 +1,21 @@
-import {Inject, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot} from '@angular/router';
-import {Auth} from 'firebase/auth';
 import {map, take} from 'rxjs/operators';
-import {AUTH} from '../injectors';
-import {AuthPipeGenerator, loggedIn, user$} from './index';
+import {AngularFirebaseAuthService} from 'angular-firebase';
+import {AuthPipeGenerator, loggedIn} from './index';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
 
   constructor(
     private router: Router,
-    @Inject(AUTH) private readonly auth: Auth
+    private angularFirebaseAuthService: AngularFirebaseAuthService,
   ) {
   }
 
   canActivate = (next: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
     const authPipeFactory = next.data.authGuardPipe as AuthPipeGenerator || (() => loggedIn);
-    return user$(this.auth).pipe(
+    return this.angularFirebaseAuthService.user$().pipe(
       take(1),
       authPipeFactory(next, state),
       map((can) => {

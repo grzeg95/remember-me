@@ -1,13 +1,12 @@
-import {Inject, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {ActivatedRouteSnapshot, CanActivate} from '@angular/router';
-import {Analytics, logEvent} from 'firebase/analytics';
-import {ANALYTICS} from './injectors';
+import {AngularFirebaseAnalyticsService} from 'angular-firebase';
 
 @Injectable()
 export class ExtraParametersRoutePipe implements CanActivate {
 
   constructor(
-    @Inject(ANALYTICS) private readonly analytics: Analytics
+    private angularFirebaseAnalyticsService: AngularFirebaseAnalyticsService
   ) {
   }
 
@@ -18,9 +17,9 @@ export class ExtraParametersRoutePipe implements CanActivate {
 
     for (const queryParam of Object.getOwnPropertyNames(queryParams)) {
       if (usefulQueryParams.has(queryParam)) {
-        logEvent(this.analytics, 'entered via ref link', {[queryParam]: queryParams[queryParam]});
+        this.angularFirebaseAnalyticsService.logEvent('entered_via_ref_link', {[queryParam]: queryParams[queryParam]});
       } else {
-        logEvent(this.analytics, 'entered via unknown ref link', {[queryParam]: queryParams[queryParam]});
+        this.angularFirebaseAnalyticsService.logEvent('entered_via_unknown_ref_link', {[queryParam]: queryParams[queryParam]});
       }
     }
 

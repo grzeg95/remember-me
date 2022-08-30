@@ -4,11 +4,10 @@ import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
-import {Subscription} from 'rxjs';
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {RouterDict} from '../../../../app.constants';
 import {ConnectionService} from '../../../../connection.service';
 import {CustomValidators} from '../../../../custom-validators';
-import {HTTPError} from '../../../models';
 import {RoundsService} from '../rounds.service';
 import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 
@@ -71,7 +70,13 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     this.savingInProgress = true;
     this.roundForm.disable();
 
-    this.roundsService.saveRound(this.name.value, this.id).then((success) => {
+    this.roundsService.saveRound(this.name.value, this.id).pipe(catchError((error) => {
+      this.savingInProgress = false;
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      this.refreshRoundByParamId(this.id);
+
+      return NEVER;
+    })).subscribe((success) => {
 
       if (success.created) {
         this.location.go(this.router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, success.roundId]).toString());
@@ -92,10 +97,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
       this.roundForm.enable();
       this.snackBar.open(success.details || 'Your operation has been done 😉');
 
-    }).catch((error) => {
-      this.savingInProgress = false;
-      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-      this.refreshRoundByParamId(this.id);
     });
   }
 
@@ -108,14 +109,16 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.roundForm.disable();
         this.deletingInProgress = true;
 
-        this.roundsService.deleteRound(this.id).then((success) => {
-          this.deletingInProgress = false;
-          this.snackBar.open(success.details || 'Your operation has been done 😉');
-          this.deepResetForm();
-        }).catch((error: HTTPError) => {
+        this.roundsService.deleteRound(this.id).pipe(catchError((error) => {
           this.deletingInProgress = false;
           this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshRoundByParamId(this.id);
+
+          return NEVER;
+        })).subscribe((success) => {
+          this.deletingInProgress = false;
+          this.snackBar.open(success.details || 'Your operation has been done 😉');
+          this.deepResetForm();
         });
       }
     });
@@ -149,7 +152,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
       this.id = roundId;
 
-      this.roundsService.getRoundById(roundId).then((round) => {
+      this.roundsService.getRoundById(roundId).subscribe((round) => {
         if (round) {
           this.roundForm.get('name').setValue(round.name);
           this.initValues.name = round.name;

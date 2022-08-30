@@ -7,13 +7,13 @@ import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, UrlTree} from '@angular/router';
-import {asapScheduler, BehaviorSubject, Subscription} from 'rxjs';
+import {asapScheduler, BehaviorSubject, catchError, NEVER, Subscription} from 'rxjs';
 import {startWith} from 'rxjs/operators';
 import '../../../../../../../../global.prototype';
 import {RouterDict} from '../../../../../../app.constants';
 import {ConnectionService} from '../../../../../../connection.service';
 import {CustomValidators} from '../../../../../../custom-validators';
-import {HTTPError, HTTPSuccess, Round, Task, TaskForm} from '../../../../../models';
+import {HTTPSuccess, Round, Task, TaskForm} from '../../../../../models';
 import {RoundsService} from '../../../rounds.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskService} from './task.service';
@@ -274,7 +274,7 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       this.id = taskId;
 
-      this.roundsService.getTaskById(this.id, this.round.id).then((task) => {
+      this.roundsService.getTaskById(this.id, this.round.id).subscribe((task) => {
         if (typeof task === 'undefined') {
           this.deepResetForm();
         } else if (task) {
@@ -332,7 +332,13 @@ export class TaskComponent implements OnInit, OnDestroy {
       },
       taskId: this.id,
       roundId: this.roundsService.selectedRound$.value.id
-    }).then((success) => {
+    }).pipe(catchError((error) => {
+      this.savingInProgress = false;
+      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      this.refreshTaskByParamId(this.id);
+
+      return NEVER;
+    })).subscribe((success) => {
 
       if (success.created) {
         this.location.go(this.router.createUrlTree(['./', success.taskId], {relativeTo: this.route}).toString());
@@ -344,10 +350,6 @@ export class TaskComponent implements OnInit, OnDestroy {
       this.taskForm.enable();
       this.snackBar.open(success.details || 'Your operation has been done 😉');
 
-    }).catch((error: HTTPError) => {
-      this.savingInProgress = false;
-      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-      this.refreshTaskByParamId(this.id);
     });
   }
 
@@ -428,14 +430,16 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.roundsService.deleteTask({
           taskId: this.id,
           roundId: this.round.id
-        }).then((success: HTTPSuccess) => {
-          this.deletingInProgress = false;
-          this.snackBar.open(success.details || 'Your operation has been done 😉');
-          this.deepResetForm();
-        }).catch((error: HTTPError) => {
+        }).pipe(catchError((error) => {
           this.deletingInProgress = false;
           this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);
+
+          return NEVER;
+        })).subscribe((success: HTTPSuccess) => {
+          this.deletingInProgress = false;
+          this.snackBar.open(success.details || 'Your operation has been done 😉');
+          this.deepResetForm();
         });
       }
     });

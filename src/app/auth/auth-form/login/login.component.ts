@@ -3,7 +3,7 @@ import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
 import {UserCredential} from 'firebase/auth';
-import {Subscription} from "rxjs";
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService} from '../../../connection.service';
 
 @Component({
@@ -47,19 +47,24 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (this.userCredential) {
       this.loginForm.disable();
 
-      this.authService.sendEmailVerification(this.userCredential.user).then(() => {
-        this.snackBar.open('Email verification has been sent 🙂', 'X', {duration: 10000});
-        this.doneEmitter.next();
-      }).catch(() => {
+      this.authService.sendEmailVerification$(this.userCredential.user).pipe(catchError(() => {
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
         this.loginForm.enable();
+        return NEVER;
+      })).subscribe(() => {
+        this.snackBar.open('Email verification has been sent 🙂', 'X', {duration: 10000});
+        this.doneEmitter.next();
       });
     }
   }
 
   login(): void {
     this.loginForm.disable();
-    this.authService.signInWithEmailAndPassword(this.email.value, this.password.value).then((userCredential) => {
+    this.authService.signInWithEmailAndPassword$(this.email.value, this.password.value).pipe(catchError(() => {
+      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+      this.loginForm.enable();
+      return NEVER;
+    })).subscribe((userCredential) => {
       this.loginForm.enable();
 
       if (userCredential) {
@@ -72,9 +77,6 @@ export class LoginComponent implements OnInit, OnDestroy {
           this.doneEmitter.next();
         }
       }
-    }).catch(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-      this.loginForm.enable();
     });
   }
 }

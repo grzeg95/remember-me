@@ -1,23 +1,18 @@
-import {Inject, Injectable} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 import {Router} from '@angular/router';
+import {
+  AngularFirebaseFirestoreService,
+  AngularFirebaseFunctionsService,
+  AngularFirebaseRemoteConfigService
+} from 'angular-firebase';
 import {AuthService} from 'auth';
-import {collection, doc, Firestore, getDoc, limit, onSnapshot, query} from 'firebase/firestore';
-import {Functions, httpsCallable, httpsCallableFromURL} from 'firebase/functions';
-import {getString, RemoteConfig} from 'firebase/remote-config';
-import {BehaviorSubject, Subscription} from 'rxjs';
+import {limit, query} from 'firebase/firestore';
+import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {Day} from '../../../../../functions/src/helpers/models';
 import {RouterDict} from '../../../app.constants';
 import {ConnectionService} from '../../../connection.service';
-import {FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../../../injectors';
-import {
-  basicEncryptedValueConverter,
-  decryptRound,
-  decryptTask,
-  decryptToday,
-  decryptTodayTask,
-  encryptedTodayTaskConverter
-} from '../../../security';
+import {SecurityService} from '../../../security.service';
 import {HTTPSuccess, Round, Task, TasksListItem, TodayItem} from '../../models';
 
 @Injectable()
@@ -45,20 +40,22 @@ export class RoundsService {
   userSub: Subscription;
   roundsListFirstLoadingSub: Subscription;
 
-  roundsListUnsub: () => void;
-  todayDocsUnsub: () => void;
-  todayUnsub: () => void;
-  tasksListUnsub: () => void;
+  roundsListSub: Subscription;
+  todayDocsSub: Subscription;
+  todaySub: Subscription;
+  tasksListSub: Subscription;
 
   lastTodayName = '.';
 
   constructor(
-    @Inject(FUNCTIONS) private readonly functions: Functions,
-    @Inject(FIRESTORE) private readonly firestore: Firestore,
-    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig,
+    private angularFirebaseFunctionService: AngularFirebaseFunctionsService,
+    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
     private authService: AuthService,
     private router: Router,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    private securityService: SecurityService,
+    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
+    private ngZone: NgZone
   ) {
   }
 
@@ -83,25 +80,32 @@ export class RoundsService {
 
   runRoundsList(): void {
 
-    if (this.roundsListUnsub) {
+    if (this.roundsListSub && !this.roundsListSub.closed) {
       return;
     }
 
     const user = this.authService.user$.value;
 
-    this.roundsListUnsub = onSnapshot(query(
-      collection(this.firestore, `users/${user.uid}/rounds`).withConverter(basicEncryptedValueConverter),
-      limit(5)
-    ), (snap) => {
-
-      // decrypt
-      const roundsDecryptPromise: Promise<Round>[] = [];
-
-      for (const doc of snap.docs) {
-        roundsDecryptPromise.push(decryptRound(doc.data(), user.cryptoKey));
+    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$(
+      query(
+        this.angularFirebaseFirestoreService.collection(`users/${user.uid}/rounds`).withConverter(this.securityService.basicEncryptedValueConverter),
+        limit(5)
+      )
+    ).subscribe((snap) => {
+      if (!snap.docs.length) {
+        this.roundsList$.next([]);
+        this.roundsListFirstLoading$.next(false);
+        return
       }
 
-      Promise.all(roundsDecryptPromise).then((decryptedRoundList) => {
+      // decrypt
+      const roundsDecrypt$: Observable<Round>[] = [];
+
+      for (const doc of snap.docs) {
+        roundsDecrypt$.push(this.securityService.decryptRound(doc.data(), user.cryptoKey));
+      }
+
+      forkJoin(roundsDecrypt$).subscribe((decryptedRoundList) => {
 
         for (const [i, doc] of snap.docs.entries()) {
           decryptedRoundList[i].id = doc.id;
@@ -116,19 +120,20 @@ export class RoundsService {
         this.roundsListFirstLoading$.next(false);
       });
     });
-    this.authService.onSnapshotUnsubList.push(this.roundsListUnsub);
+
+    this.authService.onSnapshotSubs.push(this.roundsListSub);
   }
 
   runToday(round: Round): void {
 
-    if (this.lastTodayName !== this.todayName$.getValue() && this.todayUnsub) {
+    if (this.lastTodayName !== this.todayName$.getValue() && this.todaySub && !this.todaySub.closed) {
       this.unsubscribeTodaySub();
     }
 
     this.lastTodayName = this.todayName$.getValue();
     this.now$.next(new Date());
 
-    if (this.todayUnsub || !round) {
+    if ((this.todaySub && !this.todaySub.closed) || !round) {
       return;
     }
 
@@ -136,11 +141,20 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.todayDocsUnsub = onSnapshot(query(
-      collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today`).withConverter(basicEncryptedValueConverter)
-    ), (snap) => {
+    this.todayDocsSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$(
+      query(
+        this.angularFirebaseFirestoreService.collection(`/users/${user.uid}/rounds/${round.id}/today`).withConverter(this.securityService.basicEncryptedValueConverter)
+      )
+    ).subscribe((snap) => {
 
-      Promise.all(snap.docs.map((doc) => decryptToday(doc.data(), user.cryptoKey))).then((todays) => {
+      if (!snap.docs.length) {
+        this.todayItems$.next({});
+        return;
+      }
+
+      forkJoin(
+        snap.docs.map((doc) => this.securityService.decryptToday(doc.data(), user.cryptoKey))
+      ).subscribe((todays) => {
         const todayName = this.todayName$.value;
 
         let today;
@@ -164,15 +178,18 @@ export class RoundsService {
 
         this.unsubscribeTodaySub();
 
-        this.todayUnsub = onSnapshot(query(
-          collection(this.firestore, `/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`).withConverter(encryptedTodayTaskConverter),
-          limit(25)
-        ), (snap) => {
+        this.todaySub = this.angularFirebaseFirestoreService.collectionOnSnapshot$(
+          query(
+            this.angularFirebaseFirestoreService.collection(`/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`).withConverter(this.securityService.encryptedTodayTaskConverter),
+            limit(25)
+          )
+        ).subscribe((snap) => this.ngZone.run(() => {
 
           const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
-          const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
+          const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => this.securityService.decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
 
-          Promise.all(todayTaskArrPromise).then((todayTaskArr) => {
+          forkJoin(todayTaskArrPromise).subscribe((todayTaskArr) => {
+
             for (const [i, todayTask] of todayTaskArr.entries()) {
 
               Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
@@ -199,12 +216,14 @@ export class RoundsService {
             }
 
           });
-        });
-        this.authService.onSnapshotUnsubList.push(this.todayUnsub);
+        }));
+
+        this.authService.onSnapshotSubs.push(this.todaySub);
       });
 
     });
-    this.authService.onSnapshotUnsubList.push(this.todayDocsUnsub);
+
+    this.authService.onSnapshotSubs.push(this.todayDocsSub);
   }
 
   todayItemsViewUpdate(round: Round): void {
@@ -232,20 +251,28 @@ export class RoundsService {
 
   runTasksList(round: Round): void {
 
-    if (this.tasksListUnsub || !round) {
+    if ((this.tasksListSub && !this.tasksListSub.closed) || !round) {
       return;
     }
 
     const user = this.authService.user$.value;
 
-    this.tasksListUnsub = onSnapshot(query(
-      collection(this.firestore, `users/${user.uid}/rounds/${round.id}/task`).withConverter(basicEncryptedValueConverter),
-      limit(25)
-    ), (snap) => {
+    this.tasksListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$(
+      query(
+        this.angularFirebaseFirestoreService.collection(`users/${user.uid}/rounds/${round.id}/task`).withConverter(this.securityService.basicEncryptedValueConverter),
+        limit(25)
+      )
+    ).subscribe((snap) => this.ngZone.run(() => {
 
-      const taskArrPromise = snap.docs.map((encryptTask) => decryptTask(encryptTask.data(), user.cryptoKey));
+      if (!snap.docs.length) {
+        this.tasks$.next([]);
+        this.tasksListViewFirstLoading$.next(false);
+        return;
+      }
 
-      Promise.all(taskArrPromise).then((taskArr) => {
+      const taskArrPromise = snap.docs.map((encryptTask) => this.securityService.decryptTask(encryptTask.data(), user.cryptoKey));
+
+      forkJoin(taskArrPromise).subscribe((taskArr) => {
         const tasks = taskArr.map((task, index) => {
           return {
             description: task.description,
@@ -264,9 +291,9 @@ export class RoundsService {
         }
         this.tasksListViewFirstLoading$.next(false);
       });
-    });
+    }));
 
-    this.authService.onSnapshotUnsubList.push(this.tasksListUnsub);
+    this.authService.onSnapshotSubs.push(this.tasksListSub);
   }
 
   selectRound(roundId: string): void {
@@ -305,109 +332,109 @@ export class RoundsService {
     });
   }
 
-  saveRound(name: string, roundId: string = 'null'): Promise<{roundId: string, details: string, created: boolean}> {
+  saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
 
-    const saveRoundUrl = getString(this.remoteConfig, 'saveRoundUrl');
-    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-saveRound');
+    const saveRoundUrl = this.angularFirebaseRemoteConfigService.getString('saveRoundUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>('rounds-saveRound');
 
     if (saveRoundUrl) {
-      httpsCallableFunction = httpsCallableFromURL(this.functions, saveRoundUrl);
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>(saveRoundUrl);
     }
 
     return httpsCallableFunction({
       roundId,
       name
-    }).then((e) => e.data as {roundId: string, details: string, created: boolean});
-  }
-
-  deleteRound(id: string): Promise<HTTPSuccess> {
-
-    const deleteRoundUrl = getString(this.remoteConfig, 'deleteRoundUrl');
-    let httpsCallableFunction = httpsCallable<string, HTTPSuccess>(this.functions, 'rounds-deleteRound');
-
-    if (deleteRoundUrl) {
-      httpsCallableFunction = httpsCallableFromURL<string, HTTPSuccess>(this.functions, deleteRoundUrl);
-    }
-
-    return httpsCallableFunction(id).then((e) => e.data as HTTPSuccess);
-  }
-
-  getRoundById(roundId: string): Promise<Round> {
-    const user = this.authService.user$.value;
-
-    return getDoc(
-      doc(this.firestore, `users/${user.uid}/rounds/${roundId}`).withConverter(basicEncryptedValueConverter)
-    ).then((snap) => {
-      if (snap.exists()) {
-        return decryptRound(snap.data(), user.cryptoKey);
-      }
-      return null;
     });
   }
 
-  setRoundsOrder(data: {moveBy: number, roundId: string}): Promise<{[key: string]: string}> {
+  deleteRound(id: string): Observable<HTTPSuccess> {
 
-    const setRoundsOrderUrl = getString(this.remoteConfig, 'setRoundsOrderUrl');
-    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-setRoundsOrder');
+    const deleteRoundUrl = this.angularFirebaseRemoteConfigService.getString('deleteRoundUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<string, HTTPSuccess>('rounds-deleteRound');
 
-    if (setRoundsOrderUrl) {
-      httpsCallableFunction = httpsCallableFromURL(this.functions, setRoundsOrderUrl);
+    if (deleteRoundUrl) {
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<string, HTTPSuccess>(deleteRoundUrl);
     }
 
-    return httpsCallableFunction(data).then((e) => e.data as {[key: string]: string});
+    return httpsCallableFunction(id);
   }
 
-  getTaskById(id: string, roundId: string): Promise<Task | null> {
+  getRoundById(roundId: string): Observable<Round> {
+    const user = this.authService.user$.value;
+
+    return this.angularFirebaseFirestoreService.getDoc$(
+      this.angularFirebaseFirestoreService.doc(`users/${user.uid}/rounds/${roundId}`).withConverter(this.securityService.basicEncryptedValueConverter)
+    ).pipe(mergeMap((snap) => {
+      if (snap.exists()) {
+        return this.securityService.decryptRound(snap.data(), user.cryptoKey);
+      }
+      return null;
+    }));
+  }
+
+  setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
+
+    const setRoundsOrderUrl = this.angularFirebaseRemoteConfigService.getString('setRoundsOrderUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{moveBy: number, roundId: string}, {[key: string]: string}>('rounds-setRoundsOrder');
+
+    if (setRoundsOrderUrl) {
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{moveBy: number, roundId: string}, {[key: string]: string}>(setRoundsOrderUrl);
+    }
+
+    return httpsCallableFunction(data);
+  }
+
+  getTaskById(id: string, roundId: string): Observable<Task | null> {
 
     const user = this.authService.user$.value;
 
-    return getDoc(
-      doc(this.firestore, `users/${user.uid}/rounds/${roundId}/task/${id}`).withConverter(basicEncryptedValueConverter)
-    ).then((taskDocSnap) => {
+    return this.angularFirebaseFirestoreService.getDoc$(
+      this.angularFirebaseFirestoreService.doc(`users/${user.uid}/rounds/${roundId}/task/${id}`).withConverter(this.securityService.basicEncryptedValueConverter)
+    ).pipe(mergeMap((taskDocSnap) => {
       const encryptedTask = taskDocSnap.data();
 
       if (encryptedTask) {
-        return decryptTask(encryptedTask, user.cryptoKey);
+        return this.securityService.decryptTask(encryptedTask, user.cryptoKey);
       }
 
       return null;
-    });
+    }));
   }
 
-  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Promise<HTTPSuccess> {
+  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {
 
-    const setTimesOfDayOrderUrl = getString(this.remoteConfig, 'setTimesOfDayOrderUrl');
-    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-setTimesOfDayOrder');
+    const setTimesOfDayOrderUrl = this.angularFirebaseRemoteConfigService.getString('setTimesOfDayOrderUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>('rounds-setTimesOfDayOrder');
 
     if (setTimesOfDayOrderUrl) {
-      httpsCallableFunction = httpsCallableFromURL(this.functions, setTimesOfDayOrderUrl);
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>(setTimesOfDayOrderUrl);
     }
 
-    return httpsCallableFunction(data).then((e) => e.data as HTTPSuccess);
+    return httpsCallableFunction(data);
   }
 
-  saveTask(data: {task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}): Promise<HTTPSuccess> {
+  saveTask(data: {task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}): Observable<HTTPSuccess> {
 
-    const saveTaskUrl = getString(this.remoteConfig, 'saveTaskUrl');
-    let httpsCallableFunction = httpsCallable(this.functions, 'rounds-saveTask');
+    const saveTaskUrl = this.angularFirebaseRemoteConfigService.getString('saveTaskUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>('rounds-saveTask');
 
     if (saveTaskUrl) {
-      httpsCallableFunction = httpsCallableFromURL(this.functions, saveTaskUrl);
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>(saveTaskUrl);
     }
 
-    return httpsCallableFunction(data).then((e) => e.data as HTTPSuccess);
+    return httpsCallableFunction(data);
   }
 
-  deleteTask(data: {taskId: string, roundId: string}): Promise<HTTPSuccess> {
+  deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
 
-    const deleteTaskUrl = getString(this.remoteConfig, 'deleteTaskUrl');
-    let httpsCallableFunction = httpsCallable<{taskId: string, roundId: string}, HTTPSuccess>(this.functions, 'rounds-deleteTask');
+    const deleteTaskUrl = this.angularFirebaseRemoteConfigService.getString('deleteTaskUrl');
+    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{taskId: string, roundId: string}, HTTPSuccess>('rounds-deleteTask');
 
     if (deleteTaskUrl) {
-      httpsCallableFunction = httpsCallableFromURL<{taskId: string, roundId: string}, HTTPSuccess>(this.functions, deleteTaskUrl);
+      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{taskId: string, roundId: string}, HTTPSuccess>(deleteTaskUrl);
     }
 
-    return httpsCallableFunction(data).then((e) => e.data as HTTPSuccess);
+    return httpsCallableFunction(data);
   }
 
   clearCache() {
@@ -448,30 +475,26 @@ export class RoundsService {
   }
 
   unsubscribeRoundsListSub(): void {
-    if (this.roundsListUnsub) {
-      this.roundsListUnsub();
-      this.roundsListUnsub = null;
+    if (this.roundsListSub && !this.roundsListSub.closed) {
+      this.roundsListSub.unsubscribe();
     }
   }
 
   unsubscribeTodayDocsSub(): void {
-    if (this.todayDocsUnsub) {
-      this.todayDocsUnsub();
-      this.todayDocsUnsub = null;
+    if (this.todayDocsSub && !this.todayDocsSub.closed) {
+      this.todayDocsSub.unsubscribe();
     }
   }
 
   unsubscribeTodaySub(): void {
-    if (this.todayUnsub) {
-      this.todayUnsub();
-      this.todayUnsub = null;
+    if (this.todaySub && !this.todaySub.closed) {
+      this.todaySub.unsubscribe();
     }
   }
 
   unsubscribeTasksListSub(): void {
-    if (this.tasksListUnsub) {
-      this.tasksListUnsub();
-      this.tasksListUnsub = null;
+    if (this.tasksListSub && !this.tasksListSub.closed) {
+      this.tasksListSub.unsubscribe();
     }
   }
 }

@@ -14,7 +14,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {AuthService} from 'auth';
-import {Subscription} from 'rxjs';
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {RouterDict} from '../../../../app.constants';
 import {ConnectionService} from '../../../../connection.service';
 import {Round} from '../../../models';
@@ -124,14 +124,16 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
     this.sortRoundList();
 
-    this.roundsService.setRoundsOrder({moveBy, roundId}).then((success) => {
-      this.setRoundsOrderIsPending = false;
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
-    }, (error) => {
+    this.roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
       this.setRoundsOrderIsPending = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
       this.sortRoundList();
+
+      return NEVER;
+    })).subscribe((success) => {
+      this.setRoundsOrderIsPending = false;
+      this.snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }
 

@@ -11,7 +11,7 @@ import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
 import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
 import {fetchAndActivate, getRemoteConfig} from 'firebase/remote-config';
 import {AppModule} from './app/app.module';
-import {APP_CHECK, FIREBASE_APP} from './app/injectors';
+import {APP_CHECK, FIREBASE_APP} from 'angular-firebase';
 import {environment} from './environments/environment';
 
 const initializeFirebase = (): Promise<{app: FirebaseApp, appCheck: AppCheck}> => {

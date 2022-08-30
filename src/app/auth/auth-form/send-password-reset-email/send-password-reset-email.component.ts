@@ -2,7 +2,7 @@ import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core'
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
-import {Subscription} from "rxjs";
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService} from '../../../connection.service';
 
 @Component({
@@ -41,9 +41,10 @@ export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
   sendPasswordResetEmail(): void {
     this.recoveryForm.disable();
 
-    this.authService.sendPasswordResetEmail(this.email.value)
-      .then(() => this.sendPasswordResetEmailProceed())
-      .catch(() => this.sendPasswordResetEmailProceed());
+    this.authService.sendPasswordResetEmail$(this.email.value).pipe(catchError(() => {
+      this.sendPasswordResetEmailProceed();
+      return NEVER;
+    })).subscribe(() => this.sendPasswordResetEmailProceed());
   }
 
   sendPasswordResetEmailProceed(): void {

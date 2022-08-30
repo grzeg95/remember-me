@@ -13,6 +13,7 @@ import {
   faUser
 } from '@fortawesome/free-solid-svg-icons';
 import {AuthFormComponent, AuthService, User} from 'auth';
+import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from '../connection.service';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 
@@ -53,19 +54,21 @@ export class NavComponent implements OnInit {
   }
 
   googleSignIn(): void {
-    this.authService.googleSignIn().catch(() => {
+    this.authService.googleSignIn$().pipe(catchError(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-    });
+      return NEVER;
+    })).subscribe();
   }
 
   anonymouslySignIn(): void {
-    this.authService.anonymouslySignIn().catch(() => {
+    this.authService.anonymouslySignIn$().pipe(catchError(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-    });
+      return NEVER;
+    })).subscribe();
   }
 
   signOut(): void {
-    this.authService.signOut();
+    this.authService.signOut$().subscribe();
   }
 
   openAuthFormComponent(): void {
