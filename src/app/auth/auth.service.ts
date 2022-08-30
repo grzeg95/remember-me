@@ -2,6 +2,7 @@ import {HttpClient} from '@angular/common/http';
 import {Inject, Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
+import {Analytics, logEvent} from "@firebase/analytics";
 import {getToken} from '@firebase/app-check';
 import {Buffer} from 'buffer';
 import {AppCheck} from 'firebase/app-check';
@@ -26,7 +27,7 @@ import {getString, RemoteConfig} from 'firebase/remote-config';
 import {BehaviorSubject, lastValueFrom} from 'rxjs';
 import {environment} from "../../environments/environment";
 import {RouterDict} from '../app.constants';
-import {APP_CHECK, AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
+import {ANALYTICS, APP_CHECK, AUTH, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from '../injectors';
 import {decryptUser, userConverter} from '../security';
 import {onAuthStateChanged$} from './index';
 import {FirebaseUser, User} from './user-data.model';
@@ -53,6 +54,7 @@ export class AuthService {
     @Inject(FIRESTORE) private readonly firestore: Firestore,
     @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig,
     @Inject(APP_CHECK) private readonly appCheck: AppCheck,
+    @Inject(ANALYTICS) private readonly analytics: Analytics,
     private http: HttpClient
   ) {
 
@@ -68,6 +70,19 @@ export class AuthService {
     });
 
     onAuthStateChanged$(this.auth).subscribe((firebaseUser: FirebaseUser) => {
+
+      // TMP
+      logEvent(this.analytics, 'onAuthStateChanged', {
+        value: [!!firebaseUser,
+          this.creatingUserWithEmailAndPassword,
+          !crypto.subtle,
+          this.wasReloaded,
+          this.wasTriedToLogInAMomentAgo,
+          firebaseUser?.isAnonymous,
+          !firebaseUser?.providerData.length,
+          firebaseUser?.emailVerified].map((b) => typeof b === 'undefined' ? '.' : b ? 1 : 0).join('')
+      });
+
       if (firebaseUser) {
 
         if (this.creatingUserWithEmailAndPassword) {

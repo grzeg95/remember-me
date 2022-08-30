@@ -1,6 +1,7 @@
 import {NgModule} from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {AuthGuard, AuthService} from 'auth';
+import {getAnalytics} from "firebase/analytics";
 import {FirebaseApp} from 'firebase/app';
 import {getAuth} from 'firebase/auth';
 import {getFirestore} from 'firebase/firestore';
@@ -9,10 +10,15 @@ import {getRemoteConfig} from 'firebase/remote-config';
 import {environment} from '../environments/environment';
 import {ConnectionService} from './connection.service';
 import {CustomValidators} from './custom-validators';
-import {AUTH, FIREBASE_APP, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from './injectors';
+import {ANALYTICS, AUTH, FIREBASE_APP, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from './injectors';
 
 @NgModule({
   providers: [
+    {
+      provide: ANALYTICS,
+      useFactory: (firebaseApp: FirebaseApp) => getAnalytics(firebaseApp),
+      deps: [FIREBASE_APP]
+    },
     {
       provide: AUTH,
       useFactory: (firebaseApp: FirebaseApp) => getAuth(firebaseApp),
