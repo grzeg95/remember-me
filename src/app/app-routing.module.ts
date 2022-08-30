@@ -2,6 +2,7 @@ import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {AuthGuard, redirectLoggedInTo} from 'auth';
 import {RouterDict} from './app.constants';
+import {ExtraParametersRoutePipe} from './extra-parameters-route-pipe.service';
 import {GuestComponent} from './guest/guest.component';
 
 const redirectLoggedInToUserEnterView = () => redirectLoggedInTo(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
@@ -9,7 +10,7 @@ const redirectLoggedInToUserEnterView = () => redirectLoggedInTo(['/', RouterDic
 const appRoutes: Routes = [
   {
     path: '',
-    canActivate: [AuthGuard],
+    canActivate: [ExtraParametersRoutePipe, AuthGuard],
     data: {authGuardPipe: redirectLoggedInToUserEnterView},
     component: GuestComponent,
     pathMatch: 'full'

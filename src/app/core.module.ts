@@ -10,6 +10,7 @@ import {getRemoteConfig} from 'firebase/remote-config';
 import {environment} from '../environments/environment';
 import {ConnectionService} from './connection.service';
 import {CustomValidators} from './custom-validators';
+import {ExtraParametersRoutePipe} from './extra-parameters-route-pipe.service';
 import {ANALYTICS, AUTH, FIREBASE_APP, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from './injectors';
 
 @NgModule({
@@ -42,6 +43,7 @@ import {ANALYTICS, AUTH, FIREBASE_APP, FIRESTORE, FUNCTIONS, REMOTE_CONFIG} from
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}
     },
+    ExtraParametersRoutePipe,
     AuthGuard,
     AuthService,
     ConnectionService,
