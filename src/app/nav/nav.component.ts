@@ -12,7 +12,7 @@ import {
   faTasks,
   faUser
 } from '@fortawesome/free-solid-svg-icons';
-import {AuthFormComponent, AuthService, User} from 'auth';
+import {AuthFormComponent, AuthService, FirebaseUser, User} from 'auth';
 import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from '../connection.service';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
@@ -25,6 +25,7 @@ import {UserSettingsComponent} from '../user/views/user-settings/user-settings.c
 export class NavComponent implements OnInit {
 
   user: User;
+  firebaseUser: FirebaseUser;
   isOnline: boolean;
   whileLoginIn: boolean;
 
@@ -49,6 +50,7 @@ export class NavComponent implements OnInit {
 
   ngOnInit(): void {
     this.authService.user$.subscribe((user) => this.user = user);
+    this.authService.firebaseUser$.subscribe((firebaseUser) => this.firebaseUser = firebaseUser);
     this.authService.whileLoginIn$.subscribe((whileLoginIn) => this.whileLoginIn = whileLoginIn);
     this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }

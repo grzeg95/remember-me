@@ -35,7 +35,7 @@ import {FirebaseUser, User} from './user-data.model';
 export class AuthService {
 
   user$: BehaviorSubject<User> = new BehaviorSubject<User>(undefined);
-  firebaseUser: FirebaseUser;
+  firebaseUser$ = new BehaviorSubject<FirebaseUser>(undefined);
   userDocSub: Subscription;
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
@@ -115,13 +115,13 @@ export class AuthService {
           return;
         }
 
-        if (!this.firebaseUser) {
+        if (!this.firebaseUser$.value) {
           this.whileLoginIn$.next(true);
         }
-        this.firebaseUser = firebaseUser;
+        this.firebaseUser$.next(firebaseUser);
         this.unsubscribeUserDocSub();
 
-        const userDocRef = doc(this.firestore, `users/${this.firebaseUser.uid}`).withConverter(securityService.userConverter);
+        const userDocRef = doc(this.firestore, `users/${firebaseUser.uid}`).withConverter(securityService.userConverter);
 
         this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(userDocRef).pipe(catchError((error) => {
           if (error.code === 'permission-denied') {
@@ -139,6 +139,8 @@ export class AuthService {
 
           if (cryptoKey) {
 
+            const firebaseUser = this.firebaseUser$.value;
+
             this.securityService.decryptUser({
               rounds: snap.data()?.rounds,
               photoUrl: snap.data()?.photoUrl,
@@ -153,7 +155,7 @@ export class AuthService {
                 user.photoURL = decryptedUser.photoUrl;
                 user.hasCustomPhoto = true;
               } else {
-                user.photoURL = this.firebaseUser.photoURL;
+                user.photoURL = firebaseUser.photoURL;
                 user.hasCustomPhoto = false;
               }
 
@@ -166,7 +168,7 @@ export class AuthService {
           // check if user has encrypted key
           if (snap.data()?.hasEncryptedSecretKey && !isWaitingForCryptoKey) {
             this.isWaitingForCryptoKey$.next(true);
-            this.proceedGettingOfCryptoKey(this.firebaseUser, snap);
+            this.proceedGettingOfCryptoKey(this.firebaseUser$.value, snap);
           }
 
           if (isWaitingForCryptoKey) {
@@ -186,7 +188,7 @@ export class AuthService {
         this.unsubscribeUserDocSub();
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
-        this.firebaseUser = null;
+        this.firebaseUser$.next(null);
         this.whileLoginIn$.next(false);
         this.router.navigate(['/']);
 
@@ -308,7 +310,7 @@ export class AuthService {
       }
 
       this.isWaitingForCryptoKey$.next(false);
-      this.firebaseUser = firebaseUser;
+      this.firebaseUser$.next(firebaseUser);
       this.user$.next(user);
 
       if (this.router.routerState.snapshot.url === '/') {
@@ -437,7 +439,10 @@ export class AuthService {
 
     // is not logged in
     // was created by email password
-    if (!this.user$.value && !this.firebaseUser && this.firebaseUser.providerData[0]?.providerId !== 'password') {
+
+    const firebaseUser = this.firebaseUser$.value;
+
+    if (!this.user$.value && !firebaseUser && firebaseUser.providerData[0]?.providerId !== 'password') {
 
       return throwError(() => {
         return {
@@ -447,7 +452,7 @@ export class AuthService {
       });
     }
 
-    return this.angularFirebaseAuthService.updatePassword$(this.firebaseUser, newPassword);
+    return this.angularFirebaseAuthService.updatePassword$(firebaseUser, newPassword);
   }
 
   signOut$(): Observable<void> {
@@ -458,7 +463,8 @@ export class AuthService {
 
     // is logged in
     if (this.user$.value) {
-      return this.angularFirebaseAuthService.deleteUser$(this.firebaseUser);
+      const firebaseUser = this.firebaseUser$.value;
+      return this.angularFirebaseAuthService.deleteUser$(firebaseUser);
     }
 
     return throwError(() => {
@@ -470,8 +476,10 @@ export class AuthService {
     // is logged in
     if (this.user$.value) {
 
+      const firebaseUser = this.firebaseUser$.value;
+
       return forkJoin([
-        this.angularFirebaseAuthService.getIdToken$(this.firebaseUser),
+        this.angularFirebaseAuthService.getIdToken$(firebaseUser),
         this.angularFirebaseAppCheckService.getToken$()
       ]).pipe(
         mergeMap(([userToken, xFirebaseAppCheckToken]) => {
@@ -511,7 +519,8 @@ export class AuthService {
 
     // is logged in
     if (this.user$.value) {
-      return this.angularFirebaseFirestoreService.updateDoc$(this.angularFirebaseFirestoreService.doc(`users/${this.firebaseUser.uid}`), {
+      const firebaseUser = this.firebaseUser$.value;
+      return this.angularFirebaseFirestoreService.updateDoc$(this.angularFirebaseFirestoreService.doc(`users/${firebaseUser.uid}`), {
         photoUrl: deleteField()
       });
     }

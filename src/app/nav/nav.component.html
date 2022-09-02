@@ -3,8 +3,10 @@
     <div class="col d-flex">
       <mat-toolbar>
         <mat-toolbar-row>
-          <span class="app-name">Remember Me</span>
-          <img src="/assets/img/logo.svg" class="logo">
+          <div [ngClass]="{'opacity-loading': (firebaseUser === undefined)}">
+            <span class="app-name">Remember Me</span>
+            <img src="/assets/img/logo.svg" class="logo">
+          </div>
           <span class="example-spacer"></span>
 
           <div *ngIf="user !== undefined">

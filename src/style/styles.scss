@@ -298,3 +298,22 @@ a, a:not([href]):not([class]) {
 .example-spacer {
   flex: 1 1 auto;
 }
+
+.opacity-loading {
+  animation-name: opacity-loading-keyframes;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  animation-duration: 1s;
+}
+
+@keyframes opacity-loading-keyframes {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

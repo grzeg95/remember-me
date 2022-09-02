@@ -20,3 +20,5 @@ const userBuilder = runWith(runtimeOptions).region(regionId).auth.user();
 export const userOnCreate = userBuilder.onCreate(require('./user-on-create').handler);
 
 export const userOnDelete = userBuilder.onDelete(require('./user-on-delete').handler);
+
+export const userBeforeSingIn = userBuilder.beforeSignIn(require('./user-before-sign-in').handler);
