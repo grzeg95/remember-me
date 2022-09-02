@@ -9,7 +9,6 @@ import {
   getIdToken,
   getIdTokenResult,
   IdTokenResult,
-  onAuthStateChanged,
   onIdTokenChanged,
   PopupRedirectResolver,
   reload,
@@ -45,19 +44,8 @@ export class AngularFirebaseAuthService {
     );
   }
 
-  onAuthStateChanged$(): Observable<FirebaseUser> {
+  user$(): Observable<FirebaseUser> {
     return new Observable<FirebaseUser>((subscriber) => {
-      const unsubscribe = this.ngZone.run(() => onAuthStateChanged(this.auth,
-        subscriber.next.bind(subscriber),
-        subscriber.error.bind(subscriber),
-        subscriber.complete.bind(subscriber)
-      ));
-      return {unsubscribe};
-    }).pipe(runInZone(this.ngZone));
-  }
-
-  user$(): Observable<any> {
-    return new Observable((subscriber) => {
       const unsubscribe = this.ngZone.run(() => onIdTokenChanged(this.auth,
         subscriber.next.bind(subscriber),
         subscriber.error.bind(subscriber),

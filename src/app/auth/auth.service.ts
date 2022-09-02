@@ -1,30 +1,28 @@
 import {HttpClient} from '@angular/common/http';
-import {Inject, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 import {
-  AngularFirebaseAnalyticsService,
   AngularFirebaseAppCheckService,
   AngularFirebaseAuthService,
   AngularFirebaseFirestoreService,
   AngularFirebaseFunctionsService,
-  AngularFirebaseRemoteConfigService,
-  FIRESTORE
+  AngularFirebaseRemoteConfigService
 } from 'angular-firebase';
 import {GoogleAuthProvider, IdTokenResult, UserCredential} from 'firebase/auth';
-import {deleteField, doc, DocumentData, DocumentSnapshot, Firestore} from 'firebase/firestore';
+import {deleteField, DocumentData, DocumentSnapshot} from 'firebase/firestore';
 import {
   BehaviorSubject,
   catchError,
   forkJoin,
   lastValueFrom,
+  map,
   mergeMap,
   NEVER,
   Observable,
   Subscription,
   throwError
 } from 'rxjs';
-import {map} from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 import {RouterDict} from '../app.constants';
 import {SecurityService} from '../security.service';
@@ -49,16 +47,18 @@ export class AuthService {
   constructor(
     private router: Router,
     private snackBar: MatSnackBar,
-    @Inject(FIRESTORE) private readonly firestore: Firestore,
     private http: HttpClient,
     private angularFirebaseAuthService: AngularFirebaseAuthService,
     private angularFirebaseFunctionService: AngularFirebaseFunctionsService,
     private angularFirebaseAppCheckService: AngularFirebaseAppCheckService,
     private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
-    private angularFirebaseAnalyticsService: AngularFirebaseAnalyticsService,
     private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
     private securityService: SecurityService
   ) {
+    this.init();
+  }
+
+  init() {
 
     this.angularFirebaseAuthService.beforeAuthStateChanged((firebaseUser) => {
       if (firebaseUser && !this.firstTimeOfPageLoading) {
@@ -69,19 +69,7 @@ export class AuthService {
       }
     });
 
-    this.angularFirebaseAuthService.onAuthStateChanged$().subscribe((firebaseUser) => {
-
-      // TMP
-      this.angularFirebaseAnalyticsService.logEvent('on_auth_state_changed', {
-        value: [!!firebaseUser,
-          this.creatingUserWithEmailAndPassword,
-          !crypto.subtle,
-          this.wasReloaded,
-          this.wasTriedToLogInAMomentAgo,
-          firebaseUser?.isAnonymous,
-          !firebaseUser?.providerData.length,
-          firebaseUser?.emailVerified].map((b) => typeof b === 'undefined' ? '.' : b ? 1 : 0).join('')
-      });
+    this.angularFirebaseAuthService.user$().subscribe((firebaseUser) => {
 
       if (firebaseUser) {
 
@@ -121,9 +109,9 @@ export class AuthService {
         this.firebaseUser$.next(firebaseUser);
         this.unsubscribeUserDocSub();
 
-        const userDocRef = doc(this.firestore, `users/${firebaseUser.uid}`).withConverter(securityService.userConverter);
-
-        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(userDocRef).pipe(catchError((error) => {
+        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(
+          this.angularFirebaseFirestoreService.doc(`users/${firebaseUser.uid}`).withConverter(this.securityService.userConverter)
+        ).pipe(catchError((error) => {
           if (error.code === 'permission-denied') {
             this.signOut$().subscribe();
           }
@@ -177,15 +165,8 @@ export class AuthService {
         });
 
       } else {
+        this.unsubscribeAllUserSubs();
 
-        for (const sub of this.onSnapshotSubs) {
-          if (sub && !sub.closed) {
-            sub.unsubscribe();
-          }
-        }
-        this.onSnapshotSubs = [];
-
-        this.unsubscribeUserDocSub();
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
         this.firebaseUser$.next(null);
@@ -198,12 +179,6 @@ export class AuthService {
         this.firstTimeOfPageLoading = false;
       }
     });
-  }
-
-  unsubscribeUserDocSub(): void {
-    if (this.userDocSub && !this.userDocSub.closed) {
-      this.userDocSub.unsubscribe();
-    }
   }
 
   proceedGettingOfCryptoKey(firebaseUser: FirebaseUser, actionUserDocSnap?): void {
@@ -527,5 +502,22 @@ export class AuthService {
 
     return throwError(() => {
     });
+  }
+
+  unsubscribeUserDocSub(): void {
+    if (this.userDocSub && !this.userDocSub.closed) {
+      this.userDocSub.unsubscribe();
+    }
+  }
+
+  unsubscribeAllUserSubs(): void {
+    for (const sub of this.onSnapshotSubs) {
+      if (sub && !sub.closed) {
+        sub.unsubscribe();
+      }
+    }
+    this.onSnapshotSubs = [];
+
+    this.unsubscribeUserDocSub();
   }
 }
