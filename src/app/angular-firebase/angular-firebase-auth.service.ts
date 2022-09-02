@@ -40,7 +40,7 @@ export class AngularFirebaseAuthService {
     return beforeAuthStateChanged(
       this.auth,
       this.ngZone.run(() => callback),
-      this.ngZone.run(() => onAbort)
+      onAbort ? this.ngZone.run(() => onAbort) : undefined
     );
   }
 
@@ -56,7 +56,11 @@ export class AngularFirebaseAuthService {
   }
 
   reload$(user: FirebaseUser, callback?: () => void): Observable<void> {
-    return defer(() => reload(user).then(() => callback()));
+    return defer(() => reload(user).then(() => {
+      if (callback) {
+        callback();
+      }
+    }));
   }
 
   signInWithRedirect$(provider: AuthProvider, resolver?: PopupRedirectResolver): Observable<void> {
