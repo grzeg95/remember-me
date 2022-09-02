@@ -58,6 +58,11 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.prod
+
+# angular environment variables file
+/src/environments/environment.ts
+/src/environments/environment.prod.ts
 
 **/.idea/
 

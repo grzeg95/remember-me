@@ -35,7 +35,7 @@ const initializeFirebase = (): Promise<{app: FirebaseApp, appCheck: AppCheck}> =
       isTokenAutoRefreshEnabled: true
     });
 
-    if (!environment.production && environment.dev) {
+    if (!environment.production) {
       connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
       connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
       connectFunctionsEmulator(

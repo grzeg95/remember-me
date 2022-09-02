@@ -2,19 +2,15 @@
   "name": "remember-me-angular",
   "version": "0.0.0",
   "scripts": {
+    "serve:angular": "node set-env.js && ng serve",
     "serve:emulators": "python closeEmulator.py && firebase use dev && firebase emulators:start",
-    "ng": "ng",
-    "start": "ng serve",
-    "build-dev": "ng build --configuration=dev",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "deploy:hosting:dev": "ng build --configuration=dev && firebase use dev && firebase deploy --only hosting",
-    "build:hosting:static:prod": "ng build --configuration=production && node index.nonce-parser.js",
-    "build:hosting:image:prod": "cd public && gcloud builds submit --tag gcr.io/remember-me-4/web-site",
-    "deploy:hosting:image:prod": "cd public && gcloud run deploy web-site --region=europe-west4 --image gcr.io/remember-me-4/web-site",
-    "deploy:functions:dev": "npm run deploy:dev --prefix functions",
-    "deploy:functions:prod": "npm run deploy:prod --prefix functions"
+    "build:hosting:static": "node set-env.js && ng build --configuration=production && node index.nonce-parser.js",
+    "build:hosting:image": "cd public && gcloud builds submit --tag gcr.io/remember-me-4/web-site",
+    "deploy:hosting:image": "cd public && gcloud run deploy web-site --region=europe-west4 --image gcr.io/remember-me-4/web-site",
+    "deploy:functions": "npm run deploy:prod --prefix functions"
   },
   "private": true,
   "dependencies": {
@@ -42,7 +38,8 @@
     "rxjs": "7.5.6",
     "sass": "1.54.5",
     "tslib": "2.4.0",
-    "zone.js": "0.11.8"
+    "zone.js": "0.11.8",
+    "dotenv": "16.0.2"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "14.2.1",
@@ -50,6 +47,7 @@
     "@angular/compiler-cli": "14.2.0",
     "@types/node": "16.11.24",
     "cheerio": "1.0.0-rc.12",
+    "colors": "1.4.0",
     "firebase-tools": "11.8.0",
     "sass-lint": "1.13.1",
     "typescript": "4.7.4"
