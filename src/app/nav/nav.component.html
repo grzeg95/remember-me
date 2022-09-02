@@ -3,7 +3,7 @@
     <div class="col d-flex">
       <mat-toolbar>
         <mat-toolbar-row>
-          <div [ngClass]="{'opacity-loading': (firebaseUser === undefined)}">
+          <div class="app-name-logo-wrapper" [ngClass]="{'opacity-loading': (firebaseUser === undefined)}">
             <span class="app-name">Remember Me</span>
             <img src="/assets/img/logo.svg" class="logo">
           </div>
