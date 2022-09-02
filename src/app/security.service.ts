@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {DecryptedUser, EncryptedUser} from 'auth';
 import {Buffer} from 'buffer';
-import {DocumentData, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
 import {defer, forkJoin, map, mergeMap, Observable, of} from 'rxjs';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
 
@@ -9,45 +8,6 @@ export type BasicEncryptedValue = {value: string};
 
 @Injectable()
 export class SecurityService {
-
-  basicEncryptedValueConverter = {
-    toFirestore(): DocumentData {
-      return {};
-    },
-    fromFirestore(snapshot: QueryDocumentSnapshot, options?: SnapshotOptions): BasicEncryptedValue {
-      const data = snapshot.data(options)!;
-      return {
-        value: data.value
-      } as BasicEncryptedValue;
-    }
-  };
-
-  userConverter = {
-    toFirestore(): DocumentData {
-      return {};
-    },
-    fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): EncryptedUser {
-      const data = snapshot.data(options)!;
-      return {
-        hasEncryptedSecretKey: data.hasEncryptedSecretKey,
-        rounds: data.rounds,
-        photoUrl: data.photoUrl
-      } as EncryptedUser;
-    }
-  };
-
-  encryptedTodayTaskConverter = {
-    toFirestore(): DocumentData {
-      return {};
-    },
-    fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): EncryptedTodayTask {
-      const data = snapshot.data(options)!;
-      return {
-        description: data.description,
-        timesOfDay: data.timesOfDay
-      } as EncryptedTodayTask;
-    }
-  };
 
   constructor() {
   }

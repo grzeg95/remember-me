@@ -1,17 +1,20 @@
 import {Inject, Injectable, NgZone} from '@angular/core';
 import {
   collection,
-  CollectionReference,
   doc,
   DocumentData,
   DocumentReference,
   DocumentSnapshot,
   Firestore,
   getDoc,
+  limit,
   onSnapshot,
+  query,
   Query,
+  QueryDocumentSnapshot,
   QuerySnapshot,
   SnapshotListenOptions,
+  SnapshotOptions,
   updateDoc
 } from 'firebase/firestore';
 import {defer, Observable} from 'rxjs';
@@ -27,28 +30,51 @@ export class AngularFirebaseFirestoreService {
   ) {
   }
 
-  doc(path: string): DocumentReference {
-    return doc(this.firestore, path);
+  private doc<T>(path: string): DocumentReference<T> {
+    return this.withConverter(doc(this.firestore, path));
   }
 
-  collection(path: string): CollectionReference {
-    return collection(this.firestore, path);
+  updateDoc$(path: string, data: any): Observable<void> {
+    return defer(() => updateDoc(this.doc(path), data));
   }
 
-  updateDoc$(reference: DocumentReference, data: any): Observable<void> {
-    return defer(() => updateDoc(reference, data));
+  getDoc$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
+    return defer(() => getDoc(this.withConverter<T>(this.doc(path))));
   }
 
-  getDoc$<T>(reference: DocumentReference<T>): Observable<DocumentSnapshot<T>> {
-    return defer(() => getDoc(reference));
+  docOnSnapshot$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
+    return this.fromRef(this.withConverter<T>(this.doc(path)), {includeMetadataChanges: true});
   }
 
-  docOnSnapshot$<T = DocumentData>(ref: DocumentReference<T>): Observable<DocumentSnapshot<T>> {
-    return this.fromRef(ref, {includeMetadataChanges: true});
+  private query<T = DocumentData>(path: string, options?: {limit?: number}): Query<T> {
+
+    let _query: Query;
+
+    if (options?.limit) {
+      _query = query(collection(this.firestore, path), limit(options.limit));
+    } else {
+      _query = query(collection(this.firestore, path));
+    }
+
+    return this.withConverter<T>(_query);
   }
 
-  collectionOnSnapshot$<T=DocumentData>(query: Query<T>): Observable<QuerySnapshot<T>> {
-    return this.fromRef(query, {includeMetadataChanges: true});
+  collectionOnSnapshot$<T = DocumentData>(path: string, options?: {limit?: number}): Observable<QuerySnapshot<T>> {
+    return this.fromRef(this.query<T>(path, options), {includeMetadataChanges: true});
+  }
+
+  private withConverter<T>(reference: DocumentReference): DocumentReference<T>;
+  private withConverter<T>(reference: Query): Query<T>;
+  private withConverter<T>(reference: any) {
+
+    return reference.withConverter({
+      toFirestore(t: T): DocumentData {
+        return structuredClone(t);
+      },
+      fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): T {
+        return snapshot.data(options)! as T;
+      }
+    });
   }
 
   private fromRef<T = DocumentData>(ref: DocumentReference<T>, options?: SnapshotListenOptions): Observable<DocumentSnapshot<T>>;

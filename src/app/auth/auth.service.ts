@@ -109,9 +109,7 @@ export class AuthService {
         this.firebaseUser$.next(firebaseUser);
         this.unsubscribeUserDocSub();
 
-        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(
-          this.angularFirebaseFirestoreService.doc(`users/${firebaseUser.uid}`).withConverter(this.securityService.userConverter)
-        ).pipe(catchError((error) => {
+        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(`users/${firebaseUser.uid}`).pipe(catchError((error) => {
           if (error.code === 'permission-denied') {
             this.signOut$().subscribe();
           }
@@ -495,7 +493,7 @@ export class AuthService {
     // is logged in
     if (this.user$.value) {
       const firebaseUser = this.firebaseUser$.value;
-      return this.angularFirebaseFirestoreService.updateDoc$(this.angularFirebaseFirestoreService.doc(`users/${firebaseUser.uid}`), {
+      return this.angularFirebaseFirestoreService.updateDoc$(`users/${firebaseUser.uid}`, {
         photoUrl: deleteField()
       });
     }
