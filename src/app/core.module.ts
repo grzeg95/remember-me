@@ -46,7 +46,7 @@ import {SecurityService} from './security.service';
     },
     {
       provide: FUNCTIONS,
-      useFactory: (firebaseApp: FirebaseApp) => getFunctions(firebaseApp, environment.firebase.locationId),
+      useFactory: (firebaseApp: FirebaseApp) => getFunctions(firebaseApp, environment.functionsRegionOrCustomDomain),
       deps: [FIREBASE_APP]
     },
     {

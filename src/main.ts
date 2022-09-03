@@ -22,7 +22,7 @@ const initializeFirebase = (): Promise<{app: FirebaseApp, appCheck: AppCheck}> =
     const app = initializeApp(environment.firebase);
     const firestore = getFirestore(app);
     const auth = getAuth(app);
-    const functions = getFunctions(app, environment.firebase.locationId);
+    const functions = getFunctions(app, environment.functionsRegionOrCustomDomain);
 
     const remoteConfig = getRemoteConfig(app);
     remoteConfig.settings.minimumFetchIntervalMillis = 3600000;

@@ -13,11 +13,11 @@ const getEnvironmentString = () => {
   firebase: {
     projectId: '${process.env.FIREBASE_PROJECT_ID}',
     appId: '${process.env.FIREBASE_APP_ID}',
-    locationId: '${process.env.FIREBASE_LOCATION_ID}',
     apiKey: '${process.env.FIREBASE_API_KEY}',
     authDomain: '${process.env.FIREBASE_AUTH_DOMAIN}'
   },
   recaptcha: '${process.env.RECAPTHA}',
+  functionsRegionOrCustomDomain: '${process.env.FUNCTIONS_REGION_OR_CUSTOM_DOMAIN}',
   emulators: {
     firestore: {
       host: '${process.env.FIREBASE_EMULATORS_FIRESTORE_HOST}',
