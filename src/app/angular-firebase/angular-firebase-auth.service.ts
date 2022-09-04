@@ -1,9 +1,8 @@
-import {Inject, Injectable, NgZone} from '@angular/core';
+import {Inject, Injectable, NgZone, OnDestroy} from '@angular/core';
 import {FirebaseUser} from 'auth';
 import {
   Auth,
   AuthProvider,
-  beforeAuthStateChanged,
   createUserWithEmailAndPassword,
   deleteUser,
   getIdToken,
@@ -19,16 +18,18 @@ import {
   signInWithEmailAndPassword,
   signInWithRedirect,
   signOut,
-  Unsubscribe,
   updatePassword,
   UserCredential
 } from 'firebase/auth';
-import {catchError, defer, map, Observable} from 'rxjs';
+import {BehaviorSubject, catchError, defer, filter, map, Observable, Subscription} from 'rxjs';
 import {runInZone} from '../tools';
 import {AUTH} from './angular-firebase-injectors';
 
 @Injectable()
-export class AngularFirebaseAuthService {
+export class AngularFirebaseAuthService implements OnDestroy {
+
+  private _user$ = new BehaviorSubject<FirebaseUser>(undefined);
+  private _onIdTokenChangedSub: Subscription;
 
   constructor(
     @Inject(AUTH) private readonly auth: Auth,
@@ -36,23 +37,30 @@ export class AngularFirebaseAuthService {
   ) {
   }
 
-  beforeAuthStateChanged(callback: (user: FirebaseUser) => (void | Promise<void>), onAbort?: () => void): Unsubscribe {
-    return beforeAuthStateChanged(
-      this.auth,
-      this.ngZone.run(() => callback),
-      onAbort ? this.ngZone.run(() => onAbort) : undefined
-    );
+  ngOnDestroy(): void {
+    if (this._onIdTokenChangedSub && !this._onIdTokenChangedSub.closed) {
+      this._onIdTokenChangedSub.unsubscribe();
+    }
   }
 
   user$(): Observable<FirebaseUser> {
-    return new Observable<FirebaseUser>((subscriber) => {
-      const unsubscribe = this.ngZone.run(() => onIdTokenChanged(this.auth,
-        subscriber.next.bind(subscriber),
-        subscriber.error.bind(subscriber),
-        subscriber.complete.bind(subscriber)
-      ));
-      return {unsubscribe};
-    }).pipe(runInZone(this.ngZone));
+
+    if (!this._onIdTokenChangedSub) {
+      this._onIdTokenChangedSub = new Observable<FirebaseUser>((subscriber) => {
+        const unsubscribe = this.ngZone.run(() => onIdTokenChanged(this.auth,
+          subscriber.next.bind(subscriber),
+          subscriber.error.bind(subscriber),
+          subscriber.complete.bind(subscriber)
+        ));
+        return {unsubscribe};
+      }).pipe(
+        runInZone(this.ngZone)
+      ).subscribe((firebaseUser) => this._user$.next(firebaseUser));
+    }
+
+    return this._user$.asObservable().pipe(
+      filter((firebaseUser) => firebaseUser !== undefined)
+    );
   }
 
   reload$(user: FirebaseUser, callback?: () => void): Observable<void> {

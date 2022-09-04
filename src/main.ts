@@ -3,18 +3,17 @@ __webpack_nonce__ = 'random-csp-nonce';
 
 import {enableProdMode} from '@angular/core';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
+import {FIREBASE_APP} from 'angular-firebase';
 import {getAnalytics} from 'firebase/analytics';
 import {FirebaseApp, initializeApp} from 'firebase/app';
-import {initializeAppCheck, ReCaptchaV3Provider, AppCheck} from 'firebase/app-check';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
 import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
 import {fetchAndActivate, getRemoteConfig} from 'firebase/remote-config';
 import {AppModule} from './app/app.module';
-import {APP_CHECK, FIREBASE_APP} from 'angular-firebase';
 import {environment} from './environments/environment';
 
-const initializeFirebase = (): Promise<{app: FirebaseApp, appCheck: AppCheck}> => {
+const initializeFirebase = (): Promise<{app: FirebaseApp}> => {
 
   return new Promise((resolve) => {
 
@@ -30,11 +29,6 @@ const initializeFirebase = (): Promise<{app: FirebaseApp, appCheck: AppCheck}> =
 
     getAnalytics(app);
 
-    const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(environment.recaptcha),
-      isTokenAutoRefreshEnabled: true
-    });
-
     if (!environment.production) {
       connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
       connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
@@ -46,11 +40,9 @@ const initializeFirebase = (): Promise<{app: FirebaseApp, appCheck: AppCheck}> =
     }
 
     return Promise.all(promises).then(() => resolve({
-      app,
-      appCheck
+      app
     })).catch(() => resolve({
-      app,
-      appCheck
+      app
     }));
   });
 }
@@ -64,10 +56,6 @@ initializeFirebase().then((firebaseDependencies) => {
     {
       provide: FIREBASE_APP,
       useValue: firebaseDependencies.app
-    },
-    {
-      provide: APP_CHECK,
-      useValue: firebaseDependencies.appCheck
     }
   ]).bootstrapModule(AppModule)
 }).catch((err) => console.error(err));

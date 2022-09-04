@@ -12,9 +12,6 @@ export const handler = (data: any, context: CallableContext): Promise<string> =>
   // with data
   testRequirement(data !== null)
 
-  // without app check
-  testRequirement(!context.app);
-
   // not logged in
   testRequirement(!auth);
 

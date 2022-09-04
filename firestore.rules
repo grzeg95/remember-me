@@ -2,10 +2,6 @@ rules_version = '2';
 
 service cloud.firestore {
 
-  match /databases/{database}/documents/config/{configId} {
-    allow get: if true;
-  }
-
   match /databases/{database}/documents/users/{userId} {
 
     // https://firebase.google.com/docs/firestore/pricing#firestore-rules

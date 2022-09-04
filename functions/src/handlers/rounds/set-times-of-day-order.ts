@@ -24,9 +24,6 @@ export const handler = (data: any, callableContext: CallableContext): FunctionRe
 
   const auth = callableContext?.auth;
 
-  // without app check
-  testRequirement(!callableContext.app);
-
   // not logged in
   testRequirement(!auth);
 

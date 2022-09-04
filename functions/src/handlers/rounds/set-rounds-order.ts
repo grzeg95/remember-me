@@ -23,9 +23,6 @@ export const handler = async (data: any, callableContext: CallableContext): Func
 
   const auth = callableContext?.auth;
 
-  // without app check
-  testRequirement(!callableContext.app);
-
   // not logged in
   testRequirement(!auth);
 

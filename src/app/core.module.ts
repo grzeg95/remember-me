@@ -3,7 +3,6 @@ import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {
   ANALYTICS,
   AngularFirebaseAnalyticsService,
-  AngularFirebaseAppCheckService,
   AngularFirebaseAuthService,
   AngularFirebaseFirestoreService,
   AngularFirebaseFunctionsService,
@@ -64,7 +63,6 @@ import {SecurityService} from './security.service';
     CustomValidators,
     AngularFirebaseAuthService,
     AngularFirebaseFunctionsService,
-    AngularFirebaseAppCheckService,
     AngularFirebaseAnalyticsService,
     AngularFirebaseRemoteConfigService,
     AngularFirebaseFirestoreService,

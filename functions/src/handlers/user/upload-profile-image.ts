@@ -1,6 +1,5 @@
 import {Response} from 'express';
-import {auth, appCheck, firestore} from 'firebase-admin';
-import {VerifyAppCheckTokenResponse} from 'firebase-admin/app-check';
+import {auth, firestore} from 'firebase-admin';
 import {DecodedIdToken} from 'firebase-admin/auth';
 import {https} from 'firebase-functions';
 import {encrypt, getCryptoKey} from '../../helpers/security';
@@ -11,8 +10,7 @@ const sharp = require('sharp');
 interface Context {
   req: https.Request,
   res: Response,
-  auth?: DecodedIdToken,
-  app?: VerifyAppCheckTokenResponse
+  auth?: DecodedIdToken
 }
 
 const acceptedContentTypes = new Set<string>(['image/jpeg', 'image/jpg', 'image/png']);
@@ -32,13 +30,11 @@ const sendError = (res: Response, details?: string) => {
 const getContext = (req: https.Request, res: Response): Promise<Context> => {
 
   const authPromise = auth().verifyIdToken(req.headers.authorization?.split('Bearer ')[1] + '').catch(() => undefined);
-  const appCheckPromise = appCheck().verifyToken(req.header('X-Firebase-AppCheck') + '').catch(() => undefined);
 
-  return Promise.all([authPromise, appCheckPromise]).then(([decodedIdToken, verifyAppCheckTokenResponse]) => {
+  return Promise.all([authPromise]).then(([decodedIdToken]) => {
     return {
       req,
       res,
-      app: verifyAppCheckTokenResponse,
       auth: decodedIdToken
     };
   });
@@ -59,11 +55,6 @@ export const handler = (req: https.Request, res: Response): void | Promise<void>
       !context.auth.email_verified &&
       !context.auth.isAnonymous
     ) {
-      sendError(res);
-      return;
-    }
-
-    if (!context.app) {
       sendError(res);
       return;
     }

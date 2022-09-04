@@ -1,7 +1,6 @@
-import {Component, Inject} from '@angular/core';
-import {FIRESTORE} from 'angular-firebase';
+import {Component} from '@angular/core';
+import {AngularFirebaseRemoteConfigService} from "angular-firebase";
 import {AuthService} from 'auth';
-import {doc, DocumentData, Firestore, getDoc, QueryDocumentSnapshot, SnapshotOptions} from 'firebase/firestore';
 import {defaultGuestComponentConfig, GuestComponentConfig} from '../config.model';
 
 @Component({
@@ -17,30 +16,23 @@ export class GuestComponent {
 
   constructor(
     private authService: AuthService,
-    @Inject(FIRESTORE) private readonly firestore: Firestore
+    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService
   ) {
-    getDoc(doc(this.firestore, 'config/guestComponent').withConverter({
-      toFirestore(): DocumentData {
-        return {};
-      },
-      fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): GuestComponentConfig {
-        const data = snapshot.data(options)!;
-        return {
-          lastUpdate: data.lastUpdate,
-          motto: data.motto
-        } as GuestComponentConfig;
-      }
-    })).then((snap) => {
-      if (snap.exists()) {
-        const guestComponentConfig = snap.data();
 
-        for (const key of Object.getOwnPropertyNames(guestComponentConfig)) {
-          if (guestComponentConfig[key]) {
-            this.guestComponentConfig[key] = guestComponentConfig[key];
-          }
-        }
+    try {
+      const guestComponentConfig = JSON.parse(
+        this.angularFirebaseRemoteConfigService.getValue('guestComponent').asString()
+      ) as GuestComponentConfig;
+
+      if (guestComponentConfig.motto) {
+        this.guestComponentConfig.motto = guestComponentConfig.motto;
       }
-    });
+
+      if (guestComponentConfig.lastUpdate) {
+        this.guestComponentConfig.lastUpdate = guestComponentConfig.lastUpdate;
+      }
+
+    } catch (e) {}
   }
 
   renewCookie() {

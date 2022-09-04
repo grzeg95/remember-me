@@ -3,7 +3,6 @@ import {Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 import {
-  AngularFirebaseAppCheckService,
   AngularFirebaseAuthService,
   AngularFirebaseFirestoreService,
   AngularFirebaseFunctionsService,
@@ -15,7 +14,6 @@ import {
   BehaviorSubject,
   catchError,
   forkJoin,
-  lastValueFrom,
   map,
   mergeMap,
   NEVER,
@@ -39,10 +37,8 @@ export class AuthService {
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
   onSnapshotSubs: Subscription[] = [];
   creatingUserWithEmailAndPassword = false;
-  wasReloaded = false;
-  wasTriedToLogInAMomentAgo = false;
-  firstTimeOfPageLoading = true;
   userUpdatesWhileIsWaitingForCryptoKey: DocumentSnapshot<EncryptedUser>;
+  wasTriedToLogInAMomentAgo = false;
 
   constructor(
     private router: Router,
@@ -50,7 +46,6 @@ export class AuthService {
     private http: HttpClient,
     private angularFirebaseAuthService: AngularFirebaseAuthService,
     private angularFirebaseFunctionService: AngularFirebaseFunctionsService,
-    private angularFirebaseAppCheckService: AngularFirebaseAppCheckService,
     private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
     private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
     private securityService: SecurityService
@@ -60,15 +55,6 @@ export class AuthService {
 
   init() {
 
-    this.angularFirebaseAuthService.beforeAuthStateChanged((firebaseUser) => {
-      if (firebaseUser && !this.firstTimeOfPageLoading) {
-        return lastValueFrom(this.angularFirebaseAuthService.reload$(firebaseUser, () => this.wasReloaded = true));
-      }
-      if (this.firstTimeOfPageLoading) {
-        this.firstTimeOfPageLoading = false;
-      }
-    });
-
     this.angularFirebaseAuthService.user$().subscribe((firebaseUser) => {
 
       if (firebaseUser) {
@@ -77,21 +63,6 @@ export class AuthService {
           this.creatingUserWithEmailAndPassword = false;
           this.signOut$().subscribe();
           return;
-        }
-
-        if (!crypto.subtle) {
-          this.signOut$().subscribe();
-          this.snackBar.open('Stop using IE lol');
-          return;
-        }
-
-        if (this.wasReloaded && !this.wasTriedToLogInAMomentAgo) {
-          this.wasReloaded = false;
-          return;
-        }
-
-        if (this.wasTriedToLogInAMomentAgo) {
-          this.wasTriedToLogInAMomentAgo = false;
         }
 
         const isAnonymous = firebaseUser.isAnonymous || !firebaseUser.providerData.length;
@@ -107,7 +78,10 @@ export class AuthService {
           this.whileLoginIn$.next(true);
         }
         this.firebaseUser$.next(firebaseUser);
-        this.unsubscribeUserDocSub();
+
+        if (this.userDocSub && !this.userDocSub.closed) {
+          return;
+        }
 
         this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(`users/${firebaseUser.uid}`).pipe(catchError((error) => {
           if (error.code === 'permission-denied') {
@@ -163,18 +137,15 @@ export class AuthService {
         });
 
       } else {
-        this.unsubscribeAllUserSubs();
 
+        this.unsubscribeAllUserSubs();
         this.isWaitingForCryptoKey$.next(false);
         this.user$.next(null);
         this.firebaseUser$.next(null);
         this.whileLoginIn$.next(false);
         this.router.navigate(['/']);
-
         this.creatingUserWithEmailAndPassword = false;
-        this.wasReloaded = false;
         this.wasTriedToLogInAMomentAgo = false;
-        this.firstTimeOfPageLoading = false;
       }
     });
   }
@@ -452,10 +423,9 @@ export class AuthService {
       const firebaseUser = this.firebaseUser$.value;
 
       return forkJoin([
-        this.angularFirebaseAuthService.getIdToken$(firebaseUser),
-        this.angularFirebaseAppCheckService.getToken$()
+        this.angularFirebaseAuthService.getIdToken$(firebaseUser)
       ]).pipe(
-        mergeMap(([userToken, xFirebaseAppCheckToken]) => {
+        mergeMap(([userToken]) => {
           let url: string = '';
 
           if (!environment.production) {
@@ -473,13 +443,10 @@ export class AuthService {
 
           const headers = {
             'Content-Type': file.type,
-            'authorization': `Bearer ${userToken}`,
-            'X-Firebase-AppCheck': xFirebaseAppCheckToken
+            'authorization': `Bearer ${userToken}`
           };
 
-          return lastValueFrom(
-            this.http.post<{message: string}>(url, file, {headers})
-          );
+          return this.http.post<{message: string}>(url, file, {headers})
         })
       )
     }

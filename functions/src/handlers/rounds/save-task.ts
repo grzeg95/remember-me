@@ -348,9 +348,6 @@ const checkEntryRequirements = (data: any, callableContext: CallableContext) => 
 
   const auth = callableContext?.auth;
 
-  // without app check
-  testRequirement(!callableContext.app);
-
   // not logged in
   testRequirement(!auth);
 

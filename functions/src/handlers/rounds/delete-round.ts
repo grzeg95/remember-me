@@ -14,9 +14,6 @@ export const handler = (roundId: any, callableContext: CallableContext): Functio
 
   const auth = callableContext?.auth;
 
-  // without app check
-  testRequirement(!callableContext.app);
-
   // not logged in
   testRequirement(!auth);
 
