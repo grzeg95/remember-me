@@ -19,20 +19,15 @@ export class GuestComponent {
     private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService
   ) {
 
-    try {
-      const guestComponentConfig = JSON.parse(
-        this.angularFirebaseRemoteConfigService.getValue('guestComponent').asString()
-      ) as GuestComponentConfig;
+    const guestComponentConfig = this.angularFirebaseRemoteConfigService.getValue<GuestComponentConfig>('guestComponent');
 
-      if (guestComponentConfig.motto) {
-        this.guestComponentConfig.motto = guestComponentConfig.motto;
-      }
+    if (guestComponentConfig.motto) {
+      this.guestComponentConfig.motto = guestComponentConfig.motto;
+    }
 
-      if (guestComponentConfig.lastUpdate) {
-        this.guestComponentConfig.lastUpdate = guestComponentConfig.lastUpdate;
-      }
-
-    } catch (e) {}
+    if (guestComponentConfig.lastUpdate) {
+      this.guestComponentConfig.lastUpdate = guestComponentConfig.lastUpdate;
+    }
   }
 
   renewCookie() {

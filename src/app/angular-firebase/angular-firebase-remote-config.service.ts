@@ -14,7 +14,11 @@ export class AngularFirebaseRemoteConfigService {
     return getString(this.remoteConfig, key);
   }
 
-  getValue(key: string) {
-    return getValue(this.remoteConfig, key);
+  getValue<T>(key: string) {
+    try {
+      return JSON.parse(getValue(this.remoteConfig, key).asString()) as T;
+    } catch (e) {
+      return undefined;
+    }
   }
 }
