@@ -22,7 +22,7 @@ import {
   UserCredential
 } from 'firebase/auth';
 import {BehaviorSubject, catchError, defer, filter, map, Observable, Subscription} from 'rxjs';
-import {runInZone} from '../tools';
+import {runInZone} from 'tools';
 import {AUTH} from './angular-firebase-injectors';
 
 @Injectable()

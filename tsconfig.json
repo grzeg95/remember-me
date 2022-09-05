@@ -25,7 +25,8 @@
     ],
     "paths": {
       "auth": ["./src/app/auth/index"],
-      "angular-firebase": ["./src/app/angular-firebase/index"]
+      "angular-firebase": ["./src/app/angular-firebase/index"],
+      "tools": ["./src/app/tools"]
     }
   },
   "angularCompilerOptions": {
