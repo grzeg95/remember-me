@@ -19,8 +19,8 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import {defer, Observable} from 'rxjs';
-import {runInZone} from 'tools';
 import {FIRESTORE} from './angular-firebase-injectors';
+import {runInZone} from './tools';
 
 @Injectable()
 export class AngularFirebaseFirestoreService {

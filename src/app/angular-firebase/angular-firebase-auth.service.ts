@@ -1,5 +1,4 @@
 import {Inject, Injectable, NgZone, OnDestroy} from '@angular/core';
-import {User as FirebaseUser} from 'firebase/auth';
 import {
   Auth,
   AuthProvider,
@@ -19,11 +18,12 @@ import {
   signInWithRedirect,
   signOut,
   updatePassword,
+  User as FirebaseUser,
   UserCredential
 } from 'firebase/auth';
 import {BehaviorSubject, catchError, defer, filter, map, Observable, Subscription} from 'rxjs';
-import {runInZone} from 'tools';
 import {AUTH} from './angular-firebase-injectors';
+import {runInZone} from './tools';
 
 @Injectable()
 export class AngularFirebaseAuthService implements OnDestroy {
