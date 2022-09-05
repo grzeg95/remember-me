@@ -1,11 +1,11 @@
-import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
-import {FIRESTORE} from 'angular-firebase';
+import {AngularFirebaseFirestoreService} from 'angular-firebase';
 import {AuthService} from 'auth';
-import {doc, FieldPath, Firestore, updateDoc} from 'firebase/firestore';
-import {interval, Subscription} from 'rxjs';
+import {FieldPath} from 'firebase/firestore';
+import {catchError, interval, NEVER, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {RouterDict} from 'src/app/app.constants';
 import {ConnectionService} from '../../../../../../connection.service';
@@ -51,7 +51,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private connectionService: ConnectionService,
     private taskService: TaskService,
-    @Inject(FIRESTORE) private readonly firestore: Firestore
+    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService
   ) {
   }
 
@@ -148,19 +148,21 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     const user = this.authService.user$.value;
 
-    updateDoc(
-      doc(this.firestore, `/users/${user.uid}/rounds/${this.roundsService.selectedRound$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`),
+    this.angularFirebaseFirestoreService.updateDoc$(
+      `/users/${user.uid}/rounds/${this.roundsService.selectedRound$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`,
       new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
       !todayItem.done
-    ).then(() => {
-      todayItem.disabled = false;
-    }).catch(() => {
+    ).pipe(catchError(() => {
       if (!this.destroyed) {
         todayItem.disabled = false;
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
         this.changeDay();
       }
-    });
+
+      return NEVER;
+    })).subscribe(() => {
+      todayItem.disabled = false;
+    })
 
     if (!this.isOnline) {
       todayItem.disabled = false;
