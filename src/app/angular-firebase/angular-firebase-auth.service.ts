@@ -1,5 +1,5 @@
 import {Inject, Injectable, NgZone, OnDestroy} from '@angular/core';
-import {FirebaseUser} from 'auth';
+import {User as FirebaseUser} from 'firebase/auth';
 import {
   Auth,
   AuthProvider,
