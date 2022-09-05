@@ -1,4 +1,5 @@
 import {Inject, Injectable, NgZone} from '@angular/core';
+import {FieldPath} from '@firebase/firestore';
 import {
   collection,
   doc,
@@ -34,8 +35,11 @@ export class AngularFirebaseFirestoreService {
     return this.withConverter(doc(this.firestore, path));
   }
 
-  updateDoc$(path: string, data: any): Observable<void> {
-    return defer(() => updateDoc(this.doc(path), data));
+  updateDoc$(path: string, data: any): Observable<void>
+  updateDoc$(path: string, field: string | FieldPath, value: unknown, ...moreFieldsAndValues: unknown[]): Observable<void>
+  updateDoc$(path: string, ...any: any): Observable<void> {
+    // @ts-ignore
+    return defer(() => updateDoc(this.doc(path), ...any));
   }
 
   getDoc$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
