@@ -4,6 +4,7 @@ import {DecodedIdToken} from 'firebase-admin/auth';
 import {https} from 'firebase-functions';
 import {encrypt, getCryptoKey} from '../../helpers/security';
 import {TransactionWrite} from '../../helpers/transaction-write';
+import {authorizedDomains} from '../../index';
 
 const sharp = require('sharp');
 
@@ -41,6 +42,21 @@ const getContext = (req: https.Request, res: Response): Promise<Context> => {
 };
 
 export const handler = (req: https.Request, res: Response): void | Promise<void> => {
+
+  if (req.method !== 'POST') {
+    sendError(res);
+    return;
+  }
+
+  if (!req.headers.origin) {
+    sendError(res);
+    return;
+  }
+
+  if (!authorizedDomains.has(new URL(req.headers.origin).host)) {
+    sendError(res);
+    return;
+  }
 
   return getContext(req, res).then((context) => {
 
