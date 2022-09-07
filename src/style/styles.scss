@@ -317,3 +317,7 @@ a, a:not([href]):not([class]) {
     opacity: 1;
   }
 }
+
+.mat-menu-trigger {
+  cursor: pointer;
+}
