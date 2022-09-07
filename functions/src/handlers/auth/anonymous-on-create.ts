@@ -1,79 +1,23 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
 import {firestore} from 'firebase-admin';
-import {UserRecord} from 'firebase-admin/lib/auth';
+import {UserRecord, getAuth} from 'firebase-admin/auth';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {Task} from '../../helpers/models';
-import {encrypt, encryptRound, encryptTask} from '../../helpers/security';
+import {encrypt} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {prepareTimesOfDay, proceedTodayTasks} from '../rounds/save-task';
+import {createSampleUserData} from './user-before-create';
 
-const {getAuth} = require('firebase-admin/auth');
 const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-const createSampleUserData = (userDocSnap: firestore.DocumentSnapshot, transaction: firestore.Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
-
-  let roundDocSnap: firestore.DocumentSnapshot;
-  let taskDocSnap: firestore.DocumentSnapshot;
-  let roundId: string;
-
-  const decryptedRound = {
-    timesOfDay: [],
-    timesOfDayCardinality: [],
-    name: 'Daily',
-    todaysIds: [],
-    tasksIds: []
-  };
-
-  const task: Task = {
-    timesOfDay: ['Before start'],
-    daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-    description: 'Drink coffee 🤠'
-  };
-
-  // get round
-  return transaction.get(userDocSnap.ref.collection('rounds').doc()).then((_roundDocSnap) => {
-
-    roundDocSnap = _roundDocSnap;
-    roundId = roundDocSnap.id;
-
-    // get task
-    return transaction.get(roundDocSnap.ref.collection('task').doc());
-
-  }).then((_taskDocSnap) => {
-
-    taskDocSnap = _taskDocSnap;
-
-    return proceedTodayTasks(transaction, task, taskDocSnap, {
-      description: '',
-      daysOfTheWeek: [],
-      timesOfDay: [],
-    }, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
-
-  }).then((todaysIds) => {
-
-    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, [], ['Before start'], [], []);
-
-    // create round
-    transactionWrite.create(roundDocSnap.ref, encryptRound({
-      timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
-      timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-      name: 'Daily',
-      todaysIds,
-      tasksIds: [taskDocSnap.id]
-    }, cryptoKey));
-
-    transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
-
-    return roundId;
-  });
-};
-
 export const handler = (user: UserRecord) => {
+
+  if (user.providerData.length) {
+    return;
+  }
 
   const key = randomBytes(32);
   let userDocSnap: firestore.DocumentSnapshot;

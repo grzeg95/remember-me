@@ -17,7 +17,9 @@ const runtimeOptions: RuntimeOptions = {
 
 const userBuilder = runWith(runtimeOptions).region(regionId).auth.user();
 
-export const userOnCreate = userBuilder.onCreate(require('./user-on-create').handler);
+export const anonymousOnCreate = userBuilder.onCreate(require('./anonymous-on-create').handler);
+
+export const userBeforeCreate = userBuilder.beforeCreate(require('./user-before-create').handler);
 
 export const userOnDelete = userBuilder.onDelete(require('./user-on-delete').handler);
 
