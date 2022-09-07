@@ -42,7 +42,7 @@
             </div>
 
             <div *ngIf="user" class="d-flex align-items-center right">
-              <img *ngIf="user.photoURL" [matMenuTriggerFor]="menu" [src]="user.photoURL"/>
+              <img *ngIf="user.photoURL" [matMenuTriggerFor]="menu" [imgSecure]="user.photoURL"/>
               <div *ngIf="!user.photoURL" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item (click)="signOut()"><fa-icon [icon]="faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</button>

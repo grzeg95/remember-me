@@ -19,7 +19,7 @@
       </div>
       <div class="data photo">
         <label [ngClass]="{'photo-uploading': isPhotoUploading}">
-          <img *ngIf="user.photoURL" [src]="user.photoURL"/>
+          <img *ngIf="user.photoURL" [imgSecure]="user.photoURL"/>
           <div *ngIf="!user.photoURL">
             <fa-icon [icon]="faUser"></fa-icon>
           </div>

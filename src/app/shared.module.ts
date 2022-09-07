@@ -19,6 +19,7 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatTableModule} from '@angular/material/table';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
+import {ImgSecureDirective} from './directives/img-secure.directive';
 import {LoadingTextComponent} from './loading-text/loading-text.component';
 
 const MODULES = [
@@ -50,10 +51,12 @@ const MODULES = [
   ],
   exports: [
     ...MODULES,
-    LoadingTextComponent
+    LoadingTextComponent,
+    ImgSecureDirective
   ],
   declarations: [
-    LoadingTextComponent
+    LoadingTextComponent,
+    ImgSecureDirective
   ]
 })
 export class SharedModule {
