@@ -1,9 +1,10 @@
 import {HttpsOptions, onRequest} from 'firebase-functions/v2/https';
+import {regionIdForFunctionsV2} from '../../../config';
 
 const opts: HttpsOptions = {
   timeoutSeconds: 30,
   memory: '1GiB',
-  region: 'europe-west4',
+  region: regionIdForFunctionsV2,
   maxInstances: 10,
   retry: true,
   ingressSettings: 'ALLOW_ALL',

@@ -5,7 +5,7 @@ import {decrypt, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {authorizedDomains} from '../../index';
+import {authorizedDomains} from '../../config';
 
 const app = firestore();
 
@@ -22,9 +22,11 @@ const app = firestore();
  **/
 export const handler = async (data: any, callableContext: CallableContext): FunctionResult => {
 
-  testRequirement(callableContext.rawRequest.method !== 'POST');
-  testRequirement(!callableContext.rawRequest.headers.origin);
-  testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
+  if (!process.env.FUNCTIONS_EMULATOR) {
+    testRequirement(callableContext.rawRequest.method !== 'POST');
+    testRequirement(!callableContext.rawRequest.headers.origin);
+    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
+  }
 
   const auth = callableContext?.auth;
 

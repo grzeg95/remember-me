@@ -2,8 +2,8 @@
   "name": "functions",
   "scripts": {
     "lint": "tslint --project tsconfig.json",
-    "build": "echo removing old generated lib && (if exist lib rmdir /s /q lib) && echo removed && echo: lint && npm run lint && echo tsc: start && tsc && echo tsc: done && python minify.py",
-    "build-dev": "echo: lint && npm run lint && echo tsc: start && tsc && echo tsc: done",
+    "build": "echo removing old generated lib && (if exist lib rmdir /s /q lib) && echo removed && echo: lint && npm run lint && echo tsc: start && tsc && echo tsc: done && python minify.py  && node cp-env.js",
+    "build-dev": "echo: lint && npm run lint && echo tsc: start && tsc && echo tsc: done && node cp-env.js",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
@@ -17,6 +17,7 @@
   "main": "lib/functions/src/index.js",
   "dependencies": {
     "@google-cloud/kms": "3.0.1",
+    "dotenv": "16.0.2",
     "express": "4.18.1",
     "fast-crc32c": "2.0.0",
     "firebase-admin": "11.0.1",

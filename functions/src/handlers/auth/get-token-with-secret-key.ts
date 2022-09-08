@@ -1,16 +1,17 @@
 import {getAuth} from 'firebase-admin/auth';
 import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
+import {authorizedDomains, cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {testRequirement} from '../../helpers/test-requirement';
-import {authorizedDomains} from '../../index';
 
 const crc32c = require('fast-crc32c');
 
 export const handler = (data: any, context: CallableContext): Promise<string> => {
 
-  testRequirement(context.rawRequest.method !== 'POST');
-  testRequirement(!context.rawRequest.headers.origin);
-  testRequirement(!authorizedDomains.has(new URL(context.rawRequest.headers.origin as string).host));
+  if (!process.env.FUNCTIONS_EMULATOR) {
+    testRequirement(context.rawRequest.method !== 'POST');
+    testRequirement(!context.rawRequest.headers.origin);
+    testRequirement(!authorizedDomains.has(new URL(context.rawRequest.headers.origin as string).host));
+  }
 
   const auth = context.auth;
 
