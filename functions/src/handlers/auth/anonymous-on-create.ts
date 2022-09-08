@@ -16,7 +16,7 @@ let publicKey: google.cloud.kms.v1.IPublicKey | null;
 export const handler = (user: UserRecord) => {
 
   if (user.providerData.length) {
-    return;
+    return Promise.resolve();
   }
 
   const key = randomBytes(32);
