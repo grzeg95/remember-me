@@ -7,23 +7,6 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "hosting": {
-    "public": "",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "run": {
-          "serviceId": "web-site",
-          "region": "europe-central2"
-        }
-      }
-    ]
-  },
   "emulators": {
     "functions": {
       "port": "5000",
@@ -33,10 +16,6 @@
       "port": 9090,
       "host": "localhost"
     },
-    "hosting": {
-      "port": "5001",
-      "host": "localhost"
-    },
     "ui": {
       "enabled": true,
       "host": "localhost"
@@ -44,19 +23,7 @@
     "auth": {
       "port": "9099",
       "host": "localhost"
-    },
-    "database": {
-      "port": 9000
-    },
-    "storage": {
-      "port": 9199
     }
-  },
-  "storage": {
-    "rules": "storage.rules"
-  },
-  "database": {
-    "rules": "database.rules.json"
   },
   "remoteconfig": {}
 }

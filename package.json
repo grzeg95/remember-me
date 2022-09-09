@@ -10,6 +10,7 @@
     "build:hosting:static": "node set-env.js && ng build --configuration=production && node index.nonce-parser.js",
     "build:hosting:image": "cd public && gcloud builds submit --tag gcr.io/remember-me-4/web-site",
     "deploy:hosting:image": "cd public && gcloud run deploy web-site --region=europe-west4 --image gcr.io/remember-me-4/web-site",
+    "build:functions:dev": "npm run build:dev --prefix functions",
     "deploy:functions": "npm run deploy:prod --prefix functions"
   },
   "private": true,

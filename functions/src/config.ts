@@ -2,7 +2,7 @@ import {KeyManagementServiceClient} from '@google-cloud/kms';
 const dotenv = require('dotenv');
 const path = require('path');
 
-const DOTENV_PATH = path.join(__dirname, process.env.FUNCTIONS_EMULATOR ? '.env' : '.env.prod');
+const DOTENV_PATH = path.join(__dirname, process.env.FUNCTIONS_EMULATOR && process.env.FOR_FIREBASE_EMULATOR === '1' ? '.env' : '.env.prod');
 dotenv.config({path: DOTENV_PATH, override: true});
 
 export const authorizedDomains = new Set(JSON.parse(process.env.PROJECT_FIREBASE_AUTHORIZED_DOMAINS as string));

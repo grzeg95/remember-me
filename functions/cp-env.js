@@ -1,14 +1,10 @@
 const path = require('path');
 const fs = require('fs');
 
-let envName;
+let envName = '.env.prod';
 
-if (process.env.CREATE_FUNCTIONS_EMULATOR === '1') {
+if (process.argv[2] === 'for-emulator') {
   envName = '.env';
-}
-
-if (process.env.CREATE_FUNCTIONS_EMULATOR === '0') {
-  envName = '.env.prod';
 }
 
 const DOTENV_PATH_TO_COPY = path.join(__dirname, envName);
