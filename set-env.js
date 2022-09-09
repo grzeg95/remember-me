@@ -3,8 +3,8 @@ const colors = require('colors');
 const path = require('path');
 const fs = require('fs');
 
-const DOTENV_PATH = path.join(__dirname, '.env');
-const DOTENV_PROD_PATH = path.join(__dirname, '.env.prod');
+const DOTENV_PATH = path.join(__dirname, '.env.hosting');
+const DOTENV_PROD_PATH = path.join(__dirname, '.env.hosting.prod');
 const writeFileSync = require('fs').writeFileSync;
 
 const getEnvironmentString = () => {
