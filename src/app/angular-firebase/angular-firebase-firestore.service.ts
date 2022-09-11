@@ -1,5 +1,5 @@
 import {Inject, Injectable, NgZone} from '@angular/core';
-import {FieldPath} from '@firebase/firestore';
+import {FieldPath, QueryConstraint} from '@firebase/firestore';
 import {
   collection,
   doc,
@@ -8,13 +8,11 @@ import {
   DocumentSnapshot,
   Firestore,
   getDoc,
-  limit,
   onSnapshot,
   query,
   Query,
   QueryDocumentSnapshot,
   QuerySnapshot,
-  SnapshotListenOptions,
   SnapshotOptions,
   updateDoc
 } from 'firebase/firestore';
@@ -31,8 +29,8 @@ export class AngularFirebaseFirestoreService {
   ) {
   }
 
-  private doc<T>(path: string): DocumentReference<T> {
-    return this.withConverter(doc(this.firestore, path));
+  private doc<T = DocumentData>(path: string): DocumentReference<T> {
+    return this.withConverter<T>(doc(this.firestore, path));
   }
 
   updateDoc$(path: string, data: any): Observable<void>
@@ -43,33 +41,24 @@ export class AngularFirebaseFirestoreService {
   }
 
   getDoc$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
-    return defer(() => getDoc(this.withConverter<T>(this.doc(path))));
+    return defer(() => getDoc(this.doc<T>(path)));
   }
 
   docOnSnapshot$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
-    return this.fromRef(this.withConverter<T>(this.doc(path)), {includeMetadataChanges: true});
+    return this.fromRef(this.doc<T>(path));
   }
 
-  private query<T = DocumentData>(path: string, options?: {limit?: number}): Query<T> {
-
-    let _query: Query;
-
-    if (options?.limit) {
-      _query = query(collection(this.firestore, path), limit(options.limit));
-    } else {
-      _query = query(collection(this.firestore, path));
-    }
-
-    return this.withConverter<T>(_query);
+  private query<T = DocumentData>(path: string, ...queryConstraints: QueryConstraint[]): Query<T> {
+    return this.withConverter<T>(query(collection(this.firestore, path), ...queryConstraints));
   }
 
-  collectionOnSnapshot$<T = DocumentData>(path: string, options?: {limit?: number}): Observable<QuerySnapshot<T>> {
-    return this.fromRef(this.query<T>(path, options), {includeMetadataChanges: true});
+  collectionOnSnapshot$<T = DocumentData>(path: string, ...queryConstraints: QueryConstraint[]): Observable<QuerySnapshot<T>> {
+    return this.fromRef<T>(this.query<T>(path, ...queryConstraints));
   }
 
-  private withConverter<T>(reference: DocumentReference): DocumentReference<T>;
-  private withConverter<T>(reference: Query): Query<T>;
-  private withConverter<T>(reference: any) {
+  private withConverter<T = DocumentData>(reference: DocumentReference): DocumentReference<T>;
+  private withConverter<T = DocumentData>(reference: Query): Query<T>;
+  private withConverter<T = DocumentData>(reference: any) {
 
     return reference.withConverter({
       toFirestore(t: T): DocumentData {
@@ -81,11 +70,11 @@ export class AngularFirebaseFirestoreService {
     });
   }
 
-  private fromRef<T = DocumentData>(ref: DocumentReference<T>, options?: SnapshotListenOptions): Observable<DocumentSnapshot<T>>;
-  private fromRef<T = DocumentData>(ref: Query<T>, options?: SnapshotListenOptions): Observable<QuerySnapshot<T>>;
-  private fromRef(ref: any, options: SnapshotListenOptions = {includeMetadataChanges: false}): Observable<any> {
+  private fromRef<T = DocumentData>(ref: DocumentReference<T>): Observable<DocumentSnapshot<T>>;
+  private fromRef<T = DocumentData>(ref: Query<T>): Observable<QuerySnapshot<T>>;
+  private fromRef(ref: any): Observable<any> {
     return new Observable((subscriber) => {
-      const unsubscribe = onSnapshot(ref, options, {
+      const unsubscribe = onSnapshot(ref, {includeMetadataChanges: true}, {
         next: subscriber.next.bind(subscriber),
         error: subscriber.error.bind(subscriber),
         complete: subscriber.complete.bind(subscriber),

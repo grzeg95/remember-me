@@ -6,6 +6,7 @@ import {
   AngularFirebaseRemoteConfigService
 } from 'angular-firebase';
 import {AuthService} from 'auth';
+import {limit} from 'firebase/firestore';
 import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {Day} from '../../../../../functions/src/helpers/models';
@@ -84,7 +85,7 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<BasicEncryptedValue>(`users/${user.uid}/rounds`, {limit: 5}).subscribe((snap) => {
+    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<BasicEncryptedValue>(`users/${user.uid}/rounds`, limit(5)).subscribe((snap) => {
       if (!snap.docs.length) {
         this.roundsList$.next([]);
         this.roundsListFirstLoading$.next(false);
@@ -167,7 +168,7 @@ export class RoundsService {
 
         this.unsubscribeTodaySub();
 
-        this.todaySub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<EncryptedTodayTask>(`/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`, {limit: 25}).subscribe((snap) => {
+        this.todaySub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<EncryptedTodayTask>(`/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`, limit(25)).subscribe((snap) => {
 
           const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
           const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => this.securityService.decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
@@ -243,7 +244,7 @@ export class RoundsService {
 
     this.tasksListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<BasicEncryptedValue>(
       `users/${user.uid}/rounds/${round.id}/task`,
-      {limit: 25}
+      limit(25)
     ).subscribe((snap) => {
 
       if (!snap.docs.length) {
