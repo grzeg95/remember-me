@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
 
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
+process.env.FUNCTIONS_EMULATOR = 'true';
 module.exports.admin = require('firebase-admin');
 module.exports.admin.initializeApp();
 module.exports.test = require('firebase-functions-test')({projectId: 'remember-me-dev'});
@@ -15,7 +16,8 @@ module.exports.myAuth = {
   auth: {
     uid: module.exports.myId,
     token: {
-      secretKey: crypto.randomBytes(32).toString('hex')
+      secretKey: crypto.randomBytes(32).toString('hex'),
+      email_verified: true
     }
   },
   app: {
