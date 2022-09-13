@@ -1,25 +1,16 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, fromEvent, Subject} from 'rxjs';
+import {BehaviorSubject, fromEvent, map, merge} from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class ConnectionService {
 
   isOnline$ = new BehaviorSubject<boolean>(true);
-  wasTabInactive$ = new Subject<boolean>();
+  wasTabInactive$ = fromEvent(document, 'visibilitychange').pipe(map(() => document.visibilityState === 'visible'));
 
   constructor() {
-    fromEvent(window, 'online').subscribe(() => {
-      this.isOnline$.next(true);
-    });
-
-    fromEvent(window, 'offline').subscribe(() => {
-      this.isOnline$.next(false);
-    });
-
-    fromEvent(document, 'visibilitychange').subscribe(() => {
-      this.wasTabInactive$.next(document.visibilityState === 'visible');
-    });
+    merge(
+      fromEvent(window, 'online'),
+      fromEvent(window, 'offline')
+    ).pipe(map((event) => this.isOnline$.next(event.type === 'online')));
   }
 }
