@@ -55,13 +55,13 @@ export class AuthService {
 
   init() {
 
-    this.angularFirebaseAuthService.user$().subscribe((firebaseUser) => {
+    this.angularFirebaseAuthService.user().subscribe((firebaseUser) => {
 
       if (firebaseUser) {
 
         if (this.creatingUserWithEmailAndPassword) {
           this.creatingUserWithEmailAndPassword = false;
-          this.signOut$().subscribe();
+          this.signOut().subscribe();
           return;
         }
 
@@ -70,7 +70,7 @@ export class AuthService {
         // check if email was verified but not anonymous
         if (!isAnonymous && !firebaseUser.emailVerified) {
           this.snackBar.open('Please verify you email 🤫 and try again 🙂');
-          this.signOut$().subscribe();
+          this.signOut().subscribe();
           return;
         }
 
@@ -83,9 +83,9 @@ export class AuthService {
           return;
         }
 
-        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot$<EncryptedUser>(`users/${firebaseUser.uid}`).pipe(catchError((error) => {
+        this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot<EncryptedUser>(`users/${firebaseUser.uid}`).pipe(catchError((error) => {
           if (error.code === 'permission-denied') {
-            this.signOut$().subscribe();
+            this.signOut().subscribe();
           }
           throw error;
         })).subscribe((snap) => {
@@ -151,34 +151,34 @@ export class AuthService {
   }
 
   proceedGettingOfCryptoKey(firebaseUser: FirebaseUser, actionUserDocSnap?): void {
-    this.getSecretKey$(firebaseUser).pipe(catchError((error) => {
+    this.getSecretKey(firebaseUser).pipe(catchError((error) => {
       if (error && error.code === 'email-not-verified') {
         this.snackBar.open('Please verify you email 🤫 and try again 🙂');
       }
-      this.signOut$().subscribe();
+      this.signOut().subscribe();
       throw NEVER;
     })).subscribe(({cryptoKey, firebaseUser, idTokenResult}) => {
-      return this.userPostAction$(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap).subscribe();
+      return this.userPostAction(cryptoKey, firebaseUser, idTokenResult, actionUserDocSnap).subscribe();
     });
   }
 
-  getSecretKey$(currentFirebaseUser: FirebaseUser): Observable<{firebaseUser: FirebaseUser, cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
+  getSecretKey(currentFirebaseUser: FirebaseUser): Observable<{firebaseUser: FirebaseUser, cryptoKey: CryptoKey, idTokenResult: IdTokenResult}> {
 
-    return this.angularFirebaseAuthService.getIdTokenResult$(currentFirebaseUser, true).pipe(
+    return this.angularFirebaseAuthService.getIdTokenResult(currentFirebaseUser, true).pipe(
       mergeMap((idTokenResult) => {
 
         if (!idTokenResult.claims.secretKey) {
 
           let firebaseUser: FirebaseUser;
 
-          return this.getTokenWithSecretKey$().pipe(
-            mergeMap((idTokenResult) => this.angularFirebaseAuthService.signInWithCustomToken$(idTokenResult)),
+          return this.getTokenWithSecretKey().pipe(
+            mergeMap((idTokenResult) => this.angularFirebaseAuthService.signInWithCustomToken(idTokenResult)),
             mergeMap((userCredential) => {
               firebaseUser = userCredential.user;
-              return this.angularFirebaseAuthService.getIdTokenResult$(firebaseUser, true);
+              return this.angularFirebaseAuthService.getIdTokenResult(firebaseUser, true);
             }),
             mergeMap((newIdTokenResult) => {
-              return this.securityService.getCryptoKey$(newIdTokenResult.claims.secretKey as string).pipe(map((cryptoKey) => {
+              return this.securityService.getCryptoKey(newIdTokenResult.claims.secretKey as string).pipe(map((cryptoKey) => {
                 return {
                   idTokenResult: newIdTokenResult,
                   cryptoKey,
@@ -189,7 +189,7 @@ export class AuthService {
           );
         }
 
-        return this.securityService.getCryptoKey$(idTokenResult.claims.secretKey as string).pipe(map((cryptoKey) => {
+        return this.securityService.getCryptoKey(idTokenResult.claims.secretKey as string).pipe(map((cryptoKey) => {
           return {
             idTokenResult,
             cryptoKey,
@@ -200,7 +200,7 @@ export class AuthService {
     );
   }
 
-  getTokenWithSecretKey$(): Observable<string> {
+  getTokenWithSecretKey(): Observable<string> {
 
     const getTokenWithSecretKeyUrl = this.angularFirebaseRemoteConfigService.getString('getTokenWithSecretKeyUrl');
     let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<undefined, string>('auth-getTokenWithSecretKey');
@@ -212,7 +212,7 @@ export class AuthService {
     return httpsCallableFunction();
   }
 
-  userPostAction$(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap: DocumentSnapshot<DocumentData>): Observable<void> {
+  userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap: DocumentSnapshot<DocumentData>): Observable<void> {
 
     const user: User = {
       cryptoKey,
@@ -267,13 +267,13 @@ export class AuthService {
     }));
   }
 
-  googleSignIn$(): Observable<void> {
+  googleSignIn(): Observable<void> {
 
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
 
-      return this.angularFirebaseAuthService.signInWithRedirect$(new GoogleAuthProvider()).pipe(catchError((e) => {
+      return this.angularFirebaseAuthService.signInWithRedirect(new GoogleAuthProvider()).pipe(catchError((e) => {
         this.whileLoginIn$.next(false);
         throw e;
       }));
@@ -283,31 +283,14 @@ export class AuthService {
     });
   }
 
-  anonymouslySignIn$(): Observable<UserCredential | void> {
-
-    // is not logged in
-    if (!this.user$.value) {
-      this.whileLoginIn$.next(true);
-      this.wasTriedToLogInAMomentAgo = true;
-
-      return this.angularFirebaseAuthService.signInAnonymously$().pipe(catchError((e) => {
-        this.whileLoginIn$.next(false);
-        throw e;
-      }));
-    }
-
-    return throwError(() => {
-    });
-  }
-
-  signInWithEmailAndPassword$(email: string, password: string): Observable<UserCredential | void> {
+  anonymouslySignIn(): Observable<UserCredential | void> {
 
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
       this.wasTriedToLogInAMomentAgo = true;
 
-      return this.angularFirebaseAuthService.signInWithEmailAndPassword$(email, password).pipe(catchError((e) => {
+      return this.angularFirebaseAuthService.signInAnonymously().pipe(catchError((e) => {
         this.whileLoginIn$.next(false);
         throw e;
       }));
@@ -317,13 +300,30 @@ export class AuthService {
     });
   }
 
-  createUserWithEmailAndPassword$(email: string, password: string): Observable<{code: string, message: string}> {
+  signInWithEmailAndPassword(email: string, password: string): Observable<UserCredential | void> {
+
+    // is not logged in
+    if (!this.user$.value) {
+      this.whileLoginIn$.next(true);
+      this.wasTriedToLogInAMomentAgo = true;
+
+      return this.angularFirebaseAuthService.signInWithEmailAndPassword(email, password).pipe(catchError((e) => {
+        this.whileLoginIn$.next(false);
+        throw e;
+      }));
+    }
+
+    return throwError(() => {
+    });
+  }
+
+  createUserWithEmailAndPassword(email: string, password: string): Observable<{code: string, message: string}> {
 
     // is not logged in
     if (!this.user$.value) {
       this.creatingUserWithEmailAndPassword = true;
 
-      return this.angularFirebaseAuthService.createUserWithEmailAndPassword$(email, password).pipe(
+      return this.angularFirebaseAuthService.createUserWithEmailAndPassword(email, password).pipe(
         catchError((error: {code: string, message: string}) => {
           if (error.code === 'auth/weak-password') {
             error.message = 'Password should has at least 6 characters 😩';
@@ -336,7 +336,7 @@ export class AuthService {
           throw error;
         }),
         mergeMap((userCredential) => {
-          return this.angularFirebaseAuthService.sendEmailVerification$(userCredential.user).pipe(
+          return this.angularFirebaseAuthService.sendEmailVerification(userCredential.user).pipe(
             catchError(() => {
               throw {
                 code: 'user-created',
@@ -357,29 +357,29 @@ export class AuthService {
     });
   }
 
-  sendEmailVerification$(user: FirebaseUser): Observable<void> {
+  sendEmailVerification(user: FirebaseUser): Observable<void> {
 
     // is not logged in
     if (!this.user$.value) {
-      return this.angularFirebaseAuthService.sendEmailVerification$(user);
+      return this.angularFirebaseAuthService.sendEmailVerification(user);
     }
 
     return throwError(() => {
     });
   }
 
-  sendPasswordResetEmail$(email: string): Observable<void> {
+  sendPasswordResetEmail(email: string): Observable<void> {
 
     // is not logged in
     if (!this.user$.value) {
-      return this.angularFirebaseAuthService.sendPasswordResetEmail$(email);
+      return this.angularFirebaseAuthService.sendPasswordResetEmail(email);
     }
 
     return throwError(() => {
     });
   }
 
-  updatePassword$(newPassword: string): Observable<{code: string; message: string;}> {
+  updatePassword(newPassword: string): Observable<{code: string; message: string;}> {
 
     // is not logged in
     // was created by email password
@@ -396,26 +396,26 @@ export class AuthService {
       });
     }
 
-    return this.angularFirebaseAuthService.updatePassword$(firebaseUser, newPassword);
+    return this.angularFirebaseAuthService.updatePassword(firebaseUser, newPassword);
   }
 
-  signOut$(): Observable<void> {
-    return this.angularFirebaseAuthService.signOut$();
+  signOut(): Observable<void> {
+    return this.angularFirebaseAuthService.signOut();
   }
 
-  deleteUser$(): Observable<void> {
+  deleteUser(): Observable<void> {
 
     // is logged in
     if (this.user$.value) {
       const firebaseUser = this.firebaseUser$.value;
-      return this.angularFirebaseAuthService.deleteUser$(firebaseUser);
+      return this.angularFirebaseAuthService.deleteUser(firebaseUser);
     }
 
     return throwError(() => {
     });
   }
 
-  uploadProfileImage$(file: File): Observable<{message: string}> {
+  uploadProfileImage(file: File): Observable<{message: string}> {
 
     // is logged in
     if (this.user$.value) {
@@ -423,7 +423,7 @@ export class AuthService {
       const firebaseUser = this.firebaseUser$.value;
 
       return forkJoin([
-        this.angularFirebaseAuthService.getIdToken$(firebaseUser)
+        this.angularFirebaseAuthService.getIdToken(firebaseUser)
       ]).pipe(
         mergeMap(([userToken]) => {
           let url: string = '';
@@ -455,12 +455,12 @@ export class AuthService {
     });
   }
 
-  removePhoto$(): Observable<void> {
+  removePhoto(): Observable<void> {
 
     // is logged in
     if (this.user$.value) {
       const firebaseUser = this.firebaseUser$.value;
-      return this.angularFirebaseFirestoreService.updateDoc$(`users/${firebaseUser.uid}`, {
+      return this.angularFirebaseFirestoreService.updateDoc(`users/${firebaseUser.uid}`, {
         photoUrl: deleteField()
       });
     }

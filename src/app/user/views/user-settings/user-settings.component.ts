@@ -51,7 +51,7 @@ export class UserSettingsComponent implements OnInit {
 
       if (isConfirmed) {
         if (this.user) {
-          this.authService.deleteUser$().pipe(catchError(() => {
+          this.authService.deleteUser().pipe(catchError(() => {
             this.snackBar.open('Some went wrong 🤫 Try again 🙂');
             return NEVER;
           })).subscribe();
@@ -67,7 +67,7 @@ export class UserSettingsComponent implements OnInit {
 
     if (fileList.length > 0) {
       this.isPhotoUploading = true;
-      this.authService.uploadProfileImage$(fileList[0]).pipe(catchError((error) => {
+      this.authService.uploadProfileImage(fileList[0]).pipe(catchError((error) => {
         this.isPhotoUploading = false;
         input.value = '';
         this.snackBar.open(error.error.details || 'Some went wrong 🤫 Try again 🙂');
@@ -80,6 +80,6 @@ export class UserSettingsComponent implements OnInit {
   }
 
   removePhoto() {
-    this.authService.removePhoto$().subscribe();
+    this.authService.removePhoto().subscribe();
   }
 }

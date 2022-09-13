@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (this.userCredential) {
       this.loginForm.disable();
 
-      this.authService.sendEmailVerification$(this.userCredential.user).pipe(catchError(() => {
+      this.authService.sendEmailVerification(this.userCredential.user).pipe(catchError(() => {
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
         this.loginForm.enable();
         return NEVER;
@@ -60,7 +60,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   login(): void {
     this.loginForm.disable();
-    this.authService.signInWithEmailAndPassword$(this.email.value, this.password.value).pipe(catchError(() => {
+    this.authService.signInWithEmailAndPassword(this.email.value, this.password.value).pipe(catchError(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.loginForm.enable();
       return NEVER;

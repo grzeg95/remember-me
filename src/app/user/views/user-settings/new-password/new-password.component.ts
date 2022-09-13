@@ -46,7 +46,7 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
   }
 
   changePassword(): void {
-    this.authService.updatePassword$(this.newPassword.value).pipe(catchError((e) => {
+    this.authService.updatePassword(this.newPassword.value).pipe(catchError((e) => {
       this.snackBar.open(e.message);
       return NEVER;
     })).subscribe((r) => {

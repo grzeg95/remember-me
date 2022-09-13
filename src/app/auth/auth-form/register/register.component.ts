@@ -53,7 +53,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
   register(): void {
     this.registerForm.disable();
-    this.authService.createUserWithEmailAndPassword$(this.email.value, this.password.value).pipe(catchError((e) => {
+    this.authService.createUserWithEmailAndPassword(this.email.value, this.password.value).pipe(catchError((e) => {
       this.snackBar.open(e.message, 'X', {duration: 20000});
       this.registerForm.enable();
       return NEVER;

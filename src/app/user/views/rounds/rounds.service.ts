@@ -85,7 +85,7 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<BasicEncryptedValue>(`users/${user.uid}/rounds`, limit(5)).subscribe((snap) => {
+    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`users/${user.uid}/rounds`, limit(5)).subscribe((snap) => {
       if (!snap.docs.length) {
         this.roundsList$.next([]);
         this.roundsListFirstLoading$.next(false);
@@ -135,7 +135,7 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.todayDocsSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<BasicEncryptedValue>(`/users/${user.uid}/rounds/${round.id}/today`).subscribe((querySnap) => {
+    this.todayDocsSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`/users/${user.uid}/rounds/${round.id}/today`).subscribe((querySnap) => {
 
       if (!querySnap.docs.length) {
         this.todayItems$.next({});
@@ -168,7 +168,7 @@ export class RoundsService {
 
         this.unsubscribeTodaySub();
 
-        this.todaySub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<EncryptedTodayTask>(`/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`, limit(25)).subscribe((snap) => {
+        this.todaySub = this.angularFirebaseFirestoreService.collectionOnSnapshot<EncryptedTodayTask>(`/users/${user.uid}/rounds/${round.id}/today/${today.id}/task`, limit(25)).subscribe((snap) => {
 
           const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
           const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => this.securityService.decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
@@ -242,7 +242,7 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    this.tasksListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot$<BasicEncryptedValue>(
+    this.tasksListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(
       `users/${user.uid}/rounds/${round.id}/task`,
       limit(25)
     ).subscribe((snap) => {
@@ -345,7 +345,7 @@ export class RoundsService {
   getRoundById(roundId: string): Observable<Round> {
     const user = this.authService.user$.value;
 
-    return this.angularFirebaseFirestoreService.getDoc$<BasicEncryptedValue>(`users/${user.uid}/rounds/${roundId}`).pipe(mergeMap((snap) => {
+    return this.angularFirebaseFirestoreService.getDoc<BasicEncryptedValue>(`users/${user.uid}/rounds/${roundId}`).pipe(mergeMap((snap) => {
       if (snap.exists()) {
         return this.securityService.decryptRound(snap.data(), user.cryptoKey);
       }
@@ -369,7 +369,7 @@ export class RoundsService {
 
     const user = this.authService.user$.value;
 
-    return this.angularFirebaseFirestoreService.getDoc$<BasicEncryptedValue>(`users/${user.uid}/rounds/${roundId}/task/${id}`).pipe(mergeMap((taskDocSnap) => {
+    return this.angularFirebaseFirestoreService.getDoc<BasicEncryptedValue>(`users/${user.uid}/rounds/${roundId}/task/${id}`).pipe(mergeMap((taskDocSnap) => {
       const encryptedTask = taskDocSnap.data();
 
       if (encryptedTask) {

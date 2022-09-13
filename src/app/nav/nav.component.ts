@@ -56,21 +56,21 @@ export class NavComponent implements OnInit {
   }
 
   googleSignIn(): void {
-    this.authService.googleSignIn$().pipe(catchError(() => {
+    this.authService.googleSignIn().pipe(catchError(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       return NEVER;
     })).subscribe();
   }
 
   anonymouslySignIn(): void {
-    this.authService.anonymouslySignIn$().pipe(catchError(() => {
+    this.authService.anonymouslySignIn().pipe(catchError(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       return NEVER;
     })).subscribe();
   }
 
   signOut(): void {
-    this.authService.signOut$().subscribe();
+    this.authService.signOut().subscribe();
   }
 
   openAuthFormComponent(): void {

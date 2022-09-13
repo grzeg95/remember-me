@@ -33,18 +33,18 @@ export class AngularFirebaseFirestoreService {
     return this.withConverter<T>(doc(this.firestore, path));
   }
 
-  updateDoc$(path: string, data: any): Observable<void>
-  updateDoc$(path: string, field: string | FieldPath, value: unknown, ...moreFieldsAndValues: unknown[]): Observable<void>
-  updateDoc$(path: string, ...any: any): Observable<void> {
+  updateDoc(path: string, data: any): Observable<void>
+  updateDoc(path: string, field: string | FieldPath, value: unknown, ...moreFieldsAndValues: unknown[]): Observable<void>
+  updateDoc(path: string, ...any: any): Observable<void> {
     // @ts-ignore
     return defer(() => updateDoc(this.doc(path), ...any));
   }
 
-  getDoc$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
+  getDoc<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
     return defer(() => getDoc(this.doc<T>(path)));
   }
 
-  docOnSnapshot$<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
+  docOnSnapshot<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
     return this.fromRef(this.doc<T>(path));
   }
 
@@ -52,7 +52,7 @@ export class AngularFirebaseFirestoreService {
     return this.withConverter<T>(query(collection(this.firestore, path), ...queryConstraints));
   }
 
-  collectionOnSnapshot$<T = DocumentData>(path: string, ...queryConstraints: QueryConstraint[]): Observable<QuerySnapshot<T>> {
+  collectionOnSnapshot<T = DocumentData>(path: string, ...queryConstraints: QueryConstraint[]): Observable<QuerySnapshot<T>> {
     return this.fromRef<T>(this.query<T>(path, ...queryConstraints));
   }
 

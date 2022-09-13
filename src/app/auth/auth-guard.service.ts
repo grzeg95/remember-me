@@ -15,7 +15,7 @@ export class AuthGuard implements CanActivate {
 
   canActivate = (next: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
     const authPipeFactory = next.data.authGuardPipe as AuthPipeGenerator || (() => loggedIn);
-    return this.angularFirebaseAuthService.user$().pipe(
+    return this.angularFirebaseAuthService.user().pipe(
       take(1),
       authPipeFactory(next, state),
       map((can) => {

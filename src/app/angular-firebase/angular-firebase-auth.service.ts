@@ -43,7 +43,7 @@ export class AngularFirebaseAuthService implements OnDestroy {
     }
   }
 
-  user$(): Observable<FirebaseUser> {
+  user(): Observable<FirebaseUser> {
 
     if (!this._onIdTokenChangedSub) {
       this._onIdTokenChangedSub = new Observable<FirebaseUser>((subscriber) => {
@@ -63,7 +63,7 @@ export class AngularFirebaseAuthService implements OnDestroy {
     );
   }
 
-  reload$(user: FirebaseUser, callback?: () => void): Observable<void> {
+  reload(user: FirebaseUser, callback?: () => void): Observable<void> {
     return defer(() => reload(user).then(() => {
       if (callback) {
         callback();
@@ -71,39 +71,39 @@ export class AngularFirebaseAuthService implements OnDestroy {
     }));
   }
 
-  signInWithRedirect$(provider: AuthProvider, resolver?: PopupRedirectResolver): Observable<void> {
+  signInWithRedirect(provider: AuthProvider, resolver?: PopupRedirectResolver): Observable<void> {
     return defer(() => signInWithRedirect(this.auth, provider, resolver));
   }
 
-  signInWithCustomToken$(customToken: string): Observable<UserCredential> {
+  signInWithCustomToken(customToken: string): Observable<UserCredential> {
     return defer(() => signInWithCustomToken(this.auth, customToken));
   }
 
-  signInAnonymously$(): Observable<UserCredential> {
+  signInAnonymously(): Observable<UserCredential> {
     return defer(() => signInAnonymously(this.auth));
   }
 
-  signInWithEmailAndPassword$(email: string, password: string): Observable<UserCredential | void> {
+  signInWithEmailAndPassword(email: string, password: string): Observable<UserCredential | void> {
     return defer(() => signInWithEmailAndPassword(this.auth, email, password));
   }
 
-  createUserWithEmailAndPassword$(email: string, password: string): Observable<UserCredential> {
+  createUserWithEmailAndPassword(email: string, password: string): Observable<UserCredential> {
     return defer(() => createUserWithEmailAndPassword(this.auth, email, password));
   }
 
-  sendEmailVerification$(firebaseUser: FirebaseUser): Observable<void> {
+  sendEmailVerification(firebaseUser: FirebaseUser): Observable<void> {
     return defer(() => sendEmailVerification(firebaseUser));
   }
 
-  sendPasswordResetEmail$(email: string): Observable<void> {
+  sendPasswordResetEmail(email: string): Observable<void> {
     return defer(() => sendPasswordResetEmail(this.auth, email));
   }
 
-  signOut$(): Observable<void> {
+  signOut(): Observable<void> {
     return defer(() => signOut(this.auth));
   }
 
-  updatePassword$(firebaseUser: FirebaseUser, newPassword: string): Observable<{code: string; message: string}> {
+  updatePassword(firebaseUser: FirebaseUser, newPassword: string): Observable<{code: string; message: string}> {
 
     return defer(() => updatePassword(firebaseUser, newPassword)).pipe(
       catchError(((error: {code: string, message: string}) => {
@@ -123,15 +123,15 @@ export class AngularFirebaseAuthService implements OnDestroy {
     );
   }
 
-  getIdTokenResult$(firebaseUser: FirebaseUser, forceRefresh?: boolean): Observable<IdTokenResult> {
+  getIdTokenResult(firebaseUser: FirebaseUser, forceRefresh?: boolean): Observable<IdTokenResult> {
     return defer(() => getIdTokenResult(firebaseUser, forceRefresh));
   }
 
-  getIdToken$(firebaseUser: FirebaseUser, forceRefresh?: boolean) {
+  getIdToken(firebaseUser: FirebaseUser, forceRefresh?: boolean) {
     return defer(() => getIdToken(firebaseUser, forceRefresh));
   }
 
-  deleteUser$(firebaseUser: FirebaseUser): Observable<void> {
+  deleteUser(firebaseUser: FirebaseUser): Observable<void> {
     return defer(() => deleteUser(firebaseUser));
   }
 }

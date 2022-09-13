@@ -12,7 +12,7 @@ export class SecurityService {
   constructor() {
   }
 
-  getCryptoKey$(secretKey: string): Observable<CryptoKey> {
+  getCryptoKey(secretKey: string): Observable<CryptoKey> {
 
     return defer(() => crypto.subtle.importKey(
       'raw',

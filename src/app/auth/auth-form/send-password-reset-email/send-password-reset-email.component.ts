@@ -41,7 +41,7 @@ export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
   sendPasswordResetEmail(): void {
     this.recoveryForm.disable();
 
-    this.authService.sendPasswordResetEmail$(this.email.value).pipe(catchError(() => {
+    this.authService.sendPasswordResetEmail(this.email.value).pipe(catchError(() => {
       this.sendPasswordResetEmailProceed();
       return NEVER;
     })).subscribe(() => this.sendPasswordResetEmailProceed());
