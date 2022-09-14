@@ -1,10 +1,32 @@
 import {Injectable} from '@angular/core';
 import {DecryptedUser, EncryptedUser} from 'auth';
 import {Buffer} from 'buffer';
-import {defer, forkJoin, map, mergeMap, Observable, of} from 'rxjs';
+import {catchError, defer, forkJoin, map, mergeMap, Observable, of, OperatorFunction} from 'rxjs';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
 
 export type BasicEncryptedValue = {value: string};
+
+export const protectObjectDecryption = <T>(emptyOne: T): OperatorFunction<T, T> => {
+  return (source) => {
+    return new Observable<T>((observer) => {
+      return source.pipe(
+        catchError(() => {
+          return of(emptyOne);
+        }),
+        map((obj) => {
+          if (typeof obj === 'string' || !obj) {
+            return emptyOne;
+          }
+          return obj;
+        })
+      ).subscribe({
+        next: (value?: T) => observer.next(value),
+        error: (e: any) => observer.error(e),
+        complete: () => observer.complete()
+      });
+    });
+  };
+};
 
 @Injectable()
 export class SecurityService {
@@ -23,7 +45,11 @@ export class SecurityService {
     ));
   }
 
-  decrypt(encryptedData: string, cryptoKey: CryptoKey): Observable<string> {
+  decrypt<T = string>(encryptedData: string, cryptoKey: CryptoKey): Observable<T | string | null> {
+
+    if (typeof encryptedData !== 'string' || !encryptedData) {
+      return of(null);
+    }
 
     const encryptedBase64 = Buffer.from(encryptedData, 'base64');
     const iv_len = 16;
@@ -34,72 +60,65 @@ export class SecurityService {
       name: 'AES-GCM',
       iv
     }, cryptoKey, encrypted)
-      .then((text) => Buffer.from(text).toString('utf-8'))
+      .then((arrayBuffer) => {
+        const text = Buffer.from(arrayBuffer).toString('utf-8');
+
+        try {
+          return JSON.parse(text) as T;
+        } catch (e) {
+          return text;
+        }
+      })
       .catch(() => null));
   }
 
   decryptToday(encryptedToday: BasicEncryptedValue, cryptoKey: CryptoKey): Observable<Today> {
 
-    if (encryptedToday) {
-      return this.decrypt(encryptedToday.value, cryptoKey).pipe(map((today) => JSON.parse(today) as Today));
-    }
-
-    return of({
+    const emptyToday = {
       name: '',
       tasksIds: []
-    });
+    } as Today;
+
+    return this.decrypt<Today>(encryptedToday.value, cryptoKey).pipe(protectObjectDecryption(emptyToday));
   }
 
   decryptUser(encryptedUser: EncryptedUser, cryptoKey: CryptoKey): Observable<DecryptedUser> {
 
-    let decryptedRounds$: Observable<string> = of(null);
+    const decryptedRounds$ = this.decrypt<string[]>(encryptedUser.rounds, cryptoKey).pipe(protectObjectDecryption([]));
+    const decryptedPhotoUrl$ = this.decrypt(encryptedUser.photoUrl, cryptoKey);
 
-    if (encryptedUser.rounds) {
-      decryptedRounds$ = this.decrypt(encryptedUser.rounds, cryptoKey);
-    }
-
-    let decryptedPhotoUrl$: Observable<string> = of(null);
-
-    if (encryptedUser.photoUrl) {
-      decryptedPhotoUrl$ = this.decrypt(encryptedUser.photoUrl, cryptoKey);
-    }
-
-    return forkJoin<string[]>([decryptedRounds$, decryptedPhotoUrl$])
+    return forkJoin([decryptedRounds$, decryptedPhotoUrl$])
       .pipe(map((res) => {
         return {
-          rounds: JSON.parse(res[0] || '[]'),
+          rounds: res[0],
           photoUrl: res[1],
           hasEncryptedSecretKey: encryptedUser.hasEncryptedSecretKey
-        }
+        } as DecryptedUser;
       }));
   };
 
   decryptTask(encryptedTask: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Observable<Task> {
 
-    if (encryptedTask) {
-      return this.decrypt(encryptedTask.value, cryptoKey).pipe(map((task) => JSON.parse(task) as Task));
-    }
-
-    return of({
+    const emptyTask = {
       description: '',
       daysOfTheWeek: [],
       timesOfDay: [],
-    });
+    } as Task;
+
+    return this.decrypt<Task>(encryptedTask?.value, cryptoKey).pipe(protectObjectDecryption(emptyTask));
   };
 
   decryptRound(encryptedRound: BasicEncryptedValue | undefined, cryptoKey: CryptoKey): Observable<Round> {
 
-    if (encryptedRound) {
-      return this.decrypt(encryptedRound.value, cryptoKey).pipe(map((round) => JSON.parse(round) as Round));
-    }
-
-    return of({
+    const emptyRound = {
       timesOfDay: [],
       name: '',
       timesOfDayCardinality: [],
       todaysIds: [],
       tasksIds: []
-    });
+    } as Round;
+
+    return this.decrypt<Round>(encryptedRound?.value, cryptoKey).pipe(protectObjectDecryption(emptyRound));
   };
 
   decryptTodayTask(encryptedTodayTask: EncryptedTodayTask, cryptoKey: CryptoKey): Observable<TodayTask> {
@@ -128,7 +147,7 @@ export class SecurityService {
           timesOfDay,
           timesOfDayEncryptedMap,
           description
-        })
+        } as TodayTask);
       })
     );
   };
