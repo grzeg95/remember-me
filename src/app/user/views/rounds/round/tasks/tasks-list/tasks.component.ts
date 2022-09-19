@@ -1,13 +1,13 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
+import {Round} from 'functions/src/helpers/models';
 import {Subscription} from 'rxjs';
+import {ConnectionService} from 'services';
+import {TasksListItem} from 'src/app/user/models';
 import '../../../../../../../../global.prototype';
 import {RouterDict} from '../../../../../../app.constants';
-import {ConnectionService} from '../../../../../../connection.service';
-import {ActivatedRoute, Router} from '@angular/router';
 import {RoundsService} from '../../../rounds.service';
-import {Round} from 'functions/src/helpers/models';
-import {TasksListItem} from 'src/app/user/models';
 
 @Component({
   selector: 'app-tasks',

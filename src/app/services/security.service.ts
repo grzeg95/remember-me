@@ -2,11 +2,11 @@ import {Injectable} from '@angular/core';
 import {DecryptedUser, EncryptedUser} from 'auth';
 import {Buffer} from 'buffer';
 import {catchError, defer, forkJoin, map, mergeMap, Observable, of, OperatorFunction} from 'rxjs';
-import {EncryptedTodayTask, Round, Task, Today, TodayTask} from './user/models';
+import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../user/models';
 
 export type BasicEncryptedValue = {value: string};
 
-export const protectObjectDecryption = <T>(emptyOne: T): OperatorFunction<T, T> => {
+const protectObjectDecryption = <T>(emptyOne: T): OperatorFunction<T, T> => {
   return (source) => {
     return new Observable<T>((observer) => {
       return source.pipe(

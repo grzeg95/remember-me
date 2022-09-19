@@ -1,29 +1,12 @@
-import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
-import {
-  AngularFirebaseAuthService,
-  AngularFirebaseFirestoreService,
-  AngularFirebaseFunctionsService,
-  AngularFirebaseRemoteConfigService
-} from 'angular-firebase';
+import {AngularFirebaseAuthService, AngularFirebaseFirestoreService} from 'angular-firebase';
 import {GoogleAuthProvider, IdTokenResult, UserCredential} from 'firebase/auth';
 import {deleteField, DocumentData, DocumentSnapshot} from 'firebase/firestore';
-import {
-  BehaviorSubject,
-  catchError,
-  forkJoin,
-  map,
-  mergeMap,
-  NEVER,
-  Observable,
-  Subscription,
-  throwError
-} from 'rxjs';
-import {environment} from '../../environments/environment';
+import {BehaviorSubject, catchError, map, mergeMap, NEVER, Observable, Subscription, switchMap, throwError} from 'rxjs';
+import {FunctionsService, SecurityService} from 'services';
 import {RouterDict} from '../app.constants';
-import {SecurityService} from '../security.service';
 import {EncryptedUser} from './index';
 import {FirebaseUser, User} from './user-data.model';
 
@@ -43,10 +26,8 @@ export class AuthService {
   constructor(
     private router: Router,
     private snackBar: MatSnackBar,
-    private http: HttpClient,
     private angularFirebaseAuthService: AngularFirebaseAuthService,
-    private angularFirebaseFunctionService: AngularFirebaseFunctionsService,
-    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
+    private functionsService: FunctionsService,
     private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
     private securityService: SecurityService
   ) {
@@ -201,15 +182,11 @@ export class AuthService {
   }
 
   getTokenWithSecretKey(): Observable<string> {
-
-    const getTokenWithSecretKeyUrl = this.angularFirebaseRemoteConfigService.getString('getTokenWithSecretKeyUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<undefined, string>('auth-getTokenWithSecretKey');
-
-    if (getTokenWithSecretKeyUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<undefined, string>(getTokenWithSecretKeyUrl);
-    }
-
-    return httpsCallableFunction();
+    return this.angularFirebaseAuthService.getAuthorizationToken(this.firebaseUser$.value).pipe(
+      switchMap((authorization) => {
+        return this.functionsService.httpsOnRequest<undefined, string>('getTokenWithSecretKeyUrl', 'text/plain')(undefined, authorization);
+      })
+    );
   }
 
   userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap: DocumentSnapshot<DocumentData>): Observable<void> {
@@ -419,36 +396,11 @@ export class AuthService {
 
     // is logged in
     if (this.user$.value) {
-
-      const firebaseUser = this.firebaseUser$.value;
-
-      return forkJoin([
-        this.angularFirebaseAuthService.getIdToken(firebaseUser)
-      ]).pipe(
-        mergeMap(([userToken]) => {
-          let url: string = '';
-
-          if (!environment.production) {
-            url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/europe-west4/userv2-uploadprofileimage`;
-          }
-
-          if (environment.production) {
-            url = 'https://userv2-uploadprofileimage-yhy2fc7udq-ez.a.run.app';
-          }
-
-          const uploadProfileImageUrl = this.angularFirebaseRemoteConfigService.getString('uploadProfileImageUrl');
-          if (uploadProfileImageUrl) {
-            url = uploadProfileImageUrl;
-          }
-
-          const headers = {
-            'Content-Type': file.type,
-            'authorization': `Bearer ${userToken}`
-          };
-
-          return this.http.post<{message: string}>(url, file, {headers})
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionsService.httpsOnRequest<File, {message: string}>('uploadProfileImageUrl', file.type)(file, authorization);
         })
-      )
+      );
     }
 
     return throwError(() => {

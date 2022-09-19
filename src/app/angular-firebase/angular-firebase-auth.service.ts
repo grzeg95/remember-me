@@ -134,4 +134,8 @@ export class AngularFirebaseAuthService implements OnDestroy {
   deleteUser(firebaseUser: FirebaseUser): Observable<void> {
     return defer(() => deleteUser(firebaseUser));
   }
+
+  getAuthorizationToken(firebaseUser: FirebaseUser): Observable<string> {
+    return this.getIdToken(firebaseUser).pipe(map((token) => `Bearer ${token}`));
+  }
 }

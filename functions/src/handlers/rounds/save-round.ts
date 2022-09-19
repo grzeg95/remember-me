@@ -1,44 +1,23 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {FunctionResult, Round} from '../../helpers/models';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise, Round} from '../../helpers/models';
 import {decrypt, decryptRound, encrypt, encryptRound, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser, writeUser} from '../../helpers/user';
-import {authorizedDomains} from '../../config';
 
 const app = firestore();
 
 /**
  * Save times of day
  * @function handler
- * @param {*} data
- * {
- *  roundId: string,
- *  name: string
- * }
- * @param {CallableContext} callableContext
+ * @param context Context
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = (data: any, callableContext: CallableContext): FunctionResult => {
+export const handler = (context: Context): FunctionResultPromise => {
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(callableContext.rawRequest.method !== 'POST');
-    testRequirement(!callableContext.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
-  }
-
-  const auth = callableContext?.auth;
-
-  // not logged in
-  testRequirement(!auth);
-
-  // email not verified, not for anonymous
-  testRequirement(
-    !auth?.token.email_verified &&
-    auth?.token.provider_id !== 'anonymous' &&
-    !auth?.token.isAnonymous
-  );
+  const auth = context.auth;
+  const data = context.data;
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -152,16 +131,13 @@ export const handler = (data: any, callableContext: CallableContext): FunctionRe
           });
         }
       });
-    }).then(() =>
-      created ? ({
+    }).then(() => ({
+      code: created ? 201 : 200,
+      body: {
         created,
         roundId,
-        details: 'Your round has been created 😉',
-      }) : ({
-        created,
-        roundId,
-        details: 'Your round has been updated 🙃'
-      })
-    );
+        details: created ? 'Your round has been created 😉' : 'Your round has been updated 🙃',
+      }
+    }));
   });
 };

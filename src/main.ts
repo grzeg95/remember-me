@@ -8,10 +8,9 @@ import {getAnalytics} from 'firebase/analytics';
 import {FirebaseApp, initializeApp} from 'firebase/app';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
-import {connectFunctionsEmulator, getFunctions} from 'firebase/functions';
-import {fetchAndActivate, getRemoteConfig} from 'firebase/remote-config';
+import {getRemoteConfig, activate, fetchAndActivate} from 'firebase/remote-config';
 import {AppModule} from './app/app.module';
-import {environment} from './environments/environment';
+import {environment} from 'environment';
 
 const initializeFirebase = (): Promise<{app: FirebaseApp}> => {
 
@@ -21,22 +20,24 @@ const initializeFirebase = (): Promise<{app: FirebaseApp}> => {
     const app = initializeApp(environment.firebase);
     const firestore = getFirestore(app);
     const auth = getAuth(app);
-    const functions = getFunctions(app, environment.functionsRegionOrCustomDomain);
 
     const remoteConfig = getRemoteConfig(app);
     remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
-    promises.push(fetchAndActivate(remoteConfig));
+
+    promises.push(
+      fetch(!environment.production ? '/assets/remote-config-default.json' : '/assets/remote-config-default-prod.json').then((res) => {
+        return res.json().then((remoteConfigDefault) => {
+          remoteConfig.defaultConfig = remoteConfigDefault;
+          return activate(remoteConfig);
+        });
+      }).catch(() => {}).then(() => fetchAndActivate(remoteConfig))
+    );
 
     getAnalytics(app);
 
     if (!environment.production) {
       connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`)
       connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
-      connectFunctionsEmulator(
-        functions,
-        `${environment.emulators.functions.host}`,
-        environment.emulators.functions.port
-      );
     }
 
     return Promise.all(promises).then(() => resolve({

@@ -3,7 +3,7 @@ import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
 import {catchError, NEVER, Subscription} from 'rxjs';
-import {ConnectionService} from '../../../connection.service';
+import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-send-password-reset-email',

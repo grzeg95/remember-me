@@ -1,6 +1,6 @@
 import {ChangeDetectorRef, Component} from '@angular/core';
 import {AuthService} from 'auth';
-import {ConnectionService} from './connection.service';
+import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-root',

@@ -15,8 +15,8 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {AuthService} from 'auth';
 import {catchError, NEVER, Subscription} from 'rxjs';
+import {ConnectionService} from 'services';
 import {RouterDict} from '../../../../app.constants';
-import {ConnectionService} from '../../../../connection.service';
 import {Round} from '../../../models';
 import {RoundsService} from '../rounds.service';
 

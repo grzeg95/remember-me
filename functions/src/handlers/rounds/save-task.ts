@@ -1,8 +1,8 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
 // tslint:disable-next-line:no-import-side-effect
 import '../../../../global.prototype';
-import {Day, EncryptedTodayTask, FunctionResult, Round, Task, Today, TodayTask} from '../../helpers/models';
+import {Context} from '../../helpers/https-tools';
+import {Day, EncryptedTodayTask, FunctionResultPromise, Round, Task, Today, TodayTask} from '../../helpers/models';
 import {
   BasicEncryptedValue,
   decryptRound,
@@ -19,7 +19,6 @@ import {
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {authorizedDomains} from '../../config';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 
@@ -345,7 +344,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   });
 };
 
-const checkEntryRequirements = (data: any, callableContext: CallableContext) => {
+const checkEntryRequirements = (data: any, callableContext: Context) => {
 
   const auth = callableContext?.auth;
 
@@ -445,7 +444,6 @@ const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firesto
 /**
  * Save task
  * @function handler
- * @param {*} data
  * {
  *  task: {
  *   timesOfDay: string[],
@@ -455,18 +453,15 @@ const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firesto
  *  taskId: string,
  *  roundId: string
  * }
- * @param {CallableContext} callableContext
+ * @param context: Context
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): FunctionResult => {
+export const handler = async (context: Context): FunctionResultPromise => {
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(callableContext.rawRequest.method !== 'POST');
-    testRequirement(!callableContext.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
-  }
+  const data = context.data;
+  checkEntryRequirements(data, context);
 
-  checkEntryRequirements(data, callableContext);
+  const auth = context.auth;
 
   let created = false;
   let taskId: string = data.taskId;
@@ -482,14 +477,14 @@ export const handler = async (data: any, callableContext: CallableContext): Func
   let transactionWrite: TransactionWrite;
   let roundDocSnapData: Round;
 
-  return getCryptoKey(callableContext?.auth?.token.secretKey).then((_cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
     cryptoKey = _cryptoKey;
 
     return app.runTransaction((transaction) => {
 
       transactionWrite = new TransactionWrite(transaction)
 
-      return getUser(app, transaction, callableContext?.auth?.uid as string).then(async (_userDocSnap) => {
+      return getUser(app, transaction, auth?.uid as string).then(async (_userDocSnap) => {
         userDocSnap = _userDocSnap;
 
         return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
@@ -637,16 +632,13 @@ export const handler = async (data: any, callableContext: CallableContext): Func
             });
         });
       });
-    }).then(() =>
-      created ? ({
-        'created': true,
-        'details': 'Your task has been created 😉',
-        'taskId': taskId
-      }) : ({
-        'created': false,
-        'details': 'Your task has been updated 🙃',
-        'taskId': taskId
-      })
-    );
+    }).then(() => ({
+      code: created ? 201 : 200,
+      body: {
+        created,
+        taskId,
+        details: created ? 'Your task has been created 😉' : 'Your task has been updated 🙃',
+      }
+    }));
   });
 };

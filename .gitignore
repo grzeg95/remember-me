@@ -63,6 +63,10 @@ node_modules/
 /src/environments/environment.ts
 /src/environments/environment.prod.ts
 
+# firebase remote config file
+/src/assets/remote-config-default.json
+/src/assets/remote-config-default-prod.json
+
 **/.idea/
 
 # See http://help.github.com/ignore-files/ for more about ignoring files.

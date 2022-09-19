@@ -1,34 +1,23 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {FunctionResult} from '../../helpers/models';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise} from '../../helpers/models';
 import {decrypt, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {authorizedDomains} from '../../config';
 
 const app = firestore();
 
 /**
  * Set rounds order
  * @function handler
- * @param {*} data
- * {
- *  roundId: string;
- *  moveBy: number
- * }
- * @param {CallableContext} callableContext
+ * @param context Context
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (data: any, callableContext: CallableContext): FunctionResult => {
+export const handler = async (context: Context): FunctionResultPromise => {
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(callableContext.rawRequest.method !== 'POST');
-    testRequirement(!callableContext.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
-  }
-
-  const auth = callableContext?.auth;
+  const auth = context.auth;
+  const data = context.data;
 
   // not logged in
   testRequirement(!auth);
@@ -57,7 +46,7 @@ export const handler = async (data: any, callableContext: CallableContext): Func
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  testRequirement(!callableContext.auth?.token.secretKey);
+  testRequirement(!auth?.token.secretKey);
 
   let transactionWrite: TransactionWrite;
   let transaction: firestore.Transaction;
@@ -66,7 +55,7 @@ export const handler = async (data: any, callableContext: CallableContext): Func
   const moveBy = data.moveBy;
   let cryptoKey: CryptoKey;
 
-  return getCryptoKey(callableContext.auth?.token.secretKey).then((_cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
     cryptoKey = _cryptoKey;
 
     return app.runTransaction((_transaction) => {
@@ -110,7 +99,10 @@ export const handler = async (data: any, callableContext: CallableContext): Func
 
     });
   }).then(() => ({
-    details: 'Order has been updated 🙃'
+    code: 200,
+    body: {
+      details: 'Order has been updated 🙃'
+    }
   }));
 
 };

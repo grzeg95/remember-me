@@ -1,7 +1,11 @@
 import {Component} from '@angular/core';
-import {AngularFirebaseRemoteConfigService} from "angular-firebase";
+import {AngularFirebaseRemoteConfigService} from 'angular-firebase';
 import {AuthService} from 'auth';
-import {defaultGuestComponentConfig, GuestComponentConfig} from '../config.model';
+
+interface GuestComponentConfig {
+  motto?: string,
+  lastUpdate?: string
+}
 
 @Component({
   selector: 'app-guest',
@@ -12,7 +16,7 @@ export class GuestComponent {
 
   showUserDataPolicy = false;
   whileLoginIn$ = this.authService.whileLoginIn$;
-  guestComponentConfig = defaultGuestComponentConfig;
+  guestComponentConfig: GuestComponentConfig = {};
 
   constructor(
     private authService: AuthService,

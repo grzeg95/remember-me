@@ -14,7 +14,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {AuthFormComponent, AuthService, FirebaseUser, User} from 'auth';
 import {catchError, NEVER} from 'rxjs';
-import {ConnectionService} from '../connection.service';
+import {ConnectionService} from 'services';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 
 @Component({

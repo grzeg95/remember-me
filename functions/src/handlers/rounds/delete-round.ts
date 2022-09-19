@@ -1,35 +1,19 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {FunctionResult, Round} from '../../helpers/models';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise, Round} from '../../helpers/models';
 import {decrypt, decryptRound, decryptToday, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser, writeUser} from '../../helpers/user';
-import {authorizedDomains} from '../../config';
 import DocumentData = firestore.DocumentData;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
 const app = firestore();
 
-export const handler = (roundId: any, callableContext: CallableContext): FunctionResult => {
+export const handler = (context: Context): FunctionResultPromise => {
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(callableContext.rawRequest.method !== 'POST');
-    testRequirement(!callableContext.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
-  }
-
-  const auth = callableContext?.auth;
-
-  // not logged in
-  testRequirement(!auth);
-
-  // email not verified, not for anonymous
-  testRequirement(
-    !auth?.token.email_verified &&
-    auth?.token.provider_id !== 'anonymous' &&
-    !auth?.token.isAnonymous
-  );
+  const auth = context.auth;
+  const roundId = context.data;
 
   // roundId is not empty string
   testRequirement(typeof roundId !== 'string' || roundId.length === 0);
@@ -126,7 +110,10 @@ export const handler = (roundId: any, callableContext: CallableContext): Functio
         return transactionWrite.execute();
 
       }).then(() => ({
-        details: 'Your round has been deleted 🤭'
+        code: 200,
+        body: {
+          details: 'Your round has been deleted 🤭'
+        }
       }));
     })
   });

@@ -1,18 +1,13 @@
 import {Injectable} from '@angular/core';
 import {Router} from '@angular/router';
-import {
-  AngularFirebaseFirestoreService,
-  AngularFirebaseFunctionsService,
-  AngularFirebaseRemoteConfigService
-} from 'angular-firebase';
+import {AngularFirebaseAuthService, AngularFirebaseFirestoreService} from 'angular-firebase';
 import {AuthService} from 'auth';
 import {limit} from 'firebase/firestore';
-import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription, switchMap, throwError} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
+import {BasicEncryptedValue, ConnectionService, FunctionsService, SecurityService} from 'services';
 import {Day} from '../../../../../functions/src/helpers/models';
 import {RouterDict} from '../../../app.constants';
-import {ConnectionService} from '../../../connection.service';
-import {BasicEncryptedValue, SecurityService} from '../../../security.service';
 import {EncryptedTodayTask, HTTPSuccess, Round, Task, TasksListItem, TodayItem} from '../../models';
 
 @Injectable()
@@ -48,13 +43,13 @@ export class RoundsService {
   lastTodayName = '.';
 
   constructor(
-    private angularFirebaseFunctionService: AngularFirebaseFunctionsService,
-    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
+    private functionService: FunctionsService,
     private authService: AuthService,
     private router: Router,
     private connectionService: ConnectionService,
     private securityService: SecurityService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService
+    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
+    private angularFirebaseAuthService: AngularFirebaseAuthService,
   ) {
   }
 
@@ -317,29 +312,35 @@ export class RoundsService {
 
   saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
 
-    const saveRoundUrl = this.angularFirebaseRemoteConfigService.getString('saveRoundUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>('rounds-saveRound');
-
-    if (saveRoundUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>(saveRoundUrl);
+    // is logged in
+    if (this.authService.user$.value) {
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionService.httpsOnRequest<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>('saveRoundUrl')({
+            roundId,
+            name
+          }, authorization);
+        })
+      );
     }
 
-    return httpsCallableFunction({
-      roundId,
-      name
+    return throwError(() => {
     });
   }
 
   deleteRound(id: string): Observable<HTTPSuccess> {
 
-    const deleteRoundUrl = this.angularFirebaseRemoteConfigService.getString('deleteRoundUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<string, HTTPSuccess>('rounds-deleteRound');
-
-    if (deleteRoundUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<string, HTTPSuccess>(deleteRoundUrl);
+    // is logged in
+    if (this.authService.user$.value) {
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionService.httpsOnRequest<string, HTTPSuccess>('deleteRoundUrl', 'text/plain')(id, authorization);
+        })
+      );
     }
 
-    return httpsCallableFunction(id);
+    return throwError(() => {
+    });
   }
 
   getRoundById(roundId: string): Observable<Round> {
@@ -355,14 +356,17 @@ export class RoundsService {
 
   setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
 
-    const setRoundsOrderUrl = this.angularFirebaseRemoteConfigService.getString('setRoundsOrderUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{moveBy: number, roundId: string}, {[key: string]: string}>('rounds-setRoundsOrder');
-
-    if (setRoundsOrderUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{moveBy: number, roundId: string}, {[key: string]: string}>(setRoundsOrderUrl);
+    // is logged in
+    if (this.authService.user$.value) {
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionService.httpsOnRequest<{moveBy: number, roundId: string}, {[key: string]: string}>('setRoundsOrderUrl')(data, authorization);
+        })
+      );
     }
 
-    return httpsCallableFunction(data);
+    return throwError(() => {
+    });
   }
 
   getTaskById(id: string, roundId: string): Observable<Task | null> {
@@ -382,38 +386,47 @@ export class RoundsService {
 
   setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {
 
-    const setTimesOfDayOrderUrl = this.angularFirebaseRemoteConfigService.getString('setTimesOfDayOrderUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>('rounds-setTimesOfDayOrder');
-
-    if (setTimesOfDayOrderUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>(setTimesOfDayOrderUrl);
+    // is logged in
+    if (this.authService.user$.value) {
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionService.httpsOnRequest<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>('setTimesOfDayOrderUrl')(data, authorization);
+        })
+      );
     }
 
-    return httpsCallableFunction(data);
+    return throwError(() => {
+    });
   }
 
   saveTask(data: {task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}): Observable<HTTPSuccess> {
 
-    const saveTaskUrl = this.angularFirebaseRemoteConfigService.getString('saveTaskUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>('rounds-saveTask');
-
-    if (saveTaskUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>(saveTaskUrl);
+    // is logged in
+    if (this.authService.user$.value) {
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionService.httpsOnRequest<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>('saveTaskUrl')(data, authorization);
+        })
+      );
     }
 
-    return httpsCallableFunction(data);
+    return throwError(() => {
+    });
   }
 
   deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
 
-    const deleteTaskUrl = this.angularFirebaseRemoteConfigService.getString('deleteTaskUrl');
-    let httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallable<{taskId: string, roundId: string}, HTTPSuccess>('rounds-deleteTask');
-
-    if (deleteTaskUrl) {
-      httpsCallableFunction = this.angularFirebaseFunctionService.httpsCallableFromURL<{taskId: string, roundId: string}, HTTPSuccess>(deleteTaskUrl);
+    // is logged in
+    if (this.authService.user$.value) {
+      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
+        switchMap((authorization) => {
+          return this.functionService.httpsOnRequest<{taskId: string, roundId: string}, HTTPSuccess>('deleteTaskUrl')(data, authorization);
+        })
+      );
     }
 
-    return httpsCallableFunction(data);
+    return throwError(() => {
+    });
   }
 
   clearCache() {

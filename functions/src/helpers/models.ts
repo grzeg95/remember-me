@@ -32,4 +32,9 @@ export interface Today {
   tasksIds: string[];
 }
 
-export type FunctionResult = Promise<{[key: string]: string | boolean}>;
+export type FunctionResult = {
+  body: {[key: string]: string | boolean} | string,
+  code: 200 | 201
+};
+
+export type FunctionResultPromise = Promise<FunctionResult>;

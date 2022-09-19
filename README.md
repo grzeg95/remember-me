@@ -5,12 +5,12 @@ Create separate prod and dev projects for Firebase and Google Cloud KMS. Be read
 
 ## Dev init
 Before developing make sure to:
+- install the gcloud CLI
 - run: `npm install`
 - run: `npm install ./functions`
 - run: `npm install ./firebase-unit-tests/functions`
 - run: `npm install ./firebase-unit-tests/security-rules`
 - run from cmd: `firebase login --reauth`
-- install `Install the gcloud CLI`
 - add `FOR_FIREBASE_EMULATOR=1` environment variable to `serve:emulators`
 - add `GOOGLE_APPLICATION_CREDENTIALS` environment variable `*.json` path to `serve:emulators`
 - in `.firebaserc` use `default` as `prod` and `dev` for dev projects
@@ -19,7 +19,9 @@ Before developing make sure to:
 - in `./public/nginx.conf` replace `CLOUD_FUNCTIONS_SUBDOMAIN` with provided by Google. This is `region-id`-`project-id` and `AUTH_DOMAIN` that is different from host and exists in Firebase Auth authorized domains
 - in `index.html` replace `DATA-CBID` for Cookiebot
 - create and fill `.evn.hosting` and `.env.hosting.prod` for corresponding variables in `set-env.js`
+- create and fill `.evn.remote-config-default` and `.env.remote-config-default.prod` for corresponding variables in `set-remote-config-default-env.js`
 - create and fill `.evn.functions` and `.env.functions.prod` for corresponding variables in `./functions/src/config.ts`
+
 
 ## Dev use
 - `npm run serve:angular`

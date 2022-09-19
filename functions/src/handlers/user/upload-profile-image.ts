@@ -1,139 +1,70 @@
-import {Response} from 'express';
-import {auth, firestore} from 'firebase-admin';
-import {DecodedIdToken} from 'firebase-admin/auth';
-import {https} from 'firebase-functions';
+import {firestore} from 'firebase-admin';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise} from '../../helpers/models';
 import {encrypt, getCryptoKey} from '../../helpers/security';
+import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {authorizedDomains} from '../../config';
 
 const sharp = require('sharp');
 
-interface Context {
-  req: https.Request,
-  res: Response,
-  auth?: DecodedIdToken
-}
+export const handler = (context: Context): FunctionResultPromise => {
 
-const acceptedContentTypes = new Set<string>(['image/jpeg', 'image/jpg', 'image/png']);
-const maxContentLength = 10 * 1024 * 1024; // 10MB
+  const auth = context.auth;
+  const data = context.data;
 
-const sendError = (res: Response, details?: string) => {
-  res.status(400);
-  res.type('application/json');
-  res.send({
-    code: 'invalid-argument',
-    message: 'Bad Request',
-    details: details || 'Some went wrong 🤫 Try again 🙂'
-  });
-  res.end();
-};
+  testRequirement(!auth);
 
-const getContext = (req: https.Request, res: Response): Promise<Context> => {
+  // only for verified email or anonymous
+  testRequirement(
+    typeof auth?.token.email_verified !== undefined &&
+    !auth?.token.email_verified &&
+    !auth?.token.isAnonymous
+  );
 
-  const authPromise = auth().verifyIdToken(req.headers.authorization?.split('Bearer ')[1] + '').catch(() => undefined);
+  testRequirement(!auth?.token.secretKey);
 
-  return Promise.all([authPromise]).then(([decodedIdToken]) => {
-    return {
-      req,
-      res,
-      auth: decodedIdToken
-    };
-  });
-};
+  const maxContentLength = 10 * 1024 * 1024; // 10MB
+  testRequirement(+(context.req.get('content-length') || 0) > maxContentLength, 'You can upload up to 10MB image 🙄');
 
-export const handler = (req: https.Request, res: Response): void | Promise<void> => {
+  let cryptoKey: CryptoKey;
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
+  return getCryptoKey(context.auth?.token.secretKey)
+    .then((_cryptoKey) => {
 
-    if (req.method !== 'POST') {
-      sendError(res);
-      return;
-    }
+      cryptoKey = _cryptoKey;
 
-    if (!req.headers.origin) {
-      sendError(res);
-      return;
-    }
+      return sharp(data)
+        .resize({
+          height: 256,
+          width: 256
+        })
+        .jpeg({quality: 100})
+        .toBuffer();
+    }).then((imageBuffer) => {
+      return encrypt(`data:image/jpeg;base64,${imageBuffer.toString('base64')}`, cryptoKey);
+    }).then((encryptedPhotoUrl) => {
 
-    if (!authorizedDomains.has(new URL(req.headers.origin).host)) {
-      sendError(res);
-      return;
-    }
-  }
+      const firestoreApp = firestore();
+      return firestoreApp.runTransaction((transaction) => {
 
-  return getContext(req, res).then((context) => {
+        const transactionWrite = new TransactionWrite(transaction);
 
-    if (!context.auth) {
-      sendError(res);
-      return;
-    }
+        return transaction.get(firestoreApp.doc(`users/${context.auth?.uid}`))
+          .then((userDocSnap) => {
 
-    // only for verified email or anonymous
-    if (
-      typeof context.auth.email_verified !== undefined &&
-      !context.auth.email_verified &&
-      !context.auth.isAnonymous
-    ) {
-      sendError(res);
-      return;
-    }
-
-    if (!context.auth.secretKey) {
-      sendError(res);
-      return;
-    }
-
-    if (!acceptedContentTypes.has(context.req.get('content-type') || '')) {
-      sendError(res);
-      return;
-    }
-
-    if (+(req.get('content-length') || 0) > maxContentLength) {
-      sendError(res, 'You can upload up to 10MB image 🙄');
-      return;
-    }
-
-    let cryptoKey: CryptoKey;
-
-    return getCryptoKey(context.auth.secretKey)
-      .then((_cryptoKey) => {
-
-        cryptoKey = _cryptoKey;
-
-        return sharp(req.body)
-          .resize({
-            height: 256,
-            width: 256
-          })
-          .jpeg({quality: 100})
-          .toBuffer();
-      }).then((imageBuffer) => {
-        return encrypt(`data:image/jpeg;base64,${imageBuffer.toString('base64')}`, cryptoKey);
-      }).then((encryptedPhotoUrl) => {
-
-        const firestoreApp = firestore();
-        return firestoreApp.runTransaction((transaction) => {
-
-          const transactionWrite = new TransactionWrite(transaction);
-
-          return transaction.get(firestoreApp.doc(`users/${context.auth?.uid}`))
-            .then((userDocSnap) => {
-
-              transactionWrite.update(userDocSnap.ref, {
-                photoUrl: encryptedPhotoUrl
-              });
-
-              return transactionWrite.execute();
+            transactionWrite.update(userDocSnap.ref, {
+              photoUrl: encryptedPhotoUrl
             });
-        }).then(() => {
-          context.res.status(200);
-          context.res.type('application/json');
-          context.res.send({message: 'Your picture has been updated 🙃'});
-          context.res.end();
-        }).catch(() => {
-          sendError(context.res);
-          return;
-        });
+
+            return transactionWrite.execute();
+          });
+      }).then(() => {
+        return {
+          code: 200,
+          body: {
+            message: 'Your picture has been updated 🙃'
+          }
+        }
       });
-  });
+    });
 };

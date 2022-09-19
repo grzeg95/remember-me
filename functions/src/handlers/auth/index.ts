@@ -1,13 +1,19 @@
-import {RuntimeOptions, runWith} from 'firebase-functions';
+import {Response} from 'express';
+import {https, RuntimeOptions, runWith} from 'firebase-functions';
 import {regionId} from '../../config';
+import {handler} from '../../helpers/https-tools';
 
-const https = runWith({
+const httpsFn = runWith({
   timeoutSeconds: 60,
   memory: '1GB',
   maxInstances: 10
 }).region(regionId).https;
 
-export const getTokenWithSecretKey = https.onCall(require('./get-token-with-secret-key').handler);
+export const getTokenWithSecretKey = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./get-token-with-secret-key').handler, {
+    contentType: 'text/plain'
+  })
+);
 
 const runtimeOptions: RuntimeOptions = {
   timeoutSeconds: 60,

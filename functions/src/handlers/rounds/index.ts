@@ -1,20 +1,46 @@
-import {runWith} from 'firebase-functions';
+import {Response} from 'express';
+import {https, runWith} from 'firebase-functions';
 import {regionId} from '../../config'
+import {handler} from '../../helpers/https-tools';
 
-const https = runWith({
+const httpsFn = runWith({
   timeoutSeconds: 60,
-  memory: '512MB',
+  memory: '1GB',
   maxInstances: 10
 }).region(regionId).https;
 
-export const deleteTask = https.onCall(require('./delete-task').handler);
+export const deleteTask = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./delete-task').handler, {
+    contentType: 'application/json'
+  })
+);
 
-export const saveTask = https.onCall(require('./save-task').handler);
+export const saveTask = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./save-task').handler, {
+    contentType: 'application/json'
+  })
+);
 
-export const setTimesOfDayOrder = https.onCall(require('./set-times-of-day-order').handler);
+export const setTimesOfDayOrder = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./set-times-of-day-order').handler, {
+    contentType: 'application/json'
+  })
+);
 
-export const saveRound = https.onCall(require('./save-round').handler);
+export const saveRound = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./save-round').handler, {
+    contentType: 'application/json'
+  })
+);
 
-export const deleteRound = https.onCall(require('./delete-round').handler);
+export const deleteRound = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./delete-round').handler, {
+    contentType: 'text/plain'
+  })
+);
 
-export const setRoundsOrder = https.onCall(require('./set-rounds-order').handler);
+export const setRoundsOrder = httpsFn.onRequest((req: https.Request, resp: Response) =>
+  handler(req, resp, require('./set-rounds-order').handler, {
+    contentType: 'application/json'
+  })
+);

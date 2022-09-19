@@ -5,12 +5,10 @@ import {
   AngularFirebaseAnalyticsService,
   AngularFirebaseAuthService,
   AngularFirebaseFirestoreService,
-  AngularFirebaseFunctionsService,
   AngularFirebaseRemoteConfigService,
   AUTH,
   FIREBASE_APP,
   FIRESTORE,
-  FUNCTIONS,
   REMOTE_CONFIG
 } from 'angular-firebase';
 import {AuthGuard, AuthService} from 'auth';
@@ -18,13 +16,14 @@ import {getAnalytics} from 'firebase/analytics';
 import {FirebaseApp} from 'firebase/app';
 import {getAuth} from 'firebase/auth';
 import {getFirestore} from 'firebase/firestore';
-import {getFunctions} from 'firebase/functions';
 import {getRemoteConfig} from 'firebase/remote-config';
-import {environment} from '../environments/environment';
-import {ConnectionService} from './connection.service';
-import {CustomValidators} from './custom-validators';
-import {ExtraParametersRoutePipe} from './extra-parameters-route-pipe.service';
-import {SecurityService} from './security.service';
+import {
+  ConnectionService,
+  CustomValidators,
+  ExtraParametersRoutePipe,
+  FunctionsService,
+  SecurityService
+} from 'services';
 
 @NgModule({
   providers: [
@@ -44,11 +43,6 @@ import {SecurityService} from './security.service';
       deps: [FIREBASE_APP]
     },
     {
-      provide: FUNCTIONS,
-      useFactory: (firebaseApp: FirebaseApp) => getFunctions(firebaseApp, environment.functionsRegionOrCustomDomain),
-      deps: [FIREBASE_APP]
-    },
-    {
       provide: REMOTE_CONFIG,
       useFactory: (firebaseApp: FirebaseApp) => getRemoteConfig(firebaseApp),
       deps: [FIREBASE_APP]
@@ -62,7 +56,7 @@ import {SecurityService} from './security.service';
     ConnectionService,
     CustomValidators,
     AngularFirebaseAuthService,
-    AngularFirebaseFunctionsService,
+    FunctionsService,
     AngularFirebaseAnalyticsService,
     AngularFirebaseRemoteConfigService,
     AngularFirebaseFirestoreService,

@@ -4,7 +4,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
 import {UserCredential} from 'firebase/auth';
 import {catchError, NEVER, Subscription} from 'rxjs';
-import {ConnectionService} from '../../../connection.service';
+import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-login',

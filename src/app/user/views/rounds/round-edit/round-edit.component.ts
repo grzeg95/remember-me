@@ -5,9 +5,8 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, NEVER, Subscription} from 'rxjs';
+import {ConnectionService, CustomValidators} from 'services';
 import {RouterDict} from '../../../../app.constants';
-import {ConnectionService} from '../../../../connection.service';
-import {CustomValidators} from '../../../../custom-validators';
 import {RoundsService} from '../rounds.service';
 import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 

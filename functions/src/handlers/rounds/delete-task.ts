@@ -1,6 +1,6 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {FunctionResult, Round, Task} from '../../helpers/models';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise, Round, Task} from '../../helpers/models';
 import {
   decryptRound,
   decryptTask,
@@ -12,7 +12,6 @@ import {
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {authorizedDomains} from '../../config';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 
@@ -165,29 +164,13 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
 
 /**
  * Read user data about task and remove it
- * @param {any} data
- * @param {CallableContext} callableContext
+ * @param context Context
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, callableContext: CallableContext): FunctionResult => {
+export const handler = (context: Context): FunctionResultPromise => {
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(callableContext.rawRequest.method !== 'POST');
-    testRequirement(!callableContext.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
-  }
-
-  const auth = callableContext?.auth;
-
-  // not logged in
-  testRequirement(!auth);
-
-  // email not verified, not for anonymous
-  testRequirement(
-    !auth?.token.email_verified &&
-    auth?.token.provider_id !== 'anonymous' &&
-    !auth?.token.isAnonymous
-  );
+  const auth = context.auth;
+  const data = context.data;
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -206,16 +189,19 @@ export const handler = (data: any, callableContext: CallableContext): FunctionRe
   // data.taskId is not empty string
   testRequirement(typeof data.taskId !== 'string' || data.taskId.length === 0);
 
-  testRequirement(!callableContext.auth?.token.secretKey);
+  testRequirement(!auth?.token.secretKey);
 
-  return getCryptoKey(callableContext.auth?.token.secretKey).then((cryptoKey) => {
+  return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
 
       return getUser(app, transaction, auth?.uid as string).then((userDocSnap) => {
         return proceedTaskRemoving(cryptoKey, data.roundId, data.taskId, transaction, userDocSnap);
       })
     }).then(() => ({
-      details: 'Your task has been deleted 🤭'
+      code: 200,
+      body: {
+        details: 'Your task has been deleted 🤭'
+      }
     }));
   });
 };

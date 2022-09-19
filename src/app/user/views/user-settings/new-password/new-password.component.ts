@@ -3,8 +3,7 @@ import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
 import {catchError, NEVER, Subscription} from 'rxjs';
-import {ConnectionService} from '../../../../connection.service';
-import {CustomValidators} from '../../../../custom-validators';
+import {ConnectionService, CustomValidators} from 'services';
 
 @Component({
   selector: 'app-new-password-component',

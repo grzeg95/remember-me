@@ -13,6 +13,7 @@
   "main": "lib/functions/src/index.js",
   "dependencies": {
     "@google-cloud/kms": "3.0.1",
+    "cors": "2.8.5",
     "dotenv": "16.0.2",
     "express": "4.18.1",
     "fast-crc32c": "2.0.0",

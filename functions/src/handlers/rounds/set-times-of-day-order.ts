@@ -1,34 +1,23 @@
 import {firestore} from 'firebase-admin';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {FunctionResult, Round} from '../../helpers/models';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise, Round} from '../../helpers/models';
 import {decryptRound, encryptRound, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
 import {getUser} from '../../helpers/user';
-import {authorizedDomains} from '../../config';
 
 const app = firestore();
 
 /**
  * Set times of day order
  * @function handler
- * @param {*} data
- * {
- *  roundId: string;
- *  timeOfDay: string;
- *  moveBy: number
- * }
- * @param {CallableContext} callableContext
+ * @param context Context
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (data: any, callableContext: CallableContext): FunctionResult => {
+export const handler = (context: Context): FunctionResultPromise => {
 
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(callableContext.rawRequest.method !== 'POST');
-    testRequirement(!callableContext.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(callableContext.rawRequest.headers.origin as string).host));
-  }
-  const auth = callableContext?.auth;
+  const auth = context.auth;
+  const data = context.data;
 
   // not logged in
   testRequirement(!auth);
@@ -67,7 +56,7 @@ export const handler = (data: any, callableContext: CallableContext): FunctionRe
   let roundDocSnap: firestore.DocumentSnapshot;
   let round: Round;
 
-  return getCryptoKey(callableContext.auth?.token.secretKey).then((_cryptoKey) => {
+  return getCryptoKey(context.auth?.token.secretKey).then((_cryptoKey) => {
     cryptoKey = _cryptoKey;
 
     return app.runTransaction((transaction) => {
@@ -114,7 +103,10 @@ export const handler = (data: any, callableContext: CallableContext): FunctionRe
         return transactionWrite.execute();
       });
     }).then(() => ({
-      details: 'Order has been updated 🙃'
+      code: 200,
+      body: {
+        details: 'Order has been updated 🙃'
+      }
     }));
   });
 };

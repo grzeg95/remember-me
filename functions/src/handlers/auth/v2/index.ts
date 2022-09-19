@@ -1,5 +1,8 @@
-import {HttpsOptions, onCall} from 'firebase-functions/v2/https';
+import {Response} from 'express';
+import {https} from 'firebase-functions';
+import {HttpsOptions, onRequest} from 'firebase-functions/v2/https';
 import {regionIdForFunctionsV2} from '../../../config';
+import {handler} from '../../../helpers/https-tools';
 
 const opts: HttpsOptions = {
   timeoutSeconds: 60,
@@ -12,4 +15,8 @@ const opts: HttpsOptions = {
   invoker: 'public'
 };
 
-export const gettokenwithsecretkey = onCall(opts, (request) => require('../get-token-with-secret-key').handler(request.data, request));
+export const gettokenwithsecretkey = onRequest(opts, (req: https.Request, resp: Response) =>
+  handler(req, resp, require('../get-token-with-secret-key').handler, {
+    contentType: 'text/plain'
+  })
+);

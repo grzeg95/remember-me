@@ -1,19 +1,15 @@
 import {getAuth} from 'firebase-admin/auth';
-import {CallableContext} from 'firebase-functions/lib/providers/https';
-import {authorizedDomains, cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
+import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
+import {Context} from '../../helpers/https-tools';
+import {FunctionResultPromise} from '../../helpers/models';
 import {testRequirement} from '../../helpers/test-requirement';
 
 const crc32c = require('fast-crc32c');
 
-export const handler = (data: any, context: CallableContext): Promise<string> => {
-
-  if (!process.env.FUNCTIONS_EMULATOR) {
-    testRequirement(context.rawRequest.method !== 'POST');
-    testRequirement(!context.rawRequest.headers.origin);
-    testRequirement(!authorizedDomains.has(new URL(context.rawRequest.headers.origin as string).host));
-  }
+export const handler = (context: Context): FunctionResultPromise => {
 
   const auth = context.auth;
+  const data = context.data;
 
   // with data
   testRequirement(data !== null)
@@ -54,6 +50,11 @@ export const handler = (data: any, context: CallableContext): Promise<string> =>
       .createCustomToken(auth?.uid as string, {
         secretKey: (decryptResponse.plaintext || '').toString(),
         isAnonymous: auth?.token.firebase.sign_in_provider === 'anonymous'
+      }).then((token) => {
+        return {
+          code: 200,
+          body: token
+        }
       });
   });
 };

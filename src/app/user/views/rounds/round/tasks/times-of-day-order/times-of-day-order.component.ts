@@ -5,8 +5,8 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {Round} from 'functions/src/helpers/models';
 import {catchError, NEVER, Subscription} from 'rxjs';
+import {ConnectionService} from 'services';
 import {RouterDict} from 'src/app/app.constants';
-import {ConnectionService} from '../../../../../../connection.service';
 import {RoundsService} from '../../../rounds.service';
 
 @Component({

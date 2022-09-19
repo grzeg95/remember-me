@@ -48,6 +48,11 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
+              "assets": [
+                "src/assets/img",
+                "src/assets/myId.json",
+                "src/assets/remote-config-default-prod.json"
+              ],
               "optimization": {
                 "fonts": true,
                 "scripts": true,

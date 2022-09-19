@@ -5,7 +5,7 @@ const path = require('path');
 const DOTENV_PATH = path.join(__dirname, (process.env.FUNCTIONS_EMULATOR || process.env.FOR_FIREBASE_EMULATOR === '1') ? '.env.functions' : '.env.functions.prod');
 dotenv.config({path: DOTENV_PATH, override: true});
 
-export const authorizedDomains = new Set(JSON.parse(process.env.PROJECT_FIREBASE_AUTHORIZED_DOMAINS as string));
+export const authorizedDomains = JSON.parse(process.env.PROJECT_FIREBASE_AUTHORIZED_DOMAINS as string) as string[];
 export const keyManagementServiceClient = new KeyManagementServiceClient();
 export const regionId = process.env.PROJECT_FIREBASE_REGION_ID as string;
 export const regionIdForFunctionsV2 = process.env.PROJECT_FIREBASE_REGION_ID_FOR_FUNCTIONS_V2 as string;
