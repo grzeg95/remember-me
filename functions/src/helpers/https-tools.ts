@@ -3,7 +3,7 @@ import {https, Response} from 'firebase-functions';
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
 import {HttpsError} from 'firebase-functions/lib/providers/https';
 import {authorizedDomains} from '../config';
-import {FunctionResultPromise} from './models';
+import {ContentType, FunctionResult, FunctionResultPromise} from './models';
 
 const cors = require('cors')({
   methods: ['POST', 'OPTIONS'],
@@ -67,8 +67,8 @@ const getContext = (req: https.Request, res: Response): Promise<Context> => {
   });
 };
 
-export const handler = (req: https.Request, res: Response, next: (context: Context) => FunctionResultPromise, options?: {
-  contentType?: string | string[]
+export const handler = (req: https.Request, res: Response, next: (context: Context) => FunctionResultPromise, options: {
+  contentType: ContentType | ContentType[]
 }) => {
 
   const rawRequest = req;
@@ -77,23 +77,20 @@ export const handler = (req: https.Request, res: Response, next: (context: Conte
 
   return cors(rawRequest, res, () => getContext(req, res).then((context) => {
 
-    if (
-      options?.contentType &&
+    if (((
+        Array.isArray(options.contentType) &&
+        options.contentType.indexOf((context.req.get('content-type') || '') as ContentType) === -1
+      ) ||
       (
-        (Array.isArray(options.contentType) && options.contentType.indexOf(context.req.get('content-type') || '') === -1) ||
-        (typeof options.contentType === 'string' && options.contentType !== (context.req.get('content-type') || ''))
-      )
-    ) {
-      sendError(res, new HttpsError(
-        'invalid-argument',
-        'Bad Request',
-        'content-type-unknown'
-      ));
+        typeof options.contentType === 'string' &&
+        options.contentType !== (context.req.get('content-type') || '')
+      ))) {
+      sendError(res);
       return;
     }
 
-    next(context).then((success) => {
-      sendSuccess(res, success.body, success.code);
+    next(context).then((functionResult) => {
+      sendSuccess(res, functionResult);
     }).catch((err) => {
       sendError(res, err);
     });
@@ -109,10 +106,20 @@ const sendResponse = (res: Response, body: Object, code: number) => {
   res.end();
 };
 
-const sendError = (res: Response, httpsError: HttpsError, code: number = 400) => {
-  sendResponse(res, httpsError, code);
+const sendError = (res: Response, err?: any) => {
+
+  if (!err || err.constructor.name !== 'HttpsError') {
+    const httpsError = new HttpsError(
+      'aborted',
+      'Bad Request',
+      'Some went wrong 🤫 Try again 🙂'
+    );
+    sendResponse(res, httpsError, httpsError.httpErrorCode.status);
+  } else {
+    sendResponse(res, err, err.httpErrorCode.status);
+  }
 };
 
-const sendSuccess = (res: Response, body: Object, code: number = 200) => {
-  sendResponse(res, body, code);
+const sendSuccess = (res: Response, functionResult: FunctionResult) => {
+  sendResponse(res, functionResult.body, functionResult.code);
 };

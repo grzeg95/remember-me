@@ -1,6 +1,3 @@
-/**
- * @type Day
- **/
 export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 export interface Task {
@@ -32,9 +29,16 @@ export interface Today {
   tasksIds: string[];
 }
 
-export type FunctionResult = {
-  body: {[key: string]: string | boolean} | string,
-  code: 200 | 201
-};
+export interface FunctionResult {
+  body: {[key: string]: string | boolean} | string;
+  code: number;
+}
 
 export type FunctionResultPromise = Promise<FunctionResult>;
+
+export type ContentType =
+  'image/jpeg' |
+  'image/jpg' |
+  'image/png' |
+  'application/json' |
+  'text/plain';
