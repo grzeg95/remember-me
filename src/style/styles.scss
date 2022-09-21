@@ -321,3 +321,8 @@ a, a:not([href]):not([class]) {
 .mat-menu-trigger {
   cursor: pointer;
 }
+
+.invisible-text {
+  opacity: 0;
+  color: white;
+}
