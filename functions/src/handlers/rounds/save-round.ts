@@ -1,10 +1,10 @@
 import {firestore} from 'firebase-admin';
 import {Context} from '../../helpers/https-tools';
-import {FunctionResultPromise, Round} from '../../helpers/models';
+import {FunctionResultPromise} from '../../helpers/models';
 import {decrypt, decryptRound, encrypt, encryptRound, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser, writeUser} from '../../helpers/user';
+import {getUserDocSnap, writeUser} from '../../helpers/user';
 
 const app = firestore();
 
@@ -46,16 +46,14 @@ export const handler = (context: Context): FunctionResultPromise => {
   let created = false;
   let userDocSnap: firestore.DocumentSnapshot;
   let roundDocSnapTmp: firestore.DocumentSnapshot;
-  let rounds: string[];
   let userDocSnapData: firestore.DocumentData | undefined;
   let roundDocSnap: firestore.DocumentSnapshot;
-  let round: Round;
 
   return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
 
       const transactionWrite = new TransactionWrite(transaction);
-      return getUser(app, transaction, auth?.uid as string).then((_userDocSnap) => {
+      return getUserDocSnap(app, transaction, auth?.uid as string).then((_userDocSnap) => {
 
         userDocSnap = _userDocSnap;
         userDocSnapData = userDocSnap.data();
@@ -69,8 +67,7 @@ export const handler = (context: Context): FunctionResultPromise => {
 
         return [] as string[];
 
-      }).then((_rounds) => {
-        rounds = _rounds
+      }).then((rounds) => {
 
         let roundsEncryptPromise;
 
@@ -111,8 +108,7 @@ export const handler = (context: Context): FunctionResultPromise => {
 
           roundDocSnap = roundDocSnapTmp;
 
-          return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey).then((_round) => {
-            round = _round;
+          return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey).then((round) => {
 
             /*
             * Check if name was changed

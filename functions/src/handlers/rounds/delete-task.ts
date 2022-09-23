@@ -11,7 +11,7 @@ import {
 } from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {getUserDocSnap} from '../../helpers/user';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 
@@ -194,7 +194,7 @@ export const handler = (context: Context): FunctionResultPromise => {
   return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
 
-      return getUser(app, transaction, auth?.uid as string).then((userDocSnap) => {
+      return getUserDocSnap(app, transaction, auth?.uid as string).then((userDocSnap) => {
         return proceedTaskRemoving(cryptoKey, data.roundId, data.taskId, transaction, userDocSnap);
       })
     }).then(() => ({

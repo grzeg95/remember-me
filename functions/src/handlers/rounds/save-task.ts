@@ -18,7 +18,7 @@ import {
 } from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {getUserDocSnap} from '../../helpers/user';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 
@@ -467,7 +467,6 @@ export const handler = async (context: Context): FunctionResultPromise => {
   let taskId: string = data.taskId;
   const roundId: string = data.roundId;
 
-  let cryptoKey: CryptoKey;
   const task = data.task as Task;
   task.description = task.description.trim();
   let taskDocSnap: DocumentSnapshot;
@@ -477,14 +476,13 @@ export const handler = async (context: Context): FunctionResultPromise => {
   let transactionWrite: TransactionWrite;
   let roundDocSnapData: Round;
 
-  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
-    cryptoKey = _cryptoKey;
+  return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
 
     return app.runTransaction((transaction) => {
 
-      transactionWrite = new TransactionWrite(transaction)
+      transactionWrite = new TransactionWrite(transaction);
 
-      return getUser(app, transaction, auth?.uid as string).then(async (_userDocSnap) => {
+      return getUserDocSnap(app, transaction, auth?.uid as string).then(async (_userDocSnap) => {
         userDocSnap = _userDocSnap;
 
         return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));

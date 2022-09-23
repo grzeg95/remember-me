@@ -7,7 +7,7 @@ import {Task} from '../../helpers/models';
 import {encrypt, encryptRound, encryptTask} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {getUserDocSnap} from '../../helpers/user';
 import {prepareTimesOfDay, proceedTodayTasks} from '../rounds/save-task';
 
 const crc32c = require('fast-crc32c');
@@ -115,7 +115,7 @@ export const handler = (user: AuthUserRecord) => {
       ['encrypt']
     ).then((_cryptoKey) => {
       cryptoKey = _cryptoKey;
-      return getUser(app, transaction, user.uid);
+      return getUserDocSnap(app, transaction, user.uid);
     }).then((_userDocSnap: firestore.DocumentSnapshot) => {
       userDocSnap = _userDocSnap;
 

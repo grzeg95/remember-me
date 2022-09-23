@@ -5,7 +5,7 @@ import DocumentSnapshot = firestore.DocumentSnapshot;
 import Firestore = firestore.Firestore;
 import Transaction = firestore.Transaction;
 
-export const getUser = async (app: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot> => {
+export const getUserDocSnap = async (app: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot> => {
 
   return transaction.get(app.collection('users').doc(uid)).then((userDocSnap) => {
     const userData = userDocSnap.data();

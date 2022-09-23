@@ -1,79 +1,101 @@
-const { exec } = require('child_process');
+const _spawn = require('child_process').spawn;
 const fs = require('fs');
 
-const execPromise = (cmd) => {
-  return new Promise((resolve, reject) => {
-    exec(cmd, (error, stdout, stderr) => {
-      if (error) {
-        reject(error);
-        return;
-      }
+const logSpinner = (text, textDone, promise) => {
 
-      if (stderr) {
-        reject(stderr);
-        return;
-      }
+  const frames = ['⠋', '⠙', '⠹','⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map((char) => char + ' ');
+  const lastFrameResolved = '• ';
+  const lastFrameCaught = '⁈ ';
+  let frameIndex = 0;
 
-      resolve(stdout);
-    });
-  })
+  const intervalId = setInterval(() => {
+
+    let textToPush = '';
+    textToPush += frames[frameIndex] + text;
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0);
+    process.stdout.write(textToPush);
+
+    frameIndex = ++frameIndex % frames.length;
+  }, 100);
+
+  return promise.then((r) => {
+    clearInterval(intervalId);
+
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0);
+    process.stdout.write(lastFrameResolved + textDone);
+
+    console.log();
+    return r;
+  }).catch((e) => {
+    clearInterval(intervalId);
+
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0);
+    process.stdout.write(lastFrameCaught + textDone);
+
+    console.log();
+    throw e;
+  });
 };
 
-console.log(`build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}start`);
+const spawn = async (cmd, args, options) => {
+  return new Promise((resolve) => {
 
-if (process.argv[2] === 'for-prod' && fs.existsSync('lib')) {
-  console.log('removing old generated lib');
-  fs.rmSync('lib', {recursive: true, force: true});
-  console.log('removed old generated lib');
-}
+    let stdio = 'inherit';
 
-console.log('lint: start');
-return execPromise(`node tslint --project tsconfig.json`).then((stdout) => {
+    if (options?.stdio) {
+      stdio = options?.stdio;
+    }
 
-  if (stdout) {
-    console.log(stdout);
+    _spawn(cmd, args, {
+      stdio,
+      cwd: __dirname,
+      shell: true
+    }).on('error', (error) => {
+      console.log(error);
+      process.exit(1);
+    }).on('close', () => {
+      resolve();
+    });
+  });
+};
+
+process.stdout.write('\u001B[?25l');
+
+const run = async () => {
+  console.log(`• build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}start`);
+
+  if (process.argv[2] === 'for-prod' && fs.existsSync('lib')) {
+    await logSpinner('removing old lib', 'removed old lib', new Promise((resolve, reject) => {
+      fs.rm('lib', {recursive: true, force: true}, (err) => {
+        if (err) {
+          reject(err);
+        }
+        resolve();
+      });
+    }));
   }
 
-  console.log('lint:done');
-  console.log('tsc:start');
-  return execPromise(`tsc`);
-}).then((stdout) => {
-
-  if (stdout) {
-    console.log(stdout);
-  }
-
-  console.log('tsc:done');
+  await logSpinner('lint', 'lint', spawn('node', ['tslint', '--project', 'tsconfig.json']));
+  await logSpinner('tsc', 'tsc', spawn('tsc', []));
 
   if (process.argv[2] === 'for-prod') {
-    return execPromise(`python minify.py`);
+    await logSpinner('grunting', 'grunted', spawn('grunt', [], {
+      stdio: 'ignore'
+    }));
   }
 
-  return Promise.resolve();
-}).then((stdout) => {
-
-  if (stdout) {
-    console.log(stdout);
-  }
+  let cpEnvCmdArgs = ['cp-env.js', 'for-emulator'];
 
   if (process.argv[2] === 'for-prod') {
-    console.log('minify:done');
+    cpEnvCmdArgs = ['cp-env.js'];
   }
 
-  let cpEnvCmd = 'node cp-env.js for-emulator';
+  return logSpinner('env coping', 'env copied', spawn('node', cpEnvCmdArgs));
+};
 
-  if (process.argv[2] === 'for-prod') {
-    cpEnvCmd = 'node cp-env.js';
-  }
-
-  return execPromise(cpEnvCmd);
-}).then((stdout) => {
-
-  if (stdout) {
-    console.log(stdout);
-  }
-
-  console.log('build:functions:done');
-}).catch((error) => {
-  console.log(error);
+run().then(() => {
+  console.log(`• build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}done`);
 });

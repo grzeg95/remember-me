@@ -1,10 +1,10 @@
 import {firestore} from 'firebase-admin';
 import {Context} from '../../helpers/https-tools';
-import {FunctionResultPromise, Round} from '../../helpers/models';
+import {FunctionResultPromise} from '../../helpers/models';
 import {decrypt, decryptRound, decryptToday, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser, writeUser} from '../../helpers/user';
+import {getUserDocSnap, writeUser} from '../../helpers/user';
 import DocumentData = firestore.DocumentData;
 import DocumentSnapshot = firestore.DocumentSnapshot;
 
@@ -22,30 +22,25 @@ export const handler = (context: Context): FunctionResultPromise => {
 
   let userDocSnap: firestore.DocumentSnapshot;
   let roundDocSnap: firestore.DocumentSnapshot;
-  let roundDocSnapData: Round;
-  let allTasksListOfDayRefs: firestore.DocumentSnapshot[];
   const docsToRemovePromise: (Promise<DocumentSnapshot<DocumentData>> | DocumentSnapshot)[] = [];
-  let docsToRemove: DocumentSnapshot[] = [];
 
   return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
 
       const transactionWrite = new TransactionWrite(transaction);
 
-      return getUser(app, transaction, auth?.uid as string).then((_userDocSnap) => {
+      return getUserDocSnap(app, transaction, auth?.uid as string).then((_userDocSnap) => {
         userDocSnap = _userDocSnap;
 
         return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
       }).then((_roundDocSnap) => {
         roundDocSnap = _roundDocSnap;
 
-        return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-      }).then((_roundDocSnapData) => {
-        roundDocSnapData = _roundDocSnapData;
-
         // check if round exists
         testRequirement(!roundDocSnap.exists);
 
+        return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+      }).then((roundDocSnapData) => {
         // get all documents
 
         // get all tasks
@@ -61,10 +56,10 @@ export const handler = (context: Context): FunctionResultPromise => {
           allTasksListOfDayRefsPromise.push(transaction.get(today));
         }
 
-        return Promise.all(allTasksListOfDayRefsPromise);
-      }).then((_allTasksListOfDayRefs) => {
+        transactionWrite.delete(roundDocSnap.ref);
 
-        allTasksListOfDayRefs = _allTasksListOfDayRefs;
+        return Promise.all(allTasksListOfDayRefsPromise);
+      }).then((allTasksListOfDayRefs) => {
 
         const decryptTodaysPromise = [];
 
@@ -78,15 +73,12 @@ export const handler = (context: Context): FunctionResultPromise => {
         }
 
         return Promise.all(decryptTodaysPromise).then(() => Promise.all(docsToRemovePromise));
-      }).then((_docsToRemove) => {
-
-        docsToRemove = _docsToRemove;
+      }).then((docsToRemove) => {
 
         // remove all documents
         for (const doc of docsToRemove) {
           transactionWrite.delete(doc.ref);
         }
-        transactionWrite.delete(roundDocSnap.ref);
 
         if (userDocSnap.data()?.rounds) {
           return decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);

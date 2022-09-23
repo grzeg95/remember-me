@@ -6,7 +6,7 @@ import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {encrypt} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {getUserDocSnap} from '../../helpers/user';
 import {createSampleUserData} from './user-before-create';
 
 const crc32c = require('fast-crc32c');
@@ -62,7 +62,7 @@ export const handler = (user: UserRecord) => {
       cryptoKey = _cryptoKey;
       return getAuth().setCustomUserClaims(user.uid, {encryptedSymmetricKey});
     }).then(() => {
-      return getUser(app, transaction, user.uid);
+      return getUserDocSnap(app, transaction, user.uid);
     }).then((_userDocSnap: firestore.DocumentSnapshot) => {
       userDocSnap = _userDocSnap;
 

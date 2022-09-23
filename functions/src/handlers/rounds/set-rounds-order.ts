@@ -4,7 +4,7 @@ import {FunctionResultPromise} from '../../helpers/models';
 import {decrypt, encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {getUserDocSnap} from '../../helpers/user';
 
 const app = firestore();
 
@@ -63,7 +63,7 @@ export const handler = async (context: Context): FunctionResultPromise => {
       transaction = _transaction;
       transactionWrite = new TransactionWrite(transaction);
 
-      return getUser(app, transaction, auth?.uid as string).then((_userDocSnap) => {
+      return getUserDocSnap(app, transaction, auth?.uid as string).then((_userDocSnap) => {
 
         userDocSnap = _userDocSnap;
         return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));

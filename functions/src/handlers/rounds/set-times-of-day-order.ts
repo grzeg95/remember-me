@@ -4,7 +4,7 @@ import {FunctionResultPromise, Round} from '../../helpers/models';
 import {decryptRound, encryptRound, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUser} from '../../helpers/user';
+import {getUserDocSnap} from '../../helpers/user';
 
 const app = firestore();
 
@@ -52,7 +52,6 @@ export const handler = (context: Context): FunctionResultPromise => {
   testRequirement(!auth?.token.secretKey);
 
   let cryptoKey: CryptoKey;
-  let userDocSnap: firestore.DocumentSnapshot;
   let roundDocSnap: firestore.DocumentSnapshot;
   let round: Round;
 
@@ -66,9 +65,7 @@ export const handler = (context: Context): FunctionResultPromise => {
       const roundId = data.roundId;
       const moveBy = data.moveBy;
 
-      return getUser(app, transaction, auth?.uid as string).then((_userDocSnap) => {
-        userDocSnap = _userDocSnap;
-
+      return getUserDocSnap(app, transaction, auth?.uid as string).then((userDocSnap) => {
         return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
       }).then((_roundDocSnap) => {
         roundDocSnap = _roundDocSnap;

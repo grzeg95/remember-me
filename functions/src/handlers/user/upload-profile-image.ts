@@ -4,6 +4,7 @@ import {FunctionResultPromise} from '../../helpers/models';
 import {encrypt, getCryptoKey} from '../../helpers/security';
 import {testRequirement} from '../../helpers/test-requirement';
 import {TransactionWrite} from '../../helpers/transaction-write';
+import {getUserDocSnap} from '../../helpers/user';
 
 const sharp = require('sharp');
 
@@ -49,15 +50,13 @@ export const handler = (context: Context): FunctionResultPromise => {
 
         const transactionWrite = new TransactionWrite(transaction);
 
-        return transaction.get(firestoreApp.doc(`users/${context.auth?.uid}`))
-          .then((userDocSnap) => {
-
-            transactionWrite.update(userDocSnap.ref, {
-              photoUrl: encryptedPhotoUrl
-            });
-
-            return transactionWrite.execute();
+        return getUserDocSnap(firestoreApp, transaction, context.auth?.uid as string).then((userDocSnap) => {
+          transactionWrite.update(userDocSnap.ref, {
+            photoUrl: encryptedPhotoUrl
           });
+
+          return transactionWrite.execute();
+        });
       }).then(() => {
         return {
           code: 200,
