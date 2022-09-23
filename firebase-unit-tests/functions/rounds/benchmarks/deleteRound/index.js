@@ -1,8 +1,10 @@
 const {
-  removeUser, myId, getResult, saveRound, myAuth, saveTask, deleteRound, runTimes, median, avg,
-  getRandomTimesOfDay, getRandomDaysOfTheWeek, getRandomDescription, getUserJson, getUserJsonEncrypted, insertUser,
+  removeUser, getResult, saveRound, myAuth, saveTask, deleteRound, runTimes, median, avg,
+  getRandomTimesOfDay, getRandomDaysOfTheWeek, getRandomDescription, getUserJsonEncrypted, insertUser,
   getRandomRoundName
 } = require('../../../index');
+
+const myId = myAuth.auth.uid;
 
 describe(`deleteRound`, async function () {
 

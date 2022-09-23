@@ -1,13 +1,11 @@
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 const {
-  chai, myAuth, myId, firestore, removeUser, getResult, decryptRound, setTimesOfDayOrder, saveRound
+  chai, myAuth, firestore, removeUser, getResult, decryptRound, setTimesOfDayOrder, saveRound, getCryptoKey
 } = require('../../index');
 
+const myId = myAuth.auth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
 const {encryptRound} = require('../../../../functions/lib/functions/src/helpers/security');
-const {Buffer} = require('buffer');
-const {subtle} = require('crypto').webcrypto;
 
 describe(`setTimesOfDayOrder`, async () => {
 
@@ -15,15 +13,7 @@ describe(`setTimesOfDayOrder`, async () => {
   let roundId;
 
   before(async () => {
-    cryptoKey = await subtle.importKey(
-      'raw',
-      Buffer.from(myAuth.auth.token.secretKey, 'hex'),
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['decrypt', 'encrypt']
-    );
+    cryptoKey = await getCryptoKey();
   })
 
   it(`not authenticated`, async () => {

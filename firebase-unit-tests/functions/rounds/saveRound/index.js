@@ -1,12 +1,9 @@
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 const {
-  getUserJson, chai, removeUser, myId, getResult, myAuth, getKEmptyRounds, saveRound
+  chai, getUserJson, removeUser, getResult, myAuth, getKEmptyRounds, saveRound
 } = require('../../index');
 const testsInvalid = require('./tests.json');
-const {Buffer} = require('buffer');
-const crypto = require('crypto');
-const {subtle} = crypto.webcrypto;
 
+const myId = myAuth.auth.uid;
 const expect = chai.expect;
 
 const testCreatingNextEmptyRounds = (i, max, ids) => {
@@ -114,16 +111,6 @@ describe(`saveRound`, async () => {
       });
 
       const user = await getUserJson(myId);
-
-      const cryptoKey = await subtle.importKey(
-        'raw',
-        Buffer.from(myAuth.auth.token.secretKey, 'hex'),
-        {
-          name: 'AES-GCM'
-        },
-        false,
-        ['decrypt']
-      );
 
       expect(user[myId]['collections']['rounds'][x.roundId]['fields'].name).to.eql(`task_0`);
     });

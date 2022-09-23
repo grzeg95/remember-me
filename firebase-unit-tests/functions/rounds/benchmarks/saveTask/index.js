@@ -1,8 +1,9 @@
 const {
-  removeUser, myId, getResult, saveRound, myAuth, saveTask, runTimes, median, avg, chai, getRandomTimesOfDay,
+  chai, removeUser, getResult, saveRound, myAuth, saveTask, runTimes, median, avg, getRandomTimesOfDay,
   getRandomDaysOfTheWeek, getRandomDescription
 } = require('../../../index');
 
+const myId = myAuth.auth.uid;
 const expect = chai.expect;
 
 describe(`saveTask`, async () => {

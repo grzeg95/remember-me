@@ -1,15 +1,14 @@
-process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 const {
-  getUserJson,
   chai,
+  getUserJson,
   removeUser,
-  myId,
   getResult,
   myAuth,
   getKEmptyRounds,
   deleteRound, saveRound, saveTask
 } = require('../../index');
 
+const myId = myAuth.auth.uid;
 const expect = chai.expect;
 
 describe(`deleteRound`, async () => {

@@ -1,20 +1,24 @@
-const {decrypt, decryptRound, encrypt} = require("../../functions/lib/functions/src/helpers/security");
-const {Buffer} = require("buffer");
-const crypto = require('crypto');
-const {subtle} = crypto.webcrypto;
-
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 process.env.FUNCTIONS_EMULATOR = 'true';
-module.exports.admin = require('firebase-admin');
-module.exports.admin.initializeApp();
-module.exports.test = require('firebase-functions-test')({projectId: 'remember-me-dev'});
-module.exports.chai = require('chai');
-module.exports.myFunctions = require('../../functions/lib/functions/src/index');
-module.exports.firestore = module.exports.admin.firestore();
-module.exports.myId = 'myId';
-module.exports.myAuth = {
+
+const {decrypt, decryptRound, encrypt} = require('../../functions/lib/functions/src/helpers/security');
+const {Buffer} = require('buffer');
+const crypto = require('crypto');
+const {subtle} = crypto.webcrypto;
+const test = require('firebase-functions-test')({projectId: 'remember-me-dev'});
+exports.test = test;
+exports.chai = require('chai');
+const myFunctions = require('../../functions/lib/functions/src/index');
+exports.myFunctions = myFunctions;
+
+const admin = require('firebase-admin');
+admin.initializeApp();
+const firestore = admin.firestore();
+exports.firestore = firestore;
+
+const myAuth = {
   auth: {
-    uid: module.exports.myId,
+    uid: 'myId',
     token: {
       secretKey: crypto.randomBytes(32).toString('hex'),
       email_verified: true
@@ -25,38 +29,13 @@ module.exports.myAuth = {
     token: 'lol'
   }
 };
-
-module.exports.cryptoKey = null;
-
-module.exports.saveRound = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.saveRound),
-  name: 'saveRound'
-};
-
-module.exports.deleteRound = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.deleteRound),
-  name: 'deleteRound'
-};
-
-module.exports.saveTask = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.saveTask),
-  name: 'saveTask'
-};
-
-module.exports.deleteTask = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.deleteTask),
-  name: 'deleteTask'
-};
-
-module.exports.setTimesOfDayOrder = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.setTimesOfDayOrder),
-  name: 'setTimesOfDayOrder'
-};
-
-module.exports.setRoundsOrder = {
-  wrapped: module.exports.test.wrap(module.exports.myFunctions.rounds.setRoundsOrder),
-  name: 'setRoundsOrder'
-};
+exports.myAuth = myAuth;
+exports.decryptRound = decryptRound;
+exports.encrypt = encrypt;
+exports.decrypt = decrypt;
+exports.runTimes = {};
+exports.daysOfTheWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+exports.timesOfDay = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'];
 
 class RunTime {
 
@@ -74,25 +53,62 @@ class RunTime {
   }
 }
 
-module.exports.decryptRound = async (encryptedRound, cryptoKey) => {
-  return await decryptRound(encryptedRound, cryptoKey);
+let cryptoKey = null;
+const getCryptoKey = async () => {
+  if (!cryptoKey) {
+    cryptoKey = await subtle.importKey(
+      'raw',
+      Buffer.from(myAuth.auth.token.secretKey, 'hex'),
+      {
+        name: 'AES-GCM'
+      },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+  return cryptoKey;
+};
+exports.getCryptoKey = getCryptoKey;
+
+exports.saveRound = {
+  wrapped: test.wrap(myFunctions.rounds.saveRound),
+  name: 'saveRound'
 };
 
-module.exports.encrypt = encrypt;
+exports.deleteRound = {
+  wrapped: test.wrap(myFunctions.rounds.deleteRound),
+  name: 'deleteRound'
+};
 
-module.exports.decrypt = decrypt;
+exports.saveTask = {
+  wrapped: test.wrap(myFunctions.rounds.saveTask),
+  name: 'saveTask'
+};
 
-module.exports.runTimes = {};
+exports.deleteTask = {
+  wrapped: test.wrap(myFunctions.rounds.deleteTask),
+  name: 'deleteTask'
+};
 
-module.exports.getResult = async (fn, ...args) => {
+exports.setTimesOfDayOrder = {
+  wrapped: test.wrap(myFunctions.rounds.setTimesOfDayOrder),
+  name: 'setTimesOfDayOrder'
+};
+
+exports.setRoundsOrder = {
+  wrapped: test.wrap(myFunctions.rounds.setRoundsOrder),
+  name: 'setRoundsOrder'
+};
+
+exports.getResult = async (fn, ...args) => {
   try {
-    if (!module.exports.runTimes[fn.name]) {
-      module.exports.runTimes[fn.name] = new RunTime();
+    if (!exports.runTimes[fn.name]) {
+      exports.runTimes[fn.name] = new RunTime();
     }
 
-    module.exports.runTimes[fn.name].resetTimeStart();
+    exports.runTimes[fn.name].resetTimeStart();
     const result = await fn.wrapped(...args);
-    module.exports.runTimes[fn.name].addToRunTime();
+    exports.runTimes[fn.name].addToRunTime();
     return result;
 
   } catch (error) {
@@ -104,37 +120,20 @@ module.exports.getResult = async (fn, ...args) => {
   }
 };
 
-module.exports.removeUser = async (userId) => {
-  const firestore = module.exports.firestore;
+exports.removeUser = async (userId) => {
   const documentRef = firestore.collection('users').doc(userId);
   await firestore.recursiveDelete(documentRef);
 };
 
-module.exports.createUser = async (userId) => {
-
-  const firestore = module.exports.firestore;
-
+exports.createUser = async (userId) => {
   await firestore.collection('users').doc(userId).set({
     hasEncryptedSecretKey: true
   });
 };
 
-module.exports._getUserAllData = async (documentRef, obj) => {
+const _getUserAllData = async (documentRef, obj) => {
 
-  if (!module.exports.cryptoKey) {
-    module.exports.cryptoKey = await subtle.importKey(
-      'raw',
-      Buffer.from(module.exports.myAuth.auth.token.secretKey, 'hex'),
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['encrypt', 'decrypt']
-    );
-  }
-
-  const firestore = module.exports.firestore;
-
+  const cryptoKey = await getCryptoKey();
   const docSnap = await documentRef.get();
   obj[documentRef.id] = {};
   obj[documentRef.id]['fields'] = {};
@@ -143,20 +142,20 @@ module.exports._getUserAllData = async (documentRef, obj) => {
   for (const key of Object.getOwnPropertyNames(obj[documentRef.id]['fields'])) {
 
     if (key === 'rounds') {
-      obj[documentRef.id]['fields']['rounds'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['rounds'], module.exports.cryptoKey));
+      obj[documentRef.id]['fields']['rounds'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['rounds'], cryptoKey));
     } else if (key === 'value') {
-      obj[documentRef.id]['fields'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['value'], module.exports.cryptoKey));
+      obj[documentRef.id]['fields'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['value'], cryptoKey));
     } else if (key === 'description') {
       // maybe decrypted description
       try {
-        obj[documentRef.id]['fields']['description'] = await decrypt(obj[documentRef.id]['fields']['description'], module.exports.cryptoKey);
+        obj[documentRef.id]['fields']['description'] = await decrypt(obj[documentRef.id]['fields']['description'], cryptoKey);
       } catch (e) {
       }
 
     } else if (key === 'timesOfDay') {
 
       if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'string') {
-        obj[documentRef.id]['fields']['timesOfDay'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['timesOfDay'], module.exports.cryptoKey));
+        obj[documentRef.id]['fields']['timesOfDay'] = JSON.parse(await decrypt(obj[documentRef.id]['fields']['timesOfDay'], cryptoKey));
         obj[documentRef.id]['fields']['timesOfDay'] = obj[documentRef.id]['fields']['timesOfDay'];
       } else if (Array.isArray(obj[documentRef.id]['fields']['timesOfDay'])) {
 
@@ -164,13 +163,13 @@ module.exports._getUserAllData = async (documentRef, obj) => {
         obj[documentRef.id]['fields']['timesOfDay'] = [];
 
         for (const encryptedTimesOfDay of encryptedTimesOfDayArr) {
-          obj[documentRef.id]['fields']['timesOfDay'].push(await decrypt(encryptedTimesOfDay, module.exports.cryptoKey));
+          obj[documentRef.id]['fields']['timesOfDay'].push(await decrypt(encryptedTimesOfDay, cryptoKey));
         }
 
       } else if (typeof obj[documentRef.id]['fields']['timesOfDay'] === 'object') {
         const timesOfDay = {};
         for (const key of Object.getOwnPropertyNames(obj[documentRef.id]['fields']['timesOfDay'])) {
-          timesOfDay[await decrypt(key, module.exports.cryptoKey)] = obj[documentRef.id]['fields']['timesOfDay'][key];
+          timesOfDay[await decrypt(key, cryptoKey)] = obj[documentRef.id]['fields']['timesOfDay'][key];
         }
         obj[documentRef.id]['fields']['timesOfDay'] = timesOfDay;
       }
@@ -181,13 +180,13 @@ module.exports._getUserAllData = async (documentRef, obj) => {
 
       // description
       if (typeof obj[documentRef.id]['fields'][key] === 'string') {
-        obj[documentRef.id]['fields'][await decrypt(key, module.exports.cryptoKey)] = await decrypt(obj[documentRef.id]['fields'][key], module.exports.cryptoKey);
+        obj[documentRef.id]['fields'][await decrypt(key, cryptoKey)] = await decrypt(obj[documentRef.id]['fields'][key], cryptoKey);
         delete obj[documentRef.id]['fields'][key];
       } else {
         // timesOfDay
         const timesOfDay = {};
         for (const encryptedTimeOfDay of Object.getOwnPropertyNames(obj[documentRef.id]['fields'][key])) {
-          timesOfDay[await decrypt(encryptedTimeOfDay, module.exports.cryptoKey)] = obj[documentRef.id]['fields'][key][encryptedTimeOfDay];
+          timesOfDay[await decrypt(encryptedTimeOfDay, cryptoKey)] = obj[documentRef.id]['fields'][key][encryptedTimeOfDay];
         }
         delete obj[documentRef.id]['fields'][key];
         obj[documentRef.id]['fields']['timesOfDay'] = timesOfDay;
@@ -207,7 +206,7 @@ module.exports._getUserAllData = async (documentRef, obj) => {
       await firestore.collection(collection.path).listDocuments().then(async (docsRef) => {
 
         for (const docRef of docsRef) {
-          await module.exports._getUserAllData(docRef, obj[documentRef.id]['collections'][collection.id]);
+          await _getUserAllData(docRef, obj[documentRef.id]['collections'][collection.id]);
         }
       });
 
@@ -215,27 +214,13 @@ module.exports._getUserAllData = async (documentRef, obj) => {
   });
 };
 
-module.exports.getUserAllData = async (documentRef) => {
+const getUserAllData = async (documentRef) => {
   const obj = {};
-  await module.exports._getUserAllData(documentRef, obj);
+  await _getUserAllData(documentRef, obj);
   return obj;
 };
 
-module.exports._getDocEncrypted = async (documentRef, obj) => {
-
-  if (!module.exports.cryptoKey) {
-    module.exports.cryptoKey = await subtle.importKey(
-      'raw',
-      Buffer.from(module.exports.myAuth.auth.token.secretKey, 'hex'),
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['encrypt', 'decrypt']
-    );
-  }
-
-  const firestore = module.exports.firestore;
+const _getDocEncrypted = async (documentRef, obj) => {
 
   const docSnap = await documentRef.get();
   obj[documentRef.id] = {};
@@ -253,7 +238,7 @@ module.exports._getDocEncrypted = async (documentRef, obj) => {
       await firestore.collection(collection.path).listDocuments().then(async (docsRef) => {
 
         for (const docRef of docsRef) {
-          await module.exports._getDocEncrypted(docRef, obj[documentRef.id]['collections'][collection.id]);
+          await _getDocEncrypted(docRef, obj[documentRef.id]['collections'][collection.id]);
         }
       });
 
@@ -261,25 +246,23 @@ module.exports._getDocEncrypted = async (documentRef, obj) => {
   });
 };
 
-module.exports.getDocEncrypted = async (documentRef) => {
+const getDocEncrypted = async (documentRef) => {
   const obj = {};
-  await module.exports._getDocEncrypted(documentRef, obj);
+  await _getDocEncrypted(documentRef, obj);
   return obj;
 };
 
-module.exports.getUserJsonEncrypted = async (userId) => {
-  const firestore = module.exports.firestore;
+exports.getUserJsonEncrypted = async (userId) => {
   const documentRef = firestore.collection('users').doc(userId);
-  return await module.exports.getDocEncrypted(documentRef);
+  return await getDocEncrypted(documentRef);
 };
 
-module.exports.getUserJson = async (userId) => {
-  const firestore = module.exports.firestore;
+exports.getUserJson = async (userId) => {
   const documentRef = firestore.collection('users').doc(userId);
-  return await module.exports.getUserAllData(documentRef);
+  return await getUserAllData(documentRef);
 };
 
-module.exports._insertUser = async (docJSON, docRef) => {
+const _insertUser = async (docJSON, docRef) => {
 
   // jestem w kolekcji
   // dodaje dokument
@@ -298,7 +281,7 @@ module.exports._insertUser = async (docJSON, docRef) => {
       if (docsOfCollection.length) {
 
         for (const docOfCollection of docsOfCollection) {
-          await module.exports._insertUser(
+          await _insertUser(
             docJSON['collections'][collection][docOfCollection],
             docRef.collection(collection).doc(docOfCollection)
           );
@@ -309,13 +292,12 @@ module.exports._insertUser = async (docJSON, docRef) => {
   }
 };
 
-module.exports.insertUser = async (docJSON) => {
-  const firestore = module.exports.firestore;
+exports.insertUser = async (docJSON) => {
   const userId = Object.getOwnPropertyNames(docJSON)[0];
-  await module.exports._insertUser(docJSON[userId], firestore.collection('users').doc(userId));
+  await _insertUser(docJSON[userId], firestore.collection('users').doc(userId));
 };
 
-module.exports.getEmptyRound = (name) => {
+const getEmptyRound = (name) => {
   return {
     fields: {
       timesOfDay: [],
@@ -328,7 +310,7 @@ module.exports.getEmptyRound = (name) => {
   };
 };
 
-module.exports.getKEmptyRounds = (rounds) => {
+exports.getKEmptyRounds = (rounds) => {
 
   const ids = rounds.map((round) => round.roundId);
 
@@ -338,15 +320,15 @@ module.exports.getKEmptyRounds = (rounds) => {
   };
 
   for (const round of rounds) {
-    emptyRounds.collections[round.roundId] = module.exports.getEmptyRound(round.name);
+    emptyRounds.collections[round.roundId] = getEmptyRound(round.name);
   }
 
   return emptyRounds;
 };
 
-module.exports.simplifyUserResult = (user, timesOfDayId) => {
+exports.simplifyUserResult = (user, timesOfDayId) => {
 
-  const myId = module.exports.myId;
+  const myId = myAuth.auth.uid;
 
   if (user[myId]['collections']['rounds']) {
     const simplifyUserResult = {
@@ -397,14 +379,14 @@ module.exports.simplifyUserResult = (user, timesOfDayId) => {
   return {};
 };
 
-module.exports.avg = (values) => {
+exports.avg = (values) => {
   if (values.length === 0) throw new Error("No inputs");
 
   const sum = values.reduce((a, b) => a + b, 0);
   return (sum / values.length) || 0;
 }
 
-module.exports.median = (values) => {
+exports.median = (values) => {
   if (values.length === 0) throw new Error("No inputs");
 
   values.sort(function (a, b) {
@@ -419,45 +401,37 @@ module.exports.median = (values) => {
   return (values[half - 1] + values[half]) / 2.0;
 }
 
-module.exports.randomBetween = (a, b) => {
-  return Math.random() * (b - a) + a;
+const getRandomIntInclusive = (min, max) => {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-module.exports.daysOfTheWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-module.exports.timesOfDay = [
-  'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'
-];
-
-module.exports.getRandomDaysOfTheWeek = () => {
-  return module.exports.daysOfTheWeek.shuffle().slice(0, module.exports.randomBetween(1, module.exports.daysOfTheWeek.length - 1));
-};
-
-module.exports.getRandomTimesOfDay = () => {
-  return module.exports.timesOfDay.shuffle().slice(0, module.exports.randomBetween(1, module.exports.timesOfDay.length - 1));
-};
-
-module.exports.getRandomDescription = () => {
-
+const getRandomString = (min, max) => {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-  for (let i = 0; i < module.exports.randomBetween(1, 255); i++) {
+  for (let i = 0; i < getRandomIntInclusive(min, max); i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
 
   return result;
 };
 
-module.exports.getRandomRoundName = () => {
+exports.getRandomDaysOfTheWeek = () => {
+  return exports.daysOfTheWeek.shuffle().slice(0, getRandomIntInclusive(1, exports.daysOfTheWeek.length - 1));
+};
 
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+exports.getRandomTimesOfDay = () => {
+  return exports.timesOfDay.shuffle().slice(0, getRandomIntInclusive(1, exports.timesOfDay.length - 1));
+};
 
-  for (let i = 0; i < module.exports.randomBetween(1, 100); i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
+exports.getRandomDescription = () => {
+  return getRandomString(1, 256);
+};
 
-  return result;
+exports.getRandomRoundName = () => {
+  return getRandomString(1, 256);
 };
 
 describe(`My functions tests`, () => {
@@ -469,13 +443,13 @@ describe(`My functions tests`, () => {
   require('./rounds/setRoundsOrder');
 
   after(() => {
-    for (const functionName of Object.getOwnPropertyNames(module.exports.runTimes)) {
-      const runTimes = module.exports.runTimes[functionName].runTimes;
+    for (const functionName of Object.getOwnPropertyNames(exports.runTimes)) {
+      const runTimes = exports.runTimes[functionName].runTimes;
       console.log('---------------------------');
       console.log(`${functionName}`);
       console.log(`cnt   : ${runTimes.length}`);
-      console.log(`median: ${module.exports.median(runTimes)}`);
-      console.log(`avg   : ${module.exports.avg(runTimes)}`);
+      console.log(`median: ${exports.median(runTimes)}`);
+      console.log(`avg   : ${exports.avg(runTimes)}`);
     }
   });
 });
@@ -484,35 +458,19 @@ describe(`My functions benchmarks`, () => {
   require('./rounds/benchmarks/saveTask');
 });
 
-// function getRandomString(length) {
-//   var result           = '';
-//   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-//   var charactersLength = characters.length;
-//   for ( var i = 0; i < length; i++ ) {
-//     result += characters.charAt(Math.floor(Math.random() *
-//       charactersLength));
-//   }
-//   return result;
-// }
-//
-// function getRandomIntInclusive(min, max) {
-//   min = Math.ceil(min);
-//   max = Math.floor(max);
-//   return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
-// }
-//
+// Create random user
 // (async () => {
-//   await module.exports.removeUser(module.exports.myId);
-//   await module.exports.createUser(module.exports.myId);
+//   await exports.removeUser(exports.myId);
+//   await exports.createUser(exports.myId);
 //
 //   for (let i = 0; i < 5; ++i) {
 //
 //     console.log(i);
 //
-//     const round = await module.exports.getResult(module.exports.saveRound, {
+//     const round = await exports.getResult(exports.saveRound, {
 //       roundId: 'null',
 //       name: getRandomString(getRandomIntInclusive(100, 256))
-//     }, module.exports.myAuth);
+//     }, myAuth);
 //
 //     for (let j = 0; j < getRandomIntInclusive(15, 25); ++j) {
 //
@@ -524,7 +482,7 @@ describe(`My functions benchmarks`, () => {
 //       timesOfDay.length = getRandomIntInclusive(5, 10);
 //       daysOfTheWeek.length = getRandomIntInclusive(1, 7);
 //
-//       await module.exports.getResult(module.exports.saveTask, {
+//       await exports.getResult(exports.saveTask, {
 //         task: {
 //           timesOfDay,
 //           daysOfTheWeek,
@@ -532,12 +490,12 @@ describe(`My functions benchmarks`, () => {
 //         },
 //         taskId: 'null',
 //         roundId: round.roundId
-//       }, module.exports.myAuth);
+//       }, myAuth);
 //     }
 //   }
 //
 //   const fs = require('fs');
-//   fs.writeFileSync('myId.json', JSON.stringify(await module.exports.getUserJsonEncrypted(module.exports.myId)));
+//   fs.writeFileSync('myId.json', JSON.stringify(await exports.getUserJsonEncrypted(exports.myId)));
 //
 //
 // })();

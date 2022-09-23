@@ -1,6 +1,5 @@
 const {
   removeUser,
-  myId,
   getResult,
   saveRound,
   myAuth,
@@ -10,6 +9,8 @@ const {
   getRandomDescription,
   getUserJsonEncrypted, insertUser, deleteTask, runTimes, median, avg
 } = require('../../../index');
+
+const myId = myAuth.auth.uid;
 
 describe(`deleteTask`, async function () {
 
