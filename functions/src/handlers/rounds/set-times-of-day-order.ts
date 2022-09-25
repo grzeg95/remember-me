@@ -1,10 +1,15 @@
 import {firestore} from 'firebase-admin';
-import {Context} from '../../helpers/https-tools';
-import {FunctionResultPromise, Round} from '../../helpers/models';
-import {decryptRound, encryptRound, getCryptoKey} from '../../helpers/security';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUserDocSnap} from '../../helpers/user';
+import {Round} from '../../models';
+import {
+  Context,
+  decryptRound,
+  encryptRound,
+  FunctionResultPromise,
+  getCryptoKey,
+  getUserDocSnap,
+  testRequirement,
+  TransactionWrite
+} from '../../tools';
 
 const app = firestore();
 

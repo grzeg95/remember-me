@@ -3,7 +3,20 @@ import {https, Response} from 'firebase-functions';
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
 import {HttpsError} from 'firebase-functions/lib/providers/https';
 import {authorizedDomains} from '../config';
-import {ContentType, FunctionResult, FunctionResultPromise} from './models';
+
+export interface FunctionResult {
+  body: {[key: string]: string | boolean} | string;
+  code: number;
+}
+
+export type FunctionResultPromise = Promise<FunctionResult>;
+
+export type ContentType =
+  'image/jpeg' |
+  'image/jpg' |
+  'image/png' |
+  'application/json' |
+  'text/plain';
 
 const cors = require('cors')({
   methods: ['POST', 'OPTIONS'],

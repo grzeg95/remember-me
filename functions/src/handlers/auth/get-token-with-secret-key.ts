@@ -1,8 +1,6 @@
 import {getAuth} from 'firebase-admin/auth';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {Context} from '../../helpers/https-tools';
-import {FunctionResultPromise} from '../../helpers/models';
-import {testRequirement} from '../../helpers/test-requirement';
+import {Context, FunctionResultPromise, testRequirement} from '../../tools';
 
 const crc32c = require('fast-crc32c');
 

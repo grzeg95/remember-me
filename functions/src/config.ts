@@ -1,4 +1,7 @@
 import {KeyManagementServiceClient} from '@google-cloud/kms';
+import {runWith} from 'firebase-functions';
+import {HttpsOptions} from 'firebase-functions/lib/v2/providers/https';
+
 const dotenv = require('dotenv');
 const path = require('path');
 
@@ -17,3 +20,22 @@ export const cryptoKeyVersionPath = keyManagementServiceClient.cryptoKeyVersionP
   process.env.CRYPTO_KEY_VERSION_PATH_KEY_CRYPTO_KEY as string,
   process.env.CRYPTO_KEY_VERSION_PATH_KEY_CRYPTO_KEY_VERSION as string
 );
+
+export const fnBuilder = runWith({
+  timeoutSeconds: 60,
+  memory: '1GB',
+  maxInstances: 10
+}).region(regionId);
+
+export const httpsFn = fnBuilder.https;
+
+export const optsV2: HttpsOptions = {
+  timeoutSeconds: 60,
+  memory: '1GiB',
+  region: regionIdForFunctionsV2,
+  maxInstances: 10,
+  retry: true,
+  ingressSettings: 'ALLOW_ALL',
+  concurrency: 80,
+  invoker: 'public'
+};

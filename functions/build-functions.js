@@ -1,9 +1,15 @@
 const _spawn = require('child_process').spawn;
 const fs = require('fs');
 
-const logSpinner = (text, textDone, promise) => {
+const exec = (text, textDone, promise) => {
 
-  const frames = ['⠋', '⠙', '⠹','⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map((char) => char + ' ');
+  const logInline = (text) => {
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0);
+    process.stdout.write(text);
+  };
+
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map((char) => char + ' ');
   const lastFrameResolved = '• ';
   const lastFrameCaught = '⁈ ';
   let frameIndex = 0;
@@ -12,36 +18,36 @@ const logSpinner = (text, textDone, promise) => {
 
     let textToPush = '';
     textToPush += frames[frameIndex] + text;
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(textToPush);
+    logInline(textToPush);
 
     frameIndex = ++frameIndex % frames.length;
   }, 100);
 
-  return promise.then((r) => {
+  return promise.then((code) => {
     clearInterval(intervalId);
 
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(lastFrameResolved + textDone);
+    if (code !== 0) {
+      logInline(lastFrameCaught + textDone);
+    } else {
+      logInline(lastFrameResolved + textDone);
+    }
 
-    console.log();
-    return r;
-  }).catch((e) => {
+    return code;
+  }).catch((code) => {
     clearInterval(intervalId);
-
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(lastFrameCaught + textDone);
-
+    logInline(lastFrameCaught + textDone);
+    return code;
+  }).then((code) => {
     console.log();
-    throw e;
+    if (code !== 0) {
+      process.exit(code);
+    }
   });
 };
 
 const spawn = async (cmd, args, options) => {
-  return new Promise((resolve) => {
+
+  return new Promise((resolve, reject) => {
 
     let stdio = 'inherit';
 
@@ -53,11 +59,10 @@ const spawn = async (cmd, args, options) => {
       stdio,
       cwd: __dirname,
       shell: true
-    }).on('error', (error) => {
-      console.log(error);
-      process.exit(1);
-    }).on('close', () => {
-      resolve();
+    }).on('error', (code) => {
+      reject(code);
+    }).on('exit', (code) => {
+      resolve(code);
     });
   });
 };
@@ -68,21 +73,21 @@ const run = async () => {
   console.log(`• build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}start`);
 
   if (process.argv[2] === 'for-prod' && fs.existsSync('lib')) {
-    await logSpinner('removing old lib', 'removed old lib', new Promise((resolve, reject) => {
+    await exec('removing old lib', 'removed old lib', new Promise((resolve, reject) => {
       fs.rm('lib', {recursive: true, force: true}, (err) => {
         if (err) {
-          reject(err);
+          reject(1);
         }
-        resolve();
+        resolve(0);
       });
     }));
   }
 
-  await logSpinner('lint', 'lint', spawn('node', ['tslint', '--project', 'tsconfig.json']));
-  await logSpinner('tsc', 'tsc', spawn('tsc', []));
+  await exec('lint', 'lint', spawn('node', ['tslint', '--project', 'tsconfig.json']));
+  await exec('tsc', 'tsc', spawn('tsc', []));
 
   if (process.argv[2] === 'for-prod') {
-    await logSpinner('grunting', 'grunted', spawn('grunt', [], {
+    await exec('grunting', 'grunted', spawn('grunt', [], {
       stdio: 'ignore'
     }));
   }
@@ -93,9 +98,9 @@ const run = async () => {
     cpEnvCmdArgs = ['cp-env.js'];
   }
 
-  return logSpinner('env coping', 'env copied', spawn('node', cpEnvCmdArgs));
+  await exec('env coping', 'env copied', spawn('node', cpEnvCmdArgs));
+
+  console.log(`• build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}done`);
 };
 
-run().then(() => {
-  console.log(`• build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}done`);
-});
+run();

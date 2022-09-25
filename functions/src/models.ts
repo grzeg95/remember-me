@@ -16,29 +16,15 @@ export interface Round {
 
 export interface TodayTask {
   description: string;
-  timesOfDay: {[key in string]: boolean};
+  timesOfDay: { [key in string]: boolean };
 }
 
 export interface EncryptedTodayTask {
   description: string;
-  timesOfDay: {[key in string]: boolean};
+  timesOfDay: { [key in string]: boolean };
 }
 
 export interface Today {
   name: string;
   tasksIds: string[];
 }
-
-export interface FunctionResult {
-  body: {[key: string]: string | boolean} | string;
-  code: number;
-}
-
-export type FunctionResultPromise = Promise<FunctionResult>;
-
-export type ContentType =
-  'image/jpeg' |
-  'image/jpg' |
-  'image/png' |
-  'application/json' |
-  'text/plain';

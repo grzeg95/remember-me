@@ -3,11 +3,8 @@ import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'cr
 import {firestore} from 'firebase-admin';
 import {AuthUserRecord, BeforeCreateResponse} from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {Task} from '../../helpers/models';
-import {encrypt, encryptRound, encryptTask} from '../../helpers/security';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUserDocSnap} from '../../helpers/user';
+import {Task} from '../../models';
+import {encrypt, encryptRound, encryptTask, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
 import {prepareTimesOfDay, proceedTodayTasks} from '../rounds/save-task';
 
 const crc32c = require('fast-crc32c');

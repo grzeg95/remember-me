@@ -1,10 +1,10 @@
 import {firestore} from 'firebase-admin';
 // tslint:disable-next-line:no-import-side-effect
 import '../../../../global.prototype';
-import {Context} from '../../helpers/https-tools';
-import {Day, EncryptedTodayTask, FunctionResultPromise, Round, Task, Today, TodayTask} from '../../helpers/models';
+import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../models';
 import {
   BasicEncryptedValue,
+  Context,
   decryptRound,
   decryptTask,
   decryptToday,
@@ -14,11 +14,12 @@ import {
   encryptTask,
   encryptToday,
   encryptTodayTask,
-  getCryptoKey
-} from '../../helpers/security';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUserDocSnap} from '../../helpers/user';
+  FunctionResultPromise,
+  getCryptoKey,
+  getUserDocSnap,
+  testRequirement,
+  TransactionWrite
+} from '../../tools';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 

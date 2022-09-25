@@ -1,12 +1,9 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
 import {firestore} from 'firebase-admin';
-import {UserRecord, getAuth} from 'firebase-admin/auth';
+import {getAuth, UserRecord} from 'firebase-admin/auth';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {encrypt} from '../../helpers/security';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUserDocSnap} from '../../helpers/user';
+import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
 import {createSampleUserData} from './user-before-create';
 
 const crc32c = require('fast-crc32c');

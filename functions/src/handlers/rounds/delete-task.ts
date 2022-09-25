@@ -1,17 +1,18 @@
 import {firestore} from 'firebase-admin';
-import {Context} from '../../helpers/https-tools';
-import {FunctionResultPromise, Round, Task} from '../../helpers/models';
+import {Round, Task} from '../../models';
 import {
+  Context,
   decryptRound,
   decryptTask,
   decryptToday,
   encryptRound,
   encryptToday,
-  getCryptoKey
-} from '../../helpers/security';
-import {testRequirement} from '../../helpers/test-requirement';
-import {TransactionWrite} from '../../helpers/transaction-write';
-import {getUserDocSnap} from '../../helpers/user';
+  FunctionResultPromise,
+  getCryptoKey,
+  getUserDocSnap,
+  testRequirement,
+  TransactionWrite
+} from '../../tools';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Transaction = firestore.Transaction;
 

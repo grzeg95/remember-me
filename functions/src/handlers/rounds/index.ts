@@ -1,13 +1,7 @@
 import {Response} from 'express';
-import {https, runWith} from 'firebase-functions';
-import {regionId} from '../../config'
-import {handler} from '../../helpers/https-tools';
-
-const httpsFn = runWith({
-  timeoutSeconds: 60,
-  memory: '1GB',
-  maxInstances: 10
-}).region(regionId).https;
+import {https} from 'firebase-functions';
+import {httpsFn} from '../../config'
+import {handler} from '../../tools';
 
 export const deleteTask = httpsFn.onRequest((req: https.Request, resp: Response) =>
   handler(req, resp, require('./delete-task').handler, {
