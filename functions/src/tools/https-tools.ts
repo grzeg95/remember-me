@@ -18,11 +18,13 @@ export type ContentType =
   'application/json' |
   'text/plain';
 
-const cors = require('cors')({
-  methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['authorization', 'content-type'],
-  origin: (requestOrigin: string, callback: (err: Error | null, origin?: boolean) => void) => {
+const methods = ['POST', 'OPTIONS'];
+const allowedHeaders = ['authorization', 'content-type'];
 
+const cors = require('cors')({
+  methods,
+  allowedHeaders,
+  origin: (requestOrigin: string, callback: (err: Error | null, origin?: boolean) => void) => {
     if (!process.env.FUNCTIONS_EMULATOR) {
 
       const domainFound = authorizedDomains.find((domain) => {
@@ -35,7 +37,7 @@ const cors = require('cors')({
       if (domainFound) {
         callback(null, true);
       } else {
-        callback(new Error());
+        callback(new Error(), false);
       }
     } else {
       callback(null, true);
@@ -80,34 +82,45 @@ const getContext = (req: https.Request, res: Response): Promise<Context> => {
   });
 };
 
-export const handler = (req: https.Request, res: Response, next: (context: Context) => FunctionResultPromise, options: {
-  contentType: ContentType | ContentType[]
-}) => {
+export const handler = (req: https.Request, res: Response, next: (context: Context) => FunctionResultPromise, contentType: ContentType | ContentType[] = 'application/json') => {
 
   const rawRequest = req;
-  const url = (req.headers['origin'] || req.headers['referer']) as string;
+  const url = (req.headers['origin'] || req.headers['referer'] || (req.protocol + '://' + req.headers.host)) as string;
   rawRequest.headers.origin = new URL(url).origin;
 
-  return cors(rawRequest, res, () => getContext(req, res).then((context) => {
+  return cors(rawRequest, res, (corsError: any) => {
 
-    if (((
-        Array.isArray(options.contentType) &&
-        options.contentType.indexOf((context.req.get('content-type') || '') as ContentType) === -1
-      ) ||
-      (
-        typeof options.contentType === 'string' &&
-        options.contentType !== (context.req.get('content-type') || '')
-      ))) {
-      sendError(res);
+    if (corsError) {
+      console.log(corsError);
+      res.setHeader('Access-Control-Allow-Headers', allowedHeaders.join(','));
+      res.setHeader('Access-Control-Allow-Methods', methods.join(','));
+      res.setHeader('Content-Length', '0');
+      res.status(204);
+      res.end();
       return;
     }
 
-    next(context).then((functionResult) => {
-      sendSuccess(res, functionResult);
-    }).catch((err) => {
-      sendError(res, err);
+    getContext(req, res).then((context) => {
+
+      if (((
+          Array.isArray(contentType) &&
+          contentType.indexOf((context.req.get('content-type') || '') as ContentType) === -1
+        ) ||
+        (
+          typeof contentType === 'string' &&
+          contentType !== (context.req.get('content-type') || '')
+        ))) {
+        sendError(res);
+        return;
+      }
+
+      next(context).then((functionResult) => {
+        sendSuccess(res, functionResult);
+      }).catch((err) => {
+        sendError(res, err);
+      });
     });
-  }));
+  });
 };
 
 const sendResponse = (res: Response, body: Object, code: number) => {

@@ -1,10 +1,6 @@
-import {Response} from 'express';
-import {https} from 'firebase-functions';
-import {httpsFn} from '../../config';
+import {https} from '../../config';
 import {handler} from '../../tools';
 
-export const uploadProfileImage = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./upload-profile-image').handler, {
-    contentType: ['image/jpeg', 'image/jpg', 'image/png']
-  })
+export const uploadProfileImage = https.onRequest((req, resp) =>
+  handler(req, resp, require('./upload-profile-image').handler,['image/jpeg', 'image/jpg', 'image/png'])
 );

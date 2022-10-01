@@ -1,12 +1,8 @@
-import {Response} from 'express';
-import {https} from 'firebase-functions';
-import {fnBuilder, httpsFn} from '../../config';
+import {fnBuilder, https} from '../../config';
 import {handler} from '../../tools';
 
-export const getTokenWithSecretKey = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./get-token-with-secret-key').handler, {
-    contentType: 'text/plain'
-  })
+export const getTokenWithSecretKey = https.onRequest((req, resp) =>
+  handler(req, resp, require('./get-token-with-secret-key').handler, 'text/plain')
 );
 
 const userBuilder = fnBuilder.auth.user();

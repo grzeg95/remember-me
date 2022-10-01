@@ -1,40 +1,26 @@
-import {Response} from 'express';
-import {https} from 'firebase-functions';
-import {httpsFn} from '../../config'
+import {https} from '../../config'
 import {handler} from '../../tools';
 
-export const deleteTask = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./delete-task').handler, {
-    contentType: 'application/json'
-  })
+export const deleteTask = https.onRequest((req, resp) =>
+  handler(req, resp, require('./delete-task').handler)
 );
 
-export const saveTask = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./save-task').handler, {
-    contentType: 'application/json'
-  })
+export const saveTask = https.onRequest((req, resp) =>
+  handler(req, resp, require('./save-task').handler)
 );
 
-export const setTimesOfDayOrder = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./set-times-of-day-order').handler, {
-    contentType: 'application/json'
-  })
+export const setTimesOfDayOrder = https.onRequest((req, resp) =>
+  handler(req, resp, require('./set-times-of-day-order').handler)
 );
 
-export const saveRound = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./save-round').handler, {
-    contentType: 'application/json'
-  })
+export const saveRound = https.onRequest((req, resp) =>
+  handler(req, resp, require('./save-round').handler)
 );
 
-export const deleteRound = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./delete-round').handler, {
-    contentType: 'text/plain'
-  })
+export const deleteRound = https.onRequest((req, resp) =>
+  handler(req, resp, require('./delete-round').handler, 'text/plain')
 );
 
-export const setRoundsOrder = httpsFn.onRequest((req: https.Request, resp: Response) =>
-  handler(req, resp, require('./set-rounds-order').handler, {
-    contentType: 'application/json'
-  })
+export const setRoundsOrder = https.onRequest((req, resp) =>
+  handler(req, resp, require('./set-rounds-order').handler)
 );

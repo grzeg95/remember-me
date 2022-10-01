@@ -24,10 +24,11 @@ export const cryptoKeyVersionPath = keyManagementServiceClient.cryptoKeyVersionP
 export const fnBuilder = runWith({
   timeoutSeconds: 60,
   memory: '1GB',
-  maxInstances: 10
+  maxInstances: 10,
+  failurePolicy: true
 }).region(regionId);
 
-export const httpsFn = fnBuilder.https;
+export const https = fnBuilder.https;
 
 export const optsV2: HttpsOptions = {
   timeoutSeconds: 60,
@@ -36,6 +37,6 @@ export const optsV2: HttpsOptions = {
   maxInstances: 10,
   retry: true,
   ingressSettings: 'ALLOW_ALL',
-  concurrency: 80,
+  concurrency: 250,
   invoker: 'public'
 };

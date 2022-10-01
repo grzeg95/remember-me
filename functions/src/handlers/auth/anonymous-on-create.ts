@@ -2,6 +2,7 @@ import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
 import {firestore} from 'firebase-admin';
 import {getAuth, UserRecord} from 'firebase-admin/auth';
+import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
 import {createSampleUserData} from './user-before-create';
@@ -10,7 +11,14 @@ const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-export const handler = (user: UserRecord) => {
+export const handler = (user: UserRecord, context: EventContext) => {
+
+  const eventAgeMs = Date.now() - Date.parse(context.timestamp);
+  const eventMaxAgeMs = 60 * 1000;
+  if (eventAgeMs > eventMaxAgeMs) {
+    console.log(`Dropping event ${context.eventId} with age[ms]: ${eventAgeMs}`);
+    return Promise.resolve();
+  }
 
   if (user.providerData.length) {
     return Promise.resolve();
