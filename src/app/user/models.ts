@@ -50,11 +50,6 @@ export interface Round {
   name: string;
 }
 
-export interface TimesOfDay {
-  timesOfDay?: string[];
-  timesOfDayCardinality?: number[];
-}
-
 export interface TodayTask {
   description: string;
   timesOfDay: {[key in string]: boolean};

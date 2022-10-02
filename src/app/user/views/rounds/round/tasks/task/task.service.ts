@@ -1,4 +1,4 @@
-import {Day} from '../../../../../../../../functions/src/helpers/models';
+import {Day} from '../../../../../models';
 
 export class TaskService {
   dayMap: {[key in Day]: number} = {

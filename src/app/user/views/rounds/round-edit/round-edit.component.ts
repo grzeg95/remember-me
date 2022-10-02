@@ -7,6 +7,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService, CustomValidators} from 'services';
 import {RouterDict} from '../../../../app.constants';
+import {HTTPError} from '../../../models';
 import {RoundsService} from '../rounds.service';
 import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 
@@ -69,7 +70,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     this.savingInProgress = true;
     this.roundForm.disable();
 
-    this.roundsService.saveRound(this.name.value, this.id).pipe(catchError((error) => {
+    this.roundsService.saveRound(this.name.value, this.id).pipe(catchError((error: HTTPError) => {
       this.savingInProgress = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       this.refreshRoundByParamId(this.id);
@@ -108,7 +109,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.roundForm.disable();
         this.deletingInProgress = true;
 
-        this.roundsService.deleteRound(this.id).pipe(catchError((error) => {
+        this.roundsService.deleteRound(this.id).pipe(catchError((error: HTTPError) => {
           this.deletingInProgress = false;
           this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshRoundByParamId(this.id);

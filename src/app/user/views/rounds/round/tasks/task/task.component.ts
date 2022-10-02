@@ -12,7 +12,7 @@ import {startWith} from 'rxjs/operators';
 import {ConnectionService, CustomValidators} from 'services';
 import '../../../../../../../../global.prototype';
 import {RouterDict} from '../../../../../../app.constants';
-import {HTTPSuccess, Round, Task, TaskForm} from '../../../../../models';
+import {HTTPError, HTTPSuccess, Round, Task, TaskForm} from '../../../../../models';
 import {RoundsService} from '../../../rounds.service';
 import {TaskDialogConfirmDeleteComponent} from './task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 import {TaskService} from './task.service';
@@ -331,7 +331,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       },
       taskId: this.id,
       roundId: this.roundsService.selectedRound$.value.id
-    }).pipe(catchError((error) => {
+    }).pipe(catchError((error: HTTPError) => {
       this.savingInProgress = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
@@ -429,7 +429,7 @@ export class TaskComponent implements OnInit, OnDestroy {
         this.roundsService.deleteTask({
           taskId: this.id,
           roundId: this.round.id
-        }).pipe(catchError((error) => {
+        }).pipe(catchError((error: HTTPError) => {
           this.deletingInProgress = false;
           this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);

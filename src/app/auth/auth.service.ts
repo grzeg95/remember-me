@@ -152,7 +152,7 @@ export class AuthService {
 
           let firebaseUser: FirebaseUser;
 
-          return this.getTokenWithSecretKey().pipe(
+          return this.getTokenWithSecretKey(currentFirebaseUser).pipe(
             mergeMap((idTokenResult) => this.angularFirebaseAuthService.signInWithCustomToken(idTokenResult)),
             mergeMap((userCredential) => {
               firebaseUser = userCredential.user;
@@ -181,8 +181,8 @@ export class AuthService {
     );
   }
 
-  getTokenWithSecretKey(): Observable<string> {
-    return this.angularFirebaseAuthService.getAuthorizationToken(this.firebaseUser$.value).pipe(
+  getTokenWithSecretKey(firebaseUser: FirebaseUser): Observable<string> {
+    return this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser).pipe(
       switchMap((authorization) => {
         return this.functionsService.httpsOnRequest<undefined, string>('getTokenWithSecretKeyUrl', 'text/plain')(undefined, authorization);
       })

@@ -3,10 +3,10 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
-import {Round} from 'functions/src/helpers/models';
 import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService} from 'services';
 import {RouterDict} from 'src/app/app.constants';
+import {HTTPError, Round} from '../../../../../models';
 import {RoundsService} from '../../../rounds.service';
 
 @Component({
@@ -62,7 +62,7 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       timeOfDay,
       moveBy,
       roundId: this.roundsService.selectedRound$.value.id
-    }).pipe(catchError((error) => {
+    }).pipe(catchError((error: HTTPError) => {
       this.setTimesOfDayOrderInProgress = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       moveItemInArray(this.selectedRound.timesOfDay, event.currentIndex, event.previousIndex);

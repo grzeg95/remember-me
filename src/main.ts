@@ -40,11 +40,7 @@ const initializeFirebase = (): Promise<{app: FirebaseApp}> => {
       connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
     }
 
-    return Promise.all(promises).then(() => resolve({
-      app
-    })).catch(() => resolve({
-      app
-    }));
+    return Promise.all(promises).then(() => resolve({app}));
   });
 }
 

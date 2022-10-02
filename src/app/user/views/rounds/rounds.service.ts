@@ -6,9 +6,8 @@ import {limit} from 'firebase/firestore';
 import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription, switchMap, throwError} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {BasicEncryptedValue, ConnectionService, FunctionsService, SecurityService} from 'services';
-import {Day} from '../../../../../functions/src/helpers/models';
 import {RouterDict} from '../../../app.constants';
-import {EncryptedTodayTask, HTTPSuccess, Round, Task, TasksListItem, TodayItem} from '../../models';
+import {Day, EncryptedTodayTask, HTTPSuccess, Round, Task, TasksListItem, TodayItem} from '../../models';
 
 @Injectable()
 export class RoundsService {
