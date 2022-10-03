@@ -1,5 +1,6 @@
 const _spawn = require('child_process').spawn;
 const fs = require('fs');
+const path = require('path');
 
 const exec = (text, textDone, promise) => {
 
@@ -57,7 +58,7 @@ const spawn = async (cmd, args, options) => {
 
     _spawn(cmd, args, {
       stdio,
-      cwd: __dirname,
+      cwd: path.join(__dirname, '../'),
       shell: true
     }).on('error', (code) => {
       reject(code);
@@ -87,7 +88,7 @@ const run = async () => {
   await exec('tsc', 'tsc', spawn('tsc', []));
 
   if (process.argv[2] === 'for-prod') {
-    await exec('grunting', 'grunted', spawn('grunt', [], {
+    await exec('grunting', 'grunted', spawn('cd scripts && grunt', [], {
       stdio: 'ignore'
     }));
   }
@@ -98,7 +99,7 @@ const run = async () => {
     cpEnvCmdArgs = ['cp-env.js'];
   }
 
-  await exec('env coping', 'env copied', spawn('node', cpEnvCmdArgs));
+  await exec('env coping', 'env copied', spawn('cd scripts && node', cpEnvCmdArgs));
 
   console.log(`• build:functions:${process.argv[2] ? `${process.argv[2]}:` : ''}done`);
 };

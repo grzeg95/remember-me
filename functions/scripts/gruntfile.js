@@ -4,7 +4,7 @@ module.exports = function (grunt) {
     // define source files and their destinations
     uglify: {
       files: {
-        src: 'lib/**/*.js',
+        src: '../lib/**/*.js',
         dest: '.',
         expand: true,
         flatten: false

@@ -3,8 +3,8 @@ const colors = require('colors');
 const path = require('path');
 const fs = require('fs');
 
-const DOTENV_PATH = path.join(__dirname, '.env.hosting');
-const DOTENV_PROD_PATH = path.join(__dirname, '.env.hosting.prod');
+const DOTENV_PATH = path.join(__dirname, '../', '.env.hosting');
+const DOTENV_PROD_PATH = path.join(__dirname, '../', '.env.hosting.prod');
 const writeFileSync = require('fs').writeFileSync;
 
 const getEnvironmentString = () => {
@@ -50,9 +50,9 @@ const createFoldersAllTheWayDown = (filePath) => {
 };
 
 const paths = [{
-  dotenvPath: DOTENV_PATH, environmentPath: './src/environments/environment.ts'
+  dotenvPath: DOTENV_PATH, environmentPath: '../src/environments/environment.ts'
 }, {
-  dotenvPath: DOTENV_PROD_PATH, environmentPath: './src/environments/environment.prod.ts'
+  dotenvPath: DOTENV_PROD_PATH, environmentPath: '../src/environments/environment.prod.ts'
 }];
 
 for (const path of paths) {

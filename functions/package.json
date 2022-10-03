@@ -2,8 +2,8 @@
   "name": "functions",
   "scripts": {
     "lint": "tslint --project tsconfig.json",
-    "build": "node build-functions.js for-prod",
-    "build:dev": "node build-functions.js",
+    "build": "node scripts/build-functions.js for-prod",
+    "build:dev": "node scripts/build-functions.js",
     "deploy:prod": "firebase use default && firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
