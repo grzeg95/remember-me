@@ -3,8 +3,10 @@ const colors = require('colors');
 const path = require('path');
 const fs = require('fs');
 
-const DOTENV_PATH = path.join(__dirname, '../', '.env.remote-config-default');
-const DOTENV_PROD_PATH = path.join(__dirname, '../', '.env.remote-config-default.prod');
+const basePath = path.join(__dirname, '../');
+
+const DOTENV_PATH = path.join(basePath, '.env.remote-config-default');
+const DOTENV_PROD_PATH = path.join(basePath, '.env.remote-config-default.prod');
 const writeFileSync = require('fs').writeFileSync;
 
 const getEnvironmentString = () => {
@@ -22,9 +24,9 @@ const getEnvironmentString = () => {
 };
 
 const createFoldersAllTheWayDown = (filePath) => {
-  const folders = filePath.split('/').slice(0, -1);
+  const folders = filePath.split(/\\|\//).slice(0, -1);
   folders.reduce((acc, folder) => {
-    const folderPath = acc + folder + '/';
+    const folderPath = path.join(acc, folder, '/');
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath);
     }
@@ -33,9 +35,9 @@ const createFoldersAllTheWayDown = (filePath) => {
 };
 
 const paths = [{
-  dotenvPath: DOTENV_PATH, remoteConfigPath: '../src/assets/remote-config-default.json'
+  dotenvPath: DOTENV_PATH, remoteConfigPath: path.join(basePath, 'src/assets/remote-config-default.json')
 }, {
-  dotenvPath: DOTENV_PROD_PATH, remoteConfigPath: '../src/assets/remote-config-default-prod.json'
+  dotenvPath: DOTENV_PROD_PATH, remoteConfigPath: path.join(basePath, 'src/assets/remote-config-default-prod.json')
 }];
 
 for (const path of paths) {

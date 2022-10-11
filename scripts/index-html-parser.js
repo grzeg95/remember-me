@@ -4,8 +4,10 @@ const path = require('path');
 const {readdirSync, rmSync, readFileSync} = require("fs");
 const {join} = require("path");
 
-const files = readdirSync(path.join(__dirname, '../', 'public', 'html'));
-const indexPath = path.join(__dirname, '../', 'public', 'html', 'index.html');
+const basePath = path.join(__dirname, '../');
+
+const files = readdirSync(path.join(basePath, 'public/html'));
+const indexPath = path.join(basePath, 'public/html/index.html');
 const $ = cheerio.load(fs.readFileSync(indexPath));
 const script = $('script');
 const link = $('link');
@@ -16,7 +18,7 @@ for (const fileName of files) {
 
   if (filesToLoad.has(fileName.split('.')[0])) {
 
-    const filePath = join(__dirname, '../', 'public', 'html', fileName);
+    const filePath = join(basePath, 'public/html', fileName);
 
     scriptMap[fileName] = {
       text: readFileSync(filePath),
@@ -58,7 +60,7 @@ script.each((_, elem) => {
     $(elem).attr('src', null);
     $(elem).attr('crossorigin', null);
     $(elem).text(scriptMap[src].text);
-    rmSync(join(__dirname, '../', 'public', 'html', scriptMap[src].fileName));
+    rmSync(join(basePath, 'public/html', scriptMap[src].fileName));
   }
 });
 
@@ -70,7 +72,7 @@ link.each((i, elem) => {
     const style = $('<style></style>');
     style.text(scriptMap[href].text);
     $(elem).replaceWith(style);
-    rmSync(join(__dirname, '../', 'public', 'html', scriptMap[href].fileName));
+    rmSync(join(basePath, 'public/html', scriptMap[href].fileName));
   }
 });
 
