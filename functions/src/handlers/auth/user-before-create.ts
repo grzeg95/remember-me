@@ -129,11 +129,7 @@ export const handler = (user: AuthUserRecord) => {
       return transactionWrite.execute();
     }).then(() => {
 
-      let customClaims: any = {encryptedSymmetricKey};
-
-      if (process.env.FUNCTIONS_EMULATOR) {
-        customClaims = JSON.stringify(customClaims)
-      }
+      const customClaims: any = {encryptedSymmetricKey};
 
       return {
         customClaims

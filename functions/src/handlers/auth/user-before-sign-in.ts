@@ -10,13 +10,7 @@ export const handler = (user: AuthUserRecord): Promise<BeforeSignInResponse> => 
 
   return app.doc(`users/${user.uid}`).get().then((snap) => {
 
-    let customClaims;
-
-    if (process.env.FUNCTIONS_EMULATOR) {
-      customClaims = JSON.parse(user.customClaims?.toString() || '{}');
-    } else {
-      customClaims = user.customClaims || {};
-    }
+    const customClaims = user.customClaims || {};
 
     const encryptedSymmetricKey = customClaims?.encryptedSymmetricKey as string;
 
@@ -35,11 +29,7 @@ export const handler = (user: AuthUserRecord): Promise<BeforeSignInResponse> => 
       }).then(([decryptResponse]) => {
         const secretKey = (decryptResponse.plaintext || '').toString();
 
-        let sessionClaims: any = {secretKey}
-
-        if (process.env.FUNCTIONS_EMULATOR) {
-          sessionClaims = JSON.stringify(sessionClaims)
-        }
+        const sessionClaims: any = {secretKey};
 
         return {
           sessionClaims

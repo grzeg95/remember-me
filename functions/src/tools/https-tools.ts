@@ -1,4 +1,4 @@
-import {auth} from 'firebase-admin';
+import {appCheck, auth} from 'firebase-admin';
 import {https, Response} from 'firebase-functions';
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
 import {HttpsError} from 'firebase-functions/lib/providers/https';
@@ -19,7 +19,7 @@ export type ContentType =
   'text/plain';
 
 const methods = ['POST', 'OPTIONS'];
-const allowedHeaders = ['authorization', 'content-type'];
+const allowedHeaders = ['authorization', 'content-type', 'X-Firebase-AppCheck'];
 
 const cors = require('cors')({
   methods,
@@ -54,9 +54,20 @@ export interface Context {
 
 const getContext = (req: https.Request, res: Response): Promise<Context> => {
 
-  const authPromise = auth().verifyIdToken(req.headers.authorization?.split('Bearer ')[1] + '').catch(() => undefined);
+  const decodedIdTokenPromise = auth().verifyIdToken(req.headers.authorization?.split('Bearer ')[1] + '').catch(() => undefined);
+  const appCheckVerifyAppCheckTokenResponsePromise = appCheck().verifyToken(req.get('X-Firebase-AppCheck') || '').catch(() => undefined);
 
-  return Promise.all([authPromise]).then(([decodedIdToken]) => {
+  return Promise.all([
+    decodedIdTokenPromise,
+    appCheckVerifyAppCheckTokenResponsePromise
+  ]).then(([
+    decodedIdToken,
+    appCheckVerifyAppCheckTokenResponse
+  ]) => {
+
+    if (!appCheckVerifyAppCheckTokenResponse) {
+      throw new Error();
+    }
 
     let data = req.body;
 
@@ -110,15 +121,14 @@ export const handler = (req: https.Request, res: Response, next: (context: Conte
           typeof contentType === 'string' &&
           contentType !== (context.req.get('content-type') || '')
         ))) {
-        sendError(res);
-        return;
+        throw new Error();
       }
 
       next(context).then((functionResult) => {
         sendSuccess(res, functionResult);
-      }).catch((err) => {
-        sendError(res, err);
       });
+    }).catch((err) => {
+      sendError(res, err);
     });
   });
 };
