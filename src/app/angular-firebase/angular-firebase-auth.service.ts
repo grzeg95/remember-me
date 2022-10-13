@@ -21,9 +21,10 @@ import {
   User as FirebaseUser,
   UserCredential
 } from 'firebase/auth';
-import {BehaviorSubject, catchError, defer, filter, map, Observable, Subscription} from 'rxjs';
+import {BehaviorSubject, catchError, defer, filter, map, Observable, of, Subscription} from 'rxjs';
 import {AUTH} from './angular-firebase-injectors';
 import {runInZone} from './tools';
+import {startWith} from "rxjs/operators";
 
 @Injectable()
 export class AngularFirebaseAuthService implements OnDestroy {
@@ -59,6 +60,7 @@ export class AngularFirebaseAuthService implements OnDestroy {
     }
 
     return this._user$.asObservable().pipe(
+      startWith(this._user$.value),
       filter((firebaseUser) => firebaseUser !== undefined)
     );
   }
@@ -132,6 +134,9 @@ export class AngularFirebaseAuthService implements OnDestroy {
   }
 
   getAuthorizationToken(firebaseUser: FirebaseUser, forceRefresh: boolean = false): Observable<string> {
-    return defer(() => getIdToken(firebaseUser, forceRefresh)).pipe(map((token) => `Bearer ${token}`));
+    return defer(() => getIdToken(firebaseUser, forceRefresh)).pipe(
+      map((token) => `Bearer ${token}`),
+      catchError(() => of(undefined))
+    );
   }
 }

@@ -1,11 +1,11 @@
 import {Injectable} from '@angular/core';
 import {Router} from '@angular/router';
-import {AngularFirebaseAuthService, AngularFirebaseFirestoreService} from 'angular-firebase';
-import {AuthService} from 'auth';
+import {AngularFirebaseFirestoreService, AngularFirebaseFunctionsService} from 'angular-firebase';
+import {AuthService, FirebaseUser} from 'auth';
 import {limit} from 'firebase/firestore';
-import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription, switchMap, throwError} from 'rxjs';
+import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
-import {BasicEncryptedValue, ConnectionService, FunctionsService, SecurityService} from 'services';
+import {BasicEncryptedValue, ConnectionService, SecurityService} from 'services';
 import {RouterDict} from '../../../app.constants';
 import {Day, EncryptedTodayTask, HTTPSuccess, Round, Task, TasksListItem, TodayItem} from '../../models';
 
@@ -41,18 +41,23 @@ export class RoundsService {
 
   lastTodayName = '.';
 
+  firebaseUser: FirebaseUser;
+  firebaseUserSub: Subscription;
+
   constructor(
-    private functionService: FunctionsService,
+    private angularFirebaseFunctionsService: AngularFirebaseFunctionsService,
     private authService: AuthService,
     private router: Router,
     private connectionService: ConnectionService,
     private securityService: SecurityService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
-    private angularFirebaseAuthService: AngularFirebaseAuthService,
+    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService
   ) {
   }
 
   init() {
+
+    this.firebaseUserSub = this.authService.firebaseUser$.subscribe((firebaseUser) => this.firebaseUser = firebaseUser);
+
     this.userSub = this.authService.user$.subscribe((user) => {
 
       // after log out user will be null
@@ -310,36 +315,14 @@ export class RoundsService {
   }
 
   saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
-
-    // is logged in
-    if (this.authService.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionService.httpsOnRequest<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>('saveRoundUrl')({
-            roundId,
-            name
-          }, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>('saveRoundUrl')({
+      roundId,
+      name
+    }, this.firebaseUser);
   }
 
   deleteRound(id: string): Observable<HTTPSuccess> {
-
-    // is logged in
-    if (this.authService.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionService.httpsOnRequest<string, HTTPSuccess>('deleteRoundUrl', 'text/plain')(id, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<string, HTTPSuccess>('deleteRoundUrl', 'text/plain')(id, this.firebaseUser);
   }
 
   getRoundById(roundId: string): Observable<Round> {
@@ -354,18 +337,7 @@ export class RoundsService {
   }
 
   setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
-
-    // is logged in
-    if (this.authService.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionService.httpsOnRequest<{moveBy: number, roundId: string}, {[key: string]: string}>('setRoundsOrderUrl')(data, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<{moveBy: number, roundId: string}, {[key: string]: string}>('setRoundsOrderUrl')(data, this.firebaseUser);
   }
 
   getTaskById(id: string, roundId: string): Observable<Task | null> {
@@ -384,51 +356,23 @@ export class RoundsService {
   }
 
   setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {
-
-    // is logged in
-    if (this.authService.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionService.httpsOnRequest<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>('setTimesOfDayOrderUrl')(data, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>('setTimesOfDayOrderUrl')(data, this.firebaseUser);
   }
 
   saveTask(data: {task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}): Observable<HTTPSuccess> {
-
-    // is logged in
-    if (this.authService.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionService.httpsOnRequest<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>('saveTaskUrl')(data, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>('saveTaskUrl')(data, this.firebaseUser);
   }
 
   deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
-
-    // is logged in
-    if (this.authService.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.authService.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionService.httpsOnRequest<{taskId: string, roundId: string}, HTTPSuccess>('deleteTaskUrl')(data, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<{taskId: string, roundId: string}, HTTPSuccess>('deleteTaskUrl')(data, this.firebaseUser);
   }
 
   clearCache() {
+
+    if (this.firebaseUserSub && !this.firebaseUserSub.closed) {
+      this.firebaseUserSub.unsubscribe();
+    }
+
     if (this.userSub && !this.userSub.closed) {
       this.userSub.unsubscribe();
     }

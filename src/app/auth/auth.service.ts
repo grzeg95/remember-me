@@ -1,11 +1,15 @@
 import {Injectable} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
-import {AngularFirebaseAuthService, AngularFirebaseFirestoreService} from 'angular-firebase';
+import {
+  AngularFirebaseAuthService,
+  AngularFirebaseFirestoreService,
+  AngularFirebaseFunctionsService
+} from 'angular-firebase';
 import {GoogleAuthProvider, IdTokenResult, UserCredential} from 'firebase/auth';
 import {deleteField, DocumentData, DocumentSnapshot} from 'firebase/firestore';
-import {BehaviorSubject, catchError, map, mergeMap, NEVER, Observable, Subscription, switchMap, throwError} from 'rxjs';
-import {FunctionsService, SecurityService} from 'services';
+import {BehaviorSubject, catchError, map, mergeMap, NEVER, Observable, Subscription, throwError} from 'rxjs';
+import {SecurityService} from 'services';
 import {RouterDict} from '../app.constants';
 import {EncryptedUser} from './index';
 import {FirebaseUser, User} from './user-data.model';
@@ -27,9 +31,9 @@ export class AuthService {
     private router: Router,
     private snackBar: MatSnackBar,
     private angularFirebaseAuthService: AngularFirebaseAuthService,
-    private functionsService: FunctionsService,
     private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
-    private securityService: SecurityService
+    private securityService: SecurityService,
+    private angularFirebaseFunctionsService: AngularFirebaseFunctionsService,
   ) {
     this.init();
   }
@@ -182,11 +186,7 @@ export class AuthService {
   }
 
   getTokenWithSecretKey(firebaseUser: FirebaseUser): Observable<string> {
-    return this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser).pipe(
-      switchMap((authorization) => {
-        return this.functionsService.httpsOnRequest<undefined, string>('getTokenWithSecretKeyUrl', 'text/plain')(undefined, authorization);
-      })
-    );
+    return this.angularFirebaseFunctionsService.httpsOnRequest<null, string>('getTokenWithSecretKeyUrl', 'text/plain')(null, firebaseUser);
   }
 
   userPostAction(cryptoKey: CryptoKey, firebaseUser: FirebaseUser, idTokenResult: IdTokenResult, actionUserDocSnap: DocumentSnapshot<DocumentData>): Observable<void> {
@@ -393,31 +393,16 @@ export class AuthService {
   }
 
   uploadProfileImage(file: File): Observable<{message: string}> {
+    const firebaseUser = this.firebaseUser$.value;
 
-    // is logged in
-    if (this.user$.value) {
-      return this.angularFirebaseAuthService.getAuthorizationToken(this.firebaseUser$.value).pipe(
-        switchMap((authorization) => {
-          return this.functionsService.httpsOnRequest<File, {message: string}>('uploadProfileImageUrl', file.type)(file, authorization);
-        })
-      );
-    }
-
-    return throwError(() => {
-    });
+    return this.angularFirebaseFunctionsService.httpsOnRequest<File, {message: string}>('uploadProfileImageUrl', file.type)(file, firebaseUser);
   }
 
   removePhoto(): Observable<void> {
+    const firebaseUser = this.firebaseUser$.value;
 
-    // is logged in
-    if (this.user$.value) {
-      const firebaseUser = this.firebaseUser$.value;
-      return this.angularFirebaseFirestoreService.updateDoc(`users/${firebaseUser.uid}`, {
-        photoUrl: deleteField()
-      });
-    }
-
-    return throwError(() => {
+    return this.angularFirebaseFirestoreService.updateDoc(`users/${firebaseUser.uid}`, {
+      photoUrl: deleteField()
     });
   }
 
