@@ -38,6 +38,7 @@ export const handler = (context: Context): FunctionResultPromise => {
       cryptoKey = _cryptoKey;
 
       return sharp(data)
+        .flatten({ background: '#fff' })
         .resize({
           height: 256,
           width: 256
