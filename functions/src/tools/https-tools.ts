@@ -1,7 +1,7 @@
 import {appCheck, auth} from 'firebase-admin';
 import {https, Response} from 'firebase-functions';
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
-import {HttpsError} from 'firebase-functions/lib/providers/https';
+import {HttpsError} from 'firebase-functions/v2/https';
 import {authorizedDomains} from '../config';
 
 export interface FunctionResult {

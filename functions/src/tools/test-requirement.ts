@@ -1,4 +1,4 @@
-import {HttpsError} from 'firebase-functions/lib/providers/https';
+import {HttpsError} from 'firebase-functions/v2/https';
 
 /**
  * @function testRequirement

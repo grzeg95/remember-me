@@ -1,6 +1,6 @@
 import {KeyManagementServiceClient} from '@google-cloud/kms';
 import {runWith} from 'firebase-functions';
-import {HttpsOptions} from 'firebase-functions/lib/v2/providers/https';
+import {HttpsOptions} from 'firebase-functions/v2/https';
 
 const dotenv = require('dotenv');
 const path = require('path');
@@ -35,7 +35,6 @@ export const optsV2: HttpsOptions = {
   memory: '1GiB',
   region: regionIdForFunctionsV2,
   maxInstances: 10,
-  retry: true,
   ingressSettings: 'ALLOW_ALL',
   concurrency: 250,
   invoker: 'public'

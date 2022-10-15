@@ -38,6 +38,7 @@ export const handler = (context: Context): FunctionResultPromise => {
       cryptoKey = _cryptoKey;
 
       return sharp(data)
+        .rotate()
         .flatten({ background: '#fff' })
         .resize({
           height: 256,
@@ -67,7 +68,7 @@ export const handler = (context: Context): FunctionResultPromise => {
           body: {
             message: 'Your picture has been updated 🙃'
           }
-        }
+        };
       });
     });
 };

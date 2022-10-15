@@ -1,5 +1,5 @@
 import {firestore} from 'firebase-admin';
-import {HttpsError} from 'firebase-functions/lib/providers/https';
+import {HttpsError} from 'firebase-functions/v2/https';
 import {TransactionWrite} from './transaction-write';
 import DocumentSnapshot = firestore.DocumentSnapshot;
 import Firestore = firestore.Firestore;
