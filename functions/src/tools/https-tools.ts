@@ -95,11 +95,10 @@ const getContext = (req: https.Request, res: Response): Promise<Context> => {
 
 export const handler = (req: https.Request, res: Response, next: (context: Context) => FunctionResultPromise, contentType: ContentType | ContentType[] = 'application/json') => {
 
-  const rawRequest = req;
   const url = (req.headers['origin'] || req.headers['referer'] || (req.protocol + '://' + req.headers.host)) as string;
-  rawRequest.headers.origin = new URL(url).origin;
+  req.headers.origin = new URL(url).origin;
 
-  return cors(rawRequest, res, (corsError: any) => {
+  cors(req, res, (corsError: any) => {
 
     if (corsError) {
       console.log(corsError);
@@ -111,25 +110,22 @@ export const handler = (req: https.Request, res: Response, next: (context: Conte
       return;
     }
 
-    getContext(req, res).then((context) => {
+    if (((
+        Array.isArray(contentType) &&
+        contentType.indexOf((req.get('content-type') || '') as ContentType) === -1
+      ) ||
+      (
+        typeof contentType === 'string' &&
+        contentType !== (req.get('content-type') || '')
+      ))) {
+      sendError(res);
+      return;
+    }
 
-      if (((
-          Array.isArray(contentType) &&
-          contentType.indexOf((context.req.get('content-type') || '') as ContentType) === -1
-        ) ||
-        (
-          typeof contentType === 'string' &&
-          contentType !== (context.req.get('content-type') || '')
-        ))) {
-        throw new Error();
-      }
-
-      next(context).then((functionResult) => {
-        sendSuccess(res, functionResult);
-      });
-    }).catch((err) => {
-      sendError(res, err);
-    });
+    getContext(req, res)
+      .then(next)
+      .then((functionResult) => sendSuccess(res, functionResult))
+      .catch((err) => sendError(res, err));
   });
 };
 
