@@ -1,16 +1,12 @@
 {
   "name": "firebase-admin",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.0.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start:firebase-admin": "node index.js"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@google-cloud/kms": "^3.0.1",
-    "firebase-admin": "11.0.1"
+    "@google-cloud/kms": "3.0.1",
+    "dotenv": "16.0.3",
+    "firebase-admin": "11.2.0"
   }
 }
