@@ -57,8 +57,12 @@ const repairCustomClaims = async (user, publicKey) => {
 
   if (changed) {
     return auth.setCustomUserClaims(user.uid, customClaims).then(() => {
+      console.log(`Edited ${user.uid} custom claims: ${JSON.stringify(customClaims)}`);
       user.customClaims = customClaims;
       return user;
+    }).catch((e) => {
+      console.log(`Edit error of ${user.uid} custom claims: ${JSON.stringify(customClaims)}`);
+      throw e;
     });
   }
 
@@ -73,7 +77,7 @@ const repairCustomClaims = async (user, publicKey) => {
  **/
 const repairUserAuth = async (user) => {
 
-  const keysToChange = {};
+  const properties = {};
 
   // time limit = 14 days
   const timeLimit = 1000 * 60 * 60 * 24 * 14;
@@ -83,18 +87,22 @@ const repairUserAuth = async (user) => {
 
     if (now - lastRefreshTime > timeLimit) {
       if (!user.disabled) {
-        keysToChange['disabled'] = true;
+        properties['disabled'] = true;
       }
     }
   }
 
-  if (Object.getOwnPropertyNames(keysToChange).length) {
-    return Promise.all(promises).then(() => {
-      auth.getUser(user.uid);
-      for (const key of keysToChange) {
-        user[key] = keysToChange[key];
+  if (Object.getOwnPropertyNames(properties).length) {
+    return auth.updateUser(user.uid, properties).then(() => {
+      console.log(`Edited ${user.uid} auth properties: ${JSON.stringify(properties)}`);
+
+      for (const key of properties) {
+        user[key] = properties[key];
       }
       return user;
+    }).catch((e) => {
+      console.log(`Edit error of ${user.uid} auth properties: ${JSON.stringify(properties)}`);
+      throw e;
     });
   }
 
@@ -111,13 +119,13 @@ const repairUserFirestoreFields = async (user) => {
 
   return firestore.doc(`users/${user.uid}`).get().then((userDocSnap) => {
 
-    const keysToChange = {};
+    const propertiesToChange = {};
 
     // set disabled
     if (user.disabled && typeof userDocSnap.data().disabled !== 'boolean') {
-      keysToChange['disabled'] = true;
+      propertiesToChange['disabled'] = true;
     } else if (!user.disabled && typeof userDocSnap.data().disabled !== 'undefined') {
-      keysToChange['disabled'] = FieldValue.delete();
+      propertiesToChange['disabled'] = FieldValue.delete();
     }
 
     // remove other fields in user doc than accepted fields
@@ -127,33 +135,37 @@ const repairUserFirestoreFields = async (user) => {
 
     if (fieldsToRemove.length) {
       for (const fieldToRemove of fieldsToRemove) {
-        keysToChange[fieldToRemove] = FieldValue.delete();
+        propertiesToChange[fieldToRemove] = FieldValue.delete();
       }
     }
 
     // add hasEncryptedSecretKey if user has it
     if (user.customClaims?.encryptedSymmetricKey && !userDocSnap.data().hasEncryptedSecretKey) {
-      keysToChange['hasEncryptedSecretKey'] = true;
+      propertiesToChange['hasEncryptedSecretKey'] = true;
     }
 
-    if (Object.getOwnPropertyNames(keysToChange).length) {
-      return userDocSnap.ref.update(keysToChange).then(() => user);
+    if (Object.getOwnPropertyNames(propertiesToChange).length) {
+      return userDocSnap.ref.update(propertiesToChange).then(() => {
+        console.log(`Edited ${user.uid} firestore properties: ${JSON.stringify(propertiesToChange)}`);
+        return user;
+      }).catch((e) => {
+        console.log(`Edit error of ${user.uid} firestore properties: ${JSON.stringify(propertiesToChange)}`);
+        throw e;
+      });
     }
 
     return user;
   });
 };
 
-return keyManagementServiceClient.getPublicKey({
-  name: cryptoKeyVersionPath
-}).then(([publicKey]) => {
+const processNextChunkOfUsers = (publicKey, nextPageToken) => {
 
-  // for 1000 users
-  return auth.listUsers().then((users) => {
+  return getAuth().listUsers(1000, nextPageToken).then(async (listUsersResult) => {
+    console.log(`Processing next ${listUsersResult.users.length} users`);
 
     const promises = [];
 
-    for (const user of users.users) {
+    for (const user of listUsersResult.users) {
       promises.push(
         repairCustomClaims(user, publicKey)
           .then(repairUserAuth)
@@ -161,6 +173,17 @@ return keyManagementServiceClient.getPublicKey({
       );
     }
 
-    return Promise.all(promises);
+    for (const promise of promises) {
+      await promise;
+    }
+
+    if (listUsersResult.pageToken) {
+      setTimeout(() => processNextChunkOfUsers(publicKey, listUsersResult.pageToken));
+    }
   });
-});
+};
+
+console.log('Getting public key');
+keyManagementServiceClient.getPublicKey({
+  name: cryptoKeyVersionPath
+}).then(([publicKey]) => setTimeout(() => processNextChunkOfUsers(publicKey)));
