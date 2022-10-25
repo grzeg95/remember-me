@@ -3,7 +3,7 @@ const {
   getRandomDaysOfTheWeek, getRandomDescription
 } = require('../../../index');
 
-const myId = myAuth.auth.uid;
+const myId = myAuth.uid;
 const expect = chai.expect;
 
 describe(`saveTask`, async () => {

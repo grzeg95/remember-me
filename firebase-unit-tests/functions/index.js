@@ -1,15 +1,21 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 process.env.FUNCTIONS_EMULATOR = 'true';
 
-const {decrypt, decryptRound, encrypt} = require('../../functions/lib/functions/src/helpers/security');
+const {decrypt, decryptRound, encrypt} = require('../../functions/lib/functions/src/tools/security');
 const {Buffer} = require('buffer');
 const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
 const test = require('firebase-functions-test')({projectId: 'remember-me-dev'});
 exports.test = test;
 exports.chai = require('chai');
-const myFunctions = require('../../functions/lib/functions/src/index');
-exports.myFunctions = myFunctions;
+const {
+  deleteTaskHandler,
+  saveTaskHandler,
+  setTimesOfDayOrderHandler,
+  deleteRoundHandler,
+  setRoundsOrderHandler,
+  saveRoundHandler
+} = require('../../functions/lib/functions/src/index').roundsHandlers;
 
 const admin = require('firebase-admin');
 admin.initializeApp();
@@ -17,16 +23,10 @@ const firestore = admin.firestore();
 exports.firestore = firestore;
 
 const myAuth = {
-  auth: {
-    uid: 'myId',
-    token: {
-      secretKey: crypto.randomBytes(32).toString('hex'),
-      email_verified: true
-    }
-  },
-  app: {
-    appId: 'lol',
-    token: 'lol'
+  uid: 'myId',
+  token: {
+    secretKey: crypto.randomBytes(32).toString('hex'),
+    email_verified: true
   }
 };
 exports.myAuth = myAuth;
@@ -58,7 +58,7 @@ const getCryptoKey = async () => {
   if (!cryptoKey) {
     cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(myAuth.auth.token.secretKey, 'hex'),
+      Buffer.from(myAuth.token.secretKey, 'hex'),
       {
         name: 'AES-GCM'
       },
@@ -71,43 +71,51 @@ const getCryptoKey = async () => {
 exports.getCryptoKey = getCryptoKey;
 
 exports.saveRound = {
-  wrapped: test.wrap(myFunctions.rounds.saveRound),
+  handler: saveRoundHandler,
   name: 'saveRound'
 };
 
 exports.deleteRound = {
-  wrapped: test.wrap(myFunctions.rounds.deleteRound),
+  handler: deleteRoundHandler,
   name: 'deleteRound'
 };
 
 exports.saveTask = {
-  wrapped: test.wrap(myFunctions.rounds.saveTask),
+  handler: saveTaskHandler,
   name: 'saveTask'
 };
 
 exports.deleteTask = {
-  wrapped: test.wrap(myFunctions.rounds.deleteTask),
+  handler: deleteTaskHandler,
   name: 'deleteTask'
 };
 
 exports.setTimesOfDayOrder = {
-  wrapped: test.wrap(myFunctions.rounds.setTimesOfDayOrder),
+  handler: setTimesOfDayOrderHandler,
   name: 'setTimesOfDayOrder'
 };
 
 exports.setRoundsOrder = {
-  wrapped: test.wrap(myFunctions.rounds.setRoundsOrder),
+  handler: setRoundsOrderHandler,
   name: 'setRoundsOrder'
 };
 
-exports.getResult = async (fn, ...args) => {
+exports.getResult = async (fn, data, auth) => {
+
   try {
     if (!exports.runTimes[fn.name]) {
       exports.runTimes[fn.name] = new RunTime();
     }
 
     exports.runTimes[fn.name].resetTimeStart();
-    const result = await fn.wrapped(...args);
+
+    const context = {
+      auth,
+      data
+    };
+
+    const result = (await fn.handler(context)).body;
+
     exports.runTimes[fn.name].addToRunTime();
     return result;
 
@@ -328,7 +336,7 @@ exports.getKEmptyRounds = (rounds) => {
 
 exports.simplifyUserResult = (user, timesOfDayId) => {
 
-  const myId = myAuth.auth.uid;
+  const myId = myAuth.uid;
 
   if (user[myId]['collections']['rounds']) {
     const simplifyUserResult = {

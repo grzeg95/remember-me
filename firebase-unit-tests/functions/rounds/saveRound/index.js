@@ -3,7 +3,7 @@ const {
 } = require('../../index');
 const testsInvalid = require('./tests.json');
 
-const myId = myAuth.auth.uid;
+const myId = myAuth.uid;
 const expect = chai.expect;
 
 const testCreatingNextEmptyRounds = (i, max, ids) => {

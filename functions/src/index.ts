@@ -1,6 +1,8 @@
 import {initializeApp} from 'firebase-admin/app';
-
 initializeApp();
+
+// for unit tests
+exports.roundsHandlers = require('../src/handlers/rounds/index').handlers;
 
 exports.rounds = require('./handlers/rounds');
 exports.roundsv2 = require('./handlers/rounds/v2');

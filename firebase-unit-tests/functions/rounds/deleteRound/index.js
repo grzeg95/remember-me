@@ -8,7 +8,7 @@ const {
   deleteRound, saveRound, saveTask
 } = require('../../index');
 
-const myId = myAuth.auth.uid;
+const myId = myAuth.uid;
 const expect = chai.expect;
 
 describe(`deleteRound`, async () => {

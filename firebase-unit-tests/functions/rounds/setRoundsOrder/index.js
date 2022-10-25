@@ -2,7 +2,7 @@ const {
   chai, myAuth, firestore, removeUser, getResult, setRoundsOrder, saveRound, decrypt, getCryptoKey
 } = require('../../index');
 
-const myId = myAuth.auth.uid;
+const myId = myAuth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
 

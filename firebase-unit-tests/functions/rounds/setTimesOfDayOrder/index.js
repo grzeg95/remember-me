@@ -2,10 +2,10 @@ const {
   chai, myAuth, firestore, removeUser, getResult, decryptRound, setTimesOfDayOrder, saveRound, getCryptoKey
 } = require('../../index');
 
-const myId = myAuth.auth.uid;
+const myId = myAuth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
-const {encryptRound} = require('../../../../functions/lib/functions/src/helpers/security');
+const {encryptRound} = require('../../../../functions/lib/functions/src/tools/security');
 
 describe(`setTimesOfDayOrder`, async () => {
 

@@ -3,7 +3,7 @@ const {
   saveTask, saveRound
 } = require('../../index');
 
-const myId = myAuth.auth.uid;
+const myId = myAuth.uid;
 const expect = chai.expect;
 const tests = require('../saveTask/tests.json');
 const testsInvalid = require('./tests.json');
