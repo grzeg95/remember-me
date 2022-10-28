@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {DocumentData, DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
 import {
   Context,
   decrypt,
@@ -13,7 +13,7 @@ import {
   writeUser
 } from '../../tools';
 
-const app = firestore();
+const app = getFirestore();
 
 /**
  * Save times of day
@@ -51,10 +51,10 @@ export const handler = (context: Context): FunctionResultPromise => {
 
   let roundId = data.roundId;
   let created = false;
-  let userDocSnap: firestore.DocumentSnapshot;
-  let roundDocSnapTmp: firestore.DocumentSnapshot;
-  let userDocSnapData: firestore.DocumentData | undefined;
-  let roundDocSnap: firestore.DocumentSnapshot;
+  let userDocSnap: DocumentSnapshot;
+  let roundDocSnapTmp: DocumentSnapshot;
+  let userDocSnapData: DocumentData | undefined;
+  let roundDocSnap: DocumentSnapshot;
 
   return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
@@ -118,8 +118,8 @@ export const handler = (context: Context): FunctionResultPromise => {
           return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey).then((round) => {
 
             /*
-            * Check if name was changed
-            * */
+             * Check if name was changed
+             * */
             testRequirement(round.name === data.name);
 
             transactionWrite.update(roundDocSnap.ref, encryptRound({

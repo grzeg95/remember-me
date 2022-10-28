@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
 import {
   Context,
   decrypt,
@@ -12,10 +12,8 @@ import {
   TransactionWrite,
   writeUser
 } from '../../tools';
-import DocumentData = firestore.DocumentData;
-import DocumentSnapshot = firestore.DocumentSnapshot;
 
-const app = firestore();
+const app = getFirestore();
 
 export const handler = (context: Context): FunctionResultPromise => {
 
@@ -27,9 +25,9 @@ export const handler = (context: Context): FunctionResultPromise => {
 
   testRequirement(!auth?.token.secretKey);
 
-  let userDocSnap: firestore.DocumentSnapshot;
-  let roundDocSnap: firestore.DocumentSnapshot;
-  const docsToRemovePromise: (Promise<DocumentSnapshot<DocumentData>> | DocumentSnapshot)[] = [];
+  let userDocSnap: DocumentSnapshot;
+  let roundDocSnap: DocumentSnapshot;
+  const docsToRemovePromise: (Promise<DocumentSnapshot> | DocumentSnapshot)[] = [];
 
   return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
     return app.runTransaction((transaction) => {
@@ -55,7 +53,7 @@ export const handler = (context: Context): FunctionResultPromise => {
           docsToRemovePromise.push(transaction.get(roundDocSnap.ref.collection('task').doc(taskId)));
         }
 
-        const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot<DocumentData>>[] = [];
+        const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot>[] = [];
 
         // get all today's
         for (const todayId of roundDocSnapData.todaysIds) {
@@ -103,7 +101,7 @@ export const handler = (context: Context): FunctionResultPromise => {
         writeUser(transactionWrite, userDocSnap, encrypt(roundsInUser, cryptoKey).then((encryptedRounds) => {
           return {
             rounds: encryptedRounds
-          }
+          };
         }));
 
         return transactionWrite.execute();
@@ -114,6 +112,6 @@ export const handler = (context: Context): FunctionResultPromise => {
           details: 'Your round has been deleted 🤭'
         }
       }));
-    })
+    });
   });
 };

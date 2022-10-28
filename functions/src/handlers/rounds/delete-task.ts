@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {Round, Task} from '../../models';
 import {
   Context,
@@ -13,19 +13,17 @@ import {
   testRequirement,
   TransactionWrite
 } from '../../tools';
-import DocumentSnapshot = firestore.DocumentSnapshot;
-import Transaction = firestore.Transaction;
 
-const app = firestore();
+const app = getFirestore();
 
 export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot): Promise<Transaction> => {
 
   const transactionWrite = new TransactionWrite(transaction);
-  let roundDocSnap: firestore.DocumentSnapshot;
-  let taskDocSnap: firestore.DocumentSnapshot;
+  let roundDocSnap: DocumentSnapshot;
+  let taskDocSnap: DocumentSnapshot;
   let task: Task;
   let round: Round;
-  let todayTasks: firestore.DocumentSnapshot[];
+  let todayTasks: DocumentSnapshot[];
   const todaySnapsToCheckToRemove: DocumentSnapshot[] = [];
   let timesOfDay: string[];
   let timesOfDayCardinality: number[];
@@ -47,8 +45,8 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
     testRequirement(!taskDocSnap.exists);
 
     /*
-    * Read all data
-    * */
+     * Read all data
+     * */
 
     return Promise.all([
       decryptTask(taskDocSnap.data() as {value: string}, cryptoKey),
@@ -78,7 +76,7 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
             }
 
             return docSnap;
-          })
+          });
         })
       );
     }
@@ -138,8 +136,8 @@ export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskI
     }
 
     /*
-    * Proceed all data
-    * */
+     * Proceed all data
+     * */
 
     // remove task
     transactionWrite.delete(taskDocSnap.ref);
@@ -197,7 +195,7 @@ export const handler = (context: Context): FunctionResultPromise => {
 
       return getUserDocSnap(app, transaction, auth?.uid as string).then((userDocSnap) => {
         return proceedTaskRemoving(cryptoKey, data.roundId, data.taskId, transaction, userDocSnap);
-      })
+      });
     }).then(() => ({
       code: 200,
       body: {

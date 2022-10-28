@@ -1,7 +1,7 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
-import {firestore} from 'firebase-admin';
 import {getAuth, UserRecord} from 'firebase-admin/auth';
+import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
 import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
@@ -25,10 +25,10 @@ export const handler = (user: UserRecord, context: EventContext) => {
   }
 
   const key = randomBytes(32);
-  let userDocSnap: firestore.DocumentSnapshot;
+  let userDocSnap: DocumentSnapshot;
   let transactionWrite: TransactionWrite;
   let cryptoKey: CryptoKey;
-  const app = firestore();
+  const app = getFirestore();
 
   return app.runTransaction(async (transaction) => {
 
@@ -68,7 +68,7 @@ export const handler = (user: UserRecord, context: EventContext) => {
       return getAuth().setCustomUserClaims(user.uid, {encryptedSymmetricKey});
     }).then(() => {
       return getUserDocSnap(app, transaction, user.uid);
-    }).then((_userDocSnap: firestore.DocumentSnapshot) => {
+    }).then((_userDocSnap: DocumentSnapshot) => {
       userDocSnap = _userDocSnap;
 
       // createSampleUserData
@@ -78,7 +78,7 @@ export const handler = (user: UserRecord, context: EventContext) => {
         return {
           rounds,
           hasEncryptedSecretKey: true
-        }
+        };
       }));
 
       return transactionWrite.execute();

@@ -1,6 +1,6 @@
-import {firestore} from 'firebase-admin';
 // tslint:disable-next-line:no-import-side-effect
 import '../../../../global.prototype';
+import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../models';
 import {
   BasicEncryptedValue,
@@ -20,10 +20,8 @@ import {
   testRequirement,
   TransactionWrite
 } from '../../tools';
-import DocumentSnapshot = firestore.DocumentSnapshot;
-import Transaction = firestore.Transaction;
 
-const app = firestore();
+const app = getFirestore();
 
 /**
  * @interface TaskDiff
@@ -115,7 +113,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     timesOfDay
   }, cryptoKey);
 
-  const todaysIds: Set<string> = new Set(roundDocSnapData.todaysIds);
+  const todaysIds = roundDocSnapData.todaysIds.toSet();
 
   // get all days from round
   const todayDocRefsMap: {
@@ -128,7 +126,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   const docsSnapsPromises: Promise<DocumentSnapshot>[] = [];
   let decryptedToday: Today[];
   let docsSnaps: DocumentSnapshot[];
-  let todayTaskDocSnapsDayPack: {day: Day, docSnap: firestore.DocumentSnapshot<firestore.DocumentData>}[];
+  let todayTaskDocSnapsDayPack: {day: Day, docSnap: DocumentSnapshot}[];
   let decryptedTodayTaskDocSnaps: TodayTask[];
   const todayTaskDocSnapsMap: {
     [key in string]: {
@@ -173,7 +171,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
       todayTaskDocSnapsDayPackPromise.push(
         transaction.get(todayDocRefsMap[day].docSnap.ref.collection(`task`).doc(`${taskDocSnap.id}`))
           .then((docSnap) => ({day, docSnap}))
-      )
+      );
     }
 
     // get all days task from existed task
@@ -430,7 +428,7 @@ const checkEntryRequirements = (data: any, callableContext: Context) => {
 
 };
 
-const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: firestore.Transaction, roundDocSnapData: Round, roundDocSnap: firestore.DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
+const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: Transaction, roundDocSnapData: Round, roundDocSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
   return transaction.get(roundDocSnap.ref.collection('task').doc(taskId)).then((taskDocSnap) => {
     if (!taskDocSnap.exists) {
       testRequirement(roundDocSnapData.tasksIds.length + 1 > 25, `You can own up tp 25 tasks but merge has ${roundDocSnapData.tasksIds.length + 1} 🤔`);
@@ -516,18 +514,18 @@ export const handler = async (context: Context): FunctionResultPromise => {
             tasksIds.add(taskId);
           } else {
             /*
-            * Check if nothing changed or only description was changed
-            * */
+             * Check if nothing changed or only description was changed
+             * */
             const taskChange = getTaskChange(taskDocSnapData, task);
 
             /*
-            * Check if nothing was changed
-            * */
+             * Check if nothing was changed
+             * */
             testRequirement(!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay);
 
             /*
-            * Only description was changed
-            * */
+             * Only description was changed
+             * */
             if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
               // read all task for user/{userId}/rounds/{roundId}/today/{day}/task/{taskId}
@@ -549,21 +547,21 @@ export const handler = async (context: Context): FunctionResultPromise => {
                         );
                       }
                     })
-                  )
+                  );
                 }
 
                 return Promise.all(decryptTodayPromises).then(() => {
                   return Promise.all(todayTaskDocSnapsToUpdatePromises).then((todayTaskDocSnapsToUpdate) => {
 
                     /*
-                    * Proceed all data
-                    * */
+                     * Proceed all data
+                     * */
 
                     for (const todayTask of todayTaskDocSnapsToUpdate) {
                       testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
 
                       transactionWrite.update(todayTask.ref, encrypt(task.description, cryptoKey).then((description) => {
-                        return {description}
+                        return {description};
                       }));
                     }
 
@@ -575,13 +573,13 @@ export const handler = async (context: Context): FunctionResultPromise => {
 
                     return transactionWrite.execute();
                   });
-                })
+                });
               });
             }
 
             /*
-            * Only daysOfTheWeek was changed
-            * */
+             * Only daysOfTheWeek was changed
+             * */
             if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
 
               transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));

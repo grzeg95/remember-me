@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {
   Context,
   decrypt,
@@ -10,7 +10,7 @@ import {
   TransactionWrite
 } from '../../tools';
 
-const app = firestore();
+const app = getFirestore();
 
 /**
  * Set rounds order
@@ -53,8 +53,8 @@ export const handler = async (context: Context): FunctionResultPromise => {
   testRequirement(!auth?.token.secretKey);
 
   let transactionWrite: TransactionWrite;
-  let transaction: firestore.Transaction;
-  let userDocSnap: firestore.DocumentSnapshot;
+  let transaction: Transaction;
+  let userDocSnap: DocumentSnapshot;
   const roundId = data.roundId;
   const moveBy = data.moveBy;
   let cryptoKey: CryptoKey;
@@ -95,7 +95,7 @@ export const handler = async (context: Context): FunctionResultPromise => {
         transactionWrite.update(userDocSnap.ref, encrypt(rounds, cryptoKey).then((encryptedRounds) => {
           return {
             rounds: encryptedRounds
-          }
+          };
         }));
 
         return transactionWrite.execute();

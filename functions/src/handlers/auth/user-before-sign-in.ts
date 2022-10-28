@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {getFirestore} from 'firebase-admin/firestore';
 import {AuthUserRecord, BeforeSignInResponse} from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 
@@ -6,7 +6,7 @@ const crc32c = require('fast-crc32c');
 
 export const handler = (user: AuthUserRecord): Promise<BeforeSignInResponse> => {
 
-  const app = firestore();
+  const app = getFirestore();
 
   return app.doc(`users/${user.uid}`).get().then((snap) => {
 

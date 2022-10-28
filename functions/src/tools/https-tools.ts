@@ -1,4 +1,5 @@
-import {appCheck, auth} from 'firebase-admin';
+import {getAppCheck} from 'firebase-admin/app-check';
+import {getAuth} from 'firebase-admin/auth';
 import {https, Response} from 'firebase-functions';
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
 import {HttpsError} from 'firebase-functions/v2/https';
@@ -54,8 +55,8 @@ export interface Context {
 
 const getContext = (req: https.Request, res: Response): Promise<Context> => {
 
-  const decodedIdTokenPromise = auth().verifyIdToken(req.headers.authorization?.split('Bearer ')[1] + '').catch(() => undefined);
-  const appCheckVerifyAppCheckTokenResponsePromise = appCheck().verifyToken(req.get('X-Firebase-AppCheck') || '').catch(() => undefined);
+  const decodedIdTokenPromise = getAuth().verifyIdToken(req.headers.authorization?.split('Bearer ')[1] + '').catch(() => undefined);
+  const appCheckVerifyAppCheckTokenResponsePromise = getAppCheck().verifyToken(req.get('X-Firebase-AppCheck') || '').catch(() => undefined);
 
   return Promise.all([
     decodedIdTokenPromise,

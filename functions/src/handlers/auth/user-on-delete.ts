@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {getFirestore} from 'firebase-admin/firestore';
 import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
 
@@ -11,7 +11,7 @@ export const handler = async (user: UserRecord, context: EventContext) => {
     return Promise.resolve();
   }
 
-  const app = firestore();
+  const app = getFirestore();
 
   const bulkWriter = app.bulkWriter();
   const maxRetryAttempts = 10;

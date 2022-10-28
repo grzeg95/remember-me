@@ -10,7 +10,7 @@ export const handler = (context: Context): FunctionResultPromise => {
   const data = context.data;
 
   // with data
-  testRequirement(data !== null)
+  testRequirement(data !== null);
 
   // not logged in
   testRequirement(!auth);
@@ -52,7 +52,7 @@ export const handler = (context: Context): FunctionResultPromise => {
         return {
           code: 200,
           body: token
-        }
+        };
       });
   });
 };

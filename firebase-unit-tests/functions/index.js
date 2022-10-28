@@ -8,14 +8,7 @@ const {subtle} = crypto.webcrypto;
 const test = require('firebase-functions-test')({projectId: 'remember-me-dev'});
 exports.test = test;
 exports.chai = require('chai');
-const {
-  deleteTaskHandler,
-  saveTaskHandler,
-  setTimesOfDayOrderHandler,
-  deleteRoundHandler,
-  setRoundsOrderHandler,
-  saveRoundHandler
-} = require('../../functions/lib/functions/src/index').roundsHandlers;
+const roundsHandlersGetters = require('../../functions/lib/functions/src/index').roundsHandlersGetters;
 
 const admin = require('firebase-admin');
 admin.initializeApp();
@@ -71,32 +64,32 @@ const getCryptoKey = async () => {
 exports.getCryptoKey = getCryptoKey;
 
 exports.saveRound = {
-  handler: saveRoundHandler,
+  handler: roundsHandlersGetters.getSaveRoundHandler(),
   name: 'saveRound'
 };
 
 exports.deleteRound = {
-  handler: deleteRoundHandler,
+  handler: roundsHandlersGetters.getDeleteRoundHandler(),
   name: 'deleteRound'
 };
 
 exports.saveTask = {
-  handler: saveTaskHandler,
+  handler: roundsHandlersGetters.getSaveTaskHandler(),
   name: 'saveTask'
 };
 
 exports.deleteTask = {
-  handler: deleteTaskHandler,
+  handler: roundsHandlersGetters.getDeleteTaskHandler(),
   name: 'deleteTask'
 };
 
 exports.setTimesOfDayOrder = {
-  handler: setTimesOfDayOrderHandler,
+  handler: roundsHandlersGetters.getSetTimesOfDayOrderHandler(),
   name: 'setTimesOfDayOrder'
 };
 
 exports.setRoundsOrder = {
-  handler: setRoundsOrderHandler,
+  handler: roundsHandlersGetters.getSetRoundsOrderHandler(),
   name: 'setRoundsOrder'
 };
 

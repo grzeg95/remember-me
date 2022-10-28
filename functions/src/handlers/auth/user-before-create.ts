@@ -1,6 +1,6 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
-import {firestore} from 'firebase-admin';
+import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {AuthUserRecord, BeforeCreateResponse} from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {Task} from '../../models';
@@ -11,10 +11,10 @@ const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-export const createSampleUserData = (userDocSnap: firestore.DocumentSnapshot, transaction: firestore.Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
+export const createSampleUserData = (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
 
-  let roundDocSnap: firestore.DocumentSnapshot;
-  let taskDocSnap: firestore.DocumentSnapshot;
+  let roundDocSnap: DocumentSnapshot;
+  let taskDocSnap: DocumentSnapshot;
   let roundId: string;
 
   const decryptedRound = {
@@ -72,10 +72,10 @@ export const createSampleUserData = (userDocSnap: firestore.DocumentSnapshot, tr
 export const handler = (user: AuthUserRecord) => {
 
   const key = randomBytes(32);
-  let userDocSnap: firestore.DocumentSnapshot;
+  let userDocSnap: DocumentSnapshot;
   let transactionWrite: TransactionWrite;
   let cryptoKey: CryptoKey;
-  const app = firestore();
+  const app = getFirestore();
 
   return app.runTransaction(async (transaction) => {
 
@@ -113,7 +113,7 @@ export const handler = (user: AuthUserRecord) => {
     ).then((_cryptoKey) => {
       cryptoKey = _cryptoKey;
       return getUserDocSnap(app, transaction, user.uid);
-    }).then((_userDocSnap: firestore.DocumentSnapshot) => {
+    }).then((_userDocSnap: DocumentSnapshot) => {
       userDocSnap = _userDocSnap;
 
       // createSampleUserData
@@ -123,7 +123,7 @@ export const handler = (user: AuthUserRecord) => {
         return {
           rounds,
           hasEncryptedSecretKey: true
-        }
+        };
       }));
 
       return transactionWrite.execute();

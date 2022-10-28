@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
 import {Round} from '../../models';
 import {
   Context,
@@ -11,7 +11,7 @@ import {
   TransactionWrite
 } from '../../tools';
 
-const app = firestore();
+const app = getFirestore();
 
 /**
  * Set times of day order
@@ -57,7 +57,7 @@ export const handler = (context: Context): FunctionResultPromise => {
   testRequirement(!auth?.token.secretKey);
 
   let cryptoKey: CryptoKey;
-  let roundDocSnap: firestore.DocumentSnapshot;
+  let roundDocSnap: DocumentSnapshot;
   let round: Round;
 
   return getCryptoKey(context.auth?.token.secretKey).then((_cryptoKey) => {

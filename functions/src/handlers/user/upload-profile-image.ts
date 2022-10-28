@@ -1,4 +1,4 @@
-import {firestore} from 'firebase-admin';
+import {getFirestore} from 'firebase-admin/firestore';
 import {
   Context,
   encrypt,
@@ -39,7 +39,7 @@ export const handler = (context: Context): FunctionResultPromise => {
 
       return sharp(data)
         .rotate()
-        .flatten({ background: '#fff' })
+        .flatten({background: '#fff'})
         .resize({
           height: 256,
           width: 256
@@ -50,7 +50,7 @@ export const handler = (context: Context): FunctionResultPromise => {
       return encrypt(`data:image/jpeg;base64,${imageBuffer.toString('base64')}`, cryptoKey);
     }).then((encryptedPhotoUrl) => {
 
-      const firestoreApp = firestore();
+      const firestoreApp = getFirestore();
       return firestoreApp.runTransaction((transaction) => {
 
         const transactionWrite = new TransactionWrite(transaction);

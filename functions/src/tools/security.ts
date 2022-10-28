@@ -1,14 +1,9 @@
 import {Buffer} from 'buffer';
-import {
-  Round,
-  Task,
-  Today,
-  TodayTask
-} from '../models';
+import {Round, Task, Today, TodayTask} from '../models';
 
 const crypto = require('crypto');
 
-export type BasicEncryptedValue = { value: string };
+export type BasicEncryptedValue = {value: string};
 
 export const getCryptoKey = (key: string): Promise<CryptoKey> => {
 
@@ -61,7 +56,7 @@ export const decrypt = (encryptedData: string, cryptoKey: CryptoKey): Promise<st
 
 export const encryptTask = (task: Task, cryptoKey: CryptoKey): Promise<BasicEncryptedValue> => {
   return encrypt(task, cryptoKey).then((value) => {
-    return {value}
+    return {value};
   });
 };
 

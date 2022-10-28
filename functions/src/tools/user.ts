@@ -1,9 +1,6 @@
-import {firestore} from 'firebase-admin';
+import {DocumentSnapshot, Firestore, Transaction} from 'firebase-admin/firestore';
 import {HttpsError} from 'firebase-functions/v2/https';
 import {TransactionWrite} from './transaction-write';
-import DocumentSnapshot = firestore.DocumentSnapshot;
-import Firestore = firestore.Firestore;
-import Transaction = firestore.Transaction;
 
 export const getUserDocSnap = async (app: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot> => {
 

@@ -1,7 +1,7 @@
-import {firestore} from 'firebase-admin';
+import {DocumentReference, Transaction} from 'firebase-admin/firestore';
 
 interface TransactionWriteListItem {
-  docRef: firestore.DocumentReference,
+  docRef: DocumentReference,
   data?: Object | Promise<Object>
 }
 
@@ -12,37 +12,37 @@ export class TransactionWrite {
   updateList: TransactionWriteListItem[] = [];
   deleteList: TransactionWriteListItem[] = [];
 
-  constructor(private transaction: firestore.Transaction) {
+  constructor(private transaction: Transaction) {
   }
 
-  set(docRef: firestore.DocumentReference, data: Object | Promise<Object>) {
+  set(docRef: DocumentReference, data: Object | Promise<Object>) {
     this.setList.push({
       docRef,
       data
     });
   }
 
-  create(docRef: firestore.DocumentReference, data: Object | Promise<Object>) {
+  create(docRef: DocumentReference, data: Object | Promise<Object>) {
     this.createList.push({
       docRef,
       data
     });
   }
 
-  update(docRef: firestore.DocumentReference, data: Object | Promise<Object>) {
+  update(docRef: DocumentReference, data: Object | Promise<Object>) {
     this.updateList.push({
       docRef,
       data
     });
   }
 
-  delete(docRef: firestore.DocumentReference) {
+  delete(docRef: DocumentReference) {
     this.deleteList.push({
       docRef
     });
   }
 
-  async execute(): Promise<firestore.Transaction> {
+  async execute(): Promise<Transaction> {
 
     const setDataPromise = [];
     const createDataPromise = [];
