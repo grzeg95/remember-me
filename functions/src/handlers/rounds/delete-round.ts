@@ -20,10 +20,15 @@ export const handler = (context: Context): FunctionResultPromise => {
   const auth = context.auth;
   const roundId = context.data;
 
+  // without app check
+  // not logged in
+  // email not verified, not for anonymous
+  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
+    auth?.token.provider_id !== 'anonymous' &&
+    !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
+
   // roundId is not empty string
   testRequirement(typeof roundId !== 'string' || roundId.length === 0);
-
-  testRequirement(!auth?.token.secretKey);
 
   let userDocSnap: DocumentSnapshot;
   let roundDocSnap: DocumentSnapshot;

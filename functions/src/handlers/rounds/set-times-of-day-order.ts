@@ -24,15 +24,12 @@ export const handler = (context: Context): FunctionResultPromise => {
   const auth = context.auth;
   const data = context.data;
 
+  // without app check
   // not logged in
-  testRequirement(!auth);
-
   // email not verified, not for anonymous
-  testRequirement(
-    !auth?.token.email_verified &&
+  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
     auth?.token.provider_id !== 'anonymous' &&
-    !auth?.token.isAnonymous
-  );
+    !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -53,8 +50,6 @@ export const handler = (context: Context): FunctionResultPromise => {
 
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
-
-  testRequirement(!auth?.token.secretKey);
 
   let cryptoKey: CryptoKey;
   let roundDocSnap: DocumentSnapshot;

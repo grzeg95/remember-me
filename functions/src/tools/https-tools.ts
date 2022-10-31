@@ -1,4 +1,4 @@
-import {getAppCheck} from 'firebase-admin/app-check';
+import {getAppCheck, VerifyAppCheckTokenResponse} from 'firebase-admin/app-check';
 import {getAuth} from 'firebase-admin/auth';
 import {https, Response} from 'firebase-functions';
 import {AuthData} from 'firebase-functions/lib/common/providers/https';
@@ -50,7 +50,8 @@ export interface Context {
   req: https.Request,
   res: Response,
   auth?: AuthData,
-  data?: any
+  data?: any,
+  app?: VerifyAppCheckTokenResponse
 }
 
 const getContext = (req: https.Request, res: Response): Promise<Context> => {
@@ -66,12 +67,7 @@ const getContext = (req: https.Request, res: Response): Promise<Context> => {
     appCheckVerifyAppCheckTokenResponse
   ]) => {
 
-    if (!appCheckVerifyAppCheckTokenResponse) {
-      throw new Error();
-    }
-
     let data = req.body;
-
     const contentType = req.get('content-type');
 
     if (contentType === 'text/plain' && req.body.length === 0) {
@@ -89,7 +85,8 @@ const getContext = (req: https.Request, res: Response): Promise<Context> => {
         uid: decodedIdToken.uid,
         token: decodedIdToken
       } : undefined,
-      data
+      data,
+      app: appCheckVerifyAppCheckTokenResponse
     };
   });
 };

@@ -1,6 +1,6 @@
 // tslint:disable-next-line:no-import-side-effect
-import '../../../../global.prototype';
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
+import '../../../../global.prototype';
 import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../models';
 import {
   BasicEncryptedValue,
@@ -51,11 +51,11 @@ const getTaskChange = (a: Task, b: Task): TaskDiff => {
 /**
  * Update times of day
  * @function prepareTimesOfDay
- * @param {Transaction} transaction
- * @param {string[]} taskCurrentTimesOfDay
- * @param {string[]} enteredTimesOfDay
- * @param {string[]} timesOfDay
- * @param {number[]} timesOfDayCardinality
+ * @param {FirebaseFirestore.Transaction} transaction
+ * @param {Array<string>} taskCurrentTimesOfDay
+ * @param {Array<string>} enteredTimesOfDay
+ * @param {Array<string>} timesOfDay
+ * @param {Array<string>} timesOfDayCardinality
  * @return {{addedTimesOfDay: Set<string>, removedTimesOfDay: Set<string>}}
  **/
 export const prepareTimesOfDay = (
@@ -90,7 +90,7 @@ export const prepareTimesOfDay = (
     }
   }
 
-  testRequirement(timesOfDay.length > 10, `You can own 10 times of day but merge has ${timesOfDay.length} 🤔`);
+  testRequirement(timesOfDay.length > 10, {message: `You can own 10 times of day but merge has ${timesOfDay.length} 🤔`});
 
   return {
     timesOfDay,
@@ -343,19 +343,16 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   });
 };
 
-const checkEntryRequirements = (data: any, callableContext: Context) => {
+const checkEntryRequirements = (data: any, context: Context) => {
 
-  const auth = callableContext?.auth;
+  const auth = context?.auth;
 
+  // without app check
   // not logged in
-  testRequirement(!auth);
-
   // email not verified, not for anonymous
-  testRequirement(
-    !auth?.token.email_verified &&
+  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
     auth?.token.provider_id !== 'anonymous' &&
-    !auth?.token.isAnonymous
-  );
+    !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
 
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
@@ -423,15 +420,12 @@ const checkEntryRequirements = (data: any, callableContext: Context) => {
 
   // data.task.timesOfDay contains duplicates
   testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
-
-  testRequirement(!auth?.token.secretKey);
-
 };
 
 const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: Transaction, roundDocSnapData: Round, roundDocSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
   return transaction.get(roundDocSnap.ref.collection('task').doc(taskId)).then((taskDocSnap) => {
     if (!taskDocSnap.exists) {
-      testRequirement(roundDocSnapData.tasksIds.length + 1 > 25, `You can own up tp 25 tasks but merge has ${roundDocSnapData.tasksIds.length + 1} 🤔`);
+      testRequirement(roundDocSnapData.tasksIds.length + 1 > 25, {message: `You can own up tp 25 tasks but merge has ${roundDocSnapData.tasksIds.length + 1} 🤔`});
       transactionWrite.delete(taskDocSnap.ref);
       return transaction.get(roundDocSnap.ref.collection('task').doc());
     } else {
@@ -558,7 +552,7 @@ export const handler = async (context: Context): FunctionResultPromise => {
                      * */
 
                     for (const todayTask of todayTaskDocSnapsToUpdate) {
-                      testRequirement(!todayTask.exists, `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`);
+                      testRequirement(!todayTask.exists, {message: `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`});
 
                       transactionWrite.update(todayTask.ref, encrypt(task.description, cryptoKey).then((description) => {
                         return {description};

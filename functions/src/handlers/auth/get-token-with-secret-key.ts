@@ -12,16 +12,6 @@ export const handler = (context: Context): FunctionResultPromise => {
   // with data
   testRequirement(data !== null);
 
-  // not logged in
-  testRequirement(!auth);
-
-  // email not verified, not for anonymous
-  testRequirement(
-    !auth?.token.email_verified &&
-    auth?.token.provider_id !== 'anonymous' &&
-    !auth?.token.isAnonymous
-  );
-
   // @ts-ignore
   const ciphertext = new Uint8Array(auth?.token.encryptedSymmetricKey.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
@@ -38,7 +28,7 @@ export const handler = (context: Context): FunctionResultPromise => {
       !decryptResponse.verifiedCiphertextCrc32c ||
       crc32c.calculate(decryptResponse.plaintext) !==
       Number(decryptResponse.plaintextCrc32c?.value),
-      'AsymmetricDecrypt: request corrupted in-transit'
+      {message: 'AsymmetricDecrypt: request corrupted in-transit'}
     );
 
     // Service account does not have required permissions

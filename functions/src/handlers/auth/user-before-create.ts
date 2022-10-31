@@ -88,7 +88,7 @@ export const handler = (user: AuthUserRecord) => {
     testRequirement(
       publicKey?.name !== cryptoKeyVersionPath ||
       crc32c.calculate(publicKey?.pem) !== Number(publicKey?.pemCrc32c?.value),
-      'GetPublicKey: request corrupted in-transit'
+      {message: 'GetPublicKey: request corrupted in-transit'}
     );
 
     transactionWrite = new TransactionWrite(transaction);

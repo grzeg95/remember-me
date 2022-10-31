@@ -7,7 +7,8 @@ import {
 } from 'angular-firebase';
 import {FirebaseUser} from 'auth';
 import {environment} from 'environment';
-import {forkJoin, map, Observable, switchMap} from 'rxjs';
+import {catchError, forkJoin, map, Observable, switchMap} from 'rxjs';
+import {HTTPError} from '../user/models';
 
 @Injectable()
 export class AngularFirebaseFunctionsService {
@@ -22,7 +23,7 @@ export class AngularFirebaseFunctionsService {
 
   httpsOnRequest<RequestData = unknown, RespondData = unknown>(name: string, contentType: string = 'application/json') {
 
-    return (data: RequestData, firebaseUser: FirebaseUser): Observable<RespondData> => {
+    return (data: RequestData, firebaseUser: FirebaseUser, forceRefresh = false): Observable<RespondData> => {
 
       let url = this.angularFirebaseRemoteConfigService.getString(name);
 
@@ -31,8 +32,8 @@ export class AngularFirebaseFunctionsService {
       }
 
       return forkJoin([
-        this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser),
-        this.angularFirebaseAppCheckService.getToken()
+        this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser, forceRefresh),
+        this.angularFirebaseAppCheckService.getToken(forceRefresh)
       ]).pipe(
         switchMap(([authorization, appCheckToken]) => {
 
@@ -42,9 +43,16 @@ export class AngularFirebaseFunctionsService {
             'X-Firebase-AppCheck': appCheckToken
           };
 
-          return this.http.post<{result: RespondData}>(url, data, {headers}).pipe(map((r) => r.result));
+          return this.http.post<{result: RespondData}>(url, data, {headers}).pipe(map((r) => r.result)).pipe(
+            catchError((error: HTTPError) => {
+              if (error.code === 'permission-denied' && !forceRefresh) {
+                return this.httpsOnRequest<RequestData, RespondData>(name, contentType)(data, firebaseUser, true);
+              }
+              throw error;
+            })
+          );
         })
       );
-    }
+    };
   }
 }

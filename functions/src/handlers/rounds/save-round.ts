@@ -26,6 +26,13 @@ export const handler = (context: Context): FunctionResultPromise => {
   const auth = context.auth;
   const data = context.data;
 
+  // without app check
+  // not logged in
+  // email not verified, not for anonymous
+  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
+    auth?.token.provider_id !== 'anonymous' &&
+    !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
+
   // data is not an object or is null
   testRequirement(typeof data !== 'object' || data === null);
 
@@ -46,8 +53,6 @@ export const handler = (context: Context): FunctionResultPromise => {
   // data.name is not a string in [1, 256]
   data.name = data.name.trim();
   testRequirement(data.name.length < 1 || data.name.length > 256);
-
-  testRequirement(!auth?.token.secretKey);
 
   let roundId = data.roundId;
   let created = false;
@@ -82,7 +87,7 @@ export const handler = (context: Context): FunctionResultPromise => {
         if (!roundDocSnapTmp.exists) {
 
           // check if there is max 5 rounds
-          testRequirement(rounds.length >= 5, `You can own 5 rounds 🤔`);
+          testRequirement(rounds.length >= 5, {message: `You can own 5 rounds 🤔`});
 
           return transaction.get(userDocSnap.ref.collection('rounds').doc()).then((_roundDocSnap) => {
             roundDocSnap = _roundDocSnap;
