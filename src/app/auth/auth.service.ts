@@ -395,6 +395,18 @@ export class AuthService {
   uploadProfileImage(file: File): Observable<{message: string}> {
     const firebaseUser = this.firebaseUser$.value;
 
+    // max 9MB picture file
+    // PayloadTooLargeError: request entity too large
+    if (file.size > 9 * 1024 * 1024) {
+      return throwError(() => {
+        return {
+          error: {
+            details: 'You can upload up to 9MB image 🙄'
+          }
+        };
+      });
+    }
+
     return this.angularFirebaseFunctionsService.httpsOnRequest<File, {message: string}>('uploadProfileImageUrl', file.type)(file, firebaseUser);
   }
 
