@@ -87,7 +87,7 @@ export const handler = (context: Context): FunctionResultPromise => {
         if (!roundDocSnapTmp.exists) {
 
           // check if there is max 5 rounds
-          testRequirement(rounds.length >= 5, {message: `You can own 5 rounds 🤔`});
+          testRequirement(rounds.length >= 5, {details: `You can own 5 rounds 🤔`});
 
           return transaction.get(userDocSnap.ref.collection('rounds').doc()).then((_roundDocSnap) => {
             roundDocSnap = _roundDocSnap;

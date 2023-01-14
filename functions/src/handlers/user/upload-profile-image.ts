@@ -23,8 +23,10 @@ export const handler = (context: Context): FunctionResultPromise => {
     auth?.token.provider_id !== 'anonymous' &&
     !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
 
-  const maxContentLength = 10 * 1024 * 1024; // 10MB
-  testRequirement(+(context.req.get('content-length') || 0) > maxContentLength, {message: 'You can upload up to 10MB image 🙄'});
+  // max 9MB picture file
+  // PayloadTooLargeError: request entity too large
+  const maxContentLength = 9 * 1024 * 1024; // 9MB
+  testRequirement(+(context.req.get('content-length') || 0) > maxContentLength, {message: 'You can upload up to 9MB image 🙄'});
 
   let cryptoKey: CryptoKey;
 
