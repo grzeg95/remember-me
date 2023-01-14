@@ -1,9 +1,9 @@
 const {
-  chai, getResult, myAuth, removeUser, getUserJson, saveTask, saveRound,
+  chai, getResult, myContext, removeUser, getUserJson, saveTask, saveRound,
   simplifyUserResult
 } = require('../../index');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
 
@@ -14,12 +14,12 @@ describe(`saveTask`, async () => {
   it(`not authenticated`, async () => {
 
     const expected = {
-      code: 'invalid-argument',
+      code: 'permission-denied',
       message: 'Bad Request',
       details: 'Some went wrong 🤫 Try again 🙂'
     };
 
-    const result = await getResult(saveTask, null, null);
+    const result = await getResult(saveTask, {});
 
     expect(result).to.eql(expected);
   });
@@ -37,7 +37,10 @@ describe(`saveTask`, async () => {
         const invalidCase = tests['invalid'][invalidKey];
         describe(invalidKey, async () => {
           invalidCase.forEach((test) => it(JSON.stringify(test), async () => {
-            const result = await getResult(saveTask, test, myAuth);
+            const result = await getResult(saveTask, {
+              ...myContext,
+              data: test
+            });
             expect(result).to.eql(expected);
           }));
         });
@@ -51,14 +54,23 @@ describe(`saveTask`, async () => {
     await removeUser(myId);
 
     roundId = (await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth)).roundId;
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    })).roundId;
 
     const test = tests['every day multiple times'];
 
     for (let i = 0; i < 4; ++i) {
-      await getResult(saveTask, {...test['x'], roundId}, myAuth);
+      await getResult(saveTask, {
+        ...myContext,
+        data: {
+          ...test['x'],
+          roundId
+        }
+      });
     }
 
     const user = simplifyUserResult(await getUserJson(myId), roundId);
@@ -74,14 +86,21 @@ describe(`saveTask`, async () => {
       await removeUser(myId);
 
       roundId = (await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth)).roundId;
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      })).roundId;
     });
 
     tests['create'].forEach((test) => it(test.name, async () => {
 
-      const x = await getResult(saveTask, {...test['x'], roundId}, myAuth);
+      const x = await getResult(saveTask, {
+        ...myContext,
+        data: {...test['x'], roundId}
+      });
+
       expect({
         created: true,
         details: 'Your task has been created 😉',
@@ -115,20 +134,29 @@ describe(`saveTask`, async () => {
       await removeUser(myId);
 
       roundId = (await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth)).roundId;
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      })).roundId;
     });
 
     tests['add'].forEach((test) => it(test.name, async () => {
-      const x = await getResult(saveTask, {...test['x'], roundId}, myAuth);
+      const x = await getResult(saveTask, {
+        ...myContext,
+        data: {...test['x'], roundId}
+      });
       expect({
         created: true,
         details: 'Your task has been created 😉',
         taskId: x.taskId
       }).to.eql(x);
 
-      const y = await getResult(saveTask, {...test['y'], roundId}, myAuth);
+      const y = await getResult(saveTask, {
+        ...myContext,
+        data: {...test['y'], roundId}
+      });
       expect({
         created: true,
         details: 'Your task has been created 😉',
@@ -162,13 +190,19 @@ describe(`saveTask`, async () => {
       await removeUser(myId);
 
       roundId = (await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth)).roundId;
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      })).roundId;
     });
 
     it('Nothing was changed', async () => {
-      const from = await getResult(saveTask, {...tests['edit-nothing-was-changed']['from'], roundId}, myAuth);
+      const from = await getResult(saveTask, {
+        ...myContext,
+        data: {...tests['edit-nothing-was-changed']['from'], roundId}
+      });
       expect({
         created: true,
         details: 'Your task has been created 😉',
@@ -179,7 +213,10 @@ describe(`saveTask`, async () => {
       testTo = testTo.replace(/{from}/gm, from.taskId);
       testTo = JSON.parse(testTo);
 
-      const to = await getResult(saveTask, {...testTo, roundId}, myAuth);
+      const to = await getResult(saveTask, {
+        ...myContext,
+        data: {...testTo, roundId}
+      });
       expect({
         code: 'invalid-argument',
         details: 'Some went wrong 🤫 Try again 🙂',
@@ -189,7 +226,10 @@ describe(`saveTask`, async () => {
 
     tests['edit'].forEach((test) => it(test.name, async () => {
 
-      const from = await getResult(saveTask, {...test['from'], roundId}, myAuth);
+      const from = await getResult(saveTask, {
+        ...myContext,
+        data: {...test['from'], roundId}
+      });
       expect({
         created: true,
         details: 'Your task has been created 😉',
@@ -200,7 +240,10 @@ describe(`saveTask`, async () => {
       testTo = testTo.replace(/{from}/gm, from.taskId);
       testTo = JSON.parse(testTo);
 
-      const to = await getResult(saveTask, {...testTo, roundId}, myAuth);
+      const to = await getResult(saveTask, {
+        ...myContext,
+        data: {...testTo, roundId}
+      });
       expect({
         created: false,
         details: 'Your task has been updated 🙃',

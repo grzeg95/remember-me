@@ -3,12 +3,12 @@ const {
   getUserJson,
   removeUser,
   getResult,
-  myAuth,
+  myContext,
   getKEmptyRounds,
   deleteRound, saveRound, saveTask
 } = require('../../index');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 
 describe(`deleteRound`, async () => {
@@ -16,12 +16,12 @@ describe(`deleteRound`, async () => {
   it(`not authenticated`, async () => {
 
     const expected = {
-      code: 'invalid-argument',
+      code: 'permission-denied',
       message: 'Bad Request',
       details: 'Some went wrong 🤫 Try again 🙂'
     };
 
-    const result = await getResult(deleteRound, null, null);
+    const result = await getResult(deleteRound, {});
 
     expect(result).to.eql(expected);
   });
@@ -45,7 +45,10 @@ describe(`deleteRound`, async () => {
         const invalidCase = invalid[invalidKey];
         describe(invalidKey, async () => {
           invalidCase.forEach((test) => it(JSON.stringify(test), async () => {
-            const result = await getResult(deleteRound, test, myAuth);
+            const result = await getResult(deleteRound, {
+              ...myContext,
+              data: test
+            });
             expect(result).to.eql(expected);
           }));
         });
@@ -58,9 +61,12 @@ describe(`deleteRound`, async () => {
     await removeUser(myId);
 
     const x = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -68,7 +74,10 @@ describe(`deleteRound`, async () => {
       roundId: x.roundId
     }).to.eql(x);
 
-    const y = await getResult(deleteRound, x.roundId, myAuth);
+    const y = await getResult(deleteRound, {
+      ...myContext,
+      data: x.roundId
+    });
 
     expect(y).to.eql({
       details: 'Your round has been deleted 🤭'
@@ -86,14 +95,20 @@ describe(`deleteRound`, async () => {
     await removeUser(myId);
 
     const z = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     const x = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -101,7 +116,10 @@ describe(`deleteRound`, async () => {
       roundId: x.roundId
     }).to.eql(x);
 
-    const y = await getResult(deleteRound, x.roundId, myAuth);
+    const y = await getResult(deleteRound, {
+      ...myContext,
+      data: x.roundId
+    });
 
     expect(y).to.eql({
       details: 'Your round has been deleted 🤭'
@@ -119,9 +137,12 @@ describe(`deleteRound`, async () => {
     await removeUser(myId);
 
     const first = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -130,9 +151,12 @@ describe(`deleteRound`, async () => {
     }).to.eql(first);
 
     const second = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -143,14 +167,17 @@ describe(`deleteRound`, async () => {
     for (let i = 0; i < 25; ++i) {
 
       const saveTaskRes = await getResult(saveTask, {
-        task: {
-          timesOfDay: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-          daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-          description: `task_${i}`
-        },
-        taskId: 'null',
-        roundId: second.roundId
-      }, myAuth);
+        ...myContext,
+        data: {
+          task: {
+            timesOfDay: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+            description: `task_${i}`
+          },
+          taskId: 'null',
+          roundId: second.roundId
+        }
+      });
 
       expect({
         created: true,
@@ -159,7 +186,10 @@ describe(`deleteRound`, async () => {
       }).to.eql(saveTaskRes);
     }
 
-    const deleteRoundRes = await getResult(deleteRound, second.roundId, myAuth);
+    const deleteRoundRes = await getResult(deleteRound, {
+      ...myContext,
+      data: second.roundId
+    });
 
     expect(deleteRoundRes).to.eql({
       details: 'Your round has been deleted 🤭'
@@ -178,9 +208,12 @@ describe(`deleteRound`, async () => {
     await removeUser(myId);
 
     const first = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -189,9 +222,12 @@ describe(`deleteRound`, async () => {
     }).to.eql(first);
 
     const second = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -202,14 +238,17 @@ describe(`deleteRound`, async () => {
     for (let i = 0; i < 25; ++i) {
 
       const saveTaskRes = await getResult(saveTask, {
-        task: {
-          timesOfDay: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-          daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-          description: `task_${i}`
-        },
-        taskId: 'null',
-        roundId: first.roundId
-      }, myAuth);
+        ...myContext,
+        data: {
+          task: {
+            timesOfDay: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+            description: `task_${i}`
+          },
+          taskId: 'null',
+          roundId: first.roundId
+        }
+      });
 
       expect({
         created: true,
@@ -218,7 +257,10 @@ describe(`deleteRound`, async () => {
       }).to.eql(saveTaskRes);
     }
 
-    const deleteRoundRes = await getResult(deleteRound, first.roundId, myAuth);
+    const deleteRoundRes = await getResult(deleteRound, {
+      ...myContext,
+      data: first.roundId
+    });
 
     expect(deleteRoundRes).to.eql({
       details: 'Your round has been deleted 🤭'

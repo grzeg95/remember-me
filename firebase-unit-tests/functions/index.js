@@ -15,14 +15,18 @@ admin.initializeApp();
 const firestore = admin.firestore();
 exports.firestore = firestore;
 
-const myAuth = {
-  uid: 'myId',
-  token: {
-    secretKey: crypto.randomBytes(32).toString('hex'),
-    email_verified: true
-  }
+const myContext = {
+  auth: {
+    token: {
+      secretKey: crypto.randomBytes(32).toString('hex'),
+      email_verified: true
+    },
+    uid: 'myId'
+  },
+  app: 'token'
 };
-exports.myAuth = myAuth;
+exports.myContext = myContext;
+
 exports.decryptRound = decryptRound;
 exports.encrypt = encrypt;
 exports.decrypt = decrypt;
@@ -51,7 +55,7 @@ const getCryptoKey = async () => {
   if (!cryptoKey) {
     cryptoKey = await subtle.importKey(
       'raw',
-      Buffer.from(myAuth.token.secretKey, 'hex'),
+      Buffer.from(myContext.auth.token.secretKey, 'hex'),
       {
         name: 'AES-GCM'
       },
@@ -93,7 +97,7 @@ exports.setRoundsOrder = {
   name: 'setRoundsOrder'
 };
 
-exports.getResult = async (fn, data, auth) => {
+exports.getResult = async (fn, context) => {
 
   try {
     if (!exports.runTimes[fn.name]) {
@@ -101,11 +105,6 @@ exports.getResult = async (fn, data, auth) => {
     }
 
     exports.runTimes[fn.name].resetTimeStart();
-
-    const context = {
-      auth,
-      data
-    };
 
     const result = (await fn.handler(context)).body;
 
@@ -327,27 +326,27 @@ exports.getKEmptyRounds = (rounds) => {
   return emptyRounds;
 };
 
-exports.simplifyUserResult = (user, timesOfDayId) => {
+exports.simplifyUserResult = (user, roundId) => {
 
-  const myId = myAuth.uid;
+  const myId = myContext.auth.uid;
 
   if (user[myId]['collections']['rounds']) {
     const simplifyUserResult = {
-      tasksIds: user[myId]['collections']['rounds'][timesOfDayId]['fields']['tasksIds'].toSet(),
-      timesOfDay: user[myId]['collections']['rounds'][timesOfDayId]['fields']['timesOfDay'],
-      timesOfDayCardinality: user[myId]['collections']['rounds'][timesOfDayId]['fields']['timesOfDayCardinality']
+      tasksIds: user[myId]['collections']['rounds'][roundId]['fields']['tasksIds'].toSet(),
+      timesOfDay: user[myId]['collections']['rounds'][roundId]['fields']['timesOfDay'],
+      timesOfDayCardinality: user[myId]['collections']['rounds'][roundId]['fields']['timesOfDayCardinality']
     };
 
-    if (user[myId]['collections']['rounds'][timesOfDayId]['collections']['task']) {
-      simplifyUserResult['task'] = user[myId]['collections']['rounds'][timesOfDayId]['collections']['task'];
+    if (user[myId]['collections']['rounds'][roundId]['collections']['task']) {
+      simplifyUserResult['task'] = user[myId]['collections']['rounds'][roundId]['collections']['task'];
 
       for (const taskId of Object.getOwnPropertyNames(simplifyUserResult['task'])) {
         simplifyUserResult['task'][taskId] = {...simplifyUserResult['task'][taskId]['fields']};
       }
     }
 
-    if (user[myId]['collections']['rounds'][timesOfDayId]['collections']['today']) {
-      simplifyUserResult['today'] = user[myId]['collections']['rounds'][timesOfDayId]['collections']['today'];
+    if (user[myId]['collections']['rounds'][roundId]['collections']['today']) {
+      simplifyUserResult['today'] = user[myId]['collections']['rounds'][roundId]['collections']['today'];
 
       for (const todayName of Object.getOwnPropertyNames(simplifyUserResult['today'])) {
 
@@ -461,17 +460,20 @@ describe(`My functions benchmarks`, () => {
 
 // Create random user
 // (async () => {
-//   await exports.removeUser(exports.myId);
-//   await exports.createUser(exports.myId);
+//   await exports.removeUser(myContext.auth.uid);
+//   await exports.createUser(myContext.auth.uid);
 //
 //   for (let i = 0; i < 5; ++i) {
 //
 //     console.log(i);
 //
 //     const round = await exports.getResult(exports.saveRound, {
-//       roundId: 'null',
-//       name: getRandomString(getRandomIntInclusive(100, 256))
-//     }, myAuth);
+//       ...myContext,
+//       data: {
+//         roundId: 'null',
+//         name: getRandomString(getRandomIntInclusive(100, 256))
+//       }
+//     });
 //
 //     for (let j = 0; j < getRandomIntInclusive(15, 25); ++j) {
 //
@@ -484,19 +486,20 @@ describe(`My functions benchmarks`, () => {
 //       daysOfTheWeek.length = getRandomIntInclusive(1, 7);
 //
 //       await exports.getResult(exports.saveTask, {
-//         task: {
-//           timesOfDay,
-//           daysOfTheWeek,
-//           description: getRandomString(getRandomIntInclusive(100, 256))
-//         },
-//         taskId: 'null',
-//         roundId: round.roundId
-//       }, myAuth);
+//         ...myContext,
+//         data: {
+//           task: {
+//             timesOfDay,
+//             daysOfTheWeek,
+//             description: getRandomString(getRandomIntInclusive(100, 256))
+//           },
+//           taskId: 'null',
+//           roundId: round.roundId
+//         }
+//       });
 //     }
 //   }
 //
 //   const fs = require('fs');
-//   fs.writeFileSync('myId.json', JSON.stringify(await exports.getUserJsonEncrypted(exports.myId)));
-//
-//
+//   fs.writeFileSync('myId.json', JSON.stringify(await exports.getUserJsonEncrypted(myContext.auth.uid)));
 // })();

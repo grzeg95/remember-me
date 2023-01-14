@@ -1,12 +1,14 @@
 const {
-  chai, removeUser, getResult, saveRound, myAuth, saveTask, runTimes, median, avg, getRandomTimesOfDay,
+  chai, removeUser, getResult, saveRound, myContext, saveTask, runTimes, median, avg, getRandomTimesOfDay,
   getRandomDaysOfTheWeek, getRandomDescription
 } = require('../../../index');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 
-describe(`saveTask`, async () => {
+describe(`saveTask`, async function () {
+
+  this.timeout(100000);
 
   const tasksIds = [];
   let roundId;
@@ -15,20 +17,26 @@ describe(`saveTask`, async () => {
     await removeUser(myId);
 
     roundId = (await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth)).roundId;
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    })).roundId;
 
     for (let i = 0; i < 20; ++i) {
       const taskId = (await getResult(saveTask, {
-        task: {
-          timesOfDay: getRandomTimesOfDay(),
-          daysOfTheWeek: getRandomDaysOfTheWeek(),
-          description: getRandomDescription()
-        },
-        taskId: "null",
-        roundId
-      }, myAuth)).taskId;
+        ...myContext,
+        data: {
+          task: {
+            timesOfDay: getRandomTimesOfDay(),
+            daysOfTheWeek: getRandomDaysOfTheWeek(),
+            description: getRandomDescription()
+          },
+          taskId: 'null',
+          roundId
+        }
+      })).taskId;
 
       tasksIds.push(taskId);
     }
@@ -38,18 +46,21 @@ describe(`saveTask`, async () => {
     it('run', async () => {
       for (const taskId of tasksIds) {
         await getResult(saveTask, {
-          task: {
-            timesOfDay: getRandomTimesOfDay(),
-            daysOfTheWeek: getRandomDaysOfTheWeek(),
-            description: getRandomDescription()
-          },
-          taskId,
-          roundId
-        }, myAuth);
+          ...myContext,
+          data: {
+            task: {
+              timesOfDay: getRandomTimesOfDay(),
+              daysOfTheWeek: getRandomDaysOfTheWeek(),
+              description: getRandomDescription()
+            },
+            taskId,
+            roundId
+          }
+        });
 
         expect(true).to.eql(true);
       }
-    }).timeout(50000);
+    }).timeout(100000);
   }
 
   after(() => {

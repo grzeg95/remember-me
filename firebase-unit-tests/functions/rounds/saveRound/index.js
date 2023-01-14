@@ -1,18 +1,21 @@
 const {
-  chai, getUserJson, removeUser, getResult, myAuth, getKEmptyRounds, saveRound
+  chai, getUserJson, removeUser, getResult, myContext, getKEmptyRounds, saveRound
 } = require('../../index');
 const testsInvalid = require('./tests.json');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 
 const testCreatingNextEmptyRounds = (i, max, ids) => {
   it(`(${i}/${max})`, async () => {
 
     const x = await getResult(saveRound, {
-      roundId: 'null',
-      name: 'testowy'
-    }, myAuth);
+      ...myContext,
+      data: {
+        roundId: 'null',
+        name: 'testowy'
+      }
+    });
 
     expect({
       created: true,
@@ -35,12 +38,12 @@ describe(`saveRound`, async () => {
   it(`not authenticated`, async () => {
 
     const expected = {
-      code: 'invalid-argument',
+      code: 'permission-denied',
       message: 'Bad Request',
       details: 'Some went wrong 🤫 Try again 🙂'
     };
 
-    const result = await getResult(saveRound, null, null);
+    const result = await getResult(saveRound, {});
     expect(result).to.eql(expected);
   });
 
@@ -49,7 +52,11 @@ describe(`saveRound`, async () => {
     testsInvalid['invalid'].forEach((test) => describe(test.name, async () => {
 
       test['cases'].forEach((testCase) => it(JSON.stringify(testCase), async () => {
-        const x = await getResult(saveRound, testCase, myAuth);
+
+        const x = await getResult(saveRound, {
+          ...myContext,
+          data: testCase
+        });
         expect(test['excepted']).to.eql(x);
       }));
 
@@ -70,9 +77,12 @@ describe(`saveRound`, async () => {
     it(`Too many: (${i + 1}/${maxRounds})`, async () => {
 
       const x = await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth);
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      });
 
       expect({
         code: 'invalid-argument',
@@ -89,9 +99,12 @@ describe(`saveRound`, async () => {
     it(`create one and rename`, async () => {
 
       const x = await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth);
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      });
 
       expect({
         created: true,
@@ -100,9 +113,12 @@ describe(`saveRound`, async () => {
       }).to.eql(x);
 
       const y = await getResult(saveRound, {
-        roundId: x.roundId,
-        name: `task_0`
-      }, myAuth);
+        ...myContext,
+        data: {
+          roundId: x.roundId,
+          name: `task_0`
+        }
+      }, myContext);
 
       expect(y).to.eql({
         created: false,

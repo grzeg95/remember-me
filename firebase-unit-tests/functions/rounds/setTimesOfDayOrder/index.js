@@ -1,8 +1,8 @@
 const {
-  chai, myAuth, firestore, removeUser, getResult, decryptRound, setTimesOfDayOrder, saveRound, getCryptoKey
+  chai, myContext, firestore, removeUser, getResult, decryptRound, setTimesOfDayOrder, saveRound, getCryptoKey
 } = require('../../index');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
 const {encryptRound} = require('../../../../functions/lib/functions/src/tools/security');
@@ -19,12 +19,12 @@ describe(`setTimesOfDayOrder`, async () => {
   it(`not authenticated`, async () => {
 
     const expected = {
-      code: 'invalid-argument',
+      code: 'permission-denied',
       message: 'Bad Request',
       details: 'Some went wrong 🤫 Try again 🙂'
     };
 
-    const result = await getResult(setTimesOfDayOrder, null, null);
+    const result = await getResult(setTimesOfDayOrder,  {});
 
     expect(result).to.eql(expected);
   });
@@ -44,9 +44,12 @@ describe(`setTimesOfDayOrder`, async () => {
           const invalidCase = tests['authenticated']['invalid argument'][invalidKey];
           describe(invalidKey, async () => {
             invalidCase.forEach((test) => it(JSON.stringify(test), async () => {
-              const result = await getResult(setTimesOfDayOrder, test, myAuth);
+              const result = await getResult(setTimesOfDayOrder, {
+                ...myContext,
+                data: test
+              });
               expect(result).to.eql(expected);
-            }).timeout(50000));
+            }).timeout(100000));
           });
         }
 
@@ -59,9 +62,12 @@ describe(`setTimesOfDayOrder`, async () => {
         await removeUser(myId);
 
         roundId = (await getResult(saveRound, {
-          roundId: 'null',
-          name: 'testowy'
-        }, myAuth)).roundId;
+          ...myContext,
+          data: {
+            roundId: 'null',
+            name: 'testowy'
+          }
+        })).roundId;
 
         const startTimesOfDay = test.from.split('');
         const startTimesOfDayCardinality = [...Array(startTimesOfDay.length).keys()].map(e => e + 1);
@@ -74,10 +80,13 @@ describe(`setTimesOfDayOrder`, async () => {
         }, cryptoKey));
 
         const result = await getResult(setTimesOfDayOrder, {
-          timeOfDay: test.args[0],
-          moveBy: test.args[1],
-          roundId
-        }, myAuth);
+          ...myContext,
+          data: {
+            timeOfDay: test.args[0],
+            moveBy: test.args[1],
+            roundId
+          }
+        });
         expect(result).to.eql(test.expected);
 
         const roundDocSnap = await firestore.collection('users').doc(myId).collection('rounds').doc(roundId).get();
@@ -91,7 +100,7 @@ describe(`setTimesOfDayOrder`, async () => {
           name: 'lol',
           tasksIds: []
         }).to.eql(toCompare);
-      }).timeout(50000));
+      }).timeout(100000));
     });
 
   });

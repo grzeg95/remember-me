@@ -2,7 +2,7 @@ const {
   removeUser,
   getResult,
   saveRound,
-  myAuth,
+  myContext,
   saveTask,
   getRandomTimesOfDay,
   getRandomDaysOfTheWeek,
@@ -10,7 +10,7 @@ const {
   getUserJsonEncrypted, insertUser, deleteTask, runTimes, median, avg
 } = require('../../../index');
 
-const myId = myAuth.auth.uid;
+const myId = myContext.auth.uid;
 
 describe(`deleteTask`, async function () {
 
@@ -29,22 +29,28 @@ describe(`deleteTask`, async function () {
     for (let i = 0; i < 1; ++i) {
       console.log(`round: ${i}`);
       const roundId = (await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth)).roundId;
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      })).roundId;
 
       rounds[roundId] = [];
 
       for (let j = 0; j < 20; ++j) {
         const task = (await getResult(saveTask, {
-          task: {
-            timesOfDay: getRandomTimesOfDay(),
-            daysOfTheWeek: getRandomDaysOfTheWeek(),
-            description: getRandomDescription()
-          },
-          taskId: "null",
-          roundId
-        }, myAuth));
+          ...myContext,
+          data: {
+            task: {
+              timesOfDay: getRandomTimesOfDay(),
+              daysOfTheWeek: getRandomDaysOfTheWeek(),
+              description: getRandomDescription()
+            },
+            taskId: "null",
+            roundId
+          }
+        }));
 
         rounds[roundId].push(task.taskId);
       }
@@ -63,7 +69,10 @@ describe(`deleteTask`, async function () {
       // delete all task for each round
       for (const roundId of Object.getOwnPropertyNames(rounds)) {
         for (const taskId of rounds[roundId]) {
-          await getResult(deleteTask, {taskId, roundId}, myAuth);
+          await getResult(deleteTask, {
+            ...myContext,
+            data: {taskId, roundId}
+          });
         }
       }
     });

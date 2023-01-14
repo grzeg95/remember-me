@@ -1,9 +1,9 @@
 const {
-  chai, getResult, myAuth, getUserJson, removeUser, simplifyUserResult, deleteTask,
+  chai, getResult, myContext, getUserJson, removeUser, simplifyUserResult, deleteTask,
   saveTask, saveRound
 } = require('../../index');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 const tests = require('../saveTask/tests.json');
 const testsInvalid = require('./tests.json');
@@ -21,12 +21,12 @@ describe(`deleteTask`, () => {
   it(`not authenticated`, async () => {
 
     const expected = {
-      code: 'invalid-argument',
+      code: 'permission-denied',
       message: 'Bad Request',
       details: 'Some went wrong 🤫 Try again 🙂'
     };
 
-    const result = await getResult(deleteTask, null, null);
+    const result = await getResult(deleteTask, {});
 
     expect(result).to.eql(expected);
   });
@@ -36,7 +36,10 @@ describe(`deleteTask`, () => {
     testsInvalid['invalid'].forEach((test) => describe(test.name, async () => {
 
       test['cases'].forEach((testCase) => it(JSON.stringify(testCase), async () => {
-        const x = await getResult(deleteTask, testCase, myAuth);
+        const x = await getResult(deleteTask, {
+          ...myContext,
+          data: testCase
+        });
         expect(test['excepted']).to.eql(x);
       }));
 
@@ -48,28 +51,37 @@ describe(`deleteTask`, () => {
       await removeUser(myId);
 
       roundId = (await getResult(saveRound, {
-        roundId: 'null',
-        name: 'testowy'
-      }, myAuth)).roundId;
+        ...myContext,
+        data: {
+          roundId: 'null',
+          name: 'testowy'
+        }
+      })).roundId;
     });
 
     tests['create'].forEach((test) => it(test.name, async () => {
 
-      const x = await getResult(saveTask, {...test['x'], roundId}, myAuth);
+      const x = await getResult(saveTask, {
+        ...myContext,
+        data: {...test['x'], roundId}
+      });
       expect({
         created: true,
         details: 'Your task has been created 😉',
         taskId: x.taskId
       }).to.eql(x);
 
-      const deletedResult = await getResult(deleteTask, {taskId: x.taskId, roundId}, myAuth);
+      const deletedResult = await getResult(deleteTask, {
+        ...myContext,
+        data: {taskId: x.taskId, roundId}
+      });
       expect({
         details: 'Your task has been deleted 🤭'
       }).to.eql(deletedResult);
 
       expect(emptyRound).to.eql(simplifyUserResult(await getUserJson(myId), roundId));
     }));
-  })
+  });
 
   // add a to b and remove
   // 34 * 2 = 68
@@ -86,10 +98,16 @@ describe(`deleteTask`, () => {
         await removeUser(myId);
 
         roundId = (await getResult(saveRound, {
-          roundId: 'null',
-          name: 'testowy'
-        }, myAuth)).roundId;
-        x = await getResult(saveTask, {...test['x'], roundId}, myAuth);
+          ...myContext,
+          data: {
+            roundId: 'null',
+            name: 'testowy'
+          }
+        })).roundId;
+        x = await getResult(saveTask, {
+          ...myContext,
+          data: {...test['x'], roundId}
+        });
         xId = x.taskId;
         expect({
           created: true,
@@ -101,10 +119,16 @@ describe(`deleteTask`, () => {
         // store user with task y
         await removeUser(myId);
         roundId = (await getResult(saveRound, {
-          roundId: 'null',
-          name: 'testowy'
-        }, myAuth)).roundId;
-        y = await getResult(saveTask, {...test['y'], roundId}, myAuth);
+          ...myContext,
+          data: {
+            roundId: 'null',
+            name: 'testowy'
+          }
+        })).roundId;
+        y = await getResult(saveTask, {
+          ...myContext,
+          data: {...test['y'], roundId}
+        });
         yId = y.taskId;
         expect({
           created: true,
@@ -118,17 +142,29 @@ describe(`deleteTask`, () => {
         await removeUser(myId);
 
         roundId = (await getResult(saveRound, {
-          roundId: 'null',
-          name: 'testowy'
-        }, myAuth)).roundId;
+          ...myContext,
+          data: {
+            roundId: 'null',
+            name: 'testowy'
+          }
+        })).roundId;
 
-        x = await getResult(saveTask, {...test['x'], roundId}, myAuth);
-        y = await getResult(saveTask, {...test['y'], roundId}, myAuth);
+        x = await getResult(saveTask, {
+          ...myContext,
+          data: {...test['x'], roundId}
+        });
+        y = await getResult(saveTask, {
+          ...myContext,
+          data: {...test['y'], roundId}
+        });
       });
 
       it(`remove x then y`, async () => {
 
-        deletedResult = await getResult(deleteTask, {taskId: x.taskId, roundId}, myAuth);
+        deletedResult = await getResult(deleteTask, {
+          ...myContext,
+          data: {taskId: x.taskId, roundId}
+        });
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
@@ -153,7 +189,10 @@ describe(`deleteTask`, () => {
 
         expect(mustBe).to.eql(user);
 
-        deletedResult = await getResult(deleteTask, {taskId: y.taskId, roundId}, myAuth);
+        deletedResult = await getResult(deleteTask, {
+          ...myContext,
+          data: {taskId: y.taskId, roundId}
+        });
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
@@ -163,7 +202,10 @@ describe(`deleteTask`, () => {
       // remove y then x
       it(`remove y then x`, async () => {
 
-        deletedResult = await getResult(deleteTask, {taskId: y.taskId, roundId}, myAuth);
+        deletedResult = await getResult(deleteTask, {
+          ...myContext,
+          data: {taskId: y.taskId, roundId}
+        });
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);
@@ -188,7 +230,10 @@ describe(`deleteTask`, () => {
 
         expect(mustBe).to.eql(user);
 
-        deletedResult = await getResult(deleteTask, {taskId: x.taskId, roundId}, myAuth);
+        deletedResult = await getResult(deleteTask, {
+          ...myContext,
+          data: {taskId: x.taskId, roundId}
+        });
         expect({
           details: 'Your task has been deleted 🤭'
         }).to.eql(deletedResult);

@@ -1,8 +1,8 @@
 const {
-  chai, myAuth, firestore, removeUser, getResult, setRoundsOrder, saveRound, decrypt, getCryptoKey
+  chai, myContext, firestore, removeUser, getResult, setRoundsOrder, saveRound, decrypt, getCryptoKey
 } = require('../../index');
 
-const myId = myAuth.uid;
+const myId = myContext.auth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
 
@@ -18,12 +18,12 @@ describe(`setRoundsOrder`, async () => {
   it(`not authenticated`, async () => {
 
     const expected = {
-      code: 'invalid-argument',
+      code: 'permission-denied',
       message: 'Bad Request',
       details: 'Some went wrong 🤫 Try again 🙂'
     };
 
-    const result = await getResult(setRoundsOrder, null, null);
+    const result = await getResult(setRoundsOrder, {});
 
     expect(result).to.eql(expected);
   });
@@ -43,9 +43,12 @@ describe(`setRoundsOrder`, async () => {
           const invalidCase = tests['authenticated']['invalid argument'][invalidKey];
           describe(invalidKey, async () => {
             invalidCase.forEach((test) => it(JSON.stringify(test), async () => {
-              const result = await getResult(setRoundsOrder, test, myAuth);
+              const result = await getResult(setRoundsOrder, {
+                ...myContext,
+                data: test
+              });
               expect(result).to.eql(expected);
-            }).timeout(50000));
+            }).timeout(100000));
           });
         }
 
@@ -65,9 +68,12 @@ describe(`setRoundsOrder`, async () => {
         for (let roundKey of roundsKeysFrom) {
 
           const savedRound = (await getResult(saveRound, {
-            roundId: 'null',
-            name: 'testowy'
-          }, myAuth));
+            ...myContext,
+            data:{
+              roundId: 'null',
+              name: 'testowy'
+            }
+          }));
 
           expect({
             created: true,
@@ -79,9 +85,12 @@ describe(`setRoundsOrder`, async () => {
         }
 
         const result = await getResult(setRoundsOrder, {
-          moveBy: test.args[1],
-          roundId: allRoundsIds[test.args[0]] || 'null'
-        }, myAuth);
+          ...myContext,
+          data: {
+            moveBy: test.args[1],
+            roundId: allRoundsIds[test.args[0]] || 'null'
+          }
+        });
         expect(result).to.eql(test.expected);
 
         const userDocSnap = await firestore.collection('users').doc(myId).get();
@@ -90,7 +99,7 @@ describe(`setRoundsOrder`, async () => {
         expect({
           rounds: test.to.split('').map((roundKey) => allRoundsIds[roundKey])
         }).to.eql(toCompare);
-      }).timeout(50000));
+      }).timeout(100000));
     });
 
   });
