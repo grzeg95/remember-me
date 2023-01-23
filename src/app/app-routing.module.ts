@@ -1,17 +1,14 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
-import {AuthGuard, redirectLoggedInTo} from 'auth';
+import {AuthGuardLoggedIn} from 'auth';
 import {ExtraParametersRoutePipe} from 'services';
 import {RouterDict} from './app.constants';
 import {GuestComponent} from './guest/guest.component';
 
-const redirectLoggedInToUserEnterView = () => redirectLoggedInTo(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
-
 const appRoutes: Routes = [
   {
     path: '',
-    canActivate: [ExtraParametersRoutePipe, AuthGuard],
-    data: {authGuardPipe: redirectLoggedInToUserEnterView},
+    canActivate: [ExtraParametersRoutePipe, AuthGuardLoggedIn],
     component: GuestComponent,
     pathMatch: 'full'
   },

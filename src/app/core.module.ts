@@ -8,7 +8,7 @@ import {
   AngularFirebaseFunctionsService,
   AngularFirebaseRemoteConfigService
 } from 'angular-firebase';
-import {AuthGuard, AuthService} from 'auth';
+import {AuthGuardLoggedIn, AuthGuardUnauthorized, AuthService} from 'auth';
 import {
   ConnectionService,
   CustomValidators,
@@ -27,7 +27,8 @@ import {
     AngularFirebaseFirestoreService,
     AngularFirebaseFunctionsService,
     AngularFirebaseRemoteConfigService,
-    AuthGuard,
+    AuthGuardLoggedIn,
+    AuthGuardUnauthorized,
     AuthService,
     ConnectionService,
     CustomValidators,
