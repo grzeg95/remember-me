@@ -1,5 +1,5 @@
 import {HttpClient} from '@angular/common/http';
-import {Directive, ElementRef, Input, OnChanges, SimpleChanges} from '@angular/core';
+import {Directive, ElementRef, Input, OnChanges, Renderer2, SimpleChanges} from '@angular/core';
 import {switchMap} from 'rxjs';
 
 @Directive({
@@ -11,9 +11,10 @@ export class ImgSecureDirective implements OnChanges {
 
   constructor(
     private imageElementElementRef: ElementRef<HTMLImageElement>,
+    private renderer: Renderer2,
     private http: HttpClient
   ) {
-    this.imageElementElementRef.nativeElement.style.opacity = '0';
+    this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 0);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -22,8 +23,8 @@ export class ImgSecureDirective implements OnChanges {
       if (changes.imgSecure.currentValue) {
         this.applyImgChange(changes.imgSecure.currentValue);
       } else {
-        this.imageElementElementRef.nativeElement.style.opacity = '1';
-        this.imageElementElementRef.nativeElement.src = '';
+        this.renderer.setAttribute(this.imageElementElementRef.nativeElement, 'src', '');
+        this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 1);
       }
     }
   }
@@ -47,12 +48,12 @@ export class ImgSecureDirective implements OnChanges {
           });
         })
       ).subscribe((src) => {
-        this.imageElementElementRef.nativeElement.src = src;
-        this.imageElementElementRef.nativeElement.style.opacity = '1';
+        this.renderer.setAttribute(this.imageElementElementRef.nativeElement, 'src', src);
+        this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 1);
       });
     } else {
-      this.imageElementElementRef.nativeElement.src = imgSecure;
-      this.imageElementElementRef.nativeElement.style.opacity = '1';
+      this.renderer.setAttribute(this.imageElementElementRef.nativeElement, 'src', imgSecure);
+      this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 1);
     }
   }
 }
