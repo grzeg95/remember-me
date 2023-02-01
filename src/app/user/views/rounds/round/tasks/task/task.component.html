@@ -27,19 +27,18 @@
         <small class="form-text text-center text-muted error"
                *ngIf="!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty">Enter at leas one time of day</small>
         <mat-form-field>
-          <mat-chip-list #chipList>
+          <mat-label>Times of day</mat-label>
+          <mat-chip-grid #chipGrid>
             <div formArrayName="timesOfDay">
-              <mat-chip *ngFor="let timeOfDay of timesOfDay.controls; let i = index"
+              <mat-chip-row *ngFor="let timeOfDay of timesOfDay.controls; let i = index"
                         [class.disabled]="taskForm.disabled || !isOnline"
                         [formGroupName]="i"
                         [value]="timeOfDay.value"
                         [removable]="true"
-                        [selected]="false"
-                        (selectionChange)="$event.source.deselect()"
+                        [highlighted]="false"
                         (removed)="removeTimeOfDay(i)">{{ timeOfDay.value }}
-
                 <img src="assets/img/chip-close.svg" class="mat-chip-close" matChipRemove>
-              </mat-chip>
+              </mat-chip-row>
             </div>
             <input autocomplete="off"
                    formControlName="timeOfDay"
@@ -47,15 +46,14 @@
                    #input="matAutocompleteTrigger"
                    #basicInput
                    [matAutocomplete]="auto"
-                   [matChipInputFor]="chipList"
+                   [matChipInputFor]="chipGrid"
                    [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
                    [matChipInputAddOnBlur]="true"
-                   (matChipInputTokenEnd)="add($event)"
-                   placeholder="Times of day">
-            <mat-autocomplete class="times-of-days-selector" #auto="matAutocomplete" (optionSelected)="selected($event)">
+                   (matChipInputTokenEnd)="add($event)">
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
               <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">{{ option }}</mat-option>
             </mat-autocomplete>
-          </mat-chip-list>
+          </mat-chip-grid>
         </mat-form-field>
       </div>
     </div>

@@ -1,4 +1,4 @@
-tr.mat-row:hover {
+tr.mat-mdc-row:hover {
   background: whitesmoke;
   cursor: pointer;
   user-select: none;
@@ -22,7 +22,7 @@ tr.mat-row:hover {
   }
 }
 
-.mat-spinner {
+mat-spinner {
   position: fixed;
   top: 0;
   right: 0;
