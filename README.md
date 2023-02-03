@@ -3,6 +3,9 @@ Firebase based project.
 
 Create separate prod and dev projects for Firebase and Google Cloud KMS. Be ready for additional costs and learn heavily more about billings. Configure Service accounts. Create and configure Cookiebot account. Buy domain name or use that was provided by Firebase project. Set DNS and what? Keep hacking 🧐
 
+### Official website
+https://rem.grzeg.pl
+
 ## Dev init
 Before developing make sure to:
 - install the gcloud CLI
