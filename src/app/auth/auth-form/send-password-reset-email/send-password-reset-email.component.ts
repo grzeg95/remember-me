@@ -7,8 +7,7 @@ import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-send-password-reset-email',
-  templateUrl: './send-password-reset-email.component.html',
-  styleUrls: ['./send-password-reset-email.component.scss']
+  templateUrl: './send-password-reset-email.component.html'
 })
 export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
 

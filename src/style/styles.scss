@@ -78,10 +78,6 @@ a, a:not([href]):not([class]) {
   user-select: none;
 }
 
-.full-screen-modal-without-padding .mat-mdc-dialog-surface{
-  padding: 0;
-}
-
 .action-buttons {
   display: flex;
   justify-content: space-between;
