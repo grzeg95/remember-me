@@ -24,7 +24,7 @@ export class ImgSecureDirective implements OnChanges {
         this.applyImgChange(changes.imgSecure.currentValue);
       } else {
         this.renderer.setAttribute(this.imageElementElementRef.nativeElement, 'src', '');
-        this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 1);
+        this.renderer.removeStyle(this.imageElementElementRef.nativeElement, 'opacity');
       }
     }
   }
@@ -49,11 +49,11 @@ export class ImgSecureDirective implements OnChanges {
         })
       ).subscribe((src) => {
         this.renderer.setAttribute(this.imageElementElementRef.nativeElement, 'src', src);
-        this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 1);
+        this.renderer.removeStyle(this.imageElementElementRef.nativeElement, 'opacity');
       });
     } else {
       this.renderer.setAttribute(this.imageElementElementRef.nativeElement, 'src', imgSecure);
-      this.renderer.setStyle(this.imageElementElementRef.nativeElement, 'opacity', 1);
+      this.renderer.removeStyle(this.imageElementElementRef.nativeElement, 'opacity');
     }
   }
 }
