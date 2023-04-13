@@ -33,7 +33,7 @@
     "@popperjs/core": "2.11.6",
     "bootstrap": "5.2.3",
     "buffer": "6.0.3",
-    "firebase": "9.17.2",
+    "firebase": "9.19.1",
     "jquery": "3.6.4",
     "material-design-icons": "3.0.1",
     "rxjs": "7.8.0",
@@ -49,7 +49,7 @@
     "cheerio": "1.0.0-rc.12",
     "colors": "1.4.0",
     "dotenv": "16.0.3",
-    "firebase-tools": "11.24.1",
+    "firebase-tools": "11.26.0",
     "sass-lint": "1.13.1",
     "typescript": "4.9.5"
   }

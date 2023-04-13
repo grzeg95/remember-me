@@ -7,6 +7,6 @@
   "dependencies": {
     "@google-cloud/kms": "3.0.1",
     "dotenv": "16.0.3",
-    "firebase-admin": "11.2.0"
+    "firebase-admin": "11.6.0"
   }
 }
