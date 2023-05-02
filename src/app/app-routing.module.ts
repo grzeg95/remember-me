@@ -1,14 +1,14 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
-import {AuthGuardLoggedIn} from 'auth';
-import {ExtraParametersRoutePipe} from 'services';
+import {authGuardLoggedIn} from 'auth';
+import {extraParametersRoutePipe} from 'services';
 import {RouterDict} from './app.constants';
 import {GuestComponent} from './guest/guest.component';
 
 const appRoutes: Routes = [
   {
     path: '',
-    canActivate: [ExtraParametersRoutePipe, AuthGuardLoggedIn],
+    canActivate: [extraParametersRoutePipe, authGuardLoggedIn],
     component: GuestComponent,
     pathMatch: 'full'
   },

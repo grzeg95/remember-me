@@ -1,13 +1,13 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
-import {AuthGuardUnauthorized} from 'auth';
+import {authGuardUnauthorized} from 'auth';
 import {RouterDict} from '../app.constants';
 import {UserComponent} from './user.component';
 
 const routes: Routes = [
   {
     path: '',
-    canActivate: [AuthGuardUnauthorized],
+    canActivate: [authGuardUnauthorized],
     component: UserComponent,
     children: [
       {
