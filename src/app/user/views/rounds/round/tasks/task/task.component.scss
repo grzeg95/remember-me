@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 .container {
   & > .col {
     max-width: 500px;
@@ -16,9 +18,9 @@
   width: 16px;
   height: 16px;
   margin-right: 3px;
-  opacity: 0.87*40/100;
+  opacity: math.div(0.87 * 40, 100);
 
   &:hover {
-    opacity: 0.87*57/100;
+    opacity: math.div(0.87 * 57, 100);
   }
 }

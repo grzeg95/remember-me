@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 .title {
   max-width: 600px;
   margin: auto;
@@ -178,6 +180,6 @@ mat-expansion-panel {
   }
 
   &:hover {
-    opacity: 0.87*57/100;
+    opacity: math.div(0.87 * 57, 100);
   }
 }
