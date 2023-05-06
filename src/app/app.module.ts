@@ -32,9 +32,6 @@ import {SharedModule} from './shared.module';
     SharedModule,
     MatTabsModule
   ],
-  entryComponents: [
-    AuthFormComponent
-  ],
   bootstrap: [
     AppComponent
   ]

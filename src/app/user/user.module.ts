@@ -28,10 +28,6 @@ import {UserSettingsComponent} from './views/user-settings/user-settings.compone
   providers: [
     TaskService,
     RoundsService
-  ],
-  entryComponents: [
-    UserDialogConfirmDeleteComponent,
-    UserSettingsComponent
   ]
 })
 export class UserModule {

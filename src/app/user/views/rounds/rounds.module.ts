@@ -44,10 +44,6 @@ import {RoundsService} from './rounds.service';
   providers: [
     RoundsService,
     TaskService
-  ],
-  entryComponents: [
-    TaskDialogConfirmDeleteComponent,
-    RoundDialogConfirmDeleteComponent
   ]
 })
 export class RoundsModule {
