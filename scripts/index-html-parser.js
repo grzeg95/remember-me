@@ -70,6 +70,8 @@ link.each((i, elem) => {
 
   if (href && scriptMap[href] && stylesheet) {
     const style = $('<style></style>');
+    //style nonce
+    style.attr('nonce', 'random-csp-nonce');
     style.text(scriptMap[href].text);
     $(elem).replaceWith(style);
     rmSync(join(basePath, 'public/html', scriptMap[href].fileName));
