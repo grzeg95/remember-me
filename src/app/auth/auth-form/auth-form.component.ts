@@ -1,11 +1,12 @@
-import {Component, ViewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, ViewChild} from '@angular/core';
 import {MatDialogRef} from '@angular/material/dialog';
 import {MatTabGroup} from '@angular/material/tabs';
 
 @Component({
   selector: 'app-auth-form',
   templateUrl: './auth-form.component.html',
-  styleUrls: ['./auth-form.component.scss']
+  styleUrls: ['./auth-form.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AuthFormComponent {
 

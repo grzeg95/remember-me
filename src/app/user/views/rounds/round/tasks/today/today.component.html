@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col">
 
-      <ng-container *ngIf="!isOnline && !todayItemsView">
+      <ng-container *ngIf="!isOnline() && !todayItemsView()">
         <div class="row message">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
@@ -10,9 +10,9 @@
         </div>
       </ng-container>
 
-      <ng-template *ngIf="!isOnline && todayItemsView; then showItems"></ng-template>
+      <ng-template *ngIf="!isOnline() && todayItemsView(); then showItems"></ng-template>
 
-      <ng-container *ngIf="isOnline && todayItemsViewFirstLoading$ | async">
+      <ng-container *ngIf="isOnline() && todayItemsViewFirstLoading()">
         <div class="row message">
           <div class="col">
             <app-loading-text></app-loading-text>
@@ -20,13 +20,13 @@
         </div>
       </ng-container>
 
-      <ng-template *ngIf="isOnline && todayItemsView && !(todayItemsViewFirstLoading$ | async); then showItems"></ng-template>
+      <ng-template *ngIf="isOnline() && todayItemsView() && !todayItemsViewFirstLoading(); then showItems"></ng-template>
 
       <ng-template #showItems>
 
-        <ng-container *ngIf="todayItemsView.length > 0">
+        <ng-container *ngIf="todayItemsView().length > 0">
           <div class="time-of-day-row"
-               *ngFor="let todayItem of todayItemsView; let i = index; trackBy: trackByTodayItems">
+               *ngFor="let todayItem of todayItemsView(); let i = index; trackBy: trackByTodayItems">
 
             <div class="row">
               <div class="col">
@@ -60,10 +60,10 @@
           </div>
         </ng-container>
 
-        <ng-container *ngIf="todayItemsView.length === 0">
+        <ng-container *ngIf="todayItemsView().length === 0">
           <div class="row message">
             <div class="col">
-              <span>Add some tasks for {{todayFullName$ | async}}</span>
+              <span>Add some tasks for {{todayFullName()}}</span>
             </div>
             <div class="col">
               <div class="add-task">

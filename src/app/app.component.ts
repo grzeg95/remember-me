@@ -1,35 +1,24 @@
-import {ChangeDetectorRef, Component} from '@angular/core';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {AuthService} from 'auth';
 import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
 
-  whileLoginIn$ = this.authService.whileLoginIn$;
-  isWaitingForCryptoKey: boolean;
-  user$ = this.authService.user$;
-  isOnline$ = this.connectionService.isOnline$;
+  whileLoginIn = toSignal(this.authService.whileLoginIn$);
+  isWaitingForCryptoKey = toSignal(this.authService.isWaitingForCryptoKey$);
+  user = toSignal(this.authService.user$);
+  isOnline = toSignal(this.connectionService.isOnline$);
 
   constructor(
     private authService: AuthService,
-    private connectionService: ConnectionService,
-    private cdr: ChangeDetectorRef
+    private connectionService: ConnectionService
   ) {
-
-    this.authService.isWaitingForCryptoKey$.subscribe((isWaitingForCryptoKey) => this.isWaitingForCryptoKey = isWaitingForCryptoKey);
-    this.connectionService.wasTabInactive$.subscribe((wasTabInactive) => {
-      if (wasTabInactive) {
-        this.cdr.markForCheck();
-      }
-    });
-    this.connectionService.isOnline$.subscribe((isOnline) => {
-      if (isOnline) {
-        this.cdr.markForCheck();
-      }
-    });
   }
 }

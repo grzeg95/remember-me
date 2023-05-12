@@ -1,5 +1,6 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
@@ -12,20 +13,19 @@ import {RoundsService} from '../../../rounds.service';
 @Component({
   selector: 'app-times-of-day-order',
   templateUrl: './times-of-day-order.component.html',
-  styleUrls: ['./times-of-day-order.component.scss']
+  styleUrls: ['./times-of-day-order.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
 
-  selectedRound: Round;
   selectedRoundSub: Subscription;
-
-  isOnline: boolean;
-  isOnlineSub: Subscription;
+  selectedRound = signal<Round>(null);
+  isOnline = toSignal(this.connectionService.isOnline$);
 
   faGripLines = faGripLines;
   RouterDict = RouterDict;
 
-  setTimesOfDayOrderInProgress = false;
+  setTimesOfDayOrderInProgress = signal(false);
 
   constructor(
     private roundsService: RoundsService,
@@ -37,13 +37,13 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => this.selectedRound = round);
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => {
+      this.selectedRound.set(round);
+    });
   }
 
   ngOnDestroy(): void {
     this.selectedRoundSub.unsubscribe();
-    this.isOnlineSub.unsubscribe();
   }
 
   drop(event: CdkDragDrop<string[]>): void {
@@ -52,24 +52,27 @@ export class TimesOfDayOrderComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const timeOfDay = this.selectedRound.timesOfDay[event.previousIndex];
+    const selectedRound = this.selectedRound();
+    const timeOfDay = selectedRound.timesOfDay[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
-    moveItemInArray(this.selectedRound.timesOfDay, event.previousIndex, event.currentIndex);
+    moveItemInArray(selectedRound.timesOfDay, event.previousIndex, event.currentIndex);
+    this.selectedRound.set(selectedRound);
 
-    this.setTimesOfDayOrderInProgress = true;
+    this.setTimesOfDayOrderInProgress.set(true);
     this.roundsService.setTimesOfDayOrder({
       timeOfDay,
       moveBy,
       roundId: this.roundsService.selectedRound$.value.id
     }).pipe(catchError((error: HTTPError) => {
-      this.setTimesOfDayOrderInProgress = false;
+      this.setTimesOfDayOrderInProgress.set(false);
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-      moveItemInArray(this.selectedRound.timesOfDay, event.currentIndex, event.previousIndex);
+      moveItemInArray(selectedRound.timesOfDay, event.currentIndex, event.previousIndex);
+      this.selectedRound.set(selectedRound);
 
       return NEVER;
     })).subscribe((success) => {
-      this.setTimesOfDayOrderInProgress = false;
+      this.setTimesOfDayOrderInProgress.set(false);
       this.snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }

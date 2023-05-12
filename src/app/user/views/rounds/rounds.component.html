@@ -20,17 +20,17 @@
             edit</a>
         </ng-container>
 
-        <ng-container *ngIf="roundEdit.isActive && (editedRound$ | async) as editedRound">
+        <ng-container *ngIf="roundEdit.isActive && editedRound()">
           <span> | </span>
           <a class="vertical-link"
-             [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, editedRound.id]">{{ editedRound.name }}</a>
+             [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, editedRound().id]">{{ editedRound().name }}</a>
         </ng-container>
 
-        <ng-container *ngIf="!roundEdit.isActive && selectedRound">
+        <ng-container *ngIf="!roundEdit.isActive && selectedRound()">
           <span> | </span>
           <a class="vertical-link"
-             [routerLink]="['/', RouterDict.user, RouterDict.rounds, selectedRound.id, RouterDict.todayTasks]">
-            {{ selectedRound.name }}</a>
+             [routerLink]="['/', RouterDict.user, RouterDict.rounds, selectedRound().id, RouterDict.todayTasks]">
+            {{ selectedRound().name }}</a>
         </ng-container>
       </div>
     </div>

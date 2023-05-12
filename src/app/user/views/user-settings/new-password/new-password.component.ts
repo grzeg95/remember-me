@@ -1,15 +1,17 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
-import {catchError, NEVER, Subscription} from 'rxjs';
+import {catchError, NEVER} from 'rxjs';
 import {ConnectionService, CustomValidators} from 'services';
 
 @Component({
   selector: 'app-new-password-component',
-  templateUrl: 'new-password.component.html'
+  templateUrl: 'new-password.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class NewPasswordComponent implements OnInit, OnDestroy {
+export class NewPasswordComponent implements OnInit {
 
   newPasswordForm: FormGroup = new FormGroup({
     newPassword: new FormControl('', [Validators.required]),
@@ -19,8 +21,7 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
   newPassword = this.newPasswordForm.get('newPassword') as FormControl;
   confirmNewPassword = this.newPasswordForm.get('confirmNewPassword') as FormControl;
 
-  isOnlineSub: Subscription;
-  isOnline: boolean;
+  isOnline = toSignal(this.connectionService.isOnline$);
 
   constructor(
     private authService: AuthService,
@@ -30,7 +31,6 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
     this.confirmNewPassword.addValidators(CustomValidators.equalsToOtherFormControl(this.newPassword));
 
     this.newPassword.valueChanges.subscribe(() => {
@@ -38,10 +38,6 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
         this.confirmNewPassword.updateValueAndValidity();
       }
     });
-  }
-
-  ngOnDestroy(): void {
-    this.isOnlineSub.unsubscribe();
   }
 
   changePassword(): void {

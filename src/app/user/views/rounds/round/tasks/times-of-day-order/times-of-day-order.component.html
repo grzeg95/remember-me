@@ -1,18 +1,18 @@
 <div class="container">
 
-  <div class="col" [ngClass]="{'disabled': setTimesOfDayOrderInProgress}">
+  <div class="col" [ngClass]="{'disabled': setTimesOfDayOrderInProgress()}">
 
-    <ng-template *ngIf="!selectedRound || (selectedRound && selectedRound.timesOfDay && selectedRound.timesOfDay.length === 0); then waitForItems; else showItems"></ng-template>
+    <ng-template *ngIf="!selectedRound() || (selectedRound() && selectedRound().timesOfDay && selectedRound().timesOfDay.length === 0); then waitForItems; else showItems"></ng-template>
 
     <ng-template #waitForItems>
-      <div *ngIf="!selectedRound || !selectedRound.timesOfDay && isOnline; else onOneExists" class="row message">
+      <div *ngIf="!selectedRound() || !selectedRound().timesOfDay && isOnline(); else onOneExists" class="row message">
         <div class="col">
           <app-loading-text></app-loading-text>
         </div>
       </div>
 
       <ng-template #onOneExists>
-        <div class="row message" *ngIf="isOnline">
+        <div class="row message" *ngIf="isOnline()">
           <div class="col">
             <span>Add some tasks and change the order of the times of day</span>
           </div>
@@ -24,7 +24,7 @@
             </div>
           </div>
         </div>
-        <div class="row message" *ngIf="!isOnline">
+        <div class="row message" *ngIf="!isOnline()">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
           </div>
@@ -37,8 +37,8 @@
         <div class="drag-container">
           <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
 
-          <div [cdkDropListDisabled]="!isOnline" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
-            <div cdkDrag class="drag-item mat-cell" [class.disabled]="!isOnline" *ngFor="let item of selectedRound.timesOfDay; let i = index">
+          <div [cdkDropListDisabled]="!isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
+            <div cdkDrag class="drag-item mat-cell" [class.disabled]="!isOnline()" *ngFor="let item of selectedRound().timesOfDay; let i = index">
               <span class="drag-span">{{ item }}</span>
               <fa-icon class="drag-icon" [icon]="faGripLines"></fa-icon>
             </div>
@@ -50,4 +50,4 @@
   </div>
 </div>
 
-<mat-spinner *ngIf="setTimesOfDayOrderInProgress" [diameter]="50" [strokeWidth]="5"></mat-spinner>
+<mat-spinner *ngIf="setTimesOfDayOrderInProgress()" [diameter]="50" [strokeWidth]="5"></mat-spinner>

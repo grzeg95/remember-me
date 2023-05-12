@@ -1,22 +1,21 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {asyncScheduler, Subscription} from 'rxjs';
+import {ChangeDetectionStrategy, Component, OnDestroy, OnInit} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {skip} from 'rxjs/operators';
 import {RouterDict} from '../../../app.constants';
-import {Round} from '../../models';
 import {RoundsService} from './rounds.service';
 
 @Component({
   selector: 'app-rounds',
   templateUrl: './rounds.component.html',
-  styleUrls: ['./rounds.component.scss']
+  styleUrls: ['./rounds.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoundsComponent implements OnInit, OnDestroy {
 
-  selectedRoundSub: Subscription;
-  selectedRound: Round = null;
+  selectedRound = toSignal(this.roundsService.selectedRound$.pipe(skip(1)));
   RouterDict = RouterDict;
 
-  editedRound$ = this.roundsService.editedRound$;
+  editedRound = toSignal(this.roundsService.editedRound$);
 
   constructor(
     private roundsService: RoundsService
@@ -25,17 +24,9 @@ export class RoundsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.roundsService.init();
-    this.selectedRoundSub = this.roundsService.selectedRound$
-      .pipe(skip(1))
-      .subscribe((selectedRound) => {
-        asyncScheduler.schedule(() => {
-          this.selectedRound = selectedRound;
-        });
-      });
   }
 
   ngOnDestroy(): void {
-    this.selectedRoundSub.unsubscribe();
     this.roundsService.clearCache();
   }
 }
