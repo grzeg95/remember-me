@@ -11,6 +11,6 @@ export class ConnectionService {
     merge(
       fromEvent(window, 'online'),
       fromEvent(window, 'offline')
-    ).pipe(map((event) => this.isOnline$.next(event.type === 'online')));
+    ).subscribe((event) => this.isOnline$.next(event.type === 'online'))
   }
 }
