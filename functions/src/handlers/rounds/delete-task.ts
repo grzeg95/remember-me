@@ -14,6 +14,8 @@ import {
   TransactionWrite
 } from '../../tools';
 
+import '../../tools/global.prototype';
+
 const app = getFirestore();
 
 export const proceedTaskRemoving = (cryptoKey: CryptoKey, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot): Promise<Transaction> => {

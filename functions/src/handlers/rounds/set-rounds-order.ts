@@ -10,6 +10,8 @@ import {
   TransactionWrite
 } from '../../tools';
 
+import '../../tools/global.prototype';
+
 const app = getFirestore();
 
 /**

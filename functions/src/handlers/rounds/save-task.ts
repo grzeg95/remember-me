@@ -1,6 +1,5 @@
 // tslint:disable-next-line:no-import-side-effect
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
-import '../../../../global.prototype';
 import {Day, EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../models';
 import {
   BasicEncryptedValue,
@@ -20,6 +19,8 @@ import {
   testRequirement,
   TransactionWrite
 } from '../../tools';
+
+import '../../tools/global.prototype';
 
 const app = getFirestore();
 

@@ -24,7 +24,7 @@ Before developing make sure to:
 - in `index.html` replace `DATA-CBID` for Cookiebot
 - create and fill `.evn.hosting` and `.env.hosting.prod` for corresponding variables in `set-env.js`
 - create and fill `.evn.remote-config-default` and `.env.remote-config-default.prod` for corresponding variables in `set-remote-config-default-env.js`
-- create and fill `.evn.functions` and `.env.functions.prod` for corresponding variables in `./functions/src/config.ts`
+- create and fill `.evn.functions` and `.env.functions.prod` into `functions` folder for corresponding variables in `./functions/src/config.ts`
 
 
 ## Dev use

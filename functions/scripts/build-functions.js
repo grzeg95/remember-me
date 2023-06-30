@@ -5,9 +5,11 @@ const path = require('path');
 const exec = (text, textDone, promise) => {
 
   const logInline = (text) => {
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(text);
+   try {
+     process.stdout.clearLine(0);
+     process.stdout.cursorTo(0);
+     process.stdout.write(text);
+   } catch (e) {}
   };
 
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map((char) => char + ' ');
