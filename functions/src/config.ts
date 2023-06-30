@@ -1,6 +1,7 @@
 import {KeyManagementServiceClient} from '@google-cloud/kms';
 import {runWith} from 'firebase-functions';
 import {HttpsOptions} from 'firebase-functions/v2/https';
+import {BlockingOptions} from 'firebase-functions/v2/identity';
 
 const dotenv = require('dotenv');
 const path = require('path');
@@ -39,3 +40,12 @@ export const optsV2: HttpsOptions = {
   concurrency: 250,
   invoker: 'public'
 };
+
+export const blockingOptions: BlockingOptions = {
+  timeoutSeconds: 60,
+  memory: '1GiB',
+  region: regionIdForFunctionsV2,
+  maxInstances: 10,
+  ingressSettings: 'ALLOW_ALL',
+  concurrency: 250
+}

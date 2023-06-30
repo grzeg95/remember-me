@@ -1,7 +1,10 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
-import {AuthUserRecord, BeforeCreateResponse} from 'firebase-functions/lib/common/providers/identity';
+import {
+  AuthBlockingEvent,
+  BeforeCreateResponse
+} from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {Task} from '../../models';
 import {encrypt, encryptRound, encryptTask, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
@@ -69,7 +72,7 @@ export const createSampleUserData = (userDocSnap: DocumentSnapshot, transaction:
   });
 };
 
-export const handler = (user: AuthUserRecord) => {
+export const handler = (event: AuthBlockingEvent) => {
 
   const key = randomBytes(32);
   let userDocSnap: DocumentSnapshot;
@@ -112,7 +115,7 @@ export const handler = (user: AuthUserRecord) => {
       ['encrypt']
     ).then((_cryptoKey) => {
       cryptoKey = _cryptoKey;
-      return getUserDocSnap(app, transaction, user.uid);
+      return getUserDocSnap(app, transaction, event.data.uid);
     }).then((_userDocSnap: DocumentSnapshot) => {
       userDocSnap = _userDocSnap;
 
@@ -137,6 +140,6 @@ export const handler = (user: AuthUserRecord) => {
     });
   }).catch((e) => {
     console.error(e);
-    throw new Error(`user ${user.uid} rsa key creation`);
+    throw new Error(`user ${event.data.uid} rsa key creation`);
   });
 };
