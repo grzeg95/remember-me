@@ -13,6 +13,7 @@ Before developing make sure to:
 - run: `npm install ./functions`
 - run: `npm install ./firebase-unit-tests/functions`
 - run: `npm install ./firebase-unit-tests/security-rules`
+- run: `npm install ./firebase-admin`
 - run from cmd: `firebase login --reauth`
 - add `FOR_FIREBASE_EMULATOR=1` environment variable to `serve:emulators`
 - add `GOOGLE_APPLICATION_CREDENTIALS` environment variable `*.json` path to `serve:emulators`
@@ -25,7 +26,8 @@ Before developing make sure to:
 - create and fill `.evn.hosting` and `.env.hosting.prod` for corresponding variables in `set-env.js`
 - create and fill `.evn.remote-config-default` and `.env.remote-config-default.prod` for corresponding variables in `set-remote-config-default-env.js`
 - create and fill `.evn.functions` and `.env.functions.prod` into `functions` folder for corresponding variables in `./functions/src/config.ts`
-
+- for firebase-admin add `GOOGLE_APPLICATION_CREDENTIALS` environment variable `*.json` path to `start:firebase-admin`
+- reuse `.evn.functions.prod` for firebase-admin
 
 ## Dev use
 - `npm run serve:angular`
