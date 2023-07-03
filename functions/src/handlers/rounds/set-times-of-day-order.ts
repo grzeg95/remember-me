@@ -1,5 +1,4 @@
-import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
-import {Round} from '../../models';
+import {getFirestore} from 'firebase-admin/firestore';
 import {
   Context,
   decryptRound,
@@ -21,7 +20,7 @@ const app = getFirestore();
  * @param context Context
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = (context: Context): FunctionResultPromise => {
+export const handler = async (context: Context): FunctionResultPromise => {
 
   const auth = context.auth;
   const data = context.data;
@@ -53,59 +52,48 @@ export const handler = (context: Context): FunctionResultPromise => {
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  let cryptoKey: CryptoKey;
-  let roundDocSnap: DocumentSnapshot;
-  let round: Round;
+  const cryptoKey = await getCryptoKey(context.auth?.token.secretKey);
 
-  return getCryptoKey(context.auth?.token.secretKey).then((_cryptoKey) => {
-    cryptoKey = _cryptoKey;
+  return app.runTransaction(async (transaction) => {
 
-    return app.runTransaction((transaction) => {
+    const transactionWrite = new TransactionWrite(transaction);
+    const timeOfDay = data.timeOfDay;
+    const roundId = data.roundId;
+    const moveBy = data.moveBy;
 
-      const transactionWrite = new TransactionWrite(transaction);
-      const timeOfDay = data.timeOfDay;
-      const roundId = data.roundId;
-      const moveBy = data.moveBy;
+    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
+    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
-      return getUserDocSnap(app, transaction, auth?.uid as string).then((userDocSnap) => {
-        return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
-      }).then((_roundDocSnap) => {
-        roundDocSnap = _roundDocSnap;
+    // check if timeOfDay exists
+    testRequirement(!roundDocSnap.exists);
 
-        // check if timeOfDay exists
-        testRequirement(!roundDocSnap.exists);
+    const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
 
-        return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-      }).then((_round) => {
-        round = _round;
+    const timesOfDay = round.timesOfDay;
+    const timesOfDayCardinality = round.timesOfDayCardinality;
+    const toMoveIndex = timesOfDay.indexOf(timeOfDay);
 
-        const timesOfDay = round.timesOfDay;
-        const timesOfDayCardinality = round.timesOfDayCardinality;
-        const toMoveIndex = timesOfDay.indexOf(timeOfDay);
+    testRequirement(toMoveIndex === -1);
+    testRequirement(moveBy > 0 && toMoveIndex + moveBy >= timesOfDay.length);
+    testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
 
-        testRequirement(toMoveIndex === -1);
-        testRequirement(moveBy > 0 && toMoveIndex + moveBy >= timesOfDay.length);
-        testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
+    timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);
+    timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
 
-        timesOfDay.move(toMoveIndex, toMoveIndex + moveBy);
-        timesOfDayCardinality.move(toMoveIndex, toMoveIndex + moveBy);
+    // update user
+    transactionWrite.update(roundDocSnap.ref, encryptRound({
+      timesOfDay,
+      timesOfDayCardinality,
+      name: round.name,
+      todaysIds: round.todaysIds,
+      tasksIds: round.tasksIds
+    }, cryptoKey));
 
-        // update user
-        transactionWrite.update(roundDocSnap.ref, encryptRound({
-          timesOfDay,
-          timesOfDayCardinality,
-          name: round.name,
-          todaysIds: round.todaysIds,
-          tasksIds: round.tasksIds
-        }, cryptoKey));
-
-        return transactionWrite.execute();
-      });
-    }).then(() => ({
-      code: 200,
-      body: {
-        details: 'Order has been updated 🙃'
-      }
-    }));
-  });
+    return transactionWrite.execute();
+  }).then(() => ({
+    code: 200,
+    body: {
+      details: 'Order has been updated 🙃'
+    }
+  }));
 };

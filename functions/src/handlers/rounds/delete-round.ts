@@ -15,7 +15,7 @@ import {
 
 const app = getFirestore();
 
-export const handler = (context: Context): FunctionResultPromise => {
+export const handler = async (context: Context): FunctionResultPromise => {
 
   const auth = context.auth;
   const roundId = context.data;
@@ -30,93 +30,83 @@ export const handler = (context: Context): FunctionResultPromise => {
   // roundId is not empty string
   testRequirement(typeof roundId !== 'string' || roundId.length === 0);
 
-  let userDocSnap: DocumentSnapshot;
-  let roundDocSnap: DocumentSnapshot;
-  const docsToRemovePromise: (Promise<DocumentSnapshot> | DocumentSnapshot)[] = [];
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-  return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
-    return app.runTransaction((transaction) => {
+  return app.runTransaction(async (transaction) => {
 
-      const transactionWrite = new TransactionWrite(transaction);
+    const transactionWrite = new TransactionWrite(transaction);
 
-      return getUserDocSnap(app, transaction, auth?.uid as string).then((_userDocSnap) => {
-        userDocSnap = _userDocSnap;
+    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
 
-        return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
-      }).then((_roundDocSnap) => {
-        roundDocSnap = _roundDocSnap;
+    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
-        // check if round exists
-        testRequirement(!roundDocSnap.exists);
+    // check if round exists
+    testRequirement(!roundDocSnap.exists);
 
-        return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
-      }).then((roundDocSnapData) => {
-        // get all documents
+    const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
 
-        // get all tasks
-        for (const taskId of roundDocSnapData.tasksIds) {
-          docsToRemovePromise.push(transaction.get(roundDocSnap.ref.collection('task').doc(taskId)));
-        }
+    // get all tasks
+    const docsToRemovePromise: (Promise<DocumentSnapshot> | DocumentSnapshot)[] = [];
+    for (const taskId of roundDocSnapData.tasksIds) {
+      docsToRemovePromise.push(transaction.get(roundDocSnap.ref.collection('task').doc(taskId)));
+    }
 
-        const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot>[] = [];
+    const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot>[] = [];
 
-        // get all today's
-        for (const todayId of roundDocSnapData.todaysIds) {
-          const today = roundDocSnap.ref.collection('today').doc(todayId);
-          allTasksListOfDayRefsPromise.push(transaction.get(today));
-        }
+    // get all today's
+    for (const todayId of roundDocSnapData.todaysIds) {
+      const today = roundDocSnap.ref.collection('today').doc(todayId);
+      allTasksListOfDayRefsPromise.push(transaction.get(today));
+    }
 
-        transactionWrite.delete(roundDocSnap.ref);
+    transactionWrite.delete(roundDocSnap.ref);
 
-        return Promise.all(allTasksListOfDayRefsPromise);
-      }).then((allTasksListOfDayRefs) => {
+    const allTasksListOfDayRefs = await Promise.all(allTasksListOfDayRefsPromise);
 
-        const decryptTodaysPromise = [];
+    const decryptTodaysPromise = [];
 
-        for (const todaySnap of allTasksListOfDayRefs) {
-          docsToRemovePromise.push(todaySnap);
-          decryptTodaysPromise.push(decryptToday(todaySnap.data() as {value: string}, cryptoKey).then((decryptedToday) => {
-            for (const todayTaskId of decryptedToday.tasksIds) {
-              docsToRemovePromise.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)));
-            }
-          }));
-        }
-
-        return Promise.all(decryptTodaysPromise).then(() => Promise.all(docsToRemovePromise));
-      }).then((docsToRemove) => {
-
-        // remove all documents
-        for (const doc of docsToRemove) {
-          transactionWrite.delete(doc.ref);
-        }
-
-        if (userDocSnap.data()?.rounds) {
-          return decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
-        }
-
-        return [] as string[];
-      }).then((roundsInUser) => {
-
-        // update user
-        const roundIndexInUser = roundsInUser.indexOf(roundId);
-
-        testRequirement(roundIndexInUser === -1);
-        roundsInUser.splice(roundIndexInUser, 1);
-
-        writeUser(transactionWrite, userDocSnap, encrypt(roundsInUser, cryptoKey).then((encryptedRounds) => {
-          return {
-            rounds: encryptedRounds
-          };
-        }));
-
-        return transactionWrite.execute();
-
-      }).then(() => ({
-        code: 200,
-        body: {
-          details: 'Your round has been deleted 🤭'
+    for (const todaySnap of allTasksListOfDayRefs) {
+      docsToRemovePromise.push(todaySnap);
+      decryptTodaysPromise.push(decryptToday(todaySnap.data() as {
+        value: string
+      }, cryptoKey).then((decryptedToday) => {
+        for (const todayTaskId of decryptedToday.tasksIds) {
+          docsToRemovePromise.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)));
         }
       }));
-    });
-  });
+    }
+
+    const docsToRemove = await Promise.all(decryptTodaysPromise).then(() => Promise.all(docsToRemovePromise));
+
+    // remove all documents
+    for (const doc of docsToRemove) {
+      transactionWrite.delete(doc.ref);
+    }
+
+    let roundsInUser: string[] = [];
+
+    if (userDocSnap.data()?.rounds) {
+      roundsInUser = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
+    }
+
+    // update user
+    const roundIndexInUser = roundsInUser.indexOf(roundId);
+
+    testRequirement(roundIndexInUser === -1);
+    roundsInUser.splice(roundIndexInUser, 1);
+
+    writeUser(transactionWrite, userDocSnap, encrypt(roundsInUser, cryptoKey).then((encryptedRounds) => {
+      return {
+        rounds: encryptedRounds
+      };
+    }));
+
+    return transactionWrite.execute();
+
+  }).then(() => ({
+    code: 200,
+    body: {
+      details: 'Your round has been deleted 🤭'
+    }
+  }));
 };

@@ -1,4 +1,4 @@
-import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
+import {getFirestore} from 'firebase-admin/firestore';
 import {
   Context,
   decrypt,
@@ -49,56 +49,41 @@ export const handler = async (context: Context): FunctionResultPromise => {
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  let transactionWrite: TransactionWrite;
-  let transaction: Transaction;
-  let userDocSnap: DocumentSnapshot;
   const roundId = data.roundId;
   const moveBy = data.moveBy;
-  let cryptoKey: CryptoKey;
 
-  return getCryptoKey(auth?.token.secretKey).then((_cryptoKey) => {
-    cryptoKey = _cryptoKey;
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-    return app.runTransaction((_transaction) => {
+  return app.runTransaction(async (transaction) => {
 
-      transaction = _transaction;
-      transactionWrite = new TransactionWrite(transaction);
+    const transactionWrite = new TransactionWrite(transaction);
 
-      return getUserDocSnap(app, transaction, auth?.uid as string).then((_userDocSnap) => {
+    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
+    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
-        userDocSnap = _userDocSnap;
-        return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    // check if round exists
+    testRequirement(!roundDocSnap.exists);
 
-      }).then((roundDocSnap) => {
-
-        // check if round exists
-        testRequirement(!roundDocSnap.exists);
-
-        return decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => {
-          return JSON.parse(text) as string[];
-        });
-
-      }).then((rounds) => {
-
-        const toMoveIndex = rounds.indexOf(data.roundId);
-
-        testRequirement(toMoveIndex === -1);
-        testRequirement(moveBy > 0 && toMoveIndex + moveBy >= rounds.length);
-        testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
-
-        rounds.move(toMoveIndex, toMoveIndex + moveBy);
-
-        // update user
-        transactionWrite.update(userDocSnap.ref, encrypt(rounds, cryptoKey).then((encryptedRounds) => {
-          return {
-            rounds: encryptedRounds
-          };
-        }));
-
-        return transactionWrite.execute();
-      });
-
+    const rounds = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => {
+      return JSON.parse(text) as string[];
     });
+
+    const toMoveIndex = rounds.indexOf(data.roundId);
+
+    testRequirement(toMoveIndex === -1);
+    testRequirement(moveBy > 0 && toMoveIndex + moveBy >= rounds.length);
+    testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
+
+    rounds.move(toMoveIndex, toMoveIndex + moveBy);
+
+    // update user
+    transactionWrite.update(userDocSnap.ref, encrypt(rounds, cryptoKey).then((encryptedRounds) => {
+      return {
+        rounds: encryptedRounds
+      };
+    }));
+
+    return transactionWrite.execute();
   }).then(() => ({
     code: 200,
     body: {

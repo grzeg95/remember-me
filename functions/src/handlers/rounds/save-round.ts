@@ -23,7 +23,7 @@ const app = getFirestore();
  * @param context Context
  * @return {Promise<{created: boolean, details: string, roundId: string}>}
  **/
-export const handler = (context: Context): FunctionResultPromise => {
+export const handler = async (context: Context): FunctionResultPromise => {
 
   const auth = context.auth;
   const data = context.data;
@@ -58,96 +58,82 @@ export const handler = (context: Context): FunctionResultPromise => {
 
   let roundId = data.roundId;
   let created = false;
-  let userDocSnap: DocumentSnapshot;
-  let roundDocSnapTmp: DocumentSnapshot;
   let userDocSnapData: DocumentData | undefined;
   let roundDocSnap: DocumentSnapshot;
 
-  return getCryptoKey(auth?.token.secretKey).then((cryptoKey) => {
-    return app.runTransaction((transaction) => {
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-      const transactionWrite = new TransactionWrite(transaction);
-      return getUserDocSnap(app, transaction, auth?.uid as string).then((_userDocSnap) => {
+  return app.runTransaction(async (transaction) => {
 
-        userDocSnap = _userDocSnap;
-        userDocSnapData = userDocSnap.data();
-        return transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
-      }).then((_roundDocSnapTmp) => {
-        roundDocSnapTmp = _roundDocSnapTmp;
+    const transactionWrite = new TransactionWrite(transaction);
 
-        if (userDocSnapData?.rounds) {
-          return decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
-        }
+    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
+    userDocSnapData = userDocSnap.data();
+    const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
-        return [] as string[];
+    let rounds: string[] = [];
 
-      }).then((rounds) => {
+    if (userDocSnapData?.rounds) {
+      rounds = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
+    }
 
-        let roundsEncryptPromise;
+    let roundsEncryptPromise;
 
-        // create round
-        if (!roundDocSnapTmp.exists) {
+    // create round
+    if (!roundDocSnapTmp.exists) {
 
-          // check if there is max 5 rounds
-          testRequirement(rounds.length >= 5, {details: `You can own 5 rounds 🤔`});
+      // check if there is max 5 rounds
+      testRequirement(rounds.length >= 5, {details: `You can own 5 rounds 🤔`});
 
-          return transaction.get(userDocSnap.ref.collection('rounds').doc()).then((_roundDocSnap) => {
-            roundDocSnap = _roundDocSnap;
+      roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
 
-            const roundEncryptPromise = encryptRound({
-              timesOfDay: [],
-              timesOfDayCardinality: [],
-              name: data.name,
-              todaysIds: [],
-              tasksIds: []
-            }, cryptoKey);
+      const roundEncryptPromise = encryptRound({
+        timesOfDay: [],
+        timesOfDayCardinality: [],
+        name: data.name,
+        todaysIds: [],
+        tasksIds: []
+      }, cryptoKey);
 
-            roundId = roundDocSnap.id;
-            rounds.push(roundId);
-            roundsEncryptPromise = encrypt(rounds, cryptoKey);
-            created = true;
-            transactionWrite.delete(roundDocSnapTmp.ref);
+      roundId = roundDocSnap.id;
+      rounds.push(roundId);
+      roundsEncryptPromise = encrypt(rounds, cryptoKey);
+      created = true;
+      transactionWrite.delete(roundDocSnapTmp.ref);
 
-            // update user
-            writeUser(transactionWrite, userDocSnap, roundsEncryptPromise.then((encryptedRounds) => {
-              return {
-                rounds: encryptedRounds
-              };
-            }));
+      // update user
+      writeUser(transactionWrite, userDocSnap, roundsEncryptPromise.then((encryptedRounds) => {
+        return {
+          rounds: encryptedRounds
+        };
+      }));
 
-            transactionWrite.create(roundDocSnap.ref, roundEncryptPromise);
-            return transactionWrite.execute();
-          });
-        } else {
+      transactionWrite.create(roundDocSnap.ref, roundEncryptPromise);
+    } else {
 
-          roundDocSnap = roundDocSnapTmp;
+      roundDocSnap = roundDocSnapTmp;
+      const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+      /*
+       * Check if name was changed
+       * */
+      testRequirement(round.name === data.name);
 
-          return decryptRound(roundDocSnap.data() as {value: string}, cryptoKey).then((round) => {
+      transactionWrite.update(roundDocSnap.ref, encryptRound({
+        name: data.name,
+        timesOfDay: round.timesOfDay,
+        timesOfDayCardinality: round.timesOfDayCardinality,
+        todaysIds: round.todaysIds,
+        tasksIds: round.tasksIds
+      }, cryptoKey));
+    }
 
-            /*
-             * Check if name was changed
-             * */
-            testRequirement(round.name === data.name);
-
-            transactionWrite.update(roundDocSnap.ref, encryptRound({
-              name: data.name,
-              timesOfDay: round.timesOfDay,
-              timesOfDayCardinality: round.timesOfDayCardinality,
-              todaysIds: round.todaysIds,
-              tasksIds: round.tasksIds
-            }, cryptoKey));
-
-            return transactionWrite.execute();
-          });
-        }
-      });
-    }).then(() => ({
-      code: created ? 201 : 200,
-      body: {
-        created,
-        roundId,
-        details: created ? 'Your round has been created 😉' : 'Your round has been updated 🙃',
-      }
-    }));
-  });
+    return transactionWrite.execute();
+  }).then(() => ({
+    code: created ? 201 : 200,
+    body: {
+      created,
+      roundId,
+      details: created ? 'Your round has been created 😉' : 'Your round has been updated 🙃',
+    }
+  }));
 };

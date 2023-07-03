@@ -1,7 +1,7 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
 import {getAuth, UserRecord} from 'firebase-admin/auth';
-import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
+import {getFirestore} from 'firebase-admin/firestore';
 import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
@@ -25,9 +25,6 @@ export const handler = (user: UserRecord, context: EventContext) => {
   }
 
   const key = randomBytes(32);
-  let userDocSnap: DocumentSnapshot;
-  let transactionWrite: TransactionWrite;
-  let cryptoKey: CryptoKey;
   const app = getFirestore();
 
   return app.runTransaction(async (transaction) => {
@@ -44,7 +41,7 @@ export const handler = (user: UserRecord, context: EventContext) => {
       {message: 'GetPublicKey: request corrupted in-transit'}
     );
 
-    transactionWrite = new TransactionWrite(transaction);
+    const transactionWrite = new TransactionWrite(transaction);
 
     const encryptedSymmetricKey = publicEncrypt(
       {
@@ -55,7 +52,7 @@ export const handler = (user: UserRecord, context: EventContext) => {
       Buffer.from(key.toString('hex'))
     ).toString('hex');
 
-    return webcrypto.subtle.importKey(
+    const cryptoKey = await webcrypto.subtle.importKey(
       'raw',
       key,
       {
@@ -63,26 +60,22 @@ export const handler = (user: UserRecord, context: EventContext) => {
       },
       false,
       ['encrypt']
-    ).then((_cryptoKey) => {
-      cryptoKey = _cryptoKey;
-      return getAuth().setCustomUserClaims(user.uid, {encryptedSymmetricKey});
-    }).then(() => {
-      return getUserDocSnap(app, transaction, user.uid);
-    }).then((_userDocSnap: DocumentSnapshot) => {
-      userDocSnap = _userDocSnap;
+    );
 
-      // createSampleUserData
-      return createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
-    }).then((roundId) => {
-      transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
-        return {
-          rounds,
-          hasEncryptedSecretKey: true
-        };
-      }));
+    await getAuth().setCustomUserClaims(user.uid, {encryptedSymmetricKey});
+    const userDocSnap = await getUserDocSnap(app, transaction, user.uid);
 
-      return transactionWrite.execute();
-    });
+    // createSampleUserData
+    const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
+
+    transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
+      return {
+        rounds,
+        hasEncryptedSecretKey: true
+      };
+    }));
+
+    return transactionWrite.execute();
   }).catch((e) => {
     console.error(e);
     throw new Error(`user ${user.uid} rsa key creation`);
