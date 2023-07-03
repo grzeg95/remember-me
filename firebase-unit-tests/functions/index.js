@@ -1,14 +1,14 @@
 process.env.FIRESTORE_EMULATOR_HOST = 'localhost:9090';
 process.env.FUNCTIONS_EMULATOR = 'true';
 
-const {decrypt, decryptRound, encrypt} = require('../../functions/lib/functions/src/tools/security');
+const {decrypt, decryptRound, encrypt} = require('../../functions/lib/tools/security');
 const {Buffer} = require('buffer');
 const crypto = require('crypto');
 const {subtle} = crypto.webcrypto;
 const test = require('firebase-functions-test')({projectId: 'remember-me-dev'});
 exports.test = test;
 exports.chai = require('chai');
-const roundsHandlersGetters = require('../../functions/lib/functions/src/index').roundsHandlersGetters;
+const roundsHandlersGetters = require('../../functions/lib/index').roundsHandlersGetters;
 
 const admin = require('firebase-admin');
 admin.initializeApp();

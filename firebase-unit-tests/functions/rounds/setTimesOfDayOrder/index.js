@@ -5,7 +5,7 @@ const {
 const myId = myContext.auth.uid;
 const expect = chai.expect;
 const tests = require('./tests.json');
-const {encryptRound} = require('../../../../functions/lib/functions/src/tools/security');
+const {encryptRound} = require('../../../../functions/lib/tools/security');
 
 describe(`setTimesOfDayOrder`, async () => {
 
