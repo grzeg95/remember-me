@@ -86,4 +86,9 @@ export class UserSettingsComponent implements OnInit {
   removePhoto() {
     this.authService.removePhoto().subscribe();
   }
+
+  cookiebotRenew() {
+    // @ts-ignore
+    Cookiebot.renew();
+  }
 }
