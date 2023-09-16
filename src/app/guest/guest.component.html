@@ -108,14 +108,8 @@
   </div>
 
   <footer>
-    <p>
-      <a target="_blank" href="https://www.linkedin.com/in/grzeg95">LinkedIn;</a>
-    </p>
-    <p *ngIf="guestComponentConfig.motto">
-      {{ guestComponentConfig.motto }}
-    </p>
-    <p *ngIf="guestComponentConfig.lastUpdate">
-      {{ guestComponentConfig.lastUpdate }}
-    </p>
+    <ng-container *ngIf="guestComponentConfig">
+      <p *ngFor="let line of guestComponentConfig.footerLines || []" [innerHTML]="line"></p>
+    </ng-container>
   </footer>
 </ng-container>

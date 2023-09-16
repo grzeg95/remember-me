@@ -4,8 +4,7 @@ import {AngularFirebaseRemoteConfigService} from 'angular-firebase';
 import {AuthService} from 'auth';
 
 interface GuestComponentConfig {
-  motto?: string,
-  lastUpdate?: string
+  footerLines: string[]
 }
 
 @Component({
@@ -18,22 +17,13 @@ export class GuestComponent {
 
   showUserDataPolicy = false;
   whileLoginIn = toSignal(this.authService.whileLoginIn$);
-  guestComponentConfig: GuestComponentConfig = {};
+  guestComponentConfig: GuestComponentConfig;
 
   constructor(
     private authService: AuthService,
     private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService
   ) {
-
-    const guestComponentConfig = this.angularFirebaseRemoteConfigService.getValue<GuestComponentConfig>('guestComponent');
-
-    if (guestComponentConfig.motto) {
-      this.guestComponentConfig.motto = guestComponentConfig.motto;
-    }
-
-    if (guestComponentConfig.lastUpdate) {
-      this.guestComponentConfig.lastUpdate = guestComponentConfig.lastUpdate;
-    }
+    this.guestComponentConfig = this.angularFirebaseRemoteConfigService.getValue<GuestComponentConfig>('guestComponent');
   }
 
   renewCookie() {
