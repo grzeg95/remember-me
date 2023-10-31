@@ -20,7 +20,8 @@ Before developing make sure to:
 - in `.firebaserc` use `default` as `prod` and `dev` for dev projects
 - in `firebase-unit-tests` 'indexes.ts' replace `FIREBASE_DEV_PROJECT_ID`
 - in `package.json` for `hosting` use Cloud Run PROJECT_ID, SERVICE_NAME, and REGION_ID
-- in `./public/nginx.conf` replace `CLOUD_FUNCTIONS_SUBDOMAIN` with provided by Google. This is `region-id`-`project-id` and `AUTH_DOMAIN` that is different from host and exists in Firebase Auth authorized domains
+- in `./public/nginx.conf` replace `CLOUD_FUNCTIONS_SUBDOMAIN` with provided by Google. This is `region-id`-`project-id`
+- in `./public/nginx.conf` replace `FIREBASE_PROJECT_ID`
 - in `./public/nginx.conf` replace `CLOUD_FUNCTIONS_V2_CUSTOM_DOMAIN` with provided in console cloud run domain mappings
 - in `index.html` replace `DATA-CBID` for Cookiebot
 - create and fill `.evn.hosting` and `.env.hosting.prod` for corresponding variables in `set-env.js`
