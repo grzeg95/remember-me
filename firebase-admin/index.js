@@ -7,7 +7,7 @@ const {getFirestore, FieldValue} = require('firebase-admin/firestore');
 const dotenv = require('dotenv');
 const path = require('path');
 
-const DOTENV_PATH = path.join(__dirname, '../', '.env.functions.prod');
+const DOTENV_PATH = path.join(__dirname, '../functions/.env.functions.prod');
 dotenv.config({path: DOTENV_PATH, override: true});
 
 const app = initializeApp({
