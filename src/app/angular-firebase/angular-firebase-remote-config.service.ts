@@ -1,12 +1,11 @@
-import {Inject, Injectable} from '@angular/core';
-import {getString, RemoteConfig, getValue} from 'firebase/remote-config';
-import {REMOTE_CONFIG} from './angular-firebase-injectors';
+import {Injectable} from '@angular/core';
+import {getString, getValue, RemoteConfig} from '@angular/fire/remote-config';
 
 @Injectable()
 export class AngularFirebaseRemoteConfigService {
 
   constructor(
-    @Inject(REMOTE_CONFIG) private readonly remoteConfig: RemoteConfig
+    private remoteConfig: RemoteConfig
   ) {
   }
 

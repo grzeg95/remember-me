@@ -1,8 +1,8 @@
 import {Injectable} from '@angular/core';
+import {limit} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import {AngularFirebaseFirestoreService, AngularFirebaseFunctionsService} from 'angular-firebase';
 import {AuthService, FirebaseUser} from 'auth';
-import {limit} from 'firebase/firestore';
 import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription} from 'rxjs';
 import {filter, take} from 'rxjs/operators';
 import {BasicEncryptedValue, ConnectionService, SecurityService} from 'services';

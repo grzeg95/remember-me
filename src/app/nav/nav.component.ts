@@ -1,5 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed, ElementRef, ViewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGoogle} from '@fortawesome/free-brands-svg-icons';
@@ -13,7 +12,7 @@ import {
   faTasks,
   faUser
 } from '@fortawesome/free-solid-svg-icons';
-import {AuthFormComponent, AuthService} from 'auth';
+import {AuthFormComponent, AuthService, FirebaseUser, User} from 'auth';
 import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from 'services';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
@@ -21,17 +20,14 @@ import {UserSettingsComponent} from '../user/views/user-settings/user-settings.c
 @Component({
   selector: 'app-nav',
   templateUrl: './nav.component.html',
-  styleUrls: ['./nav.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./nav.component.scss']
 })
-export class NavComponent {
+export class NavComponent implements OnInit {
 
-  user = toSignal(this.authService.user$);
-  firebaseUser = toSignal(this.authService.firebaseUser$);
-  isOnline = toSignal(this.connectionService.isOnline$);
-  whileLoginIn = toSignal(this.authService.whileLoginIn$);
-
-  disableMenuButton = computed(() => !this.isOnline() || this.whileLoginIn())
+  user: User;
+  firebaseUser: FirebaseUser;
+  isOnline: boolean;
+  whileLoginIn: boolean;
 
   faTasks = faTasks;
   faUser = faUser;
@@ -50,6 +46,13 @@ export class NavComponent {
     private connectionService: ConnectionService,
     private snackBar: MatSnackBar
   ) {
+  }
+
+  ngOnInit(): void {
+    this.authService.user$.subscribe((user) => this.user = user);
+    this.authService.firebaseUser$.subscribe((firebaseUser) => this.firebaseUser = firebaseUser);
+    this.authService.whileLoginIn$.subscribe((whileLoginIn) => this.whileLoginIn = whileLoginIn);
+    this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   googleSignIn(): void {

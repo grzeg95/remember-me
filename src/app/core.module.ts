@@ -1,7 +1,6 @@
 import {NgModule} from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {
-  AngularFirebaseAnalyticsService,
   AngularFirebaseAppCheckService,
   AngularFirebaseAuthService,
   AngularFirebaseFirestoreService,
@@ -20,7 +19,6 @@ import {
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}
     },
-    AngularFirebaseAnalyticsService,
     AngularFirebaseAppCheckService,
     AngularFirebaseAuthService,
     AngularFirebaseFirestoreService,

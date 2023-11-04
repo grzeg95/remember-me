@@ -1,5 +1,4 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component} from '@angular/core';
 import {AngularFirebaseRemoteConfigService} from 'angular-firebase';
 import {AuthService} from 'auth';
 
@@ -10,13 +9,12 @@ interface GuestComponentConfig {
 @Component({
   selector: 'app-guest',
   templateUrl: './guest.component.html',
-  styleUrls: ['./guest.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./guest.component.scss']
 })
 export class GuestComponent {
 
   showUserDataPolicy = false;
-  whileLoginIn = toSignal(this.authService.whileLoginIn$);
+  whileLoginIn$ = this.authService.whileLoginIn$;
   guestComponentConfig: GuestComponentConfig;
 
   constructor(

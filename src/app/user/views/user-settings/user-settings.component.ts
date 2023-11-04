@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
@@ -9,8 +9,7 @@ import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/use
 @Component({
   selector: 'app-user-settings',
   templateUrl: './user-settings.component.html',
-  styleUrls: ['./user-settings.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./user-settings.component.scss']
 })
 export class UserSettingsComponent implements OnInit {
 
@@ -26,8 +25,7 @@ export class UserSettingsComponent implements OnInit {
     public dialogRef: MatDialogRef<UserSettingsComponent>,
     private authService: AuthService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private snackBar: MatSnackBar
   ) {
   }
 
@@ -39,8 +37,6 @@ export class UserSettingsComponent implements OnInit {
         this.user = user;
         this.isPhotoUploading = false;
       }
-
-      this.cdr.markForCheck();
     });
   }
 

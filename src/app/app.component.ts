@@ -1,24 +1,24 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component} from '@angular/core';
 import {AuthService} from 'auth';
 import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
 
-  whileLoginIn = toSignal(this.authService.whileLoginIn$);
-  isWaitingForCryptoKey = toSignal(this.authService.isWaitingForCryptoKey$);
-  user = toSignal(this.authService.user$);
-  isOnline = toSignal(this.connectionService.isOnline$);
+  whileLoginIn$ = this.authService.whileLoginIn$;
+  isWaitingForCryptoKey: boolean;
+  isOnline$ = this.connectionService.isOnline$;
 
   constructor(
     private authService: AuthService,
     private connectionService: ConnectionService
   ) {
+    this.authService.isWaitingForCryptoKey$.subscribe((isWaitingForCryptoKey) => {
+      this.isWaitingForCryptoKey = isWaitingForCryptoKey;
+    });
   }
 }

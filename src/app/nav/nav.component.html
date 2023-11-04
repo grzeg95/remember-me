@@ -3,47 +3,47 @@
     <div class="col d-flex">
       <mat-toolbar>
         <mat-toolbar-row>
-          <div class="app-name-logo-wrapper" [ngClass]="{'opacity-loading': (firebaseUser() === undefined)}">
+          <div class="app-name-logo-wrapper" [ngClass]="{'opacity-loading': (firebaseUser === undefined)}">
             <span class="app-name">Remember Me</span>
             <img src="/assets/img/logo.svg" class="logo">
           </div>
           <span class="example-spacer"></span>
 
-          <div *ngIf="user() !== undefined">
+          <div *ngIf="user !== undefined">
 
-            <div *ngIf="!user()" class="d-flex align-items-center right">
+            <div *ngIf="!user" class="d-flex align-items-center right">
               <button mat-flat-button
                       color="primary"
                       [matMenuTriggerFor]="menu"
-                      [disabled]="disableMenuButton()"
+                      [disabled]="!isOnline || whileLoginIn"
                       aria-label="Log in">
                 <span class="loginButton">Sign in <fa-icon [icon]="faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
               </button>
 
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item
-                        [disabled]="disableMenuButton()"
+                        [disabled]="!isOnline || whileLoginIn"
                         (click)="googleSignIn()">
                   <span><fa-icon [icon]="faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
                 </button>
 
                 <button mat-menu-item
-                        [disabled]="disableMenuButton()"
+                        [disabled]="!isOnline || whileLoginIn"
                         (click)="openAuthFormComponent()">
                   <span><fa-icon [icon]="faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</span>
                 </button>
 
                 <button mat-menu-item
-                        [disabled]="disableMenuButton()"
+                        [disabled]="!isOnline || whileLoginIn"
                         (click)="anonymouslySignIn()">
                   <span><fa-icon [icon]="faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</span>
                 </button>
               </mat-menu>
             </div>
 
-            <div *ngIf="user()" class="d-flex align-items-center right">
-              <img *ngIf="user().photoURL" [matMenuTriggerFor]="menu" [imgSecure]="user().photoURL"/>
-              <div *ngIf="!user().photoURL" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
+            <div *ngIf="user" class="d-flex align-items-center right">
+              <img *ngIf="user.photoURL" [matMenuTriggerFor]="menu" [imgSecure]="user.photoURL"/>
+              <div *ngIf="!user.photoURL" [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="faUser"></fa-icon></div>
               <mat-menu #menu="matMenu" xPosition="before">
                 <button mat-menu-item (click)="signOut()"><fa-icon [icon]="faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</button>
                 <button mat-menu-item (click)="openUserSetting()"><fa-icon [icon]="faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</button>
@@ -51,8 +51,6 @@
             </div>
 
           </div>
-
-
         </mat-toolbar-row>
       </mat-toolbar>
     </div>

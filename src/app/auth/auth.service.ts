@@ -1,4 +1,6 @@
 import {Injectable} from '@angular/core';
+import {GoogleAuthProvider, IdTokenResult, UserCredential} from '@angular/fire/auth';
+import {deleteField, DocumentData, DocumentSnapshot} from '@angular/fire/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 import {
@@ -6,8 +8,6 @@ import {
   AngularFirebaseFirestoreService,
   AngularFirebaseFunctionsService
 } from 'angular-firebase';
-import {GoogleAuthProvider, IdTokenResult, UserCredential} from 'firebase/auth';
-import {deleteField, DocumentData, DocumentSnapshot} from 'firebase/firestore';
 import {BehaviorSubject, catchError, map, mergeMap, NEVER, Observable, Subscription, throwError} from 'rxjs';
 import {SecurityService} from 'services';
 import {RouterDict} from '../app.constants';
@@ -23,9 +23,8 @@ export class AuthService {
   whileLoginIn$ = new BehaviorSubject<boolean>(false);
   isWaitingForCryptoKey$ = new BehaviorSubject<boolean>(false);
   onSnapshotSubs: Subscription[] = [];
-  creatingUserWithEmailAndPassword = false;
+  wasUserWithEmailAndPassword = false;
   userUpdatesWhileIsWaitingForCryptoKey: DocumentSnapshot<EncryptedUser>;
-  wasTriedToLogInAMomentAgo = false;
 
   constructor(
     private router: Router,
@@ -44,8 +43,8 @@ export class AuthService {
 
       if (firebaseUser) {
 
-        if (this.creatingUserWithEmailAndPassword) {
-          this.creatingUserWithEmailAndPassword = false;
+        if (this.wasUserWithEmailAndPassword) {
+          this.wasUserWithEmailAndPassword = false;
           this.signOut().subscribe();
           return;
         }
@@ -129,8 +128,7 @@ export class AuthService {
         this.firebaseUser$.next(null);
         this.whileLoginIn$.next(false);
         this.router.navigate(['/']);
-        this.creatingUserWithEmailAndPassword = false;
-        this.wasTriedToLogInAMomentAgo = false;
+        this.wasUserWithEmailAndPassword = false;
       }
     });
   }
@@ -265,7 +263,6 @@ export class AuthService {
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
-      this.wasTriedToLogInAMomentAgo = true;
 
       return this.angularFirebaseAuthService.signInAnonymously().pipe(catchError((e) => {
         this.whileLoginIn$.next(false);
@@ -282,7 +279,6 @@ export class AuthService {
     // is not logged in
     if (!this.user$.value) {
       this.whileLoginIn$.next(true);
-      this.wasTriedToLogInAMomentAgo = true;
 
       return this.angularFirebaseAuthService.signInWithEmailAndPassword(email, password).pipe(catchError((e) => {
         this.whileLoginIn$.next(false);
@@ -298,7 +294,7 @@ export class AuthService {
 
     // is not logged in
     if (!this.user$.value) {
-      this.creatingUserWithEmailAndPassword = true;
+      this.wasUserWithEmailAndPassword = true;
 
       return this.angularFirebaseAuthService.createUserWithEmailAndPassword(email, password).pipe(
         catchError((error: {code: string, message: string}) => {

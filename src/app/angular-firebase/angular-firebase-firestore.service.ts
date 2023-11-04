@@ -1,30 +1,30 @@
-import {Inject, Injectable, NgZone} from '@angular/core';
-import {FieldPath, QueryConstraint} from '@firebase/firestore';
+import {Injectable, NgZone} from '@angular/core';
 import {
   collection,
   doc,
   DocumentData,
   DocumentReference,
   DocumentSnapshot,
+  FieldPath,
   Firestore,
   getDoc,
   onSnapshot,
   query,
   Query,
+  QueryConstraint,
   QueryDocumentSnapshot,
   QuerySnapshot,
   SnapshotOptions,
   updateDoc
-} from 'firebase/firestore';
+} from '@angular/fire/firestore';
 import {defer, Observable} from 'rxjs';
-import {FIRESTORE} from './angular-firebase-injectors';
 import {runInZone} from './tools';
 
 @Injectable()
 export class AngularFirebaseFirestoreService {
 
   constructor(
-    @Inject(FIRESTORE) private readonly firestore: Firestore,
+    private firestore: Firestore,
     private ngZone: NgZone
   ) {
   }

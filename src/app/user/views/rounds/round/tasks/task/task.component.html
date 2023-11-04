@@ -47,11 +47,11 @@
                    #basicInput
                    [matAutocomplete]="auto"
                    [matChipInputFor]="chipGrid"
-                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes()"
+                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
                    [matChipInputAddOnBlur]="true"
                    (matChipInputTokenEnd)="add($event)">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
-              <mat-option *ngFor="let option of filteredOptions()" [value]="option">{{ option }}</mat-option>
+              <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">{{ option }}</mat-option>
             </mat-autocomplete>
           </mat-chip-grid>
         </mat-form-field>
@@ -59,7 +59,7 @@
     </div>
     <div class="row">
       <div class="col">
-        <mat-progress-bar [style.opacity]="savingInProgress() || deletingInProgress() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+        <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
       </div>
     </div>
     <div class="row">

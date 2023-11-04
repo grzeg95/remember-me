@@ -1,11 +1,10 @@
 import {Location} from '@angular/common';
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
-import {catchError, NEVER} from 'rxjs';
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService, CustomValidators} from 'services';
 import {RouterDict} from '../../../../app.constants';
 import {HTTPError} from '../../../models';
@@ -15,12 +14,12 @@ import {RoundDialogConfirmDeleteComponent} from './round-dialog-confirm-delete/r
 @Component({
   selector: 'app-times-of-day-list',
   templateUrl: './round-edit.component.html',
-  styleUrls: ['./round-edit.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./round-edit.component.scss']
 })
 export class RoundEditComponent implements OnInit, OnDestroy {
 
-  isOnline = toSignal(this.connectionService.isOnline$);
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
   roundForm: FormGroup = new FormGroup({
     name: new FormControl('', [CustomValidators.maxRequired(256)])
@@ -28,9 +27,9 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
   name = this.roundForm.get('name');
 
-  savingInProgress = signal(false);
-  deletingInProgress = signal(false);
-  id= 'null';
+  savingInProgress = false;
+  deletingInProgress = false;
+  id = 'null';
   initValues: {
     name: string
   } = {
@@ -54,6 +53,8 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         this.refreshRoundByParamId(paramMap.get('id'));
       }
     });
+
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   idIsNull(): boolean {
@@ -66,11 +67,11 @@ export class RoundEditComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.savingInProgress.set(true);
+    this.savingInProgress = true;
     this.roundForm.disable();
 
     this.roundsService.saveRound(this.name.value, this.id).pipe(catchError((error: HTTPError) => {
-      this.savingInProgress.set(false);
+      this.savingInProgress = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       this.refreshRoundByParamId(this.id);
 
@@ -91,7 +92,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         tasksIds: []
       });
       this.id = success.roundId;
-      this.savingInProgress.set(false);
+      this.savingInProgress = false;
       this.initValues.name = this.name.value;
       this.roundForm.enable();
       this.snackBar.open(success.details || 'Your operation has been done 😉');
@@ -106,16 +107,16 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
       if (isConfirmed) {
         this.roundForm.disable();
-        this.deletingInProgress.set(true);
+        this.deletingInProgress = true;
 
         this.roundsService.deleteRound(this.id).pipe(catchError((error: HTTPError) => {
-          this.deletingInProgress.set(false);
+          this.deletingInProgress = false;
           this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshRoundByParamId(this.id);
 
           return NEVER;
         })).subscribe((success) => {
-          this.deletingInProgress.set(false);
+          this.deletingInProgress = false;
           this.snackBar.open(success.details || 'Your operation has been done 😉');
           this.deepResetForm();
         });
@@ -171,5 +172,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.roundsService.editedRound$.next(null);
+    this.isOnlineSub.unsubscribe();
   }
 }

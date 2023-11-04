@@ -1,24 +1,20 @@
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
 import {
   AfterViewChecked,
-  ChangeDetectionStrategy,
   Component,
-  computed,
   ElementRef,
   HostListener,
   OnDestroy,
   OnInit,
   Renderer2,
-  signal,
   ViewChild
 } from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {AuthService} from 'auth';
-import {catchError, map, NEVER, Subscription} from 'rxjs';
+import {catchError, NEVER, Subscription} from 'rxjs';
 import {ConnectionService} from 'services';
 import {RouterDict} from '../../../../app.constants';
 import {Round} from '../../../models';
@@ -27,8 +23,7 @@ import {RoundsService} from '../rounds.service';
 @Component({
   selector: 'app-rounds-list',
   templateUrl: './rounds-list.component.html',
-  styleUrls: ['./rounds-list.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./rounds-list.component.scss']
 })
 export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked {
 
@@ -36,23 +31,21 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
   faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper: ElementRef;
 
-  roundsList = toSignal(this.roundsService.roundsList$);
-  sortedRoundList = computed(() => {
-    const roundsMap: { [key in string]: Round } = {};
-
-    for (const round of this.roundsList() || []) {
-      roundsMap[round.id] = round;
-    }
-
-    return (this.roundsOrder() || []).filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
-  });
-  roundsOrder = signal([]);
-  isOnline = toSignal(this.connectionsService.isOnline$);
-  selectedRound = toSignal(this.roundsService.selectedRound$);
-  setRoundsOrderIsPending = signal(false);
-  roundsListFirstLoading = toSignal(this.roundsService.roundsListFirstLoading$);
+  roundsListSub: Subscription;
+  roundsList: Round[];
+  sortedRoundList: Round[];
 
   roundsOrderSub: Subscription;
+  roundsOrder: string[];
+
+  isOnlineSub: Subscription;
+  isOnline: boolean;
+
+  setRoundsOrderIsPending = false;
+  roundsListFirstLoading$ = this.roundsService.roundsListFirstLoading$;
+
+  selectedRound: Round;
+  selectedRoundSub: Subscription;
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -73,16 +66,36 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   ngOnInit(): void {
     this.roundsService.runRoundsList();
-
-    this.roundsOrderSub = this.authService.user$.pipe(
-      map((user) => (user && user.rounds) || [])
-    ).subscribe((roundsOrder) => {
-      this.roundsOrder.set(roundsOrder);
+    this.roundsListSub = this.roundsService.roundsList$.subscribe((roundsList) => {
+      this.roundsList = roundsList;
+      this.sortRoundList();
     });
+    this.roundsOrderSub = this.authService.user$.subscribe((user) => {
+      if (user) {
+        this.roundsOrder = user.rounds;
+        this.sortRoundList();
+      }
+    });
+    this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((selectedRound) => this.selectedRound = selectedRound);
   }
 
   ngOnDestroy(): void {
+    this.roundsListSub.unsubscribe();
     this.roundsOrderSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
+    this.selectedRoundSub.unsubscribe();
+  }
+
+  sortRoundList(): void {
+
+    const roundsMap: { [key in string]: Round } = {};
+
+    for (const round of this.roundsList || []) {
+      roundsMap[round.id] = round;
+    }
+
+    this.sortedRoundList = (this.roundsOrder || []).filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
   }
 
   addRound(): void {
@@ -103,24 +116,23 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
       return;
     }
 
-    this.setRoundsOrderIsPending.set(true);
+    this.setRoundsOrderIsPending = true;
+    const roundsOrder = this.roundsOrder;
     const moveBy = event.currentIndex - event.previousIndex;
+    const roundId = roundsOrder[event.previousIndex];
 
-    const roundsOrderCopy = this.roundsOrder();
-    const roundId = this.roundsOrder()[event.previousIndex];
-
-    moveItemInArray(roundsOrderCopy, event.previousIndex, event.currentIndex);
-    this.roundsOrder.set(roundsOrderCopy);
+    moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
+    this.sortRoundList();
 
     this.roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
-      this.setRoundsOrderIsPending.set(false);
+      this.setRoundsOrderIsPending = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-      moveItemInArray(roundsOrderCopy, event.currentIndex, event.previousIndex);
-      this.roundsOrder.set(roundsOrderCopy);
+      moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
+      this.sortRoundList();
 
       return NEVER;
     })).subscribe((success) => {
-      this.setRoundsOrderIsPending.set(false);
+      this.setRoundsOrderIsPending = false;
       this.snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }

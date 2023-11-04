@@ -1,4 +1,4 @@
-<ng-container *ngIf="!whileLoginIn()">
+<ng-container *ngIf="!(whileLoginIn$ | async)">
   <div class="container">
     <h1>Hello there.</h1>
     <h3>Do you remember?</h3>

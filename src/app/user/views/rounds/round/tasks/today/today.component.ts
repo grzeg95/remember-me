@@ -1,5 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
@@ -17,13 +16,16 @@ import {TaskService} from '../task/task.service';
 @Component({
   selector: 'app-today',
   templateUrl: './today.component.html',
-  styleUrls: ['./today.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./today.component.scss']
 })
 export class TodayComponent implements OnInit, OnDestroy {
 
-  todayFullName = toSignal(this.roundsService.todayFullName$);
-  isOnline = toSignal(this.connectionService.isOnline$);
+  todayName$ = this.roundsService.todayName$;
+  todayFullName$ = this.roundsService.todayFullName$;
+
+  isOnline: boolean;
+  isOnlineSub: Subscription;
+  wasOffline: boolean;
 
   RouterDict = RouterDict;
   faCheckCircle = faCheckCircle;
@@ -35,9 +37,10 @@ export class TodayComponent implements OnInit, OnDestroy {
 
   selectedRoundChangeDaySub: Subscription;
 
-  todayItemsViewFirstLoading = toSignal(this.roundsService.todayItemsViewFirstLoading$);
+  todayItemsViewFirstLoading$ = this.roundsService.todayItemsViewFirstLoading$;
   todayItemsSub: Subscription;
-  todayItemsView = toSignal(this.roundsService.todayItemsView$);
+  todayItemsViewSub: Subscription;
+  todayItemsView: {timeOfDay: string, tasks: TodayItem[]}[];
 
   constructor(
     private authService: AuthService,
@@ -59,12 +62,23 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => this.roundsService.todayItemsViewUpdate(round));
 
-    this.changeDay();
+    this.todayItemsViewSub = this.roundsService.todayItemsView$.subscribe((todayItemsView) => this.todayItemsView = todayItemsView);
+
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => {
+      this.isOnline = isOnline;
+      if (isOnline) {
+        this.changeDay();
+      } else {
+        this.wasOffline = true;
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.todayItemsSub.unsubscribe();
     this.selectedRoundSub.unsubscribe();
+    this.todayItemsViewSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
 
     if (this.changeDayIntervalSub && !this.changeDayIntervalSub.closed) {
       this.changeDayIntervalSub.unsubscribe();

@@ -1,23 +1,13 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {Location} from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  ElementRef,
-  OnDestroy,
-  OnInit,
-  signal,
-  ViewChild
-} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AbstractControl, FormArray, FormControl, FormGroup} from '@angular/forms';
 import {MatAutocompleteSelectedEvent, MatAutocompleteTrigger} from '@angular/material/autocomplete';
 import {MatChipInputEvent} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, UrlTree} from '@angular/router';
-import {asapScheduler, catchError, NEVER, Subscription} from 'rxjs';
+import {asapScheduler, BehaviorSubject, catchError, NEVER, Subscription} from 'rxjs';
 import {startWith} from 'rxjs/operators';
 import {ConnectionService, CustomValidators} from 'services';
 import '../../../../../../../../global.prototype';
@@ -30,15 +20,15 @@ import {TaskService} from './task.service';
 @Component({
   selector: 'app-task',
   templateUrl: './task.component.html',
-  styleUrls: ['./task.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./task.component.scss']
 })
 export class TaskComponent implements OnInit, OnDestroy {
 
   private waitingForRefresh: boolean;
   private waitingForRefreshTaskId: string;
 
-  isOnline = toSignal(this.connectionService.isOnline$);
+  isOnline: boolean;
+  isOnlineSub: Subscription;
 
   initValues: TaskForm = {
     daysOfTheWeek: {
@@ -73,10 +63,10 @@ export class TaskComponent implements OnInit, OnDestroy {
   daysOfTheWeek = this.taskForm.get('daysOfTheWeek') as FormGroup;
   description = this.taskForm.get('description');
 
-  savingInProgress = signal(false);
-  deletingInProgress = signal(false);
-  filteredOptions = signal([]);
-  separatorKeysCodes = signal([ENTER]);
+  savingInProgress = false;
+  deletingInProgress = false;
+  filteredOptions$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  separatorKeysCodes: number[] = [ENTER];
   options: string[] = [];
   @ViewChild(MatAutocompleteTrigger, {read: MatAutocompleteTrigger}) input: MatAutocompleteTrigger;
   @ViewChild('basicInput') basicInput: ElementRef<HTMLInputElement>;
@@ -98,18 +88,19 @@ export class TaskComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private connectionService: ConnectionService
   ) {
-    effect(() => {
-      if (this.isOnline()) {
-        this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
-      } else {
-        this.taskForm.disable();
-      }
-    })
   }
 
   ngOnInit(): void {
 
     this.taskForm.enable();
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => {
+      if (isOnline) {
+        this.refreshTaskByParamId(this.activeRoute.snapshot.params.id || 'null');
+      } else {
+        this.taskForm.disable();
+      }
+      this.isOnline = isOnline;
+    });
 
     this.timeOfDayValueChanges = (this.taskForm.get('timesOfDay') as FormArray).valueChanges.subscribe((timesOfDay: string[]) => {
 
@@ -235,13 +226,14 @@ export class TaskComponent implements OnInit, OnDestroy {
   applyFilter(value: string): void {
     if (value) {
       const filterValue = value.toLowerCase();
-      this.filteredOptions.set(this.options.filter((option) => option.toLowerCase().includes(filterValue)));
+      this.filteredOptions$.next(this.options.filter((option) => option.toLowerCase().includes(filterValue)));
     } else {
-      this.filteredOptions.set(this.options);
+      this.filteredOptions$.next(this.options);
     }
   }
 
   ngOnDestroy(): void {
+    this.isOnlineSub.unsubscribe();
 
     if (this.roundsOrderSub && !this.roundsOrderSub.closed) {
       this.roundsOrderSub.unsubscribe();
@@ -287,7 +279,7 @@ export class TaskComponent implements OnInit, OnDestroy {
         } else if (task) {
           this.setAll(task);
         }
-        this.savingInProgress.set(false);
+        this.savingInProgress = false;
       });
 
     } else {
@@ -303,7 +295,7 @@ export class TaskComponent implements OnInit, OnDestroy {
         });
       }
 
-      this.savingInProgress.set(false);
+      this.savingInProgress = false;
       this.taskForm.enable();
     }
 
@@ -324,7 +316,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     }
 
     this.taskForm.disable();
-    this.savingInProgress.set(true);
+    this.savingInProgress = true;
 
     const task = this.taskForm.getRawValue() as TaskForm;
     const trimDescription = task.description.trim();
@@ -340,7 +332,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       taskId: this.id,
       roundId: this.roundsService.selectedRound$.value.id
     }).pipe(catchError((error: HTTPError) => {
-      this.savingInProgress.set(false);
+      this.savingInProgress = false;
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       this.refreshTaskByParamId(this.id);
 
@@ -352,7 +344,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       }
 
       this.id = success.taskId;
-      this.savingInProgress.set(false);
+      this.savingInProgress = false;
       this.initValues = this.taskForm.getRawValue();
       this.taskForm.enable();
       this.snackBar.open(success.details || 'Your operation has been done 😉');
@@ -432,19 +424,19 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       if (isConfirmed) {
         this.taskForm.disable();
-        this.deletingInProgress.set(true);
+        this.deletingInProgress = true;
 
         this.roundsService.deleteTask({
           taskId: this.id,
           roundId: this.round.id
         }).pipe(catchError((error: HTTPError) => {
-          this.deletingInProgress.set(false);
+          this.deletingInProgress = false;
           this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           this.refreshTaskByParamId(this.id);
 
           return NEVER;
         })).subscribe((success: HTTPSuccess) => {
-          this.deletingInProgress.set(false);
+          this.deletingInProgress = false;
           this.snackBar.open(success.details || 'Your operation has been done 😉');
           this.deepResetForm();
         });
@@ -466,7 +458,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     });
 
     this.initValues = this.initValues = this.taskForm.getRawValue();
-    this.deletingInProgress.set(false);
+    this.deletingInProgress = false;
     this.taskForm.enable();
   }
 

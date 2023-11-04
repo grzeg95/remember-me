@@ -1,11 +1,11 @@
 <app-nav></app-nav>
 
-<mat-spinner *ngIf="whileLoginIn()"
-             [strokeWidth]="isWaitingForCryptoKey() ? 8 : 5"
-             [color]="isWaitingForCryptoKey() ? 'accent' : 'primary'"></mat-spinner>
+<mat-spinner *ngIf="whileLoginIn$ | async"
+             [strokeWidth]="isWaitingForCryptoKey ? 8 : 5"
+             [color]="isWaitingForCryptoKey ? 'accent' : 'primary'"></mat-spinner>
 <router-outlet></router-outlet>
 
-<div [class.active]="!isOnline()" class="offline">
+<div [class.active]="!(isOnline$ | async)" class="offline">
   <div class="text">rem.grzeg.pl is currently offline</div>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="1.325rem" height="1.325rem">
     <path d="M0 0h24v24H0z" fill="none"/>

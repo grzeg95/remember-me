@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
@@ -8,8 +8,7 @@ import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-login',
-  templateUrl: './login.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './login.component.html'
 })
 export class LoginComponent implements OnInit, OnDestroy {
 

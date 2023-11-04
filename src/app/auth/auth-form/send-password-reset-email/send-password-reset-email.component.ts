@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
@@ -7,8 +7,7 @@ import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-send-password-reset-email',
-  templateUrl: './send-password-reset-email.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './send-password-reset-email.component.html'
 })
 export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
 

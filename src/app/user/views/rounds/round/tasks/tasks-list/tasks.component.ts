@@ -1,33 +1,34 @@
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {Subscription} from 'rxjs';
 import {ConnectionService} from 'services';
 import '../../../../../../../../global.prototype';
 import {RouterDict} from '../../../../../../app.constants';
-import {Round} from '../../../../../models';
+import {Round, TasksListItem} from '../../../../../models';
 import {RoundsService} from '../../../rounds.service';
 
 @Component({
   selector: 'app-tasks',
   templateUrl: './tasks.component.html',
-  styleUrls: ['./tasks.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./tasks.component.scss']
 })
 export class TasksComponent implements OnInit, OnDestroy {
 
-  isOnline = toSignal(this.connectionService.isOnline$);
-  tasks = toSignal(this.roundsService.tasks$);
+  isOnline: boolean;
+  isOnlineSub: Subscription;
+
+  tasks: TasksListItem[];
+  tasksSub: Subscription;
 
   RouterDict = RouterDict;
   faEdit = faEdit;
-  displayedColumns = signal(['description', 'daysOfTheWeek', 'timesOfDays', 'edit']);
+  displayedColumns: string[] = ['description', 'daysOfTheWeek', 'timesOfDays', 'edit'];
 
   selectedRoundSub: Subscription;
-  selectedRound = signal<Round>(null);
+  selectedRound: Round;
 
-  tasksListViewFirstLoading = toSignal(this.roundsService.tasksListViewFirstLoading$);
+  tasksListViewFirstLoading$ = this.roundsService.tasksListViewFirstLoading$;
 
   constructor(
     private roundsService: RoundsService,
@@ -40,8 +41,11 @@ export class TasksComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((round) => {
       this.roundsService.runTasksList(round);
-      this.selectedRound.set(round);
+      this.selectedRound = round;
     });
+
+    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
+    this.tasksSub = this.roundsService.tasks$.subscribe((tasks) => this.tasks = tasks);
   }
 
   getTimesOfDay(timesOfDayOrder: string[], taskTimesOfDay: string[]): string[] {
@@ -59,5 +63,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.selectedRoundSub.unsubscribe();
+    this.isOnlineSub.unsubscribe();
+    this.tasksSub.unsubscribe();
   }
 }

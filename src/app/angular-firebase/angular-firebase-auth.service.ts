@@ -1,4 +1,4 @@
-import {Inject, Injectable, NgZone, OnDestroy} from '@angular/core';
+import {Injectable, OnDestroy} from '@angular/core';
 import {
   Auth,
   AuthProvider,
@@ -9,7 +9,6 @@ import {
   IdTokenResult,
   onIdTokenChanged,
   PopupRedirectResolver,
-  reload,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInAnonymously,
@@ -20,10 +19,8 @@ import {
   updatePassword,
   User as FirebaseUser,
   UserCredential
-} from 'firebase/auth';
+} from '@angular/fire/auth';
 import {BehaviorSubject, catchError, defer, filter, map, Observable, of, Subscription} from 'rxjs';
-import {AUTH} from './angular-firebase-injectors';
-import {runInZone} from './tools';
 import {startWith} from "rxjs/operators";
 
 @Injectable()
@@ -33,8 +30,7 @@ export class AngularFirebaseAuthService implements OnDestroy {
   private _onIdTokenChangedSub: Subscription;
 
   constructor(
-    @Inject(AUTH) private readonly auth: Auth,
-    private ngZone: NgZone
+    private auth: Auth
   ) {
   }
 
@@ -48,29 +44,19 @@ export class AngularFirebaseAuthService implements OnDestroy {
 
     if (!this._onIdTokenChangedSub) {
       this._onIdTokenChangedSub = new Observable<FirebaseUser>((subscriber) => {
-        const unsubscribe = this.ngZone.run(() => onIdTokenChanged(this.auth,
+        const unsubscribe = onIdTokenChanged(this.auth,
           subscriber.next.bind(subscriber),
           subscriber.error.bind(subscriber),
           subscriber.complete.bind(subscriber)
-        ));
+        );
         return {unsubscribe};
-      }).pipe(
-        runInZone(this.ngZone)
-      ).subscribe((firebaseUser) => this._user$.next(firebaseUser));
+      }).subscribe((firebaseUser) => this._user$.next(firebaseUser));
     }
 
     return this._user$.asObservable().pipe(
       startWith(this._user$.value),
       filter((firebaseUser) => firebaseUser !== undefined)
     );
-  }
-
-  reload(user: FirebaseUser, callback?: () => void): Observable<void> {
-    return defer(() => reload(user).then(() => {
-      if (callback) {
-        callback();
-      }
-    }));
   }
 
   signInWithRedirect(provider: AuthProvider, resolver?: PopupRedirectResolver): Observable<void> {

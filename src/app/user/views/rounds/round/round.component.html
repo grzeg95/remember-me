@@ -1,4 +1,4 @@
-<ng-container *ngIf="selectedRound()">
+<ng-container *ngIf="selectedRound$ | async">
   <app-round-nav></app-round-nav>
 
   <router-outlet></router-outlet>

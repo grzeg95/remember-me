@@ -1,7 +1,7 @@
 <div class="container">
   <div class="col">
 
-    <ng-container *ngIf="!isOnline() && !tasks()">
+    <ng-container *ngIf="!isOnline && !tasks">
       <div class="row message">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
@@ -9,9 +9,9 @@
       </div>
     </ng-container>
 
-    <ng-template *ngIf="!isOnline() && tasks(); then showItems"></ng-template>
+    <ng-template *ngIf="!isOnline && tasks; then showItems"></ng-template>
 
-    <ng-container *ngIf="isOnline() && tasksListViewFirstLoading()">
+    <ng-container *ngIf="isOnline && tasksListViewFirstLoading$ | async">
       <div class="row message">
         <div class="col">
           <app-loading-text></app-loading-text>
@@ -19,13 +19,13 @@
       </div>
     </ng-container>
 
-    <ng-template *ngIf="isOnline() && tasks() && !tasksListViewFirstLoading(); then showItems"></ng-template>
+    <ng-template *ngIf="isOnline && tasks && !(tasksListViewFirstLoading$ | async); then showItems"></ng-template>
 
     <ng-template #showItems>
 
-      <ng-container *ngIf="tasks().length > 0">
+      <ng-container *ngIf="tasks.length > 0">
         <div class="row">
-          <table mat-table [dataSource]="tasks()" *ngIf="selectedRound()?.timesOfDay || []; let timesOfDay">
+          <table mat-table [dataSource]="tasks" *ngIf="selectedRound.timesOfDay || []; let timesOfDay">
 
             <ng-container matColumnDef="description">
               <th mat-header-cell *matHeaderCellDef>Description</th>
@@ -49,8 +49,8 @@
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns();"></tr>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
           </table>
 
@@ -62,7 +62,7 @@
         </div>
       </ng-container>
 
-      <ng-container *ngIf="tasks().length === 0">
+      <ng-container *ngIf="tasks.length === 0">
         <div class="row message">
           <div class="col">
             <span>Add some tasks to this empty list</span>

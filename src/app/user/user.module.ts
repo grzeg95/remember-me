@@ -4,8 +4,6 @@ import {RouterModule} from '@angular/router';
 import {SharedModule} from '../shared.module';
 import {UserRoutingModule} from './user-routing.module';
 import {UserComponent} from './user.component';
-import {TaskService} from './views/rounds/round/tasks/task/task.service';
-import {RoundsService} from './views/rounds/rounds.service';
 import {NewPasswordComponent} from './views/user-settings/new-password/new-password.component';
 import {
   UserDialogConfirmDeleteComponent
@@ -24,10 +22,6 @@ import {UserSettingsComponent} from './views/user-settings/user-settings.compone
     CommonModule,
     SharedModule,
     UserRoutingModule
-  ],
-  providers: [
-    TaskService,
-    RoundsService
   ]
 })
 export class UserModule {

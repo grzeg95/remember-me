@@ -1,20 +1,18 @@
-import {ChangeDetectionStrategy, Component, OnInit} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {RoundsService} from '../rounds.service';
 
 @Component({
   selector: 'app-round',
-  templateUrl: './round.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './round.component.html'
 })
 export class RoundComponent implements OnInit {
 
-  selectedRound = toSignal(this.roundsService.selectedRound$);
+  selectedRound$ = this.roundsService.selectedRound$;
 
   constructor(
-      private route: ActivatedRoute,
-      private roundsService: RoundsService
+    private route: ActivatedRoute,
+    private roundsService: RoundsService
   ) {
   }
 

@@ -1,15 +1,13 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Component} from '@angular/core';
 import {Observable} from 'rxjs';
 
 @Component({
   selector: 'app-loading-text',
-  template: '<span [innerHTML]="loadingText()"></span>',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  template: '<span [innerHTML]="loadingText$ | async"></span>'
 })
 export class LoadingTextComponent {
 
-  loadingText = toSignal(new Observable<string>((subscriber) => {
+  loadingText$ = new Observable<string>((subscriber) => {
 
     const getLoadingText = (cnt: number) => {
 
@@ -38,5 +36,5 @@ export class LoadingTextComponent {
     return function unsubscribe() {
       clearInterval(intervalId);
     };
-  }));
+  });
 }
