@@ -19,7 +19,7 @@
       </div>
       <div class="data photo">
         <label [ngClass]="{'photo-uploading': isPhotoUploading}">
-          <img *ngIf="user.photoURL" [imgSecure]="user.photoURL"/>
+          <img *ngIf="user.photoURL" [internalImgSecure]="user.photoURL"/>
           <div *ngIf="!user.photoURL">
             <fa-icon [icon]="faUser"></fa-icon>
           </div>
@@ -32,11 +32,11 @@
     <ng-container *ngIf="!user.isAnonymous">
       <div class="item">
         <div class="name">Name</div>
-        <div class="data" [innerHTML]="user.displayName"></div>
+        <div class="data" [innerHTML]="user.firebaseUser.displayName"></div>
       </div>
       <div class="item">
         <div class="name">Email</div>
-        <div class="data" [innerHTML]="user.email"></div>
+        <div class="data" [innerHTML]="user.firebaseUser.email"></div>
       </div>
     </ng-container>
   </div>

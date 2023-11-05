@@ -11,7 +11,6 @@ import {AuthService} from 'auth';
 import {
   ConnectionService,
   CustomValidators,
-  SecurityService
 } from 'services';
 
 @NgModule({
@@ -27,7 +26,6 @@ import {
     AuthService,
     ConnectionService,
     CustomValidators,
-    SecurityService
   ]
 })
 export class CoreModule {

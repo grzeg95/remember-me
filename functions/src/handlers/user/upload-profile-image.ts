@@ -49,7 +49,7 @@ export const handler = async (context: Context): FunctionResultPromise => {
 
     const userDocSnap = await getUserDocSnap(firestoreApp, transaction, context.auth?.uid as string);
     transactionWrite.update(userDocSnap.ref, {
-      photoUrl: encryptedPhotoUrl
+      photoURL: encryptedPhotoUrl
     });
 
     return transactionWrite.execute();

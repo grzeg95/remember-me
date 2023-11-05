@@ -37,7 +37,7 @@ service cloud.firestore {
 
     allow update: if (
       isUserVerifiedForModules() &&
-      request.resource.data.diff(resource.data).affectedKeys() == ['photoUrl'].toSet() &&
+      request.resource.data.diff(resource.data).affectedKeys() == ['photoURL'].toSet() &&
       request.resource.data.diff(resource.data).removedKeys().size() == 1
     );
 

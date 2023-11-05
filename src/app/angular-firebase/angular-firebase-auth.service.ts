@@ -1,4 +1,4 @@
-import {Injectable, OnDestroy} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {
   Auth,
   AuthProvider,
@@ -7,7 +7,7 @@ import {
   getIdToken,
   getIdTokenResult,
   IdTokenResult,
-  onIdTokenChanged,
+  onAuthStateChanged,
   PopupRedirectResolver,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -20,43 +20,24 @@ import {
   User as FirebaseUser,
   UserCredential
 } from '@angular/fire/auth';
-import {BehaviorSubject, catchError, defer, filter, map, Observable, of, Subscription} from 'rxjs';
-import {startWith} from "rxjs/operators";
+import {catchError, defer, map, Observable, of, shareReplay} from 'rxjs';
 
 @Injectable()
-export class AngularFirebaseAuthService implements OnDestroy {
+export class AngularFirebaseAuthService {
 
-  private _user$ = new BehaviorSubject<FirebaseUser>(undefined);
-  private _onIdTokenChangedSub: Subscription;
+  firebaseUser$: Observable<FirebaseUser>;
 
   constructor(
     private auth: Auth
   ) {
-  }
-
-  ngOnDestroy(): void {
-    if (this._onIdTokenChangedSub && !this._onIdTokenChangedSub.closed) {
-      this._onIdTokenChangedSub.unsubscribe();
-    }
-  }
-
-  user(): Observable<FirebaseUser> {
-
-    if (!this._onIdTokenChangedSub) {
-      this._onIdTokenChangedSub = new Observable<FirebaseUser>((subscriber) => {
-        const unsubscribe = onIdTokenChanged(this.auth,
-          subscriber.next.bind(subscriber),
-          subscriber.error.bind(subscriber),
-          subscriber.complete.bind(subscriber)
-        );
-        return {unsubscribe};
-      }).subscribe((firebaseUser) => this._user$.next(firebaseUser));
-    }
-
-    return this._user$.asObservable().pipe(
-      startWith(this._user$.value),
-      filter((firebaseUser) => firebaseUser !== undefined)
-    );
+    this.firebaseUser$ = new Observable<FirebaseUser>((subscriber) => {
+      const unsubscribe = onAuthStateChanged(this.auth,
+        subscriber.next.bind(subscriber),
+        subscriber.error.bind(subscriber),
+        subscriber.complete.bind(subscriber)
+      );
+      return {unsubscribe};
+    }).pipe(shareReplay());
   }
 
   signInWithRedirect(provider: AuthProvider, resolver?: PopupRedirectResolver): Observable<void> {

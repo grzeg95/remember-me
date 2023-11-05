@@ -141,7 +141,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     const user = this.authService.user$.value;
 
     this.angularFirebaseFirestoreService.updateDoc(
-      `/users/${user.uid}/rounds/${this.roundsService.selectedRound$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`,
+      `/users/${user.firebaseUser.uid}/rounds/${this.roundsService.selectedRound$.value.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`,
       new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
       !todayItem.done
     ).pipe(catchError(() => {

@@ -5,9 +5,9 @@ import {
   AngularFirebaseAuthService,
   AngularFirebaseRemoteConfigService
 } from 'angular-firebase';
-import {FirebaseUser} from 'auth';
 import {environment} from 'environment';
 import {forkJoin, map, Observable, switchMap} from 'rxjs';
+import {take} from 'rxjs/operators';
 
 @Injectable()
 export class AngularFirebaseFunctionsService {
@@ -22,7 +22,7 @@ export class AngularFirebaseFunctionsService {
 
   httpsOnRequest<RequestData = unknown, RespondData = unknown>(name: string, contentType: string = 'application/json') {
 
-    return (data: RequestData, firebaseUser: FirebaseUser): Observable<RespondData> => {
+    return (data: RequestData): Observable<RespondData> => {
 
       let url = this.angularFirebaseRemoteConfigService.getString(name);
 
@@ -30,19 +30,24 @@ export class AngularFirebaseFunctionsService {
         url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/${environment.functionsRegionOrCustomDomain}/${url}`;
       }
 
-      return forkJoin([
-        this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser, false),
-        this.angularFirebaseAppCheckService.getToken(false)
-      ]).pipe(
-        switchMap(([authorization, appCheckToken]) => {
+      return this.angularFirebaseAuthService.firebaseUser$.pipe(
+        take(1),
+        switchMap((firebaseUser) => {
+          return forkJoin([
+            this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser, false),
+            this.angularFirebaseAppCheckService.getToken(false)
+          ]).pipe(
+            switchMap(([authorization, appCheckToken]) => {
 
-          const headers = {
-            'Content-Type': contentType,
-            'authorization': authorization,
-            'X-Firebase-AppCheck': appCheckToken
-          };
+              const headers = {
+                'Content-Type': contentType,
+                'authorization': authorization,
+                'X-Firebase-AppCheck': appCheckToken
+              };
 
-          return this.http.post<{result: RespondData}>(url, data, {headers}).pipe(map((r) => r.result));
+              return this.http.post<{result: RespondData}>(url, data, {headers}).pipe(map((r) => r.result));
+            })
+          );
         })
       );
     };
