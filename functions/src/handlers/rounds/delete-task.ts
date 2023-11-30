@@ -1,12 +1,11 @@
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
+import {CallableRequest} from 'firebase-functions/v2/https';
 import {
-  Context,
   decryptRound,
   decryptTask,
   decryptToday,
   encryptRound,
   encryptToday,
-  FunctionResultPromise,
   getCryptoKey,
   getUserDocSnap,
   testRequirement,
@@ -21,10 +20,6 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
 
   const transactionWrite = new TransactionWrite(transaction);
   const todaySnapsToCheckToRemove: DocumentSnapshot[] = [];
-  let timesOfDay: string[];
-  let timesOfDayCardinality: number[];
-  let todaysIds: Set<string>;
-  let tasksIds: Set<string>;
 
   const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
 
@@ -45,10 +40,10 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
     decryptRound(roundDocSnap.data() as {value: string}, cryptoKey)
   ]);
 
-  timesOfDay = round.timesOfDay;
-  timesOfDayCardinality = round.timesOfDayCardinality;
-  todaysIds = round.todaysIds.toSet();
-  tasksIds = round.tasksIds.toSet();
+  const timesOfDay = round.timesOfDay;
+  const timesOfDayCardinality = round.timesOfDayCardinality;
+  const todaysIds = round.todaysIds.toSet();
+  const tasksIds = round.tasksIds.toSet();
 
   // read all task for user/{userId}/today/{day}/task/{taskId}
   const todayTaskDocSnapsToUpdatePromises = [];
@@ -145,18 +140,18 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
 
 /**
  * Read user data about task and remove it
- * @param context Context
+ * @param {CallableRequest} request
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (context: Context): FunctionResultPromise => {
+export const handler = async (request: CallableRequest) => {
 
-  const auth = context.auth;
-  const data = context.data;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
   // not logged in
   // email not verified, not for anonymous
-  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
+  testRequirement(!auth || (!auth?.token.email_verified &&
     auth?.token.provider_id !== 'anonymous' &&
     !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
 

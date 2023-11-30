@@ -1,35 +1,25 @@
-import {https} from '../../config';
-import {handler} from '../../tools';
+import {onCall} from 'firebase-functions/v2/https';
+import {optsV2} from '../../config';
+
+/* eslint-disable @typescript-eslint/no-var-requires*/
 
 const getDeleteTaskHandler = () => require('./delete-task').handler;
-export const deleteTask = https.onRequest((req, resp) =>
-  handler(req, resp, getDeleteTaskHandler())
-);
+export const deletetask = onCall(optsV2, getDeleteTaskHandler());
 
 const getSaveTaskHandler = () => require('./save-task').handler;
-export const saveTask = https.onRequest((req, resp) =>
-  handler(req, resp, getSaveTaskHandler())
-);
+export const savetask = onCall(optsV2, getSaveTaskHandler());
 
 const getSetTimesOfDayOrderHandler = () => require('./set-times-of-day-order').handler;
-export const setTimesOfDayOrder = https.onRequest((req, resp) =>
-  handler(req, resp, getSetTimesOfDayOrderHandler())
-);
+export const settimesofdayorder = onCall(optsV2, getSetTimesOfDayOrderHandler());
 
 const getSaveRoundHandler = () => require('./save-round').handler;
-export const saveRound = https.onRequest((req, resp) =>
-  handler(req, resp, getSaveRoundHandler())
-);
+export const saveround = onCall(optsV2, getSaveRoundHandler());
 
 const getDeleteRoundHandler = () => require('./delete-round').handler;
-export const deleteRound = https.onRequest((req, resp) =>
-  handler(req, resp, getDeleteRoundHandler(), 'text/plain')
-);
+export const deleteround = onCall(optsV2, getDeleteRoundHandler());
 
 const getSetRoundsOrderHandler = () => require('./set-rounds-order').handler;
-export const setRoundsOrder = https.onRequest((req, resp) =>
-  handler(req, resp, getSetRoundsOrderHandler())
-);
+export const setroundsorder = onCall(optsV2, getSetRoundsOrderHandler());
 
 export const handlersGetters = {
   getDeleteTaskHandler,

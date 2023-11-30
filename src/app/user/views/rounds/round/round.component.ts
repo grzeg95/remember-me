@@ -1,14 +1,20 @@
-import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute} from '@angular/router';
+import {Component} from '@angular/core';
+import {ActivatedRoute, RouterOutlet} from '@angular/router';
 import {RoundsService} from '../rounds.service';
+import {RoundNavComponent} from './round-nav/round-nav.component';
 
 @Component({
   selector: 'app-round',
+  standalone: true,
+  imports: [
+    RoundNavComponent,
+    RouterOutlet
+  ],
   templateUrl: './round.component.html'
 })
-export class RoundComponent implements OnInit {
+export class RoundComponent {
 
-  selectedRound$ = this.roundsService.selectedRound$;
+  selectedRound = this.roundsService.selectedRound;
 
   constructor(
     private route: ActivatedRoute,
@@ -17,12 +23,8 @@ export class RoundComponent implements OnInit {
   }
 
   ngOnInit(): void {
-
     this.route.paramMap.subscribe((paramMap) => {
-      if (paramMap.get('id')) {
-        this.roundsService.selectRound(paramMap.get('id'));
-      }
+      this.roundsService.setGettingOfRoundById(paramMap.get('id') || '')
     });
-    this.roundsService.runRoundsList();
   }
 }

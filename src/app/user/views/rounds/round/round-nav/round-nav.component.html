@@ -2,7 +2,9 @@
   <div class="row">
     <div class="col">
       <div class="round-nav">
-        <button *ngFor="let route of routes" [routerLink]="route.href" routerLinkActive="active">{{ route.label }}</button>
+        @for (route of routes; track route.label) {
+          <button [routerLink]="route.href" routerLinkActive="active">{{ route.label }}</button>
+        }
       </div>
     </div>
   </div>

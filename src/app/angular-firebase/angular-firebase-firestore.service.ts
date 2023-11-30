@@ -35,9 +35,9 @@ export class AngularFirebaseFirestoreService {
 
   updateDoc(path: string, data: any): Observable<void>
   updateDoc(path: string, field: string | FieldPath, value: unknown, ...moreFieldsAndValues: unknown[]): Observable<void>
-  updateDoc(path: string, ...any: any): Observable<void> {
+  updateDoc(path: string, ...data: any): Observable<void> {
     // @ts-ignore
-    return defer(() => updateDoc(this.doc(path), ...any));
+    return defer(() => updateDoc(this.doc(path), ...data));
   }
 
   getDoc<T = DocumentData>(path: string): Observable<DocumentSnapshot<T>> {
@@ -61,7 +61,7 @@ export class AngularFirebaseFirestoreService {
   private withConverter<T = DocumentData>(reference: any) {
 
     return reference.withConverter({
-      toFirestore(t: T): DocumentData {
+      toFirestore(t: T): T {
         return structuredClone(t);
       },
       fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): T {

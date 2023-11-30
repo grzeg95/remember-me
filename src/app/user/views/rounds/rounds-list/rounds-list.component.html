@@ -1,37 +1,41 @@
 <div class="container">
   <div class="col">
 
-    <ng-container *ngIf="!isOnline && !roundsList">
+    @if (!isOnline() && !roundsList().length) {
       <div class="row message">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
         </div>
       </div>
-    </ng-container>
+    }
 
-    <ng-template *ngIf="!isOnline && sortedRoundList; then showItems"></ng-template>
+    @if (!isOnline() && roundsList().length) {
+      <ng-container *ngTemplateOutlet="showItems"></ng-container>
+    }
 
-    <ng-container *ngIf="isOnline && roundsListFirstLoading$ | async">
+    @if (isOnline() && roundsListFirstLoading()) {
       <div class="row message">
         <div class="col">
-          <app-loading-text></app-loading-text>
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
         </div>
       </div>
-    </ng-container>
+    }
 
-    <ng-template *ngIf="isOnline && sortedRoundList && !(roundsListFirstLoading$ | async); then showItems"></ng-template>
+    @if (isOnline() && roundsList() && !roundsListFirstLoading()) {
+      <ng-container *ngTemplateOutlet="showItems"></ng-container>
+    }
 
     <ng-template #showItems>
 
-      <ng-container *ngIf="sortedRoundList.length > 0">
+      @if (roundsList().length > 0) {
         <div class="row" #roundListTableWrapper>
-          <table
+          <table  [trackBy]="trackRoundList"
                   class="rounds-list no-select"
                   mat-table
-                  [dataSource]="sortedRoundList"
+                  [dataSource]="roundsList()"
                   cdkDropList
                   (cdkDropListDropped)="drop($event)"
-                  [cdkDropListDisabled]="!isOnline">
+                  [cdkDropListDisabled]="!isOnline()">
 
             <ng-container matColumnDef="roundName">
               <th mat-header-cell *matHeaderCellDef>Round</th>
@@ -56,7 +60,7 @@
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr cdkDrag [class.disabled]="setRoundsOrderIsPending || ((!isOnline || setRoundsOrderIsPending) && (!isOnline && !!selectedRound && selectedRound.id !== row.id)) || ((!isOnline || setRoundsOrderIsPending) && !selectedRound)" mat-row
+            <tr cdkDrag [class.disabled]="isRoundsOrderUpdating() || ((!isOnline() || isRoundsOrderUpdating()) && (!isOnline() && !!selectedRound() && selectedRound()?.id !== row.id)) || ((!isOnline() || isRoundsOrderUpdating()) && !selectedRound())" mat-row
                 *matRowDef="let row; columns: displayedColumns;" (click)="goToRound(row.id)"></tr>
 
           </table>
@@ -68,9 +72,9 @@
             </button>
           </div>
         </div>
-      </ng-container>
+      }
 
-      <ng-container *ngIf="sortedRoundList.length === 0">
+      @if (roundsList().length === 0) {
         <div class="row message">
           <div class="col">
             <span>Add some rounds to this empty list</span>
@@ -84,10 +88,12 @@
             </div>
           </div>
         </div>
-      </ng-container>
+      }
 
     </ng-template>
   </div>
 </div>
 
-<mat-spinner *ngIf="setRoundsOrderIsPending" [diameter]="50" [strokeWidth]="5"></mat-spinner>
+@if (isRoundsOrderUpdating()) {
+  <mat-spinner [diameter]="50" [strokeWidth]="5"></mat-spinner>
+}

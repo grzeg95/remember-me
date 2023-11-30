@@ -1,25 +1,33 @@
-import {Component, OnInit} from '@angular/core';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {NgClass, NgStyle} from '@angular/common';
+import {Component, effect, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialog, MatDialogActions, MatDialogRef} from '@angular/material/dialog';
+import {MatExpansionModule} from '@angular/material/expansion';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
-import {AuthService, User} from 'auth';
-import {catchError, NEVER, Subscription} from 'rxjs';
+import {AuthService} from 'auth';
+import {catchError, NEVER} from 'rxjs';
+import {InternalImgSecureDirective} from '../../../directives/internal-img-secure.directive';
+import {NewPasswordComponent} from './new-password/new-password.component';
 import {UserDialogConfirmDeleteComponent} from './user-dialog-confirm-delete/user-dialog-confirm-delete.component';
 
 @Component({
   selector: 'app-user-settings',
+  standalone: true,
+  imports: [MatDialogActions, MatExpansionModule, FontAwesomeModule, InternalImgSecureDirective, MatButtonModule, MatProgressSpinnerModule, NewPasswordComponent, NgStyle, NgClass],
   templateUrl: './user-settings.component.html',
-  styleUrls: ['./user-settings.component.scss']
+  styleUrl: './user-settings.component.scss'
 })
-export class UserSettingsComponent implements OnInit {
+export class UserSettingsComponent {
 
   faUser = faUser;
   faGear = faGear;
 
-  user: User;
-  userSub: Subscription;
-
-  isPhotoUploading: boolean;
+  user = toSignal(this.authService.user$);
+  isPhotoUploading = signal(false);
 
   constructor(
     public dialogRef: MatDialogRef<UserSettingsComponent>,
@@ -27,21 +35,12 @@ export class UserSettingsComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {
-  }
-
-  ngOnInit(): void {
-    this.userSub = this.authService.user$.subscribe((user) => {
+    effect(() => {
+      const user = this.user();
       if (!user) {
         this.dialogRef.close();
-      } else {
-        this.user = user;
-        this.isPhotoUploading = false;
       }
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.userSub.unsubscribe();
+    })
   }
 
   openRemoveAccountConfirmPrompt(): void {
@@ -50,7 +49,7 @@ export class UserSettingsComponent implements OnInit {
     dialog.afterClosed().subscribe((isConfirmed) => {
 
       if (isConfirmed) {
-        if (this.user) {
+        if (this.user()) {
           this.authService.deleteUser().pipe(catchError(() => {
             this.snackBar.open('Some went wrong 🤫 Try again 🙂');
             return NEVER;
@@ -60,20 +59,21 @@ export class UserSettingsComponent implements OnInit {
     });
   }
 
-  fileChange(event) {
+  fileChange(event: any) {
 
     const input: HTMLInputElement = event.target;
-    const fileList: FileList = input.files;
+    const fileList: FileList = input.files as FileList;
 
     if (fileList.length > 0) {
-      this.isPhotoUploading = true;
+      this.isPhotoUploading.set(true);
       this.authService.uploadProfileImage(fileList[0]).pipe(catchError((error) => {
-        this.isPhotoUploading = false;
+        this.isPhotoUploading.set(false);
         input.value = '';
         this.snackBar.open(error.error.details || 'Some went wrong 🤫 Try again 🙂');
         return NEVER;
       })).subscribe((success) => {
         input.value = '';
+        this.isPhotoUploading.set(false);
         this.snackBar.open(success.message || 'Your operation has been done 😉');
       });
     }

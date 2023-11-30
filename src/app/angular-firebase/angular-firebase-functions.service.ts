@@ -1,55 +1,31 @@
-import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {
-  AngularFirebaseAppCheckService,
-  AngularFirebaseAuthService,
-  AngularFirebaseRemoteConfigService
-} from 'angular-firebase';
+import {Functions, httpsCallableFromURL} from '@angular/fire/functions';
 import {environment} from 'environment';
-import {forkJoin, map, Observable, switchMap} from 'rxjs';
-import {take} from 'rxjs/operators';
+import {defer} from 'rxjs';
+import {AngularFirebaseRemoteConfigService} from './angular-firebase-remote-config.service';
 
 @Injectable()
 export class AngularFirebaseFunctionsService {
 
   constructor(
-    private angularFirebaseAppCheckService: AngularFirebaseAppCheckService,
-    private angularFirebaseAuthService: AngularFirebaseAuthService,
-    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService,
-    private http: HttpClient
+    private functions: Functions,
+    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService
   ) {
   }
 
-  httpsOnRequest<RequestData = unknown, RespondData = unknown>(name: string, contentType: string = 'application/json') {
+  httpsCallable<RequestData = unknown, RespondData = unknown>(name: string) {
+    return (data: RequestData) => {
+      return defer(() => {
 
-    return (data: RequestData): Observable<RespondData> => {
+        let url = this.angularFirebaseRemoteConfigService.getString(name);
 
-      let url = this.angularFirebaseRemoteConfigService.getString(name);
+        if (!environment.production) {
+          url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/${environment.functionsRegionOrCustomDomain}/${url}`;
+        }
 
-      if (!environment.production) {
-        url = `${environment.emulators.functions.protocol}://${environment.emulators.functions.host}:${environment.emulators.functions.port}/${environment.firebase.projectId}/${environment.functionsRegionOrCustomDomain}/${url}`;
-      }
-
-      return this.angularFirebaseAuthService.firebaseUser$.pipe(
-        take(1),
-        switchMap((firebaseUser) => {
-          return forkJoin([
-            this.angularFirebaseAuthService.getAuthorizationToken(firebaseUser, false),
-            this.angularFirebaseAppCheckService.getToken(false)
-          ]).pipe(
-            switchMap(([authorization, appCheckToken]) => {
-
-              const headers = {
-                'Content-Type': contentType,
-                'authorization': authorization,
-                'X-Firebase-AppCheck': appCheckToken
-              };
-
-              return this.http.post<{result: RespondData}>(url, data, {headers}).pipe(map((r) => r.result));
-            })
-          );
-        })
-      );
-    };
+        return httpsCallableFromURL<RequestData, RespondData>(this.functions, url)(data)
+          .then((res) => res.data);
+      });
+    }
   }
 }

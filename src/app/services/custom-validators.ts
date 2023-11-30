@@ -1,8 +1,8 @@
-import {FormControl, ValidatorFn} from '@angular/forms';
+import {AbstractControl, ValidationErrors, ValidatorFn} from '@angular/forms';
 
 export class CustomValidators {
-  static maxRequired(val: number): ValidatorFn {
-    return (c: FormControl): {maxRequired: boolean} | null => {
+  static maxRequired(val: number) {
+    return (c: AbstractControl<any, any>): {maxRequired: boolean} | null => {
 
       const current = c.value as string;
       const trimLeft = (c.value as string).trimStart();
@@ -15,8 +15,8 @@ export class CustomValidators {
     }
   }
 
-  static equalsToOtherFormControl(otherFormControl: FormControl): ValidatorFn {
-    return (c: FormControl): {notEquals: boolean} | null => {
+  static equalsToOtherFormControl(otherFormControl: AbstractControl<any, any>): ValidatorFn {
+    return (c: AbstractControl<any, any>): ValidationErrors | null => {
       return c.value === otherFormControl.value ? null : {notEquals: true};
     }
   }

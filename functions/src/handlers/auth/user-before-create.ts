@@ -10,6 +10,8 @@ import {Task} from '../../models';
 import {encrypt, encryptRound, encryptTask, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
 import {prepareTimesOfDay, proceedTodayTasks} from '../rounds/save-task';
 
+/* eslint-disable @typescript-eslint/no-var-requires*/
+
 const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;

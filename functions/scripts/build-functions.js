@@ -86,7 +86,7 @@ const run = async () => {
     }));
   }
 
-  await exec('lint', 'lint', spawn('node', ['tslint', '--project', 'tsconfig.json']));
+  await exec('eslint', 'eslint', spawn('eslint', ['--ext', '.js,.ts', '.']));
   await exec('tsc', 'tsc', spawn('tsc', []));
 
   if (process.argv[2] === 'for-prod') {

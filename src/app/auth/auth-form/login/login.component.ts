@@ -1,16 +1,20 @@
-import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {Component, EventEmitter, Output, signal} from '@angular/core';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
 import {UserCredential} from 'firebase/auth';
-import {catchError, NEVER, Subscription} from 'rxjs';
+import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from 'services';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
+  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule],
   templateUrl: './login.component.html'
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent {
 
   loginForm: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
@@ -20,10 +24,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   email = this.loginForm.get('email');
   password = this.loginForm.get('password');
 
-  isOnlineSub: Subscription;
-  isOnline: boolean;
-
-  userCredential: UserCredential;
+  isOnline = this.connectionService.isOnline;
+  userCredential = signal<UserCredential | undefined>(undefined);
 
   @Output() doneEmitter = new EventEmitter<void>();
 
@@ -34,19 +36,15 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {
   }
 
-  ngOnInit(): void {
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
-  }
-
-  ngOnDestroy(): void {
-    this.isOnlineSub.unsubscribe();
-  }
-
   sendEmailVerification(): void {
-    if (this.userCredential) {
+
+    const userCredential = this.userCredential();
+
+    if (userCredential) {
+
       this.loginForm.disable();
 
-      this.authService.sendEmailVerification(this.userCredential.user).pipe(catchError(() => {
+      this.authService.sendEmailVerification(userCredential.user).pipe(catchError(() => {
         this.snackBar.open('Some went wrong 🤫 Try again 🙂');
         this.loginForm.enable();
         return NEVER;
@@ -57,9 +55,10 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   }
 
-  login(): void {
+  login() {
     this.loginForm.disable();
-    this.authService.signInWithEmailAndPassword(this.email.value, this.password.value).pipe(catchError(() => {
+
+    this.authService.signInWithEmailAndPassword(this.loginForm.get('email')?.value, this.loginForm.get('password')?.value).pipe(catchError(() => {
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.loginForm.enable();
       return NEVER;
@@ -69,7 +68,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       if (userCredential) {
 
         if (!userCredential.user.emailVerified) {
-          this.userCredential = userCredential;
+          this.userCredential.set(userCredential);
         }
 
         if (userCredential.user.emailVerified) {

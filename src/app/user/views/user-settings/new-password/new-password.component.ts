@@ -1,15 +1,19 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {Component, OnInit} from '@angular/core';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {AuthService} from 'auth';
-import {catchError, NEVER, Subscription} from 'rxjs';
+import {catchError, NEVER} from 'rxjs';
 import {ConnectionService, CustomValidators} from 'services';
 
 @Component({
-  selector: 'app-new-password-component',
-  templateUrl: 'new-password.component.html'
+  selector: 'app-new-password',
+  standalone: true,
+  imports: [ReactiveFormsModule, MatInputModule, MatButtonModule],
+  templateUrl: './new-password.component.html'
 })
-export class NewPasswordComponent implements OnInit, OnDestroy {
+export class NewPasswordComponent implements OnInit {
 
   newPasswordForm: FormGroup = new FormGroup({
     newPassword: new FormControl('', [Validators.required]),
@@ -19,8 +23,7 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
   newPassword = this.newPasswordForm.get('newPassword') as FormControl;
   confirmNewPassword = this.newPasswordForm.get('confirmNewPassword') as FormControl;
 
-  isOnlineSub: Subscription;
-  isOnline: boolean;
+  isOnline = this.connectionService.isOnline;
 
   constructor(
     private authService: AuthService,
@@ -30,7 +33,6 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
     this.confirmNewPassword.addValidators(CustomValidators.equalsToOtherFormControl(this.newPassword));
 
     this.newPassword.valueChanges.subscribe(() => {
@@ -38,10 +40,6 @@ export class NewPasswordComponent implements OnInit, OnDestroy {
         this.confirmNewPassword.updateValueAndValidity();
       }
     });
-  }
-
-  ngOnDestroy(): void {
-    this.isOnlineSub.unsubscribe();
   }
 
   changePassword(): void {

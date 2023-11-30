@@ -1,9 +1,9 @@
 // tslint:disable-next-line:no-import-side-effect
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
+import {CallableRequest} from 'firebase-functions/v2/https';
 import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../models';
 import {
   BasicEncryptedValue,
-  Context,
   decryptRound,
   decryptTask,
   decryptToday,
@@ -13,7 +13,6 @@ import {
   encryptTask,
   encryptToday,
   encryptTodayTask,
-  FunctionResultPromise,
   getCryptoKey,
   getUserDocSnap,
   testRequirement,
@@ -112,7 +111,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   const encryptedTodayTaskToAddPromise = encryptTodayTask({
     description: task.description,
     timesOfDay
-  }, cryptoKey);
+  } as TodayTask, cryptoKey);
 
   const todaysIds = roundDocSnapData.todaysIds.toSet();
 
@@ -164,7 +163,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   const todayTaskDocSnapsDayPackPromise = [];
   for (const day of (taskDocSnapData.daysOfTheWeek || [])) {
     todayTaskDocSnapsDayPackPromise.push(
-      transaction.get(todayDocRefsMap[day].docSnap.ref.collection(`task`).doc(`${taskDocSnap.id}`))
+      transaction.get(todayDocRefsMap[day].docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
         .then((docSnap) => ({day, docSnap}))
     );
   }
@@ -211,7 +210,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   for (const dayToCreate of toCreate) {
     if (!todayDocRefsMap[dayToCreate]) {
       newTodayItemsForTaskToCreatePromises.push(
-        transaction.get(roundDocSnap.ref.collection(`today`).doc()).then((docSnap) => {
+        transaction.get(roundDocSnap.ref.collection('today').doc()).then((docSnap) => {
           return {dayToCreate, docSnap};
         }));
     }
@@ -233,12 +232,12 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
     if (!todayDocRefsMap[dayToCreate]) {
       transactionWrite.create(
-        newTodayItemsMap[dayToCreate].ref.collection(`task`).doc(taskDocSnap.id),
+        newTodayItemsMap[dayToCreate].ref.collection('task').doc(taskDocSnap.id),
         encryptedTodayTaskToAddPromise
       );
     } else {
       transactionWrite.create(
-        todayDocRefsMap[dayToCreate].docSnap.ref.collection(`task`).doc(taskDocSnap.id),
+        todayDocRefsMap[dayToCreate].docSnap.ref.collection('task').doc(taskDocSnap.id),
         encryptedTodayTaskToAddPromise
       );
     }
@@ -280,7 +279,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   for (const taskFromDayToRemove of toRemove) {
     tasksFromTodayToRemovePromise.push(transaction.get(
-      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection(`task`).doc(taskDocSnap.id)
+      todayDocRefsMap[taskFromDayToRemove].docSnap.ref.collection('task').doc(taskDocSnap.id)
     ));
   }
 
@@ -315,7 +314,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     transactionWrite.set(todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, encryptTodayTask({
       description: task.description,
       timesOfDay: newTimesOfDay
-    }, cryptoKey));
+    } as TodayTask, cryptoKey));
   }
 
   // remove tasks from day to remove
@@ -327,14 +326,33 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   return todaysIds.toArray();
 };
 
-const checkEntryRequirements = (data: any, context: Context) => {
+const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: Transaction, roundDocSnapData: Round, roundDocSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
+  return transaction.get(roundDocSnap.ref.collection('task').doc(taskId)).then((taskDocSnap) => {
+    if (!taskDocSnap.exists) {
+      testRequirement(roundDocSnapData.tasksIds.length + 1 > 25, {message: `You can own up tp 25 tasks but merge has ${roundDocSnapData.tasksIds.length + 1} 🤔`});
+      transactionWrite.delete(taskDocSnap.ref);
+      return transaction.get(roundDocSnap.ref.collection('task').doc());
+    } else {
+      return taskDocSnap;
+    }
+  });
+};
 
-  const auth = context?.auth;
+/**
+ * Save task
+ * @function handler
+ * @return {Promise<{created: boolean, details: string, roundId: string}>}
+ * @param {CallableRequest} request
+ **/
+export const handler = async (request: CallableRequest) => {
+
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
   // not logged in
   // email not verified, not for anonymous
-  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
+  testRequirement(!auth || (!auth?.token.email_verified &&
     auth?.token.provider_id !== 'anonymous' &&
     !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
 
@@ -404,41 +422,6 @@ const checkEntryRequirements = (data: any, context: Context) => {
 
   // data.task.timesOfDay contains duplicates
   testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
-};
-
-const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: Transaction, roundDocSnapData: Round, roundDocSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
-  return transaction.get(roundDocSnap.ref.collection('task').doc(taskId)).then((taskDocSnap) => {
-    if (!taskDocSnap.exists) {
-      testRequirement(roundDocSnapData.tasksIds.length + 1 > 25, {message: `You can own up tp 25 tasks but merge has ${roundDocSnapData.tasksIds.length + 1} 🤔`});
-      transactionWrite.delete(taskDocSnap.ref);
-      return transaction.get(roundDocSnap.ref.collection('task').doc());
-    } else {
-      return taskDocSnap;
-    }
-  });
-};
-
-/**
- * Save task
- * @function handler
- * {
- *  task: {
- *   timesOfDay: string[],
- *   daysOfTheWeek: not null like ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
- *   description: string
- *  },
- *  taskId: string,
- *  roundId: string
- * }
- * @param context: Context
- * @return {Promise<{created: boolean, details: string, roundId: string}>}
- **/
-export const handler = async (context: Context): FunctionResultPromise => {
-
-  const data = context.data;
-  checkEntryRequirements(data, context);
-
-  const auth = context.auth;
 
   let created = false;
   let taskId: string = data.taskId;
@@ -504,13 +487,12 @@ export const handler = async (context: Context): FunctionResultPromise => {
         for (const docSnap of docSnaps) {
 
           decryptTodayPromises.push(decryptToday(docSnap.data() as BasicEncryptedValue, cryptoKey).then((today) => {
-              if (today.tasksIds.find((id) => id === taskDocSnap.id)) {
-                todayTaskDocSnapsToUpdatePromises.push(
-                  transaction.get(docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
-                );
-              }
-            })
-          );
+            if (today.tasksIds.find((id) => id === taskDocSnap.id)) {
+              todayTaskDocSnapsToUpdatePromises.push(
+                transaction.get(docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
+              );
+            }
+          }));
         }
 
         return Promise.all(decryptTodayPromises).then(() => {
@@ -586,11 +568,8 @@ export const handler = async (context: Context): FunctionResultPromise => {
 
     return transactionWrite.execute();
   }).then(() => ({
-    code: created ? 201 : 200,
-    body: {
-      created,
-      taskId,
-      details: created ? 'Your task has been created 😉' : 'Your task has been updated 🙃',
-    }
+    created,
+    taskId,
+    details: created ? 'Your task has been created 😉' : 'Your task has been updated 🙃'
   }));
 };

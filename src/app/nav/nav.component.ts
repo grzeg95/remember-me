@@ -1,34 +1,39 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {NgClass, NgStyle} from '@angular/common';
+import {Component, computed, ElementRef, ViewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
+import {MatMenuModule} from '@angular/material/menu';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatToolbarModule} from '@angular/material/toolbar';
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {
   faArrowRightFromBracket,
-  faArrowRightToBracket,
   faAt,
   faEllipsisV,
   faEyeSlash,
   faGear,
-  faTasks,
   faUser
 } from '@fortawesome/free-solid-svg-icons';
-import {AuthFormComponent, AuthService, User} from 'auth';
+import {AuthFormComponent, AuthService} from 'auth';
 import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from 'services';
+import {InternalImgSecureDirective} from '../directives/internal-img-secure.directive';
 import {UserSettingsComponent} from '../user/views/user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
+  standalone: true,
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass],
   templateUrl: './nav.component.html',
-  styleUrls: ['./nav.component.scss']
+  styleUrl: './nav.component.scss'
 })
-export class NavComponent implements OnInit {
+export class NavComponent {
 
-  user: User;
-  isOnline: boolean;
-  whileLoginIn: boolean;
+  user = toSignal(this.authService.user$);
+  isButtonDisabled = computed(() => !this.connectionService.isOnline() || this.authService.whileLoginIn());
 
-  faTasks = faTasks;
   faUser = faUser;
   faGoogle = faGoogle;
   faEllipsisV = faEllipsisV;
@@ -36,8 +41,7 @@ export class NavComponent implements OnInit {
   faArrowRightFromBracket = faArrowRightFromBracket;
   faEyeSlash = faEyeSlash;
   faAt = faAt;
-  faArrowRightToBracket = faArrowRightToBracket;
-  @ViewChild('menuToggleCheckbox') menuToggleCheckbox: ElementRef;
+  @ViewChild('menuToggleCheckbox') menuToggleCheckbox!: ElementRef;
 
   constructor(
     private authService: AuthService,
@@ -45,12 +49,6 @@ export class NavComponent implements OnInit {
     private connectionService: ConnectionService,
     private snackBar: MatSnackBar
   ) {
-  }
-
-  ngOnInit(): void {
-    this.authService.user$.subscribe((user) => this.user = user);
-    this.authService.whileLoginIn$.subscribe((whileLoginIn) => this.whileLoginIn = whileLoginIn);
-    this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
   }
 
   googleSignIn(): void {

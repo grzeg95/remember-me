@@ -4,10 +4,9 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
-    "sourceMap": false,
+    "sourceMap": true,
     "strict": true,
-    "target": "es2017",
-    "removeComments": true
+    "target": "es2017"
   },
   "compileOnSave": true,
   "include": [

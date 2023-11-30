@@ -3,25 +3,31 @@
   <mat-form-field>
     <mat-label>Email</mat-label>
     <input autocomplete="off" matInput formControlName="email" type="email">
-    <mat-error *ngIf="!registerForm.disabled && !email.valid && (email.dirty || email.touched)">Enter email</mat-error>
+    @if (!registerForm.disabled && !email?.valid && (email?.dirty || email?.touched)) {
+      <mat-error>Enter email</mat-error>
+    }
   </mat-form-field>
 
   <mat-form-field>
     <mat-label>Password</mat-label>
     <input autocomplete="off" matInput formControlName="password" type="password">
-    <mat-error *ngIf="!registerForm.disabled && !password.valid && (password.dirty || password.touched)">Enter password</mat-error>
+    @if (!registerForm.disabled && !password?.valid && (password?.dirty || password?.touched)) {
+      <mat-error>Enter password</mat-error>
+    }
   </mat-form-field>
 
   <mat-form-field>
     <mat-label>Confirm password</mat-label>
     <input autocomplete="off" matInput formControlName="confirmPassword" type="password">
-    <mat-error *ngIf="!registerForm.disabled && !confirmPassword.valid && (confirmPassword.dirty || confirmPassword.touched)">Confirm password</mat-error>
+    @if (!registerForm.disabled && !confirmPassword?.valid && (confirmPassword?.dirty || confirmPassword?.touched)) {
+      <mat-error>Confirm password</mat-error>
+    }
   </mat-form-field>
 
   <div class="action-buttons">
     <button mat-flat-button
             color="primary"
-            [disabled]="registerForm.disabled || registerForm.invalid || !isOnline"
+            [disabled]="registerForm.disabled || registerForm.invalid || !isOnline()"
             (click)="register()">Register</button>
   </div>
 </form>

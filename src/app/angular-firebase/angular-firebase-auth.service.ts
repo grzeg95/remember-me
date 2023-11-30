@@ -3,11 +3,7 @@ import {
   Auth,
   AuthProvider,
   createUserWithEmailAndPassword,
-  deleteUser,
-  getIdToken,
-  getIdTokenResult,
-  IdTokenResult,
-  onAuthStateChanged,
+  onIdTokenChanged,
   PopupRedirectResolver,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -20,24 +16,26 @@ import {
   User as FirebaseUser,
   UserCredential
 } from '@angular/fire/auth';
-import {catchError, defer, map, Observable, of, shareReplay} from 'rxjs';
+import {catchError, defer, map, Observable, shareReplay} from 'rxjs';
 
 @Injectable()
 export class AngularFirebaseAuthService {
 
-  firebaseUser$: Observable<FirebaseUser>;
+  firebaseUser$: Observable<FirebaseUser | null | undefined>;
 
   constructor(
     private auth: Auth
   ) {
-    this.firebaseUser$ = new Observable<FirebaseUser>((subscriber) => {
-      const unsubscribe = onAuthStateChanged(this.auth,
+    this.firebaseUser$ = new Observable<FirebaseUser | null>((subscriber) => {
+      const unsubscribe = onIdTokenChanged(this.auth,
         subscriber.next.bind(subscriber),
         subscriber.error.bind(subscriber),
         subscriber.complete.bind(subscriber)
       );
       return {unsubscribe};
-    }).pipe(shareReplay());
+    }).pipe(
+      shareReplay()
+    );
   }
 
   signInWithRedirect(provider: AuthProvider, resolver?: PopupRedirectResolver): Observable<void> {
@@ -92,18 +90,13 @@ export class AngularFirebaseAuthService {
     );
   }
 
-  getIdTokenResult(firebaseUser: FirebaseUser, forceRefresh?: boolean): Observable<IdTokenResult> {
-    return defer(() => getIdTokenResult(firebaseUser, forceRefresh));
-  }
-
-  deleteUser(firebaseUser: FirebaseUser): Observable<void> {
-    return defer(() => deleteUser(firebaseUser));
-  }
-
-  getAuthorizationToken(firebaseUser: FirebaseUser, forceRefresh: boolean = false): Observable<string> {
-    return defer(() => getIdToken(firebaseUser, forceRefresh)).pipe(
-      map((token) => `Bearer ${token}`),
-      catchError(() => of(undefined))
-    );
+  deleteUser(): Observable<void> {
+    return defer(async () => {
+      return this.auth.currentUser?.delete();
+    }).pipe(catchError((e) => {
+      // TODO to check on production
+      console.log(e);
+      throw e;
+    }));
   }
 }

@@ -1,6 +1,6 @@
-import {https} from '../../config';
-import {handler} from '../../tools';
+import {onCall} from 'firebase-functions/v2/https';
+import {optsV2} from '../../config';
 
-export const uploadProfileImage = https.onRequest((req, resp) =>
-  handler(req, resp, require('./upload-profile-image').handler, ['image/jpeg', 'image/jpg', 'image/png'])
-);
+/* eslint-disable @typescript-eslint/no-var-requires*/
+
+export const uploadprofileimage = onCall(optsV2, require('./upload-profile-image').handler);

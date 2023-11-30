@@ -18,7 +18,7 @@ export const authGuardLoggedIn = (): Observable<true | UrlTree> => {
 
       // redirect to default user view
       if (can) {
-        return router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
+        return router.createUrlTree(['/', RouterDict.user]);
       }
       return true;
     })

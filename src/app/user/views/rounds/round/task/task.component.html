@@ -1,0 +1,89 @@
+<div class="container">
+  <div class="col" [formGroup]="taskForm">
+    <div class="row">
+      <div class="col form-group">
+        <mat-form-field floatLabel="always">
+          <mat-label>Task description</mat-label>
+          <input autocomplete="off" matInput formControlName="description" [placeholder]="'Your task description'">
+          @if (!taskForm.disabled && !description!.valid && (description!.dirty || description!.touched)) {
+            <mat-error>Enter description from 1 to 256 characters</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col form-group">
+        <small class="form-text text-center text-muted" [ngClass]="!taskForm.disabled && !daysOfTheWeek.valid && daysOfTheWeek.dirty ? 'error' : ''">Mark days</small>
+        <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
+          @for (dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; track $index) {
+            <mat-slide-toggle [checked]="daysOfTheWeek.get(dayOfTheWeek)!.value == true"
+                              [class.disabled]="taskForm.disabled || !isOnline()"
+                              [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col form-group">
+        @if (!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty) {
+          <small class="form-text text-center text-muted error">Enter at leas one time of day</small>
+        }
+        <mat-form-field>
+          <mat-label>Times of day</mat-label>
+          <mat-chip-grid #chipGrid>
+            <div formArrayName="timesOfDay">
+              @for (timeOfDay of timesOfDay.controls; track timeOfDay.value; let i = $index) {
+                <mat-chip-row [class.disabled]="taskForm.disabled || !isOnline()"
+                              [formGroupName]="i"
+                              [value]="timeOfDay.value"
+                              [removable]="true"
+                              [highlighted]="false"
+                              (removed)="handleRemoveTimeOfDay(i)">{{ timeOfDay.value }}
+                  <img src="assets/img/chip-close.svg" class="mat-chip-close" matChipRemove>
+                </mat-chip-row>
+              }
+            </div>
+            <input autocomplete="off"
+                   formControlName="timeOfDay"
+                   matInput
+                   #input="matAutocompleteTrigger"
+                   #basicInput
+                   [matAutocomplete]="auto"
+                   [matChipInputFor]="chipGrid"
+                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                   [matChipInputAddOnBlur]="true"
+                   (matChipInputTokenEnd)="handleAddTimeOfDay($event)">
+            <mat-autocomplete #auto="matAutocomplete" (optionSelected)="handleOptionSelected($event)">
+              @for (option of filteredOptions(); track option) {
+                <mat-option [value]="option">{{ option }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-chip-grid>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <mat-progress-bar [style.opacity]="isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col text-center actions">
+        <button mat-flat-button
+                color="primary"
+                [disabled]="taskForm.disabled || taskForm.invalid || !isOnline() || !isNothingChanged()"
+                (click)="saveTask()">{{ !editedTask() ? 'Create' : 'Save' }}</button>
+          @if (editedTask()) {
+            <button mat-stroked-button
+              color="primary"
+              [disabled]="taskForm.disabled || !isOnline()"
+              (click)="setGettingOfTaskById('')">New</button>
+            <button mat-stroked-button
+              color="warn"
+              [disabled]="taskForm.disabled || !isOnline()"
+              (click)="deleteTask()">Delete</button>
+          }
+      </div>
+    </div>
+  </div>
+</div>

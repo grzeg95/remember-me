@@ -1,51 +1,49 @@
-import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
-import {
-  AfterViewChecked,
-  Component,
-  ElementRef,
-  HostListener,
-  OnDestroy,
-  OnInit,
-  Renderer2,
-  ViewChild
-} from '@angular/core';
+import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
+import {NgTemplateOutlet} from '@angular/common';
+import {AfterViewChecked, Component, ElementRef, HostListener, Renderer2, signal, ViewChild} from '@angular/core';
+import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatTableModule} from '@angular/material/table';
 import {ActivatedRoute, Router} from '@angular/router';
+import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
-import {AuthService} from 'auth';
-import {catchError, NEVER, Subscription} from 'rxjs';
+import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from 'services';
 import {RouterDict} from '../../../../app.constants';
-import {Round} from '../../../models';
+import {Round} from '../models';
 import {RoundsService} from '../rounds.service';
 
 @Component({
   selector: 'app-rounds-list',
+  standalone: true,
   templateUrl: './rounds-list.component.html',
-  styleUrls: ['./rounds-list.component.scss']
+  imports: [
+    MatProgressBarModule,
+    MatTableModule,
+    CdkDropList,
+    FontAwesomeModule,
+    MatButtonModule,
+    CdkDrag,
+    MatProgressSpinnerModule,
+    NgTemplateOutlet
+  ],
+  styleUrl: './rounds-list.component.scss'
 })
-export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class RoundsListComponent implements AfterViewChecked {
 
   displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
   faEdit = faEdit;
-  @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper: ElementRef;
+  @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper!: ElementRef;
 
-  roundsListSub: Subscription;
-  roundsList: Round[];
-  sortedRoundList: Round[];
-
-  roundsOrderSub: Subscription;
-  roundsOrder: string[];
-
-  isOnlineSub: Subscription;
-  isOnline: boolean;
-
-  setRoundsOrderIsPending = false;
-  roundsListFirstLoading$ = this.roundsService.roundsListFirstLoading$;
-
-  selectedRound: Round;
-  selectedRoundSub: Subscription;
+  isOnline = this.connectionsService.isOnline;
+  isRoundsOrderUpdating = signal<boolean>(false);
+  roundsListFirstLoading = this.roundsService.roundsListFirstLoading;
+  selectedRound = this.roundsService.selectedRound;
+  roundsList = this.roundsService.roundsList;
+  roundsOrder = this.roundsService.roundsOrder;
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -59,43 +57,8 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private renderer: Renderer2,
-    private authService: AuthService,
     private connectionsService: ConnectionService
   ) {
-  }
-
-  ngOnInit(): void {
-    this.roundsService.runRoundsList();
-    this.roundsListSub = this.roundsService.roundsList$.subscribe((roundsList) => {
-      this.roundsList = roundsList;
-      this.sortRoundList();
-    });
-    this.roundsOrderSub = this.authService.user$.subscribe((user) => {
-      if (user) {
-        this.roundsOrder = user.rounds;
-        this.sortRoundList();
-      }
-    });
-    this.isOnlineSub = this.connectionsService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
-    this.selectedRoundSub = this.roundsService.selectedRound$.subscribe((selectedRound) => this.selectedRound = selectedRound);
-  }
-
-  ngOnDestroy(): void {
-    this.roundsListSub.unsubscribe();
-    this.roundsOrderSub.unsubscribe();
-    this.isOnlineSub.unsubscribe();
-    this.selectedRoundSub.unsubscribe();
-  }
-
-  sortRoundList(): void {
-
-    const roundsMap: { [key in string]: Round } = {};
-
-    for (const round of this.roundsList || []) {
-      roundsMap[round.id] = round;
-    }
-
-    this.sortedRoundList = (this.roundsOrder || []).filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
   }
 
   addRound(): void {
@@ -116,23 +79,22 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
       return;
     }
 
-    this.setRoundsOrderIsPending = true;
-    const roundsOrder = this.roundsOrder;
+    this.isRoundsOrderUpdating.set(true);
+    const roundsOrder = this.roundsOrder();
     const moveBy = event.currentIndex - event.previousIndex;
     const roundId = roundsOrder[event.previousIndex];
 
     moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
-    this.sortRoundList();
+    this.roundsOrder.set([...roundsOrder]);
 
     this.roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
-      this.setRoundsOrderIsPending = false;
+      this.isRoundsOrderUpdating.set(false);
       this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
-      this.sortRoundList();
-
+      this.roundsOrder.set([...roundsOrder]);
       return NEVER;
     })).subscribe((success) => {
-      this.setRoundsOrderIsPending = false;
+      this.isRoundsOrderUpdating.set(false);
       this.snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }
@@ -140,14 +102,16 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
   applyCellsWidths(): void {
     if (this.roundListTableWrapper) {
 
-      const elements = Array.from(this.roundListTableWrapper.nativeElement.children);
+      const elements: HTMLElement[] = Array.from(this.roundListTableWrapper.nativeElement.children);
       const table = elements.find((e: HTMLElement) => e.classList.contains('rounds-list')) as HTMLTableElement;
 
       if (table) {
         for (const row of Array.from(table.rows) as HTMLTableRowElement[]) {
           for (let i = 0; i < row.cells.length - 1; ++i) {
             const cell = row.cells.item(i);
-            this.renderer.setStyle(cell, 'width', `${cell.offsetWidth}px`);
+            if (cell) {
+              this.renderer.setStyle(cell, 'width', `${cell.offsetWidth}px`);
+            }
           }
         }
       }
@@ -156,5 +120,9 @@ export class RoundsListComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   ngAfterViewChecked(): void {
     this.applyCellsWidths();
+  }
+
+  trackRoundList(index: number, item: Round) {
+    return item.id;
   }
 }

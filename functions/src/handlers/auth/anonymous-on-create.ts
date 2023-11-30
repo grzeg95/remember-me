@@ -7,6 +7,8 @@ import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
 import {createSampleUserData} from './user-before-create';
 
+/* eslint-disable @typescript-eslint/no-var-requires*/
+
 const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;

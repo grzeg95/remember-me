@@ -1,15 +1,13 @@
 import {getFirestore} from 'firebase-admin/firestore';
+import {CallableRequest} from 'firebase-functions/v2/https';
 import {
-  Context,
   decryptRound,
   encryptRound,
-  FunctionResultPromise,
   getCryptoKey,
   getUserDocSnap,
   testRequirement,
   TransactionWrite
 } from '../../tools';
-
 import '../../tools/global.prototype';
 
 const app = getFirestore();
@@ -17,18 +15,18 @@ const app = getFirestore();
 /**
  * Set times of day order
  * @function handler
- * @param context Context
+ * @param {CallableRequest} request
  * @return {Promise<Object.<string, string>>}
  **/
-export const handler = async (context: Context): FunctionResultPromise => {
+export const handler = async (request: CallableRequest) => {
 
-  const auth = context.auth;
-  const data = context.data;
+  const auth = request.auth;
+  const data = request.data;
 
   // without app check
   // not logged in
   // email not verified, not for anonymous
-  testRequirement(!context.app || !auth || (!auth?.token.email_verified &&
+  testRequirement(!auth || (!auth?.token.email_verified &&
     auth?.token.provider_id !== 'anonymous' &&
     !auth?.token.isAnonymous) || !auth?.token.secretKey, {code: 'permission-denied'});
 
@@ -52,7 +50,7 @@ export const handler = async (context: Context): FunctionResultPromise => {
   // data.moveBy is integer without 0
   testRequirement(!Number.isInteger(data.moveBy) || data.moveBy === 0);
 
-  const cryptoKey = await getCryptoKey(context.auth?.token.secretKey);
+  const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
   return app.runTransaction(async (transaction) => {
 
@@ -91,9 +89,6 @@ export const handler = async (context: Context): FunctionResultPromise => {
 
     return transactionWrite.execute();
   }).then(() => ({
-    code: 200,
-    body: {
-      details: 'Order has been updated 🙃'
-    }
+    details: 'Order has been updated 🙃'
   }));
 };

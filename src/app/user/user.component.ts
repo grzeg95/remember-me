@@ -1,17 +1,14 @@
 import {Component} from '@angular/core';
-import {AuthService} from 'auth';
+import {RouterOutlet} from '@angular/router';
 
 @Component({
   selector: 'app-user',
-  templateUrl: './user.component.html',
-  styleUrls: ['./user.component.scss']
+  standalone: true,
+  imports: [RouterOutlet],
+  templateUrl: './user.component.html'
 })
 export class UserComponent {
 
-  user$ = this.authService.user$;
-
-  constructor(
-    private authService: AuthService
-  ) {
+  constructor() {
   }
 }

@@ -5,31 +5,33 @@
         <mat-form-field floatLabel="always">
           <mat-label>Round name</mat-label>
           <input autocomplete="off" matInput formControlName="name">
-          <mat-error *ngIf="!roundForm.disabled && !name.valid && (name.dirty || name.touched)">Enter name from 1 to 256 characters</mat-error>
+          @if (!roundForm.disabled && !name?.valid && (name?.dirty || name?.touched)) {
+            <mat-error>Enter name from 1 to 256 characters</mat-error>
+          }
         </mat-form-field>
       </div>
     </div>
     <div class="row">
       <div class="col">
-        <mat-progress-bar [style.opacity]="savingInProgress || deletingInProgress ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+        <mat-progress-bar [style.opacity]="isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
       </div>
     </div>
     <div class="row">
       <div class="col text-center actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="roundForm.disabled || roundForm.invalid || !isOnline || nothingChanged()"
-                (click)="saveRound()">{{ idIsNull() ? 'Create' : 'Save' }}</button>
-        <button *ngIf="!idIsNull()"
-                mat-stroked-button
-                color="primary"
-                [disabled]="roundForm.disabled || !isOnline"
-                (click)="deepResetForm()">New</button>
-        <button *ngIf="!idIsNull()"
-                mat-stroked-button
-                color="warn"
-                [disabled]="roundForm.disabled || !isOnline"
-                (click)="deleteRound()">Delete</button>
+                [disabled]="roundForm.disabled || roundForm.invalid || !isOnline() || !isNothingChanged()"
+                (click)="saveRound()">{{ !editedRound() ? 'Create' : 'Save' }}</button>
+        @if (editedRound()) {
+          <button mat-stroked-button
+                  color="primary"
+                  [disabled]="roundForm.disabled || !isOnline()"
+                  (click)="setGettingOfRoundById('')">New</button>
+          <button mat-stroked-button
+                  color="warn"
+                  [disabled]="roundForm.disabled || !isOnline()"
+                  (click)="deleteRound()">Delete</button>
+        }
       </div>
     </div>
   </div>

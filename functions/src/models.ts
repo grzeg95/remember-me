@@ -15,6 +15,7 @@ export interface Round {
 }
 
 export interface TodayTask {
+  timesOfDayEncryptedMap?: any;
   description: string;
   timesOfDay: { [key in string]: boolean };
 }

@@ -1,0 +1,74 @@
+<div class="container">
+
+  <div class="col" [ngClass]="{'disabled': isLoading()}">
+
+    @if (!selectedRound() || (selectedRound() && selectedRound()?.timesOfDay && selectedRound()?.timesOfDay?.length === 0)) {
+      <ng-container *ngTemplateOutlet="waitForItems"></ng-container>
+    }
+    @else {
+      <ng-container *ngTemplateOutlet="showItems"></ng-container>
+    }
+
+    <ng-template #waitForItems>
+
+      @if (!selectedRound() || !selectedRound()?.timesOfDay && isOnline()) {
+        <div class="row message">
+          <div class="col">
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          </div>
+        </div>
+      }
+      @else {
+        <ng-container *ngTemplateOutlet="onOneExists"></ng-container>
+      }
+
+      <ng-template #onOneExists>
+
+        @if (isOnline()) {
+          <div class="row message">
+            <div class="col">
+              <span>Add some tasks and change the order of the times of day</span>
+            </div>
+            <div class="col">
+              <div class="add-task">
+                <button mat-flat-button
+                        color="primary"
+                        (click)="addNewTask()">Add new</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (!isOnline()) {
+          <div class="row message">
+            <div class="col">
+              <span>You are offline. Waiting for connection...</span>
+            </div>
+          </div>
+        }
+
+      </ng-template>
+    </ng-template>
+
+    <ng-template #showItems>
+      <div class="row">
+        <div class="drag-container">
+          <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
+          <div [cdkDropListDisabled]="!isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
+            @for (item of selectedRound()?.timesOfDay; let i = $index; track item) {
+              <div cdkDrag class="drag-item mat-cell" [class.disabled]="!isOnline()">
+                <span class="drag-span">{{ item }}</span>
+                <fa-icon class="drag-icon" [icon]="faGripLines"></fa-icon>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
+
+@if (isLoading()) {
+  <mat-spinner [diameter]="50" [strokeWidth]="5"></mat-spinner>
+}

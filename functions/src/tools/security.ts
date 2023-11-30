@@ -1,7 +1,7 @@
 import {Buffer} from 'buffer';
 import {Round, Task, Today, TodayTask} from '../models';
 
-const crypto = require('crypto');
+import crypto = require('crypto');
 
 export type BasicEncryptedValue = {value: string};
 

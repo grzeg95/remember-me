@@ -5,6 +5,8 @@ import {
 } from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
 
+/* eslint-disable @typescript-eslint/no-var-requires*/
+
 const crc32c = require('fast-crc32c');
 
 export const handler = async (event: AuthBlockingEvent): Promise<BeforeSignInResponse> => {
@@ -15,12 +17,11 @@ export const handler = async (event: AuthBlockingEvent): Promise<BeforeSignInRes
 
   const customClaims = event.data.customClaims || {};
 
-  const encryptedSymmetricKey = customClaims?.encryptedSymmetricKey as string;
+  const encryptedSymmetricKey = customClaims?.encryptedSymmetricKey;
 
   if (encryptedSymmetricKey && snap.exists && typeof snap.data()?.hasEncryptedSecretKey === 'boolean' && snap.data()?.hasEncryptedSecretKey) {
 
-    // @ts-ignore
-    const ciphertext = new Uint8Array((encryptedSymmetricKey).match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+    const ciphertext = new Uint8Array(encryptedSymmetricKey.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16)));
     const ciphertextCrc32c = crc32c.calculate(ciphertext);
 
     const [decryptResponse] = await keyManagementServiceClient.asymmetricDecrypt({

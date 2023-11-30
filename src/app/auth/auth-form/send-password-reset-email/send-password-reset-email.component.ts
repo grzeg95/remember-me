@@ -1,15 +1,19 @@
-import {Component, EventEmitter, OnDestroy, OnInit, Output} from '@angular/core';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
+import {Component, EventEmitter, Output} from '@angular/core';
+import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {AuthService} from 'auth';
-import {catchError, NEVER, Subscription} from 'rxjs';
+import {catchError, NEVER} from 'rxjs';
 import {ConnectionService} from 'services';
+import {AuthService} from '../../auth.service';
 
 @Component({
   selector: 'app-send-password-reset-email',
+  standalone: true,
+  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule],
   templateUrl: './send-password-reset-email.component.html'
 })
-export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
+export class SendPasswordResetEmailComponent {
 
   recoveryForm: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email])
@@ -17,8 +21,7 @@ export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
 
   email = this.recoveryForm.get('email');
 
-  isOnlineSub: Subscription;
-  isOnline: boolean;
+  isOnline = this.connectionService.isOnline;
 
   @Output() doneEmitter = new EventEmitter<void>();
 
@@ -29,18 +32,10 @@ export class SendPasswordResetEmailComponent implements OnInit, OnDestroy {
   ) {
   }
 
-  ngOnInit(): void {
-    this.isOnlineSub = this.connectionService.isOnline$.subscribe((isOnline) => this.isOnline = isOnline);
-  }
-
-  ngOnDestroy(): void {
-    this.isOnlineSub.unsubscribe();
-  }
-
   sendPasswordResetEmail(): void {
     this.recoveryForm.disable();
 
-    this.authService.sendPasswordResetEmail(this.email.value).pipe(catchError(() => {
+    this.authService.sendPasswordResetEmail(this.email?.value).pipe(catchError(() => {
       this.sendPasswordResetEmailProceed();
       return NEVER;
     })).subscribe(() => this.sendPasswordResetEmailProceed());

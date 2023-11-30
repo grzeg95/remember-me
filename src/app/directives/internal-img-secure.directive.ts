@@ -1,7 +1,8 @@
 import {Directive, ElementRef, Input, Renderer2} from '@angular/core';
 
 @Directive({
-  selector: '[internalImgSecure]'
+  selector: '[internalImgSecure]',
+  standalone: true
 })
 export class InternalImgSecureDirective {
 

@@ -1,5 +1,9 @@
 @use 'sass:math';
 
+:host {
+  display: block;
+}
+
 .title {
   max-width: 600px;
   margin: auto;

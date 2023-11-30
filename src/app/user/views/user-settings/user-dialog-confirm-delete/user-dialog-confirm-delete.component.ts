@@ -1,12 +1,14 @@
 import {Component} from '@angular/core';
-import {MatDialogRef} from '@angular/material/dialog';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialogActions, MatDialogRef, MatDialogTitle} from '@angular/material/dialog';
 
 @Component({
   selector: 'app-user-dialog-confirm-delete',
-  templateUrl: 'user-dialog-confirm-delete.component.html'
+  standalone: true,
+  imports: [MatDialogActions, MatButtonModule, MatDialogTitle],
+  templateUrl: './user-dialog-confirm-delete.component.html'
 })
 export class UserDialogConfirmDeleteComponent {
-
   constructor(public dialogRef: MatDialogRef<UserDialogConfirmDeleteComponent>) {
   }
 }

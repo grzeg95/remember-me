@@ -1,177 +1,355 @@
-import {Injectable} from '@angular/core';
-import {limit} from '@angular/fire/firestore';
+import {Location} from '@angular/common';
+import {computed, effect, Injectable, signal} from '@angular/core';
+import {limit, QueryDocumentSnapshot} from '@angular/fire/firestore';
 import {Router} from '@angular/router';
 import {AngularFirebaseFirestoreService, AngularFirebaseFunctionsService} from 'angular-firebase';
-import {AuthService} from 'auth';
-import {BehaviorSubject, forkJoin, mergeMap, Observable, Subscription} from 'rxjs';
-import {filter, take} from 'rxjs/operators';
-import {
-  BasicEncryptedValue,
-  ConnectionService,
-  decryptRound,
-  decryptTask,
-  decryptToday,
-  decryptTodayTask
-} from 'services';
+import {AuthService, User} from 'auth';
+import {catchError, EMPTY, forkJoin, map, Observable, of, Subscription, switchMap, throwError,} from 'rxjs';
+import {filter} from 'rxjs/operators';
+import {BasicEncryptedValue} from 'utils';
 import {RouterDict} from '../../../app.constants';
-import {Day, EncryptedTodayTask, HTTPSuccess, Round, Task, TasksListItem, TodayItem} from '../../models';
+import {Day, EncryptedTodayTask, HTTPSuccess, Round, TaskForm, TasksListItem, TodayItem} from './models';
+import {decryptRound} from './utils';
+import {decryptTask, decryptToday, decryptTodayTask} from './utils/crypto';
 
 @Injectable()
 export class RoundsService {
 
-  roundsList$ = new BehaviorSubject<Round[]>(null);
-  roundsOrder$ = new BehaviorSubject<string[]>(null);
-  editedRound$ = new BehaviorSubject<Round>(null);
-  selectedRound$ = new BehaviorSubject<Round>(null);
+  //
+  // Rounds
+  //
 
-  roundsOrderFirstLoading$ = new BehaviorSubject<boolean>(true);
-  tasksListViewFirstLoading$ = new BehaviorSubject<boolean>(true);
-  todayName$ = new BehaviorSubject<string>('');
-  todayFullName$ = new BehaviorSubject<string>('');
-  now$ = new BehaviorSubject<Date>(new Date());
-  tasks$ = new BehaviorSubject<TasksListItem[]>(null);
+  private _roundsList = signal<Round[]>([]);
+  roundsOrder = signal<string[]>([]);
+  roundsList = computed<Round[]>(() => {
 
-  roundsListFirstLoading$ = new BehaviorSubject<boolean>(true);
+    const roundsOrder = this.roundsOrder();
+    const roundsList = this._roundsList();
 
-  todayItems$ = new BehaviorSubject<{[p: string]: TodayItem[]}>(null);
-  todayItemsView$ = new BehaviorSubject<{timeOfDay: string, tasks: TodayItem[]}[]>(null);
-  todayItemsViewFirstLoading$ = new BehaviorSubject<boolean>(true);
+    const roundsMap: { [key in string]: Round } = {};
 
-  nowSub: Subscription;
-  userSub: Subscription;
-  roundsListFirstLoadingSub: Subscription;
+    for (const round of roundsList) {
+      roundsMap[round.id as string] = round;
+    }
 
-  roundsListSub: Subscription;
-  todayDocsSub: Subscription;
-  todaySub: Subscription;
-  tasksListSub: Subscription;
+    return roundsOrder.filter((roundId) => roundsMap[roundId]).map((roundId) => roundsMap[roundId]);
+  });
+  roundsOrderFirstLoading = signal<boolean>(true);
+  roundsListFirstLoading = signal<boolean>(true);
+  selectedRound = signal<Round | undefined>(undefined);
+  lastSelectedRound = signal<Round | undefined>(undefined);
+  editedRound = signal<Round | undefined>(undefined);
+  selectedRoundOnSnapSub: Subscription | undefined;
+  roundsListSub: Subscription | undefined;
+  roundsOrderSub: Subscription | undefined;
 
-  lastTodayName = '.';
+  //
+  // Today items
+  //
+
+  todayItemsFirstLoading = signal<boolean>(true);
+  private _todayItems = signal<{[p: string]: TodayItem[]}>({});
+  todayItems = computed(() => {
+
+    const round = this.selectedRound();
+    const todayItems = this._todayItems();
+
+    return round?.timesOfDay.filter((timeOfDay) => todayItems[timeOfDay]).map((timeOfDay) => ({
+      timeOfDay,
+      tasks: todayItems[timeOfDay]
+    })) || [];
+  });
+  todayName = signal<{full: string, short: Day} | undefined>(undefined);
+  lastTodayName = signal<{full: string, short: string} | undefined>(undefined);
+  dayToSetInEditor = signal<Day | undefined>(undefined);
+  now = signal<Date>(new Date());
+  todayTasksSub: Subscription | undefined;
+  todayNamesDocsSub: Subscription | undefined;
+
+  //
+  // Tasks list
+  //
+
+  tasksList = signal<TasksListItem[] | null>(null);
+  tasksListFirstLoading = signal<boolean>(true);
+  tasksListSub: Subscription | undefined;
+
+  //
+  // Task edit
+  //
+  dayToApply = signal<Day | null>(null);
 
   constructor(
-    private angularFirebaseFunctionsService: AngularFirebaseFunctionsService,
     private authService: AuthService,
+    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
+    private angularFirebaseFunctionsService: AngularFirebaseFunctionsService,
     private router: Router,
-    private connectionService: ConnectionService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService
+    private location: Location
   ) {
+    effect(() => {
+      const now = this.now();
+
+      this.todayName.set({
+        full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()],
+        short: (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as Day[])[now.getDay()]
+      });
+    }, {allowSignalWrites: true});
   }
 
   init() {
-
-    this.userSub = this.authService.user$.subscribe((user) => {
-
-      // after log out user will be null
-      if (user) {
-        this.roundsOrder$.next(user.rounds);
-        this.roundsOrderFirstLoading$.next(false);
-        if (this.selectedRound$.value) {
-          this.selectRound(this.selectedRound$.value.id);
-        }
-      }
-    });
-
-    this.nowSub = this.now$.subscribe((now) => {
-      this.todayFullName$.next(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]);
-      this.todayName$.next(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]);
-    });
+    this.runGettingOfRoundsOrder();
+    this.runGettingOfRoundsList();
   }
 
-  runRoundsList(): void {
+  private runGettingOfRoundsOrder() {
 
-    const user = this.authService.user$.value;
+    if (this.roundsOrderSub && !this.roundsOrderSub.closed) {
+      return;
+    }
+
+    this.roundsOrderSub = this.authService.user$.pipe(
+      filter((user): user is User => !!user)
+    ).subscribe((user) => {
+      this.roundsOrder.set(user.rounds);
+      this.roundsOrderFirstLoading.set(false);
+    });
+
+    this.authService.onSnapshotSubs.add(this.roundsOrderSub);
+  }
+
+  private runGettingOfRoundsList(): void {
 
     if (this.roundsListSub && !this.roundsListSub.closed) {
       return;
     }
 
-    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds`, limit(5)).subscribe((snap) => {
-      if (!snap.docs.length) {
-        this.roundsList$.next([]);
-        this.roundsListFirstLoading$.next(false);
-        return
-      }
+    const user = this.authService.user$.value as User;
 
-      // decrypt
-      const roundsDecrypt$: Observable<Round>[] = [];
+    this.roundsListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds`, limit(5)).pipe(
+      switchMap((querySnap) => {
 
-      for (const doc of snap.docs) {
-        roundsDecrypt$.push(decryptRound(doc.data(), user.cryptoKey));
-      }
-
-      forkJoin(roundsDecrypt$).subscribe((decryptedRoundList) => {
-
-        for (const [i, doc] of snap.docs.entries()) {
-          decryptedRoundList[i].id = doc.id;
+        if (!querySnap.docs.length) {
+          return Promise.resolve<Round[]>([]);
         }
 
-        this.roundsList$.next(decryptedRoundList);
+        // decrypt
+        const roundsDecryptPromise: Promise<Round>[] = [];
 
-        if (this.selectedRound$.value) {
-          this.selectRound(this.selectedRound$.value.id);
+        for (const doc of querySnap.docs) {
+          roundsDecryptPromise.push(decryptRound(doc.data(), user.cryptoKey));
         }
 
-        this.roundsListFirstLoading$.next(false);
-      });
+        return Promise.all(roundsDecryptPromise).then((decryptedRoundList) => {
+          for (const [i, doc] of querySnap.docs.entries()) {
+            decryptedRoundList[i].id = doc.id;
+          }
+
+          return decryptedRoundList;
+        });
+      })
+    ).subscribe((roundsList) => {
+      this._roundsList.set(roundsList);
+      this.roundsListFirstLoading.set(false);
     });
 
-    this.authService.onSnapshotSubs.push(this.roundsListSub);
+    this.authService.onSnapshotSubs.add(this.roundsListSub);
   }
 
-  runToday(round: Round): void {
+  setGettingOfRoundById(id: string) {
 
-    if (this.lastTodayName !== this.todayName$.getValue() && this.todaySub && !this.todaySub.closed) {
-      this.unsubscribeTodaySub();
-    }
-
-    this.lastTodayName = this.todayName$.getValue();
-    this.now$.next(new Date());
-
-    if ((this.todaySub && !this.todaySub.closed) || !round) {
+    if (this.selectedRound()?.id === id) {
+      this.lastSelectedRound.set(this.selectedRound());
       return;
     }
 
-    this.unsubscribeTodayDocsSub();
+    this.selectedRound.set(undefined);
+    this.lastSelectedRound.set(undefined);
 
-    const user = this.authService.user$.value;
+    if (!id) {
+      this.clearCacheRound();
+      this.selectedRound.set(undefined);
+      this.lastSelectedRound.set(undefined);
+      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]);
+      return;
+    }
 
-    this.todayDocsSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`/users/${user.firebaseUser.uid}/rounds/${round.id}/today`).subscribe((querySnap) => {
+    if (this.selectedRound()?.id !== id) {
+
+      this.clearCacheRound();
+
+      if (this.selectedRoundOnSnapSub && !this.selectedRoundOnSnapSub.closed) {
+        this.selectedRoundOnSnapSub.unsubscribe();
+      }
+    }
+
+    if (this.selectedRoundOnSnapSub && !this.selectedRoundOnSnapSub.closed) {
+      this.selectedRoundOnSnapSub.unsubscribe();
+    }
+
+    const user = this.authService.user$.value as User;
+
+    this.selectedRoundOnSnapSub = this.angularFirebaseFirestoreService.docOnSnapshot<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds/${id}`).pipe(
+      switchMap((docSnap) => {
+
+        if (!docSnap.exists()) {
+          throw throwError(() => {
+          });
+        }
+
+        return decryptRound(docSnap.data(), user.cryptoKey).then((round) => {
+          round.id = docSnap.id;
+          return round;
+        });
+      }),
+      catchError(() => {
+        this.setGettingOfRoundById('');
+        return EMPTY;
+      }),
+    ).subscribe((round) => {
+
+      this.lastSelectedRound.set(this.selectedRound());
+      this.selectedRound.set(round);
+
+      if (round.id === 'null') {
+        this.location.go(this.router.createUrlTree(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]).toString());
+      }
+    });
+
+    this.authService.onSnapshotSubs.add(this.selectedRoundOnSnapSub);
+  }
+
+  saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
+    return this.angularFirebaseFunctionsService.httpsCallable<{roundId: string, name: string}, {
+      roundId: string,
+      details: string,
+      created: boolean
+    }>('roundsSaveRoundUrl')({
+      roundId,
+      name
+    });
+  }
+
+  deleteRound(id: string): Observable<HTTPSuccess> {
+    return this.angularFirebaseFunctionsService.httpsCallable<string, HTTPSuccess>('roundsDeleteRoundUrl')(id);
+  }
+
+  setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<HTTPSuccess> {
+    return this.angularFirebaseFunctionsService.httpsCallable<{
+      moveBy: number,
+      roundId: string
+    }, HTTPSuccess>('roundsSetRoundsOrderUrl')(data);
+  }
+
+  clearCacheRounds() {
+
+    //
+    // Rounds
+    //
+
+    this._roundsList.set([]);
+    this.roundsOrder.set([]);
+    this.roundsOrderFirstLoading.set(true);
+    this.roundsListFirstLoading.set(true);
+    this.selectedRound.set(undefined);
+    this.lastSelectedRound.set(undefined);
+    this.editedRound.set(undefined);
+
+    if (this.selectedRoundOnSnapSub && !this.selectedRoundOnSnapSub.closed) {
+      this.selectedRoundOnSnapSub.unsubscribe();
+    }
+
+    if (this.roundsListSub && !this.roundsListSub.closed) {
+      this.roundsListSub.unsubscribe();
+    }
+
+    if (this.roundsOrderSub && !this.roundsOrderSub.closed) {
+      this.roundsOrderSub.unsubscribe();
+    }
+  }
+
+  clearCacheRound() {
+
+    //
+    // Today items
+    //
+
+    this.todayItemsFirstLoading.set(true);
+    this._todayItems.set({});
+    this.todayName.set(undefined);
+    this.lastTodayName.set(undefined);
+    this.dayToSetInEditor.set(undefined);
+    this.now.set(new Date());
+
+    if (this.todayTasksSub && !this.todayTasksSub.closed) {
+      this.todayTasksSub.unsubscribe();
+    }
+
+    if (this.todayNamesDocsSub && !this.todayNamesDocsSub.closed) {
+      this.todayNamesDocsSub.unsubscribe();
+    }
+
+    //
+    // Tasks list
+    //
+
+    this.tasksList.set(null);
+    this.tasksListFirstLoading.set(true);
+
+    if (this.tasksListSub && !this.tasksListSub.closed) {
+      this.tasksListSub.unsubscribe();
+    }
+  }
+
+  setGettingOfTodayTasks(round: Round): void {
+
+    if (
+      this.lastTodayName()?.full !== this.todayName()?.full ||
+      this.lastTodayName()?.short !== this.todayName()?.short
+    ) {
+      this.todayTasksSub?.unsubscribe();
+      this.todayNamesDocsSub?.unsubscribe();
+    }
+
+    this.lastTodayName.set(this.todayName());
+    this.now.set(new Date());
+
+    const user = this.authService.user$.value as User;
+
+    this.todayNamesDocsSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`/users/${user.firebaseUser.uid}/rounds/${round.id}/today`).subscribe((querySnap) => {
 
       if (!querySnap.docs.length) {
-        this.todayItems$.next({});
+        this._todayItems.set({});
+        this.todayItemsFirstLoading.set(false);
         return;
       }
 
       forkJoin(
         querySnap.docs.map((queryDocSnap) => decryptToday(queryDocSnap.data(), user.cryptoKey))
       ).subscribe((todays) => {
-        const todayName = this.todayName$.value;
+        const todayName = this.todayName();
 
-        let today;
+        let today: QueryDocumentSnapshot<BasicEncryptedValue> | undefined = undefined;
         for (const [i, doc] of querySnap.docs.entries()) {
           const name = todays[i].name;
 
-          if (name === todayName) {
+          if (name === todayName?.short) {
             today = doc;
             break;
           }
         }
 
-        if (!today && this.connectionService.isOnline$.value) {
-          this.todayItems$.next({});
+        if (!today) {
+          this._todayItems.set({});
+          this.todayItemsFirstLoading.set(false);
           return;
         }
 
-        if (!today && !this.connectionService.isOnline$.value) {
-          return;
-        }
+        this.todayTasksSub?.unsubscribe();
 
-        this.unsubscribeTodaySub();
-
-        this.todaySub = this.angularFirebaseFirestoreService.collectionOnSnapshot<EncryptedTodayTask>(`/users/${user.firebaseUser.uid}/rounds/${round.id}/today/${today.id}/task`, limit(25)).subscribe((snap) => {
+        this.todayTasksSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<EncryptedTodayTask>(`/users/${user.firebaseUser.uid}/rounds/${round.id}/today/${today.id}/task`, limit(25)).subscribe((querySnap) => {
 
           const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
-          const todayTaskArrPromise = snap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
+          const todayTaskArrPromise = querySnap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data(), user.cryptoKey));
 
           forkJoin(todayTaskArrPromise).subscribe((todayTaskArr) => {
 
@@ -184,249 +362,90 @@ export class RoundsService {
                 todayTasksByTimeOfDay[timeOfDay].push({
                   description: todayTask.description,
                   done: todayTask.timesOfDay[timeOfDay],
-                  id: snap.docs[i].id,
+                  id: querySnap.docs[i].id,
                   disabled: false,
-                  dayOfTheWeekId: today.id,
+                  dayOfTheWeekId: today!.id,
                   timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
                 });
               });
             }
 
-            if (!this.connectionService.isOnline$.value) {
-              return;
-            }
-
             if (todayTasksByTimeOfDay) {
-              this.todayItems$.next(todayTasksByTimeOfDay);
+              this._todayItems.set(todayTasksByTimeOfDay);
             }
 
+            this.todayItemsFirstLoading.set(false);
           });
         });
 
-        this.authService.onSnapshotSubs.push(this.todaySub);
+        this.authService.onSnapshotSubs.add(this.todayTasksSub);
       });
 
     });
 
-    this.authService.onSnapshotSubs.push(this.todayDocsSub);
+    this.authService.onSnapshotSubs.add(this.todayNamesDocsSub);
   }
 
-  todayItemsViewUpdate(round: Round): void {
-
-    if (!round) {
-      return;
-    }
-
-    const order = round.timesOfDay;
-    const today = this.todayItems$.getValue();
-
-    if (!today) {
-      return;
-    }
-
-    this.todayItemsView$.next(
-      order.filter((timeOfDay) => today[timeOfDay]).map((timeOfDay) => ({
-        timeOfDay,
-        tasks: today[timeOfDay]
-      }))
-    );
-
-    this.todayItemsViewFirstLoading$.next(false);
+  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {
+    return this.angularFirebaseFunctionsService.httpsCallable<{
+      timeOfDay: string,
+      moveBy: number,
+      roundId: string
+    }, HTTPSuccess>('roundsSetTimesOfDayOrderUrl')(data);
   }
 
-  runTasksList(round: Round): void {
+  setGettingOfTasksList(round: Round): void {
 
     if ((this.tasksListSub && !this.tasksListSub.closed) || !round) {
       return;
     }
 
-    const user = this.authService.user$.value;
+    const user = this.authService.user$.value as User;
 
-    this.tasksListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(
-      `users/${user.firebaseUser.uid}/rounds/${round.id}/task`,
-      limit(25)
-    ).subscribe((snap) => {
+    this.tasksListSub = this.angularFirebaseFirestoreService.collectionOnSnapshot<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds/${round.id}/task`, limit(25)).pipe(
+      switchMap((querySnap) => {
 
-      if (!snap.docs.length) {
-        this.tasks$.next([]);
-        this.tasksListViewFirstLoading$.next(false);
-        return;
-      }
-
-      const taskArrPromise = snap.docs.map((encryptTask) => decryptTask(encryptTask.data(), user.cryptoKey));
-
-      forkJoin(taskArrPromise).subscribe((taskArr) => {
-        const tasks = taskArr.map((task, index) => {
-          return {
-            description: task.description,
-            timesOfDay: task.timesOfDay,
-            daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
-            id: snap.docs[index].id
-          } as TasksListItem;
-        });
-
-        if (!this.connectionService.isOnline$.value) {
-          return;
+        if (!querySnap.docs.length) {
+          return of([]);
         }
 
-        if (tasks) {
-          this.tasks$.next(tasks);
-        }
-        this.tasksListViewFirstLoading$.next(false);
-      });
+        return forkJoin(querySnap.docs.map((encryptTask) => decryptTask(encryptTask.data(), user.cryptoKey))).pipe(
+          map((tasks) => {
+            return tasks.map((task, index) => {
+              return {
+                description: task.description,
+                timesOfDay: task.timesOfDay,
+                daysOfTheWeek: task.daysOfTheWeek.length === 7 ? 'Every day' : task.daysOfTheWeek.join(', '),
+                id: querySnap.docs[index].id
+              } as TasksListItem;
+            });
+          })
+        );
+      })
+    ).subscribe((tasks) => {
+      this.tasksList.set(tasks);
+      this.tasksListFirstLoading.set(false);
     });
 
-    this.authService.onSnapshotSubs.push(this.tasksListSub);
+    this.authService.onSnapshotSubs.add(this.tasksListSub);
   }
 
-  selectRound(roundId: string): void {
-
-    if (this.roundsListFirstLoadingSub && !this.roundsListFirstLoadingSub.closed) {
-      this.roundsListFirstLoadingSub.unsubscribe();
-    }
-
-    this.roundsListFirstLoadingSub = this.roundsListFirstLoading$.pipe(
-      filter((first) => !first),
-      take(1)
-    ).subscribe(() => {
-      const roundsOrder = this.roundsOrder$.value;
-
-      for (const roundsOrderId of roundsOrder || []) {
-        if (roundsOrderId === roundId) {
-          const round = this.roundsList$.value.find((round) => round.id === roundId);
-          if (this.selectedRound$.value?.id !== round.id) {
-
-            this.unsubscribeTodayDocsSub();
-            this.unsubscribeTodaySub();
-            this.unsubscribeTasksListSub();
-
-            this.tasksListViewFirstLoading$.next(true);
-            this.todayItems$.next(null);
-            this.todayItemsViewFirstLoading$.next(true);
-            this.todayItemsView$.next(null);
-          }
-          this.selectedRound$.next(round);
-          return;
-        }
-      }
-
-      this.selectedRound$.next(null);
-      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList])
-    });
-  }
-
-  saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
-    return this.angularFirebaseFunctionsService.httpsOnRequest<{roundId: string, name: string}, {roundId: string, details: string, created: boolean}>('saveRoundUrl')({
-      roundId,
-      name
-    });
-  }
-
-  deleteRound(id: string): Observable<HTTPSuccess> {
-    return this.angularFirebaseFunctionsService.httpsOnRequest<string, HTTPSuccess>('deleteRoundUrl', 'text/plain')(id);
-  }
-
-  getRoundById(roundId: string): Observable<Round> {
-    const user = this.authService.user$.value;
-
-    return this.angularFirebaseFirestoreService.getDoc<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds/${roundId}`).pipe(mergeMap((snap) => {
-      if (snap.exists()) {
-        return decryptRound(snap.data(), user.cryptoKey);
-      }
-      return null;
-    }));
-  }
-
-  setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<{[key: string]: string}> {
-    return this.angularFirebaseFunctionsService.httpsOnRequest<{moveBy: number, roundId: string}, {[key: string]: string}>('setRoundsOrderUrl')(data);
-  }
-
-  getTaskById(id: string, roundId: string): Observable<Task | null> {
-
-    const user = this.authService.user$.value;
-
-    return this.angularFirebaseFirestoreService.getDoc<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds/${roundId}/task/${id}`).pipe(mergeMap((taskDocSnap) => {
-      const encryptedTask = taskDocSnap.data();
-
-      if (encryptedTask) {
-        return decryptTask(encryptedTask, user.cryptoKey);
-      }
-
-      return null;
-    }));
-  }
-
-  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {
-    return this.angularFirebaseFunctionsService.httpsOnRequest<{timeOfDay: string, moveBy: number, roundId: string}, HTTPSuccess>('setTimesOfDayOrderUrl')(data);
-  }
-
-  saveTask(data: {task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}): Observable<HTTPSuccess> {
-    return this.angularFirebaseFunctionsService.httpsOnRequest<{task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]}, taskId: string, roundId: string}, HTTPSuccess>('saveTaskUrl')(data);
+  saveTask(data: {
+    task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
+    taskId: string,
+    roundId: string
+  }): Observable<HTTPSuccess> {
+    return this.angularFirebaseFunctionsService.httpsCallable<{
+      task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
+      taskId: string,
+      roundId: string
+    }, HTTPSuccess>('roundsSaveTaskUrl')(data);
   }
 
   deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
-    return this.angularFirebaseFunctionsService.httpsOnRequest<{taskId: string, roundId: string}, HTTPSuccess>('deleteTaskUrl')(data);
-  }
-
-  clearCache() {
-
-    if (this.userSub && !this.userSub.closed) {
-      this.userSub.unsubscribe();
-    }
-
-    if (this.nowSub && !this.nowSub.closed) {
-      this.nowSub.unsubscribe();
-    }
-
-    if (this.roundsListFirstLoadingSub && !this.roundsListFirstLoadingSub.closed) {
-      this.roundsListFirstLoadingSub.unsubscribe();
-    }
-
-    this.unsubscribeRoundsListSub();
-    this.unsubscribeTodayDocsSub();
-    this.unsubscribeTodaySub();
-    this.unsubscribeTasksListSub()
-
-    this.roundsList$.next(null);
-    this.roundsOrder$.next(null);
-    this.editedRound$.next(null);
-    this.selectedRound$.next(null);
-
-    this.roundsOrderFirstLoading$.next(true);
-    this.tasksListViewFirstLoading$.next(true);
-    this.todayName$ = new BehaviorSubject<string>('');
-    this.todayFullName$ = new BehaviorSubject<string>('');
-    this.now$ = new BehaviorSubject<Date>(new Date());
-    this.tasks$.next(null);
-
-    this.roundsListFirstLoading$.next(true);
-
-    this.todayItems$.next(null);
-    this.todayItemsView$.next(null);
-    this.todayItemsViewFirstLoading$.next(true);
-  }
-
-  unsubscribeRoundsListSub(): void {
-    if (this.roundsListSub && !this.roundsListSub.closed) {
-      this.roundsListSub.unsubscribe();
-    }
-  }
-
-  unsubscribeTodayDocsSub(): void {
-    if (this.todayDocsSub && !this.todayDocsSub.closed) {
-      this.todayDocsSub.unsubscribe();
-    }
-  }
-
-  unsubscribeTodaySub(): void {
-    if (this.todaySub && !this.todaySub.closed) {
-      this.todaySub.unsubscribe();
-    }
-  }
-
-  unsubscribeTasksListSub(): void {
-    if (this.tasksListSub && !this.tasksListSub.closed) {
-      this.tasksListSub.unsubscribe();
-    }
+    return this.angularFirebaseFunctionsService.httpsCallable<{
+      taskId: string,
+      roundId: string
+    }, HTTPSuccess>('roundsDeleteTaskUrl')(data);
   }
 }

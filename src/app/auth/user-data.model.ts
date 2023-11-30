@@ -2,18 +2,18 @@ import {User as FirebaseUser} from 'firebase/auth';
 export {FirebaseUser};
 
 export interface User {
-  rounds?: string[];
-  photoURL: string;
+  rounds: string[];
+  photoURL: string | null;
   hasCustomPhoto: boolean;
-  cryptoKey?: CryptoKey;
+  cryptoKey: CryptoKey;
   providerId?: string;
   isAnonymous?: boolean;
-  firebaseUser: FirebaseUser
+  firebaseUser: FirebaseUser;
 }
 
 export interface EncryptedUser {
-  rounds: string;
-  hasEncryptedSecretKey: boolean;
+  rounds?: string;
+  hasEncryptedSecretKey?: boolean;
   photoURL?: string;
 }
 

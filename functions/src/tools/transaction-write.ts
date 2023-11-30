@@ -2,9 +2,12 @@ import {DocumentReference, Transaction} from 'firebase-admin/firestore';
 
 interface TransactionWriteListItem {
   docRef: DocumentReference,
-  data?: Object | Promise<Object>
+  data?: NonNullable<unknown> | Promise<NonNullable<unknown>>
 }
 
+/**
+ * @class TransactionWrite
+ */
 export class TransactionWrite {
 
   setList: TransactionWriteListItem[] = [];
@@ -12,36 +15,66 @@ export class TransactionWrite {
   updateList: TransactionWriteListItem[] = [];
   deleteList: TransactionWriteListItem[] = [];
 
+  /**
+   * Create TransactionWrite for specific Transaction
+   * */
   constructor(private transaction: Transaction) {
   }
 
-  set(docRef: DocumentReference, data: Object | Promise<Object>) {
+  /**
+   * Add set operation
+   * @param {DocumentReference} docRef
+   * @param {NonNullable<unknown> | Promise<NonNullable<unknown>>} data
+   * @return {void}
+   */
+  set(docRef: DocumentReference, data: NonNullable<unknown> | Promise<NonNullable<unknown>>) {
     this.setList.push({
       docRef,
       data
     });
   }
 
-  create(docRef: DocumentReference, data: Object | Promise<Object>) {
+  /**
+   * Add create operation
+   * @param {DocumentReference} docRef
+   * @param {NonNullable<unknown> | Promise<NonNullable<unknown>>} data
+   * @return {void}
+   */
+  create(docRef: DocumentReference, data: NonNullable<unknown> | Promise<NonNullable<unknown>>) {
     this.createList.push({
       docRef,
       data
     });
   }
 
-  update(docRef: DocumentReference, data: Object | Promise<Object>) {
+  /**
+   * Add update operation
+   * @param {DocumentReference} docRef
+   * @param {NonNullable<unknown> | Promise<NonNullable<unknown>>} data
+   * @return {void}
+   */
+  update(docRef: DocumentReference, data: NonNullable<unknown> | Promise<NonNullable<unknown>>) {
     this.updateList.push({
       docRef,
       data
     });
   }
 
+  /**
+   * Add delete operation
+   * @param {DocumentReference} docRef
+   * @return {void}
+   */
   delete(docRef: DocumentReference) {
     this.deleteList.push({
       docRef
     });
   }
 
+  /**
+   * Execute all transactions
+   * @return {Promise<Transaction>}
+   */
   async execute(): Promise<Transaction> {
 
     const setDataPromise = [];
@@ -63,7 +96,7 @@ export class TransactionWrite {
     return Promise.all([
       Promise.all(setDataPromise),
       Promise.all(createDataPromise),
-      Promise.all(updateDataPromise) as Promise<{}[]>
+      Promise.all(updateDataPromise) as Promise<NonNullable<unknown>[]>
     ]).then(([setData, createData, updateData]) => {
 
       for (const [i, item] of this.setList.entries()) {
