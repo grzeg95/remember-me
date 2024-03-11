@@ -15,7 +15,7 @@ export const regionIdForFunctionsV2 = process.env.PROJECT_FIREBASE_REGION_ID_FOR
 
 export const cryptoKeyVersionPath = keyManagementServiceClient.cryptoKeyVersionPath(
   process.env.CRYPTO_KEY_VERSION_PATH_PROJECT as string,
-  regionId,
+  process.env.CRYPTO_KEY_VERSION_PATH_KEY_LOCATION as string,
   process.env.CRYPTO_KEY_VERSION_PATH_KEY_RING as string,
   process.env.CRYPTO_KEY_VERSION_PATH_KEY_CRYPTO_KEY as string,
   process.env.CRYPTO_KEY_VERSION_PATH_KEY_CRYPTO_KEY_VERSION as string
