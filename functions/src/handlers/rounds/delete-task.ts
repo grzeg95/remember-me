@@ -1,32 +1,32 @@
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {
-  decryptRound,
-  decryptTask,
-  decryptToday,
-  encryptRound,
-  encryptToday,
-  getCryptoKey,
-  getUserDocSnap,
-  testRequirement,
-  TransactionWrite
-} from '../../tools';
 
-import '../../tools/global.prototype';
+import '../../utils/global.prototype';
+import {Round, RoundDoc} from '../../models/round';
+import {Task} from '../../models/task';
+import {Today, TodayDoc} from '../../models/today';
+import {TodayTask} from '../../models/today-task';
+import {User, UserDoc} from '../../models/user';
+import {encrypt, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 
 const app = getFirestore();
 
-export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot): Promise<Transaction> => {
+export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot<User, UserDoc>): Promise<Transaction> => {
 
   const transactionWrite = new TransactionWrite(transaction);
-  const todaySnapsToCheckToRemove: DocumentSnapshot[] = [];
+  const todaySnapsToCheckToRemove: DocumentSnapshot<Today, TodayDoc>[] = [];
 
-  const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+  const roundRef = Round.ref(userDocSnap.ref, roundId);
+  const roundDocSnap = await transaction.get(roundRef);
 
   // interrupt if user has not this timesOfDay
   testRequirement(!roundDocSnap.exists);
 
-  const taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));
+  const taskRef = Task.ref(roundDocSnap.ref, taskId);
+  const taskDocSnap = await transaction.get(taskRef);
 
   // interrupt if user has not this task
   testRequirement(!taskDocSnap.exists);
@@ -36,28 +36,28 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
    * */
 
   const [task, round] = await Promise.all([
-    decryptTask(taskDocSnap.data() as {value: string}, cryptoKey),
-    decryptRound(roundDocSnap.data() as {value: string}, cryptoKey)
+    Task.data(taskDocSnap, cryptoKey),
+    Round.data(roundDocSnap, cryptoKey)
   ]);
 
-  const timesOfDay = round.timesOfDay;
-  const timesOfDayCardinality = round.timesOfDayCardinality;
-  const todaysIds = round.todaysIds.toSet();
+  const timesOfDay = round.timesOfDayIds;
+  const timesOfDayIdsCardinality = round.timesOfDayIdsCardinality;
+  const todayIds = round.todayIds.toSet();
   const tasksIds = round.tasksIds.toSet();
 
   // read all task for user/{userId}/today/{day}/task/{taskId}
   const todayTaskDocSnapsToUpdatePromises = [];
 
-  for (const docId of todaysIds) {
+  for (const docId of todayIds) {
     todayTaskDocSnapsToUpdatePromises.push(
-      transaction.get(roundDocSnap.ref.collection('today').doc(docId)).then((snap) => {
-        return transaction.get(snap.ref.collection('task').doc(`${taskDocSnap.id}`)).then((docSnap) => {
+      transaction.get(Today.ref(roundDocSnap.ref, docId)).then((todaySnap) => {
+        return transaction.get(TodayTask.ref(todaySnap.ref, taskDocSnap.id)).then((todayTaskSnap) => {
 
-          if (docSnap.exists) {
-            todaySnapsToCheckToRemove.push(snap);
+          if (todayTaskSnap.exists) {
+            todaySnapsToCheckToRemove.push(todaySnap);
           }
 
-          return docSnap;
+          return todayTaskSnap;
         });
       })
     );
@@ -66,14 +66,14 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
   const todayTasksPromise = Promise.all(todayTaskDocSnapsToUpdatePromises);
 
   // prepare timesOfDay and timesOfDayCardinality
-  for (const timeOfDay of task.timesOfDay) {
+  for (const timeOfDay of task.timesOfDayIds) {
     const indexToRemove = timesOfDay.indexOf(timeOfDay);
     if (indexToRemove > -1) {
-      if (timesOfDayCardinality[indexToRemove] - 1 === 0) {
-        timesOfDayCardinality.splice(indexToRemove, 1);
+      if (timesOfDayIdsCardinality[indexToRemove] - 1 === 0) {
+        timesOfDayIdsCardinality.splice(indexToRemove, 1);
         timesOfDay.splice(indexToRemove, 1);
       } else {
-        timesOfDayCardinality[indexToRemove]--;
+        timesOfDayIdsCardinality[indexToRemove]--;
       }
     }
   }
@@ -89,7 +89,7 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
 
   for (const todayDocSnap of todaySnapsToCheckToRemove) {
     todaySnapsToCheckToRemoveDecryptedPromise.push(
-      decryptToday(todayDocSnap.data() as {value: string}, cryptoKey)
+      Today.data(todayDocSnap, cryptoKey)
     );
   }
 
@@ -99,17 +99,20 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
 
     const todayTask = todaySnapsToCheckToRemoveDecrypted[i];
 
-    if (todayTask.tasksIds.length === 1) {
+    if (todayTask.todayTasksIds.length === 1) {
       transactionWrite.delete(todayDocSnap.ref);
-      todaysIds.delete(todayDocSnap.ref.id);
+      todayIds.delete(todayDocSnap.ref.id);
     } else {
-      const todayTasksIds = todayTask.tasksIds.toSet();
+      const todayTasksIds = todayTask.todayTasksIds.toSet();
       todayTasksIds.delete(taskDocSnap.id);
 
-      transactionWrite.update(todayDocSnap.ref, encryptToday({
-        name: todayTask.name,
-        tasksIds: todayTasksIds.toArray()
-      }, cryptoKey));
+      const encryptedName = await encrypt(todayTask.name, cryptoKey);
+      const todayTasksIdsName = await encrypt(todayTasksIds.toArray(), cryptoKey);
+
+      transactionWrite.update(todayDocSnap.ref, {
+        name: encryptedName,
+        tasksIds: todayTasksIdsName
+      });
     }
   }
 
@@ -127,13 +130,13 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
   }
 
   // roundDataToWrite
-  transactionWrite.update(roundDocSnap.ref, encryptRound({
-    timesOfDayCardinality,
-    timesOfDay,
-    name: round.name,
-    todaysIds: todaysIds.toArray(),
+  const encryptedName = await encrypt(round.name, cryptoKey);
+  transactionWrite.update(roundDocSnap.ref, {
+    encryptedName,
+    timesOfDayIdsCardinality,
+    todayIds: todayIds.toArray(),
     tasksIds: tasksIds.toArray()
-  }, cryptoKey));
+  } as RoundDoc);
 
   return transactionWrite.execute();
 };

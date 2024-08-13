@@ -18,7 +18,7 @@ const getEnvironmentString = () => {
     apiKey: '${process.env.FIREBASE_API_KEY}',
     authDomain: '${process.env.FIREBASE_AUTH_DOMAIN}'
   },
-  recaptcha: '${process.env.RECAPTHA}',
+  recaptchaEnterprise: '${process.env.RECAPTHA_ENTERPRISE}',
   functionsRegionOrCustomDomain: '${process.env.FUNCTIONS_REGION_OR_CUSTOM_DOMAIN}',
   emulators: {
     firestore: {

@@ -36,6 +36,9 @@ module.exports = {
     'camelcase': 0,
     'no-extend-native': 0,
     'no-var-requires': 0,
-    'no-prototype-builtins': 0
+    'no-prototype-builtins': 0,
+    'require-jsdoc': 0,
+    'no-trailing-spaces': 0,
+    '@typescript-eslint/ no-explicit-any': 0
   },
 };

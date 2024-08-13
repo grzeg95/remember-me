@@ -6,9 +6,14 @@ import {
   BeforeCreateResponse
 } from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {Task} from '../../models';
-import {encrypt, encryptRound, encryptTask, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
+import {Round, RoundDoc} from '../../models/round';
+import {User, UserDoc} from '../../models/user';
+import {encrypt} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 import {prepareTimesOfDay, proceedTodayTasks} from '../rounds/save-task';
+import {Task, TaskDoc} from '../../models/task';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
 
@@ -16,48 +21,42 @@ const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-export const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
+export const createSampleUserData = async (userDocSnap: DocumentSnapshot<User, UserDoc>, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
 
-  const decryptedRound = {
-    timesOfDay: [],
-    timesOfDayCardinality: [],
-    name: 'Daily',
-    todaysIds: [],
-    tasksIds: []
-  };
+  const encryptedName = await encrypt('Daily', cryptoKey);
+  const decryptedRound = new Round('null', [], [], [], [], 'Daily', encryptedName, false);
 
-  const task: Task = {
-    timesOfDay: ['Before start'],
-    daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-    description: 'Drink coffee 🤠'
-  };
+  const encryptedDescription = await encrypt('Drink coffee 🤠', cryptoKey);
+  const encryptedDaysOfTheWeek = await encrypt(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], cryptoKey);
+  const task: Task = new Task('null', encryptedDescription, 'Drink coffee 🤠', ['Before start'], encryptedDaysOfTheWeek, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], false);
 
   // get round
-  const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
+  const roundRef = Round.ref(userDocSnap.ref, undefined);
+  const roundDocSnap = await transaction.get(roundRef);
 
   const roundId = roundDocSnap.id;
 
   // get task
   const taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
 
-  const todaysIds = await proceedTodayTasks(transaction, task, taskDocSnap, {
-    description: '',
-    daysOfTheWeek: [],
-    timesOfDay: [],
-  }, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
+  const todayIds = await proceedTodayTasks(transaction, task, taskDocSnap, task, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
 
   const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, [], ['Before start'], [], []);
 
   // create round
-  transactionWrite.create(roundDocSnap.ref, encryptRound({
-    timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
-    timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-    name: 'Daily',
-    todaysIds,
+  transactionWrite.create(roundDocSnap.ref, {
+    encryptedName,
+    timesOfDayIds: timesOfDaysToStoreMetadata.timesOfDayIds,
+    timesOfDayIdsCardinality: timesOfDaysToStoreMetadata.timesOfDayIdsCardinality,
+    todayIds,
     tasksIds: [taskDocSnap.id]
-  }, cryptoKey));
+  } as RoundDoc);
 
-  transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+  transactionWrite.set(taskDocSnap.ref, {
+    encryptedDaysOfTheWeek,
+    encryptedDescription,
+    timesOfDayIds: task.timesOfDayIds
+  } as TaskDoc);
 
   return roundId;
 };
@@ -116,11 +115,12 @@ export const handler = (event: AuthBlockingEvent) => {
 
     await transactionWrite.execute();
 
-    const customClaims: any = {encryptedSymmetricKey};
+    const customClaims = {encryptedSymmetricKey};
 
     return {
       customClaims
     } as BeforeCreateResponse;
+
   }).catch((e) => {
     console.error(e);
     throw new Error(`user ${event.data.uid} rsa key creation`);

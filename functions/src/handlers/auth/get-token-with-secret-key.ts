@@ -1,7 +1,7 @@
 import {getAuth} from 'firebase-admin/auth';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {testRequirement} from '../../tools';
 import {CallableRequest} from 'firebase-functions/v2/https';
+import {testRequirement} from '../../utils/test-requirement';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
 

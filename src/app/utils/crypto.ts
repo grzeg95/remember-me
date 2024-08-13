@@ -1,7 +1,4 @@
-import {DecryptedUser, EncryptedUser} from 'auth';
 import {Buffer} from 'buffer';
-
-export type BasicEncryptedValue = {value: string};
 
 export const protectObjectDecryption = <T>(emptyOne: T): (value: any) => Promise<T> => {
   return async (value: T) => {
@@ -47,23 +44,3 @@ export const decrypt = async <T = string>(encryptedData: string | null | undefin
       }
     });
 }
-
-export const decryptUser = async (encryptedUser: EncryptedUser, cryptoKey: CryptoKey): Promise<DecryptedUser> => {
-
-  const decryptedRoundsPromise = decrypt<string[]>(encryptedUser.rounds, cryptoKey).then(protectObjectDecryption<string[]>([]));
-  const decryptedPhotoURLPromise = decrypt(encryptedUser.photoURL, cryptoKey);
-
-  return Promise.all([
-    decryptedRoundsPromise,
-    decryptedPhotoURLPromise
-  ]).then(([
-    decryptedRounds,
-    decryptedPhotoURL
-  ]) => {
-    return {
-      rounds: decryptedRounds,
-      photoURL: decryptedPhotoURL,
-      hasEncryptedSecretKey: encryptedUser.hasEncryptedSecretKey
-    } as DecryptedUser;
-  });
-};

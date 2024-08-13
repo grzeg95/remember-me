@@ -33,7 +33,7 @@ export const handler = async (event: AuthBlockingEvent): Promise<BeforeSignInRes
     });
     const secretKey = (decryptResponse.plaintext || '').toString();
 
-    const sessionClaims: any = {secretKey};
+    const sessionClaims = {secretKey};
 
     return {
       sessionClaims

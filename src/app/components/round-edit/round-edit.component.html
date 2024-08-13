@@ -1,0 +1,38 @@
+<div class="container">
+  <div class="col" [formGroup]="_roundForm">
+    <div class="row">
+      <div class="col form-group">
+        <mat-form-field floatLabel="always">
+          <mat-label>Round name</mat-label>
+          <input autocomplete="off" matInput formControlName="name">
+          @if (!_roundForm.disabled && !_name?.valid && (_name?.dirty || _name?.touched)) {
+            <mat-error>Enter name from 1 to 256 characters</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <mat-progress-bar [style.opacity]="_isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col text-center actions">
+        <button mat-flat-button
+                color="primary"
+                [disabled]="_roundForm.disabled || _roundForm.invalid || !_isOnline() || !_isNothingChanged()"
+                (click)="saveRound()">{{ !_editRound() ? 'Create' : 'Save' }}</button>
+        @if (_editRound()) {
+          <button mat-stroked-button
+                  color="primary"
+                  [disabled]="_roundForm.disabled || !_isOnline()"
+                  (click)="_editRoundIdSig.set(undefined)">New</button>
+          <button mat-stroked-button
+                  color="warn"
+                  [disabled]="_roundForm.disabled || !_isOnline()"
+                  (click)="deleteRound()">Delete</button>
+        }
+      </div>
+    </div>
+  </div>
+</div>

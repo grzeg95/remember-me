@@ -1,25 +1,16 @@
 // tslint:disable-next-line:no-import-side-effect
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {EncryptedTodayTask, Round, Task, Today, TodayTask} from '../../models';
-import {
-  BasicEncryptedValue,
-  decryptRound,
-  decryptTask,
-  decryptToday,
-  decryptTodayTask,
-  encrypt,
-  encryptRound,
-  encryptTask,
-  encryptToday,
-  encryptTodayTask,
-  getCryptoKey,
-  getUserDocSnap,
-  testRequirement,
-  TransactionWrite
-} from '../../tools';
 
-import '../../tools/global.prototype';
+import '../../utils/global.prototype';
+import {Round, RoundDoc} from '../../models/round';
+import {Task, TaskDoc} from '../../models/task';
+import {Today, TodayDoc} from '../../models/today';
+import {TodayTask, TodayTaskDoc} from '../../models/today-task';
+import {encrypt, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 
 const app = getFirestore();
 
@@ -28,7 +19,7 @@ const app = getFirestore();
  **/
 interface TaskDiff {
   description: boolean,
-  timesOfDay: boolean,
+  timesOfDayIds: boolean,
   daysOfTheWeek: boolean
 }
 
@@ -39,11 +30,11 @@ interface TaskDiff {
  * @return {TaskDiff}
  **/
 const getTaskChange = (a: Task, b: Task): TaskDiff => {
-  const aTimesOfDay = a.timesOfDay.toSet();
-  const bTimesOfDay = b.timesOfDay.toSet();
+  const aTimesOfDayIds = a.timesOfDayIds.toSet();
+  const bTimesOfDayIds = b.timesOfDayIds.toSet();
   return {
     description: a.description !== b.description,
-    timesOfDay: !aTimesOfDay.hasOnly(bTimesOfDay),
+    timesOfDayIds: !aTimesOfDayIds.hasOnly(bTimesOfDayIds),
     daysOfTheWeek: !a.daysOfTheWeek.toSet().hasOnly(b.daysOfTheWeek.toSet())
   };
 };
@@ -52,78 +43,73 @@ const getTaskChange = (a: Task, b: Task): TaskDiff => {
  * Update times of day
  * @function prepareTimesOfDay
  * @param {FirebaseFirestore.Transaction} transaction
- * @param {Array<string>} taskCurrentTimesOfDay
- * @param {Array<string>} enteredTimesOfDay
- * @param {Array<string>} timesOfDay
- * @param {Array<string>} timesOfDayCardinality
+ * @param {Array<string>} taskCurrentTimesOfDayIds
+ * @param {Array<string>} enteredTimesOfDayIds
+ * @param {Array<string>} timesOfDayIds
+ * @param {Array<string>} timesOfDayIdsCardinality
  * @return {{addedTimesOfDay: Set<string>, removedTimesOfDay: Set<string>}}
  **/
 export const prepareTimesOfDay = (
   transaction: Transaction,
-  taskCurrentTimesOfDay: string[],
-  enteredTimesOfDay: string[],
-  timesOfDay: string[],
-  timesOfDayCardinality: number[]): {timesOfDay: string[], timesOfDayCardinality: number[]} => {
+  taskCurrentTimesOfDayIds: string[],
+  enteredTimesOfDayIds: string[],
+  timesOfDayIds: string[],
+  timesOfDayIdsCardinality: number[]): {timesOfDayIds: string[], timesOfDayIdsCardinality: number[]} => {
 
-  const toAdd = enteredTimesOfDay.toSet().difference(taskCurrentTimesOfDay.toSet());
-  const toRemove = taskCurrentTimesOfDay.toSet().difference(enteredTimesOfDay.toSet());
+  const toAdd = enteredTimesOfDayIds.toSet().difference(taskCurrentTimesOfDayIds.toSet());
+  const toRemove = taskCurrentTimesOfDayIds.toSet().difference(enteredTimesOfDayIds.toSet());
 
   for (const timeOfDay of toRemove) {
-    const indexToRemove = timesOfDay.indexOf(timeOfDay);
+    const indexToRemove = timesOfDayIds.indexOf(timeOfDay);
     if (indexToRemove > -1) {
-      if (timesOfDayCardinality[indexToRemove] - 1 === 0) {
-        timesOfDayCardinality.splice(indexToRemove, 1);
-        timesOfDay.splice(indexToRemove, 1);
+      if (timesOfDayIdsCardinality[indexToRemove] - 1 === 0) {
+        timesOfDayIdsCardinality.splice(indexToRemove, 1);
+        timesOfDayIds.splice(indexToRemove, 1);
       } else {
-        timesOfDayCardinality[indexToRemove]--;
+        timesOfDayIdsCardinality[indexToRemove]--;
       }
     }
   }
 
   for (const timeOfDay of toAdd) {
-    const indexToAdd = timesOfDay.indexOf(timeOfDay);
+    const indexToAdd = timesOfDayIds.indexOf(timeOfDay);
     if (indexToAdd > -1) {
-      timesOfDayCardinality[indexToAdd]++;
+      timesOfDayIdsCardinality[indexToAdd]++;
     } else {
-      timesOfDayCardinality.unshift(1);
-      timesOfDay.unshift(timeOfDay);
+      timesOfDayIdsCardinality.unshift(1);
+      timesOfDayIds.unshift(timeOfDay);
     }
   }
 
-  testRequirement(timesOfDay.length > 10, {message: `You can own 10 times of day but merge has ${timesOfDay.length} 🤔`});
+  testRequirement(timesOfDayIds.length > 10, {message: `You can own 10 times of day but merge has ${timesOfDayIds.length} 🤔`});
 
   return {
-    timesOfDay,
-    timesOfDayCardinality
+    timesOfDayIds: [...timesOfDayIds],
+    timesOfDayIdsCardinality: [...timesOfDayIdsCardinality]
   };
 };
 
-export const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot, roundDocSnapData: Round, transactionWrite: TransactionWrite, cryptoKey: CryptoKey) => {
+export const proceedTodayTasks = async (transaction: Transaction, task: Task, taskDocSnap: DocumentSnapshot, taskDocSnapData: Task, roundDocSnap: DocumentSnapshot<Round, RoundDoc>, roundDocSnapData: Round, transactionWrite: TransactionWrite, cryptoKey: CryptoKey) => {
 
   // create task for days
   // add task timesOfDay
-  const timesOfDay: { [key in string]: boolean } = {};
+  const timesOfDayIds: { [key in string]: boolean } = {};
 
-  for (const timeOfDay of task.timesOfDay) {
-    timesOfDay[timeOfDay] = false;
+  for (const timeOfDayId of task.timesOfDayIds) {
+    timesOfDayIds[timeOfDayId] = false;
   }
 
-  const encryptedTodayTaskToAddPromise = encryptTodayTask({
-    description: task.description,
-    timesOfDay
-  } as TodayTask, cryptoKey);
-
-  const todaysIds = roundDocSnapData.todaysIds.toSet();
+  const todayIds = roundDocSnapData.todayIds.toSet();
 
   // get all days from round
   const todayDocRefsMap: {
     [key in string]: {
-      docSnap: DocumentSnapshot,
+      docSnap: DocumentSnapshot<Today, TodayTask>,
       today: Today
     }
   } = {};
 
-  const docsSnapsPromises: Promise<DocumentSnapshot>[] = [];
+  const docsSnapsPromises: Promise<DocumentSnapshot<Today, TodayDoc>>[] = [];
 
   const todayTaskDocSnapsMap: {
     [key in string]: {
@@ -137,8 +123,10 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   const toCreate: Set<string> = new Set();
   const taskDaysOfTheWeek = (task.daysOfTheWeek || []).toSet();
 
-  for (const todayId of todaysIds.toArray()) {
-    docsSnapsPromises.push(transaction.get(roundDocSnap.ref.collection('today').doc(todayId)));
+  for (const todayId of todayIds.toArray()) {
+
+    const todayRef = Today.ref(roundDocSnap.ref, todayId);
+    docsSnapsPromises.push(transaction.get(todayRef));
   }
 
   const docsSnaps = await Promise.all(docsSnapsPromises);
@@ -147,7 +135,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   for (const docSnap of docsSnaps) {
     decryptedTodayPromise.push(
-      decryptToday(docSnap.data() as {value: string}, cryptoKey)
+      Today.data(docSnap, cryptoKey)
     );
   }
 
@@ -162,8 +150,11 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   const todayTaskDocSnapsDayPackPromise = [];
   for (const day of (taskDocSnapData.daysOfTheWeek || [])) {
+
+    const todayTaskRef = TodayTask.ref(todayDocRefsMap[day].docSnap.ref, taskDocSnap.id);
+
     todayTaskDocSnapsDayPackPromise.push(
-      transaction.get(todayDocRefsMap[day].docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
+      transaction.get(todayTaskRef)
         .then((docSnap) => ({day, docSnap}))
     );
   }
@@ -174,7 +165,7 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   const decryptedTodayTaskDocSnapsPromise = [];
 
   for (const docSnapPack of todayTaskDocSnapsDayPack) {
-    decryptedTodayTaskDocSnapsPromise.push(decryptTodayTask(docSnapPack.docSnap.data() as EncryptedTodayTask, cryptoKey));
+    decryptedTodayTaskDocSnapsPromise.push(TodayTask.data(docSnapPack.docSnap, cryptoKey));
   }
 
   const decryptedTodayTaskDocSnaps = await Promise.all(decryptedTodayTaskDocSnapsPromise);
@@ -222,8 +213,15 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   for (const item of newTodayItemsForTaskToCreate) {
     newTodayItemsMap[item.dayToCreate] = item.docSnap;
-    todaysIds.add(item.docSnap.id);
+    todayIds.add(item.docSnap.id);
   }
+
+  const encryptedDescription = await encrypt(task.description, cryptoKey);
+  const encryptedTimesOfDay = await encrypt(timesOfDayIds, cryptoKey);
+  const encryptedTodayTaskToAdd = {
+    encryptedDescription,
+    encryptedTimesOfDay
+  } as TodayTaskDoc;
 
   // get new today tasks
   // on exist today's
@@ -233,12 +231,12 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     if (!todayDocRefsMap[dayToCreate]) {
       transactionWrite.create(
         newTodayItemsMap[dayToCreate].ref.collection('task').doc(taskDocSnap.id),
-        encryptedTodayTaskToAddPromise
+        encryptedTodayTaskToAdd
       );
     } else {
       transactionWrite.create(
         todayDocRefsMap[dayToCreate].docSnap.ref.collection('task').doc(taskDocSnap.id),
-        encryptedTodayTaskToAddPromise
+        encryptedTodayTaskToAdd
       );
     }
   }
@@ -246,30 +244,37 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
   // prepare
   // create day if not exists
   for (const dayToCreate of newTodayItemsForTaskToCreate) {
-    transactionWrite.create(dayToCreate.docSnap.ref, encryptToday({
-      name: dayToCreate.dayToCreate,
-      tasksIds: [taskDocSnap.id]
-    }, cryptoKey));
+
+    const encryptedName = await encrypt(dayToCreate.dayToCreate, cryptoKey);
+
+    transactionWrite.create(dayToCreate.docSnap.ref, {
+      encryptedName,
+      todayTasksIds: [taskDocSnap.id]
+    } as Today);
   }
 
   // increment taskSize if new task is in today
   for (const dayToCreate of toCreate) {
     if (todayDocRefsMap[dayToCreate]) {
-      const todayTask = todayDocRefsMap[dayToCreate].today;
 
-      transactionWrite.update(todayDocRefsMap[dayToCreate].docSnap.ref, encryptToday({
-        name: todayTask.name,
-        tasksIds: [...todayTask.tasksIds, taskDocSnap.id]
-      }, cryptoKey));
+      const todayTask = todayDocRefsMap[dayToCreate].today;
+      const encryptedName = await encrypt(todayTask.name, cryptoKey);
+
+      transactionWrite.update(todayDocRefsMap[dayToCreate].docSnap.ref, {
+        encryptedName,
+        todayTasksIds: [...todayTask.todayTasksIds, taskDocSnap.id]
+      } as Today);
     }
   }
 
   for (const day of taskDocSnapData.daysOfTheWeek || []) {
     if (!taskDaysOfTheWeek.has(day)) {
-      const todayTaskIds = todayDocRefsMap[day].today.tasksIds;
+
+      const todayTaskIds = todayDocRefsMap[day].today.todayTasksIds;
+
       if (todayTaskIds.length === 1) {
         transactionWrite.delete(todayDocRefsMap[day].docSnap.ref);
-        todaysIds.delete(todayDocRefsMap[day].docSnap.ref.id);
+        todayIds.delete(todayDocRefsMap[day].docSnap.ref.id);
       }
     }
   }
@@ -285,11 +290,11 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   // update
   // add task timesOfDay to newTimesOfDay
-  const newTimesOfDayRaw: { [key in string]: boolean } = {};
+  const newTimesOfDayIdsRaw: { [key in string]: boolean } = {};
 
   // select inserted task timesOfDay to newTimesOfDayRaw
-  for (const timeOfDay of task.timesOfDay) {
-    newTimesOfDayRaw[timeOfDay] = false;
+  for (const timeOfDayId of task.timesOfDayIds) {
+    newTimesOfDayIdsRaw[timeOfDayId] = false;
   }
 
   for (const dayToUpdate of toUpdate) {
@@ -304,17 +309,18 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     }
 
     // maybe there exist selected timesOfDay
-    const newTimesOfDay = {...newTimesOfDayRaw};
+    const newTimesOfDay = {...newTimesOfDayIdsRaw};
     for (const newTimeOfDay of Object.keys(newTimesOfDay)) {
       if (oldTimesOfDay[newTimeOfDay]) {
         newTimesOfDay[newTimeOfDay] = oldTimesOfDay[newTimeOfDay];
       }
     }
 
-    transactionWrite.set(todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, encryptTodayTask({
-      description: task.description,
-      timesOfDay: newTimesOfDay
-    } as TodayTask, cryptoKey));
+    const encryptedNewTimesOfDay = await encrypt(newTimesOfDay, cryptoKey);
+    transactionWrite.set(todayTaskDocSnapsMap[dayToUpdate].docSnap.ref, {
+      encryptedDescription,
+      encryptedTimesOfDay: encryptedNewTimesOfDay
+    });
   }
 
   // remove tasks from day to remove
@@ -323,15 +329,19 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
     transactionWrite.delete(taskFromDayToRemove.ref);
   }
 
-  return todaysIds.toArray();
+  return todayIds.toArray();
 };
 
-const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: Transaction, roundDocSnapData: Round, roundDocSnap: DocumentSnapshot, taskId: string): Promise<DocumentSnapshot> => {
-  return transaction.get(roundDocSnap.ref.collection('task').doc(taskId)).then((taskDocSnap) => {
+const getTaskDocSnap = (transactionWrite: TransactionWrite, transaction: Transaction, roundDocSnapData: Round, roundDocSnap: DocumentSnapshot<Round, RoundDoc>, taskId: string) => {
+
+  let taskRef = Task.ref(roundDocSnap.ref, taskId);
+
+  return transaction.get(taskRef).then((taskDocSnap) => {
     if (!taskDocSnap.exists) {
       testRequirement(roundDocSnapData.tasksIds.length + 1 > 25, {message: `You can own up tp 25 tasks but merge has ${roundDocSnapData.tasksIds.length + 1} 🤔`});
       transactionWrite.delete(taskDocSnap.ref);
-      return transaction.get(roundDocSnap.ref.collection('task').doc());
+      taskRef = Task.ref(roundDocSnap.ref, undefined);
+      return transaction.get(taskRef);
     } else {
       return taskDocSnap;
     }
@@ -381,8 +391,8 @@ export const handler = async (request: CallableRequest) => {
   // data.task has not 3 keys
   testRequirement(dataTaskKeys.length !== 3);
 
-  // data.task has not ['description', 'daysOfTheWeek', 'timesOfDay']
-  testRequirement(!dataTaskKeys.toSet().hasAny(['description', 'daysOfTheWeek', 'timesOfDay'].toSet()));
+  // data.task has not ['description', 'daysOfTheWeek', 'timesOfDayIds']
+  testRequirement(!dataTaskKeys.toSet().hasAny(['description', 'daysOfTheWeek', 'timesOfDayIds'].toSet()));
 
   // data.task.description is not a string
   testRequirement(typeof data.task.description !== 'string');
@@ -400,37 +410,35 @@ export const handler = async (request: CallableRequest) => {
     !((new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).hasAll(new Set(data.task.daysOfTheWeek)))
   );
 
-  // data.task.timesOfDay is not an array
-  testRequirement(!Array.isArray(data.task.timesOfDay));
+  // data.task.timesOfDayIds is not an array
+  testRequirement(!Array.isArray(data.task.timesOfDayIds));
 
-  // data.task.timesOfDay.length is not in [1, 10]
-  testRequirement(data.task.timesOfDay.length === 0 || data.task.timesOfDay.length > 10);
+  // data.task.timesOfDayIds.length is not in [1, 10]
+  testRequirement(data.task.timesOfDayIds.length === 0 || data.task.timesOfDayIds.length > 10);
 
-  const timesOfDayTmp = [];
-  for (const timeOfDay of data.task.timesOfDay) {
-    // data.task.timesOfDay contains other than string
+  const timesOfDayIdsTmp = [];
+  for (const timeOfDay of data.task.timesOfDayIds) {
+    // data.task.timesOfDayIds contains other than string
     testRequirement(typeof timeOfDay !== 'string');
 
     const timeOfDayTrim = (timeOfDay as string).trim();
 
-    // data.task.timesOfDay contains string that trim is not in [1, 100]
+    // data.task.timesOfDayIds contains string that trim is not in [1, 100]
     testRequirement(timeOfDayTrim.length === 0 || timeOfDayTrim.length > 100);
 
-    timesOfDayTmp.push(timeOfDayTrim);
+    timesOfDayIdsTmp.push(timeOfDayTrim);
   }
-  data.task.timesOfDay = timesOfDayTmp;
+  data.task.timesOfDayIds = timesOfDayIdsTmp;
 
-  // data.task.timesOfDay contains duplicates
-  testRequirement(data.task.timesOfDay.toSet().size !== data.task.timesOfDay.length);
+  // data.task.timesOfDayIds contains duplicates
+  testRequirement(data.task.timesOfDayIds.toSet().size !== data.task.timesOfDayIds.length);
 
   let created = false;
   let taskId: string = data.taskId;
   const roundId: string = data.roundId;
 
-  const task = data.task as Task;
-  task.description = task.description.trim();
-  let todaysIds: string[];
-
+  data.task.description = data.task.description.trim();
+  let todayIds: string[];
 
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
@@ -440,19 +448,20 @@ export const handler = async (request: CallableRequest) => {
 
     const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
 
-    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const roundRef = Round.ref(userDocSnap.ref, roundId);
+    const roundDocSnap = await transaction.get(roundRef);
 
     // roundSnap must exist
     testRequirement(!roundDocSnap.exists);
 
-    const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+    const roundDocSnapData = await Round.data(roundDocSnap, cryptoKey);
 
-    const timesOfDay = roundDocSnapData.timesOfDay;
-    const timesOfDayCardinality = roundDocSnapData.timesOfDayCardinality;
+    const timesOfDayIds = roundDocSnapData.timesOfDayIds;
+    const timesOfDayIdsCardinality = roundDocSnapData.timesOfDayIdsCardinality;
     const tasksIds = roundDocSnapData.tasksIds.toSet();
 
     const taskDocSnap = await getTaskDocSnap(transactionWrite, transaction, roundDocSnapData, roundDocSnap, taskId);
-    const taskDocSnapData = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+    const taskDocSnapData = await Task.data(taskDocSnap, cryptoKey);
 
     if (!taskDocSnap.exists) {
       created = true;
@@ -462,41 +471,44 @@ export const handler = async (request: CallableRequest) => {
       /*
        * Check if nothing changed or only description was changed
        * */
-      const taskChange = getTaskChange(taskDocSnapData, task);
+      const taskChange = getTaskChange(taskDocSnapData, data.task);
 
       /*
        * Check if nothing was changed
        * */
-      testRequirement(!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay);
+      testRequirement(!taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDayIds);
 
       /*
        * Only description was changed
        * */
-      if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+      if (taskChange.description && !taskChange.daysOfTheWeek && !taskChange.timesOfDayIds) {
 
         // read all task for user/{userId}/rounds/{roundId}/today/{day}/task/{taskId}
 
         const docSnaps = await Promise.all(
-          roundDocSnapData.todaysIds
-            .map((todayId) => transaction.get(roundDocSnap.ref.collection('today').doc(todayId)))
+          roundDocSnapData.todayIds
+            .map((todayId) => transaction.get(Today.ref(roundDocSnap.ref, todayId)))
         );
 
-        const todayTaskDocSnapsToUpdatePromises: any[] = [];
+        const todayTaskDocSnapsToUpdatePromises: Promise<DocumentSnapshot<TodayTask, TodayTaskDoc>>[] = [];
         const decryptTodayPromises = [];
 
         for (const docSnap of docSnaps) {
 
-          decryptTodayPromises.push(decryptToday(docSnap.data() as BasicEncryptedValue, cryptoKey).then((today) => {
-            if (today.tasksIds.find((id) => id === taskDocSnap.id)) {
+          decryptTodayPromises.push(Today.data(docSnap, cryptoKey).then((today) => {
+            if (today.todayTasksIds.find((id) => id === taskDocSnap.id)) {
+
+              const todayTaskRef = TodayTask.ref(docSnap.ref, taskDocSnap.id);
+
               todayTaskDocSnapsToUpdatePromises.push(
-                transaction.get(docSnap.ref.collection('task').doc(`${taskDocSnap.id}`))
+                transaction.get(todayTaskRef)
               );
             }
           }));
         }
 
         return Promise.all(decryptTodayPromises).then(() => {
-          return Promise.all(todayTaskDocSnapsToUpdatePromises).then((todayTaskDocSnapsToUpdate) => {
+          return Promise.all(todayTaskDocSnapsToUpdatePromises).then(async (todayTaskDocSnapsToUpdate) => {
 
             /*
              * Proceed all data
@@ -505,16 +517,19 @@ export const handler = async (request: CallableRequest) => {
             for (const todayTask of todayTaskDocSnapsToUpdate) {
               testRequirement(!todayTask.exists, {message: `Known task ${taskDocSnap.ref.path} is not related with ${todayTask.ref.path}`});
 
-              transactionWrite.update(todayTask.ref, encrypt(task.description, cryptoKey).then((description) => {
+              transactionWrite.update(todayTask.ref, encrypt(data.task.description, cryptoKey).then((description) => {
                 return {description};
               }));
             }
 
-            transactionWrite.update(taskDocSnap.ref, encryptTask({
-              description: task.description,
-              timesOfDay: task.timesOfDay,
-              daysOfTheWeek: task.daysOfTheWeek
-            }, cryptoKey));
+            const encryptedDescription = await encrypt(data.task.description, cryptoKey);
+            const encryptedDaysOfTheWeek = await encrypt(data.task.daysOfTheWeek, cryptoKey);
+
+            transactionWrite.update(taskDocSnap.ref, {
+              encryptedDescription,
+              timesOfDayIds: data.task.timesOfDayIds,
+              encryptedDaysOfTheWeek
+            } as TaskDoc);
 
             return transactionWrite.execute();
           });
@@ -524,46 +539,75 @@ export const handler = async (request: CallableRequest) => {
       /*
        * Only daysOfTheWeek was changed
        * */
-      if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDay) {
+      if (!taskChange.description && taskChange.daysOfTheWeek && !taskChange.timesOfDayIds) {
 
-        transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+        const encryptedDescription = await encrypt(data.task.description, cryptoKey);
+        const encryptedDaysOfTheWeek = await encrypt(data.task.daysOfTheWeek, cryptoKey);
+
+        transactionWrite.set(taskDocSnap.ref, {
+          encryptedDescription,
+          timesOfDayIds: data.task.timesOfDayIds,
+          encryptedDaysOfTheWeek
+        } as TaskDoc);
 
         // update round
-        todaysIds = await proceedTodayTasks(transaction, task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey);
+        todayIds = await proceedTodayTasks(transaction, data.task, taskDocSnap, taskDocSnapData, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey);
+
+        const encryptedName = await encrypt(roundDocSnapData.name, cryptoKey);
+
         transactionWrite.update(
           userDocSnap.ref.collection('rounds').doc(roundId),
-          encryptRound({
-            timesOfDay: roundDocSnapData.timesOfDay,
-            timesOfDayCardinality: roundDocSnapData.timesOfDayCardinality,
-            name: roundDocSnapData.name,
-            todaysIds,
+          {
+            timesOfDayIds: roundDocSnapData.timesOfDayIds,
+            timesOfDayIdsCardinality: roundDocSnapData.timesOfDayIdsCardinality,
+            encryptedName,
+            todayIds,
             tasksIds: tasksIds.toArray()
-          }, cryptoKey)
+          } as RoundDoc
         );
 
         return transactionWrite.execute();
       }
     }
 
-    const decryptedTask = await decryptTask(taskDocSnap.data() as {value: string}, cryptoKey);
+    const decryptedTask = await Task.data(taskDocSnap, cryptoKey);
 
-    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDay, data.task.timesOfDay, timesOfDay, timesOfDayCardinality);
+    const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, decryptedTask.timesOfDayIds, data.task.timesOfDay, timesOfDayIds, timesOfDayIdsCardinality);
+
+    //   readonly encryptedDescription: string;
+    //   readonly timesOfDayIds: string[];
+    //   readonly encryptedDaysOfTheWeek: string;
+
+    const encryptedDescription = await encrypt(data.task.description, cryptoKey);
+    const encryptedDaysOfTheWeek = await encrypt(data.task.daysOfTheWeek, cryptoKey);
 
     // update task
-    transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
+    transactionWrite.set(taskDocSnap.ref, {
+      encryptedDescription,
+      timesOfDayIds: data.task.timesOfDayIds,
+      encryptedDaysOfTheWeek
+    } as TaskDoc);
 
     // update round
-    todaysIds = await proceedTodayTasks(transaction, task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey);
+    todayIds = await proceedTodayTasks(transaction, data.task, taskDocSnap, decryptedTask, roundDocSnap, roundDocSnapData, transactionWrite, cryptoKey);
+
+    //   readonly timesOfDayIds: string[];
+    //   readonly timesOfDayIdsCardinality: number[];
+    //   readonly todayIds: string[];
+    //   readonly tasksIds: string[];
+    //   readonly encryptedName: string;
+
+    const encryptedName = await encrypt(roundDocSnapData.name, cryptoKey);
 
     transactionWrite.update(
       userDocSnap.ref.collection('rounds').doc(roundId),
-      encryptRound({
-        timesOfDay: timesOfDaysToStoreMetadata.timesOfDay,
-        timesOfDayCardinality: timesOfDaysToStoreMetadata.timesOfDayCardinality,
-        name: roundDocSnapData.name,
-        todaysIds,
+      {
+        timesOfDayIds: timesOfDaysToStoreMetadata.timesOfDayIds,
+        timesOfDayIdsCardinality: timesOfDaysToStoreMetadata.timesOfDayIdsCardinality,
+        encryptedName,
+        todayIds,
         tasksIds: tasksIds.toArray()
-      }, cryptoKey)
+      } as RoundDoc
     );
 
     return transactionWrite.execute();

@@ -1,0 +1,34 @@
+<div class="container">
+  <div class="row">
+    <div class="col d-flex">
+      <mat-toolbar>
+        <mat-toolbar-row>
+          <span class="app-name">Remember Me</span>
+          <img src="/src/assets/img/logo.svg" class="logo">
+          <span class="example-spacer"></span>
+          <div class="d-flex align-items-center right">
+            <button mat-stroked-button color="primary" (click)="_dialogRef.close()">Close</button>
+          </div>
+        </mat-toolbar-row>
+      </mat-toolbar>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="nav">
+        @for (form of _forms; track form.name) {
+          <button [ngClass]="{'active': form.name === _selectedForm()}"
+                (click)="_selectedForm.set(form.name)"
+                [innerHTML]="form.label"></button>
+        }
+      </div>
+      <div class="selectedForm">
+        @switch (_selectedForm()) {
+          @case ('login') { <app-login (doneEmitter)="_dialogRef.close()"></app-login> }
+          @case ('register') { <app-register (doneEmitter)="_dialogRef.close()"></app-register> }
+          @case ('send-password-reset-email') { <app-send-password-reset-email (doneEmitter)="_dialogRef.close()"></app-send-password-reset-email> }
+        }
+      </div>
+    </div>
+  </div>
+</div>

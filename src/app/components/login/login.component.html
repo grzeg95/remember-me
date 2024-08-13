@@ -1,0 +1,32 @@
+<form [formGroup]="_loginForm">
+
+  <mat-form-field>
+    <mat-label>Email</mat-label>
+    <input autocomplete="off" matInput formControlName="email" type="email">
+    @if (!_loginForm.disabled && !_email?.valid && (_email?.dirty || !_password?.untouched)) {
+      <mat-error>Enter email</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Password</mat-label>
+    <input autocomplete="off" matInput formControlName="password" type="password">
+    @if (!_loginForm.disabled && !_password?.valid && (_password?.dirty || !_password?.untouched)) {
+      <mat-error>Enter password</mat-error>
+    }
+  </mat-form-field>
+
+  <div class="action-buttons">
+    <button mat-flat-button
+            color="primary"
+            [disabled]="_loginForm.disabled || _loginForm.invalid || !_isOnline()"
+            (click)="login()">Login</button>
+
+    @if (_userCredential()) {
+      <button mat-stroked-button
+              color="primary"
+              [disabled]="_loginForm.disabled || _loginForm.invalid || !_isOnline()"
+              (click)="sendEmailVerification()">Send email verification</button>
+    }
+  </div>
+</form>

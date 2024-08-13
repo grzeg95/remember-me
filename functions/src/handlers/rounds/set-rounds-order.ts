@@ -1,8 +1,13 @@
 import {getFirestore} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {decrypt, encrypt, getCryptoKey, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
+import {Round} from '../../models/round';
+import {User, UserDoc} from '../../models/user';
 
-import '../../tools/global.prototype';
+import '../../utils/global.prototype';
+import {getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 
 const app = getFirestore();
 
@@ -51,29 +56,27 @@ export const handler = async (request: CallableRequest) => {
     const transactionWrite = new TransactionWrite(transaction);
 
     const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
-    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const userData = await User.data(userDocSnap, cryptoKey);
+    const roundRef = Round.ref(userDocSnap.ref, roundId);
+    const roundDocSnap = await transaction.get(roundRef);
 
     // check if round exists
     testRequirement(!roundDocSnap.exists);
 
-    const rounds = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => {
-      return JSON.parse(text) as string[];
-    });
+    const roundsIds = userData.roundsIds;
 
-    const toMoveIndex = rounds.indexOf(data.roundId);
+    const toMoveIndex = roundsIds.indexOf(data.roundId);
 
     testRequirement(toMoveIndex === -1);
-    testRequirement(moveBy > 0 && toMoveIndex + moveBy >= rounds.length);
+    testRequirement(moveBy > 0 && toMoveIndex + moveBy >= roundsIds.length);
     testRequirement(moveBy < 0 && toMoveIndex + moveBy < 0);
 
-    rounds.move(toMoveIndex, toMoveIndex + moveBy);
+    roundsIds.move(toMoveIndex, toMoveIndex + moveBy);
 
     // update user
-    transactionWrite.update(userDocSnap.ref, encrypt(rounds, cryptoKey).then((encryptedRounds) => {
-      return {
-        rounds: encryptedRounds
-      };
-    }));
+    transactionWrite.update(userDocSnap.ref, {
+      roundsIds
+    } as UserDoc);
 
     return transactionWrite.execute();
   }).then(() => ({

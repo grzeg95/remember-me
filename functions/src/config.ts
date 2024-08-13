@@ -12,6 +12,7 @@ dotenv.config({path: DOTENV_PATH, override: true});
 export const keyManagementServiceClient = new KeyManagementServiceClient();
 export const regionId = process.env.PROJECT_FIREBASE_REGION_ID as string;
 export const regionIdForFunctionsV2 = process.env.PROJECT_FIREBASE_REGION_ID_FOR_FUNCTIONS_V2 as string;
+export const regionIdForBlockingFunctionsV2 = process.env.PROJECT_FIREBASE_REGION_ID_FOR_BLOCKING_FUNCTIONS_V2 as string;
 
 export const cryptoKeyVersionPath = keyManagementServiceClient.cryptoKeyVersionPath(
   process.env.CRYPTO_KEY_VERSION_PATH_PROJECT as string,
@@ -43,7 +44,7 @@ export const optsV2: HttpsOptions = {
 export const blockingOptions: BlockingOptions = {
   timeoutSeconds: 60,
   memory: '1GiB',
-  region: regionIdForFunctionsV2,
+  region: regionIdForBlockingFunctionsV2,
   maxInstances: 10,
   ingressSettings: 'ALLOW_ALL',
   concurrency: 250

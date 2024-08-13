@@ -1,18 +1,13 @@
-import {DocumentData, DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
+import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {
-  decrypt,
-  decryptRound,
-  encrypt,
-  encryptRound,
-  getCryptoKey,
-  getUserDocSnap,
-  testRequirement,
-  TransactionWrite,
-  writeUser
-} from '../../tools';
 
-import '../../tools/global.prototype';
+import '../../utils/global.prototype';
+import {Round, RoundDoc} from '../../models/round';
+import {User} from '../../models/user';
+import {encrypt, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap, writeUser} from '../../utils/user';
 
 const app = getFirestore();
 
@@ -57,8 +52,8 @@ export const handler = async (request: CallableRequest) => {
 
   let roundId = data.roundId;
   let created = false;
-  let userDocSnapData: DocumentData | undefined;
-  let roundDocSnap: DocumentSnapshot;
+  let userDocSnapData: User | undefined;
+  let roundDocSnap: DocumentSnapshot<Round, RoundDoc>;
 
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
@@ -67,13 +62,14 @@ export const handler = async (request: CallableRequest) => {
     const transactionWrite = new TransactionWrite(transaction);
 
     const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
-    userDocSnapData = userDocSnap.data();
-    const roundDocSnapTmp = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    userDocSnapData = await User.data(userDocSnap, cryptoKey);
+    const roundRefTmp = Round.ref(userDocSnap.ref, roundId);
+    const roundDocSnapTmp = await transaction.get(roundRefTmp);
 
-    let rounds: string[] = [];
+    let roundsIds: string[] = [];
 
-    if (userDocSnapData?.rounds) {
-      rounds = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
+    if (userDocSnapData?.roundsIds) {
+      roundsIds = userDocSnapData.roundsIds;
     }
 
     let roundsEncryptPromise;
@@ -82,21 +78,14 @@ export const handler = async (request: CallableRequest) => {
     if (!roundDocSnapTmp.exists) {
 
       // check if there is max 5 rounds
-      testRequirement(rounds.length >= 5, {details: 'You can own 5 rounds 🤔'});
+      testRequirement(roundsIds.length >= 5, {details: 'You can own 5 rounds 🤔'});
 
-      roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
-
-      const roundEncryptPromise = encryptRound({
-        timesOfDay: [],
-        timesOfDayCardinality: [],
-        name: data.name,
-        todaysIds: [],
-        tasksIds: []
-      }, cryptoKey);
+      const roundRef = Round.ref(userDocSnap.ref, undefined);
+      roundDocSnap = await transaction.get(roundRef);
 
       roundId = roundDocSnap.id;
-      rounds.push(roundId);
-      roundsEncryptPromise = encrypt(rounds, cryptoKey);
+      roundsIds.push(roundId);
+      roundsEncryptPromise = encrypt(roundsIds, cryptoKey);
       created = true;
       transactionWrite.delete(roundDocSnapTmp.ref);
 
@@ -107,26 +96,35 @@ export const handler = async (request: CallableRequest) => {
         };
       }));
 
-      transactionWrite.create(roundDocSnap.ref, roundEncryptPromise);
+      const roundName = await encrypt(data.name, cryptoKey);
+      transactionWrite.create(roundDocSnap.ref, {
+        encryptedName: roundName,
+        timesOfDayIds: [],
+        timesOfDayIdsCardinality: [],
+        todayIds: [],
+        tasksIds: []
+      } as RoundDoc);
     } else {
 
       roundDocSnap = roundDocSnapTmp;
-      const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+      const round = await Round.data(roundDocSnap, cryptoKey);
       /*
        * Check if name was changed
        * */
       testRequirement(round.name === data.name);
 
-      transactionWrite.update(roundDocSnap.ref, encryptRound({
-        name: data.name,
-        timesOfDay: round.timesOfDay,
-        timesOfDayCardinality: round.timesOfDayCardinality,
-        todaysIds: round.todaysIds,
+      const roundName = await encrypt(data.name, cryptoKey);
+      transactionWrite.update(roundDocSnap.ref, {
+        encryptedName: roundName,
+        timesOfDayIds: round.timesOfDayIds,
+        timesOfDayIdsCardinality: round.timesOfDayIdsCardinality,
+        todayIds: round.todayIds,
         tasksIds: round.tasksIds
-      }, cryptoKey));
+      } as RoundDoc);
     }
 
     return transactionWrite.execute();
+
   }).then(() => ({
     created,
     roundId,

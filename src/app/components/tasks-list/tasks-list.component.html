@@ -1,0 +1,90 @@
+<div class="container">
+  <div class="col">
+
+    @if (!_isOnline() && !_tasks()) {
+      <div class="row message">
+        <div class="col">
+          <span>You are offline. Waiting for connection...</span>
+        </div>
+      </div>
+    }
+
+    @if (!_isOnline() && _tasks()) {
+      <ng-template *ngTemplateOutlet="showItems"></ng-template>
+    }
+
+    @if (_isOnline() && _tasksLoading()) {
+      <div class="row message">
+        <div class="col">
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        </div>
+      </div>
+    }
+
+    @if (_isOnline() && _tasks() && !_tasksLoading()) {
+      <ng-template *ngTemplateOutlet="showItems"></ng-template>
+    }
+
+    <ng-template #showItems>
+
+      @if (_tasks()!.length > 0) {
+
+        <div class="row">
+
+          @if ((_round()!.timesOfDayIds || []); as timesOfDayIds) {
+            <table mat-table [dataSource]="_tasks()!">
+
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>Description</th>
+                <td mat-cell *matCellDef="let element">{{ element.description }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="daysOfTheWeek">
+                <th mat-header-cell *matHeaderCellDef>Days</th>
+                <td mat-cell *matCellDef="let element">{{ element.daysOfTheWeek }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="timesOfDays">
+                <th mat-header-cell *matHeaderCellDef>Times of day</th>
+                <td mat-cell *matCellDef="let element">{{ getTimesOfDay(timesOfDayIds, element.timesOfDay).join(', ') }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="edit">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell class="edit-button" *matCellDef="let element" (click)="goToTask(element.id)">
+                  <fa-icon [icon]="_faEdit"></fa-icon>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="_displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: _displayedColumns;"></tr>
+
+            </table>
+          }
+
+          <div class="add-task-button">
+            <button mat-flat-button
+                    color="primary"
+                    (click)="goToTask()">Add new</button>
+          </div>
+        </div>
+      }
+
+      @if (_tasks()!.length === 0) {
+        <div class="row message">
+          <div class="col">
+            <span>Add some tasks to this empty list</span>
+          </div>
+          <div class="col">
+            <div class="add-task">
+              <button mat-flat-button
+                      color="primary"
+                      (click)="goToTask()">Add new task
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </ng-template>
+  </div>
+</div>

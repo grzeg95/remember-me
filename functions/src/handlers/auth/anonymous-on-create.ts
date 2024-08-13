@@ -4,7 +4,10 @@ import {getAuth, UserRecord} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
+import {UserDoc} from '../../models/user';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 import {createSampleUserData} from './user-before-create';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
@@ -70,12 +73,10 @@ export const handler = (user: UserRecord, context: EventContext) => {
     // createSampleUserData
     const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
 
-    transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
-      return {
-        rounds,
-        hasEncryptedSecretKey: true
-      };
-    }));
+    transactionWrite.set(userDocSnap.ref, {
+      roundsIds: [roundId],
+      hasEncryptedSecretKey: true
+    } as UserDoc);
 
     return transactionWrite.execute();
   }).catch((e) => {
