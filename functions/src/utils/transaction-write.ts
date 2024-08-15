@@ -102,7 +102,7 @@ export class TransactionWrite {
       for (const [i, item] of this.setList.entries()) {
         const data = setData[i];
         if (data !== undefined) {
-          this.transaction.set(item.docRef, data);
+          this.transaction.set(item.docRef, data, {});
         } else {
           throw new Error('data for set is undefined');
         }

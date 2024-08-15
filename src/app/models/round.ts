@@ -34,6 +34,9 @@ export class Round implements RoundDoc {
         tasksIds: round.tasksIds,
         encryptedName: round.encryptedName
       };
+    },
+    fromFirestore(snapshot: QueryDocumentSnapshot) {
+      return snapshot.data();
     }
   } as FirestoreDataConverter<Round, RoundDoc>;
 

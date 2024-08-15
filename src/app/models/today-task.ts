@@ -24,6 +24,7 @@ export class TodayTask implements TodayTaskDoc {
     public readonly description: string,
     public readonly encryptedTimesOfDay: string,
     public readonly timesOfDay: { [key in string]: boolean },
+    public readonly timesOfDayEncryptedMap: { [key in string]: string },
     public readonly exists: boolean
   ) {
   }
@@ -34,6 +35,9 @@ export class TodayTask implements TodayTaskDoc {
         encryptedDescription: todayTask.encryptedDescription,
         encryptedTimesOfDay: todayTask.encryptedTimesOfDay
       };
+    },
+    fromFirestore(snapshot: QueryDocumentSnapshot) {
+      return snapshot.data();
     }
   } as FirestoreDataConverter<TodayTask, TodayTaskDoc>;
 
@@ -57,7 +61,23 @@ export class TodayTask implements TodayTaskDoc {
     data?.['encryptedTimesOfDay'] && typeof data['encryptedTimesOfDay'] === 'string' && (encryptedTimesOfDay = data['encryptedTimesOfDay']);
 
     const description = await decrypt<string>(encryptedDescription, cryptoKey).then(protectObjectDecryption<string>(''));
-    const timesOfDay = await decrypt<{ [key in string]: boolean }>(encryptedTimesOfDay, cryptoKey).then(protectObjectDecryption<{ [key in string]: boolean }>({}));
+
+    const decryptedKeysPromise: Promise<string | null>[] = [];
+    const encryptedKeys = Object.getOwnPropertyNames(data?.timesOfDay);
+
+    for (const encryptedKey of encryptedKeys) {
+      decryptedKeysPromise.push(decrypt(encryptedKey, cryptoKey));
+    }
+
+    const decryptedKeys = await Promise.all(decryptedKeysPromise);
+
+    const timesOfDay: { [key in string]: boolean } = {};
+    const timesOfDayEncryptedMap: { [key in string]: string } = {};
+
+    for (const [i, decryptedKey] of decryptedKeys.entries()) {
+      timesOfDay[decryptedKey as string] = (data?.timesOfDay as { [key in string]: boolean }) [encryptedKeys[i]];
+      timesOfDayEncryptedMap[decryptedKey as string] = encryptedKeys[i];
+    }
 
     return new TodayTask(
       snap.id,
@@ -65,6 +85,7 @@ export class TodayTask implements TodayTaskDoc {
       description,
       encryptedTimesOfDay,
       timesOfDay,
+      timesOfDayEncryptedMap,
       snap.exists()
     );
   }

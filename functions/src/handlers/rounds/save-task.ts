@@ -141,6 +141,9 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   const decryptedToday = await Promise.all(decryptedTodayPromise);
 
+  console.log(decryptedToday);
+  console.log(docsSnaps);
+
   for (const [i, docSnap] of docsSnaps.entries()) {
     todayDocRefsMap[decryptedToday[i].name] = {
       docSnap,
@@ -150,6 +153,9 @@ export const proceedTodayTasks = async (transaction: Transaction, task: Task, ta
 
   const todayTaskDocSnapsDayPackPromise = [];
   for (const day of (taskDocSnapData.daysOfTheWeek || [])) {
+
+    console.log(day);
+    console.log(todayDocRefsMap);
 
     const todayTaskRef = TodayTask.ref(todayDocRefsMap[day].docSnap.ref, taskDocSnap.id);
 

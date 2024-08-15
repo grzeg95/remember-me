@@ -1,6 +1,15 @@
-import {doc, DocumentData, DocumentSnapshot, Firestore, FirestoreDataConverter} from 'firebase/firestore';
+import firebase from 'firebase/compat';
+import {
+  doc,
+  DocumentData,
+  DocumentSnapshot,
+  Firestore,
+  FirestoreDataConverter,
+  QueryDocumentSnapshot
+} from 'firebase/firestore';
 import {decrypt} from '../utils/crypto';
 import {Collections} from './collections';
+import SnapshotOptions = firebase.firestore.SnapshotOptions;
 
 export interface UserDoc extends DocumentData {
   readonly disabled: boolean;
@@ -62,6 +71,9 @@ export class User implements UserDoc {
         hasEncryptedSecretKey: user.hasEncryptedSecretKey,
         encryptedPhotoBlobURL: user.encryptedPhotoBlobURL
       };
+    },
+    fromFirestore(snapshot: QueryDocumentSnapshot) {
+      return snapshot.data();
     }
   } as FirestoreDataConverter<User, UserDoc>;
 
@@ -70,6 +82,8 @@ export class User implements UserDoc {
   }
 
   static async data(snap: DocumentSnapshot<User, UserDoc>, cryptoKey: CryptoKey) {
+
+    console.log(snap);
 
     const data = snap.data();
 

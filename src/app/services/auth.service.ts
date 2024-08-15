@@ -65,7 +65,7 @@ export class AuthService {
   });
 
   readonly loadingUserSig = new Sig<boolean>(true);
-  readonly userSig = new Sig<User>();
+  readonly userSig = new Sig<User | null>();
   private _userSub: Subscription | undefined;
 
   private _tokenSub: Subscription | undefined;
@@ -94,7 +94,7 @@ export class AuthService {
       const firebaseUser = this.firebaseUser();
 
       if (!firebaseUser) {
-        this.userSig.set(undefined);
+        this.userSig.set(null);
         this.loadingUserSig.set(false);
         this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
         firebaseUserUid = undefined;
@@ -109,6 +109,8 @@ export class AuthService {
         return;
       }
       firebaseUserUid = firebaseUser.uid;
+
+      this.loadingUserSig.set(true);
 
       const isAnonymous = firebaseUser.isAnonymous || !firebaseUser.providerData.length;
 
@@ -137,8 +139,6 @@ export class AuthService {
           }
         }
       }
-
-      this.loadingUserSig.set(true);
 
       this._tokenSub && !this._tokenSub.closed && this._tokenSub.unsubscribe();
       this._tokenSub = zip(of(idTokenResult!), of(firebaseUser)).pipe(
@@ -175,8 +175,10 @@ export class AuthService {
           takeUntilDestroyed(this._destroyRef),
           takeWhile(() => !!this.firebaseUser()),
           switchMap((snap) => User.data(snap, cryptoKey)),
-          catchError(() => of(null))
+
         ).subscribe((user) => {
+
+          console.log(user);
 
           if (!user) {
             return;

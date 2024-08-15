@@ -259,6 +259,10 @@ export class TodayComponent {
     }
   }
 
+  todayItemIsDone(timeOfDay: string): boolean {
+    return !this._todayList()?.find((todayItem) => todayItem.timeOfDay === timeOfDay)?.tasks.some((task) => !task.done);
+  }
+
   addNewTask(): void {
 
     const todayName = this._roundsService.todaySig.get()();

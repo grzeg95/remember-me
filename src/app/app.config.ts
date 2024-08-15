@@ -1,5 +1,11 @@
 import {provideHttpClient} from '@angular/common/http';
-import {APP_INITIALIZER, ApplicationConfig, Injector, Provider} from '@angular/core';
+import {
+  APP_INITIALIZER,
+  ApplicationConfig,
+  Injector,
+  provideExperimentalZonelessChangeDetection,
+  Provider
+} from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {provideClientHydration} from '@angular/platform-browser';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
@@ -22,6 +28,8 @@ import {
 } from './models/firebase';
 import {AuthService} from './services/auth.service';
 import {ConnectionService} from './services/connection.service';
+import {RemoteConfigService} from './services/remote-config.service';
+import {RoundsService} from './services/rounds.service';
 
 if (!environment.production) {
   // @ts-ignore
@@ -143,6 +151,7 @@ const angularMaterialProviders = [
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideExperimentalZonelessChangeDetection(),
     provideRouter(routes),
     provideClientHydration(),
     provideHttpClient(),
@@ -150,6 +159,8 @@ export const appConfig: ApplicationConfig = {
     provideFirebase(),
     AuthService,
     ConnectionService,
+    RoundsService,
+    RemoteConfigService,
     firebaseInitializers,
     angularMaterialProviders
   ]

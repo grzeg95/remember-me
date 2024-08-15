@@ -34,7 +34,12 @@ export class Task implements TaskDoc {
   } as FirestoreDataConverter<Task, TaskDoc>;
 
   static ref(roundRef: DocumentReference<Round, RoundDoc>, id?: string) {
-    return roundRef.firestore.doc([roundRef.path, Collections.tasks, id].filter((part) => !!part).join('/')).withConverter(Task._converter);
+
+    if (id) {
+      return roundRef.firestore.doc([roundRef.path, Collections.tasks, id].join('/')).withConverter(Task._converter);
+    }
+
+    return roundRef.firestore.collection([roundRef.path, Collections.tasks].join('/')).doc().withConverter(Task._converter);
   }
 
   static refs(roundRef: DocumentReference<Round, RoundDoc>) {

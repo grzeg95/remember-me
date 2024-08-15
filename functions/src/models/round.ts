@@ -44,7 +44,12 @@ export class Round implements RoundDoc {
   } as FirestoreDataConverter<Round, RoundDoc>;
 
   static ref(userRef: DocumentReference<User, UserDoc>, id?: string) {
-    return userRef.firestore.doc([userRef.path, Collections.rounds, id].filter((part) => !!part).join('/')).withConverter(Round.converter);
+
+    if (id) {
+      return userRef.firestore.doc([userRef.path, Collections.rounds, id].join('/')).withConverter(Round.converter);
+    }
+
+    return userRef.firestore.collection([userRef.path, Collections.rounds].join('/')).doc().withConverter(Round.converter);
   }
 
   static refs(userRef: DocumentReference<User, UserDoc>) {

@@ -16,6 +16,8 @@ export const authGuardUnauthorized = (): Observable<true | UrlTree> => {
     map(user => !!user),
     map((can: boolean) => {
 
+      console.log(can);
+
       // redirect to guest view
       if (!can) {
         return router.createUrlTree(['/']);

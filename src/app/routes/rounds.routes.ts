@@ -21,7 +21,6 @@ export const roundsRoutes: Routes = [
     path: '',
     component: RoundsComponent,
     providers: [
-      RoundsService,
       TaskService
     ],
     children: [

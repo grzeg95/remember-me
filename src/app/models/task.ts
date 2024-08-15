@@ -1,4 +1,12 @@
-import {collection, doc, DocumentData, DocumentReference, DocumentSnapshot, FirestoreDataConverter} from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  DocumentData,
+  DocumentReference,
+  DocumentSnapshot,
+  FirestoreDataConverter,
+  QueryDocumentSnapshot
+} from 'firebase/firestore';
 
 import {decrypt, protectObjectDecryption} from '../utils/crypto';
 import {Collections} from './collections';
@@ -31,6 +39,9 @@ export class Task implements TaskDoc {
         timesOfDayIds: task.timesOfDayIds,
         encryptedDaysOfTheWeek: task.encryptedDaysOfTheWeek
       };
+    },
+    fromFirestore(snapshot: QueryDocumentSnapshot) {
+      return snapshot.data();
     }
   } as FirestoreDataConverter<Task, TaskDoc>;
 

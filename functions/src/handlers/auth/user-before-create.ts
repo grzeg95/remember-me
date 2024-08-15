@@ -1,5 +1,5 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
-import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
+import {constants, publicEncrypt, randomBytes, RsaPublicKey/* , webcrypto */} from 'crypto';
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {
   AuthBlockingEvent,
@@ -31,13 +31,14 @@ export const createSampleUserData = async (userDocSnap: DocumentSnapshot<User, U
   const task: Task = new Task('null', encryptedDescription, 'Drink coffee 🤠', ['Before start'], encryptedDaysOfTheWeek, ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], false);
 
   // get round
-  const roundRef = Round.ref(userDocSnap.ref, undefined);
+  const roundRef = Round.ref(userDocSnap.ref);
   const roundDocSnap = await transaction.get(roundRef);
 
   const roundId = roundDocSnap.id;
 
   // get task
-  const taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
+  const taskRef = Task.ref(roundDocSnap.ref);
+  const taskDocSnap = await transaction.get(taskRef);
 
   const todayIds = await proceedTodayTasks(transaction, task, taskDocSnap, task, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
 
@@ -61,57 +62,61 @@ export const createSampleUserData = async (userDocSnap: DocumentSnapshot<User, U
   return roundId;
 };
 
-export const handler = (event: AuthBlockingEvent) => {
+export const handler = async (event: AuthBlockingEvent) => {
+
+  if (!publicKey) {
+    [publicKey] = await keyManagementServiceClient.getPublicKey({
+      name: cryptoKeyVersionPath
+    });
+  }
+
+  testRequirement(
+    publicKey?.name !== cryptoKeyVersionPath ||
+    crc32c.calculate(publicKey?.pem) !== Number(publicKey?.pemCrc32c?.value),
+    {message: 'GetPublicKey: request corrupted in-transit'}
+  );
 
   const key = randomBytes(32);
-  let transactionWrite: TransactionWrite;
   const app = getFirestore();
+
+  const encryptedSymmetricKey = publicEncrypt(
+    {
+      key: publicKey?.pem,
+      oaepHash: 'sha256',
+      padding: constants.RSA_PKCS1_OAEP_PADDING
+    } as RsaPublicKey,
+    Buffer.from(key.toString('hex'))
+  ).toString('hex');
+
+  // const cryptoKey = await webcrypto.subtle.importKey(
+  //   'raw',
+  //   key,
+  //   {
+  //     name: 'AES-GCM'
+  //   },
+  //   false,
+  //   ['encrypt']
+  // );
 
   return app.runTransaction(async (transaction) => {
 
-    if (!publicKey) {
-      [publicKey] = await keyManagementServiceClient.getPublicKey({
-        name: cryptoKeyVersionPath
-      });
-    }
-
-    testRequirement(
-      publicKey?.name !== cryptoKeyVersionPath ||
-      crc32c.calculate(publicKey?.pem) !== Number(publicKey?.pemCrc32c?.value),
-      {message: 'GetPublicKey: request corrupted in-transit'}
-    );
-
-    transactionWrite = new TransactionWrite(transaction);
-
-    const encryptedSymmetricKey = publicEncrypt(
-      {
-        key: publicKey?.pem,
-        oaepHash: 'sha256',
-        padding: constants.RSA_PKCS1_OAEP_PADDING
-      } as RsaPublicKey,
-      Buffer.from(key.toString('hex'))
-    ).toString('hex');
-
-    const cryptoKey = await webcrypto.subtle.importKey(
-      'raw',
-      key,
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['encrypt']
-    );
+    const transactionWrite = new TransactionWrite(transaction);
 
     const userDocSnap = await getUserDocSnap(app, transaction, event.data.uid);
 
     // createSampleUserData
-    const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
-    transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
-      return {
-        rounds,
-        hasEncryptedSecretKey: true
-      };
-    }));
+    // const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
+    // transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
+    //   return {
+    //     rounds,
+    //     hasEncryptedSecretKey: true
+    //   };
+    // }));
+
+    transactionWrite.set(userDocSnap.ref, {
+      roundsIds: [] as string[],
+      hasEncryptedSecretKey: true
+    } as UserDoc);
 
     await transactionWrite.execute();
 
