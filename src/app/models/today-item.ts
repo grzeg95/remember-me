@@ -4,5 +4,5 @@ export interface TodayItem {
   id: string;
   disabled: boolean;
   dayOfTheWeekId: string;
-  timeOfDayEncrypted: string;
+  timeOfDayIdEncrypted: string;
 }

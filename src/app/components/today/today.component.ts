@@ -54,14 +54,39 @@ export class TodayComponent {
 
   protected readonly _todayList = computed(() => {
 
-    const todayTasksMapSig = this._todayTasks();
+    const round = this._round();
+    const todayTasks = this._todayTasks();
     const today = this._today();
 
-    if (!todayTasksMapSig || !today) {
+    if (!round || !todayTasks || !today) {
       return undefined;
     }
 
-    // todayTasksMapSig.get
+    const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
+
+    for (const todayTask of todayTasks) {
+
+      Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
+
+        if (!todayTasksByTimeOfDay[timeOfDay]) {
+          todayTasksByTimeOfDay[timeOfDay] = [];
+        }
+
+        todayTasksByTimeOfDay[timeOfDay].push({
+          description: todayTask.description,
+          done: todayTask.timesOfDay[timeOfDay],
+          id: todayTask.id,
+          disabled: false,
+          dayOfTheWeekId: today.short,
+          timeOfDayIdEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
+        });
+      });
+    }
+
+    return round.timesOfDayIds.filter((timeOfDayId) => todayTasksByTimeOfDay[timeOfDayId]).map((timeOfDay) => ({
+      timeOfDay,
+      tasks: todayTasksByTimeOfDay[timeOfDay]
+    })) || [];
   });
 
   protected readonly _RouterDict = RouterDict;
@@ -218,7 +243,7 @@ export class TodayComponent {
     todayItem.disabled = true;
     defer(() => updateDoc(
       todayTaskRef,
-      new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
+      new FieldPath('timesOfDay', todayItem.timeOfDayIdEncrypted),
       !todayItem.done
     )).pipe(catchError(() => {
       todayItem.disabled = false;
