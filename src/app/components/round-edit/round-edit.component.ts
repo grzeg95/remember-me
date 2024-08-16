@@ -41,7 +41,7 @@ export class RoundEditComponent implements OnDestroy {
 
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
 
-  private readonly _isLoadingSig = new Sig<boolean>(true);
+  private readonly _isLoadingSig = new Sig<boolean>(false);
   protected readonly _isLoading = this._isLoadingSig.get();
 
   protected readonly _editRoundIdSig = this._roundsService.editRoundIdSig;
@@ -98,8 +98,13 @@ export class RoundEditComponent implements OnDestroy {
       const user = this._user();
       const editRoundId = this._editRoundId();
 
+      if (user === undefined || editRoundId === undefined) {
+        return;
+      }
+
       if (!user || !editRoundId) {
         this.resetForm();
+        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]);
         this._roundsService.roundSig.set(undefined);
         this._roundsService.roundIdSig.set(undefined);
         this._roundForm.enable();

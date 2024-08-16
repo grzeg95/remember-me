@@ -91,6 +91,12 @@ export class AuthService {
         return;
       }
 
+      const authStateReady = this.authStateReady();
+
+      if (!authStateReady) {
+        return;
+      }
+
       const firebaseUser = this.firebaseUser();
 
       if (!firebaseUser) {
@@ -177,8 +183,6 @@ export class AuthService {
           switchMap((snap) => User.data(snap, cryptoKey)),
 
         ).subscribe((user) => {
-
-          console.log(user);
 
           if (!user) {
             return;

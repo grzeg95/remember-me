@@ -26,6 +26,9 @@ export class TodayTask implements TodayTaskDoc {
         encryptedDescription: todayTask.encryptedDescription,
         encryptedTimesOfDay: todayTask.encryptedTimesOfDay
       };
+    },
+    fromFirestore(snap: FirebaseFirestore.QueryDocumentSnapshot) {
+      return snap.data();
     }
   } as FirestoreDataConverter<TodayTask, TodayTaskDoc>;
 

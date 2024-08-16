@@ -4,10 +4,7 @@ import crypto = require('crypto');
 
 export const protectObjectDecryption = <T>(emptyOne: T): (value: any) => Promise<T> => {
   return async (value: T) => {
-    if (typeof value === 'string' || !value) {
-      return emptyOne;
-    }
-    return value;
+    return !value ? emptyOne : value;
   };
 };
 
@@ -17,7 +14,7 @@ export const getCryptoKey = (secretKey: string): Promise<CryptoKey> => {
     Buffer.from(secretKey, 'hex'),
     {name: 'AES-GCM'},
     false,
-    ['decrypt']
+    ['decrypt', 'encrypt']
   );
 };
 
@@ -66,5 +63,6 @@ export const decrypt = async <T = string>(encryptedData: string | null | undefin
       } catch {
         return text;
       }
-    });
+    })
+    .catch(() => null);
 };

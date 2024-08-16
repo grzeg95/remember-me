@@ -2,10 +2,7 @@ import {Buffer} from 'buffer';
 
 export const protectObjectDecryption = <T>(emptyOne: T): (value: any) => Promise<T> => {
   return async (value: T) => {
-    if (typeof value === 'string' || !value) {
-      return emptyOne;
-    }
-    return value;
+    return !value ? emptyOne : value;
   };
 }
 
@@ -42,5 +39,6 @@ export const decrypt = async <T = string>(encryptedData: string | null | undefin
       } catch {
         return text;
       }
-    });
+    })
+    .catch(() => null);
 }

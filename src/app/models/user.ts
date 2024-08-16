@@ -83,8 +83,6 @@ export class User implements UserDoc {
 
   static async data(snap: DocumentSnapshot<User, UserDoc>, cryptoKey: CryptoKey) {
 
-    console.log(snap);
-
     const data = snap.data();
 
     let disabled = false;

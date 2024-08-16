@@ -25,6 +25,9 @@ export class Today implements TodayDoc {
         encryptedName: today.encryptedName,
         todayTasksIds: today.todayTasksIds
       };
+    },
+    fromFirestore(snap: FirebaseFirestore.QueryDocumentSnapshot) {
+      return snap.data();
     }
   } as FirestoreDataConverter<Today, TodayDoc>;
 

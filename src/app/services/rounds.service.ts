@@ -28,7 +28,7 @@ export class RoundsService {
   readonly roundIdSig = new Sig<string>();
 
   readonly editRoundSig = new Sig<Round>();
-  readonly editRoundIdSig = new Sig<string>();
+  readonly editRoundIdSig = new Sig<string | null>();
   readonly loadingEditRoundSig = new Sig<boolean>(false);
 
   readonly roundsMapSig = new Sig<Map<string, Round>>();
@@ -135,7 +135,7 @@ export class RoundsService {
       roundId: string,
       details: string,
       created: boolean
-    }>('roundsSaveRoundUrl', {
+    }>('rounds-saveround', {
       roundId,
       name
     });
@@ -149,7 +149,7 @@ export class RoundsService {
     return this._functionsService.httpsCallable<{
       moveBy: number,
       roundId: string
-    }, HTTPSuccess>('roundsSetRoundsOrderUrl', data);
+    }, HTTPSuccess>('rounds-setroundsorder', data);
   }
 
   setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {

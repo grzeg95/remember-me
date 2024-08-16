@@ -30,6 +30,9 @@ export class Task implements TaskDoc {
         timesOfDayIds: task.timesOfDayIds,
         encryptedDaysOfTheWeek: task.encryptedDaysOfTheWeek
       };
+    },
+    fromFirestore(snap: FirebaseFirestore.QueryDocumentSnapshot) {
+      return snap.data();
     }
   } as FirestoreDataConverter<Task, TaskDoc>;
 

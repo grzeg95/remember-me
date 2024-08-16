@@ -30,6 +30,9 @@ export class User implements UserDoc {
         hasEncryptedSecretKey: user.hasEncryptedSecretKey,
         encryptedPhotoBlobURL: user.encryptedPhotoBlobURL
       };
+    },
+    fromFirestore(snap: FirebaseFirestore.QueryDocumentSnapshot) {
+      return snap.data();
     }
   } as FirestoreDataConverter<User, UserDoc>;
 

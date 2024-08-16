@@ -3,7 +3,7 @@ import {CallableRequest} from 'firebase-functions/v2/https';
 
 import '../../utils/global.prototype';
 import {Round, RoundDoc} from '../../models/round';
-import {User} from '../../models/user';
+import {User, UserDoc} from '../../models/user';
 import {encrypt, getCryptoKey} from '../../utils/crypto';
 import {testRequirement} from '../../utils/test-requirement';
 import {TransactionWrite} from '../../utils/transaction-write';
@@ -72,8 +72,6 @@ export const handler = async (request: CallableRequest) => {
       roundsIds = userDocSnapData.roundsIds;
     }
 
-    let roundsEncryptPromise;
-
     // create round
     if (!roundDocSnapTmp.exists) {
 
@@ -85,20 +83,17 @@ export const handler = async (request: CallableRequest) => {
 
       roundId = roundDocSnap.id;
       roundsIds.push(roundId);
-      roundsEncryptPromise = encrypt(roundsIds, cryptoKey);
       created = true;
       transactionWrite.delete(roundDocSnapTmp.ref);
 
       // update user
-      writeUser(transactionWrite, userDocSnap, roundsEncryptPromise.then((encryptedRounds) => {
-        return {
-          rounds: encryptedRounds
-        };
-      }));
+      writeUser(transactionWrite, userDocSnap, {
+        roundsIds
+      } as UserDoc);
 
-      const roundName = await encrypt(data.name, cryptoKey);
+      const encryptedName = await encrypt(data.name, cryptoKey);
       transactionWrite.create(roundDocSnap.ref, {
-        encryptedName: roundName,
+        encryptedName,
         timesOfDayIds: [],
         timesOfDayIdsCardinality: [],
         todayIds: [],
@@ -113,9 +108,9 @@ export const handler = async (request: CallableRequest) => {
        * */
       testRequirement(round.name === data.name);
 
-      const roundName = await encrypt(data.name, cryptoKey);
+      const encryptedName = await encrypt(data.name, cryptoKey);
       transactionWrite.update(roundDocSnap.ref, {
-        encryptedName: roundName,
+        encryptedName,
         timesOfDayIds: round.timesOfDayIds,
         timesOfDayIdsCardinality: round.timesOfDayIdsCardinality,
         todayIds: round.todayIds,
