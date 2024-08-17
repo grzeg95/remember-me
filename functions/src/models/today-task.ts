@@ -5,7 +5,7 @@ import {Today, TodayDoc} from './today';
 
 export interface TodayTaskDoc extends DocumentData{
   encryptedDescription: string;
-  encryptedTimesOfDay: string;
+  encryptedTimesOfDayIds: string;
 }
 
 export class TodayTask implements TodayTaskDoc {
@@ -14,7 +14,7 @@ export class TodayTask implements TodayTaskDoc {
     public readonly id: string,
     public readonly encryptedDescription: string,
     public readonly description: string,
-    public readonly encryptedTimesOfDay: string,
+    public readonly encryptedTimesOfDayIds: string,
     public readonly timesOfDay: {[key in string]: boolean},
     public readonly exists: boolean
   ) {
@@ -24,7 +24,7 @@ export class TodayTask implements TodayTaskDoc {
     toFirestore: (todayTask: TodayTask) => {
       return {
         encryptedDescription: todayTask.encryptedDescription,
-        encryptedTimesOfDay: todayTask.encryptedTimesOfDay
+        encryptedTimesOfDayIds: todayTask.encryptedTimesOfDayIds
       };
     },
     fromFirestore(snap: FirebaseFirestore.QueryDocumentSnapshot) {
@@ -45,19 +45,19 @@ export class TodayTask implements TodayTaskDoc {
     const data = snap.data();
 
     let encryptedDescription = '';
-    let encryptedTimesOfDay = '';
+    let encryptedTimesOfDayIds = '';
 
     data?.['encryptedDescription'] && typeof data['encryptedDescription'] === 'string' && (encryptedDescription = data['encryptedDescription']);
-    data?.['encryptedTimesOfDay'] && typeof data['encryptedTimesOfDay'] === 'string' && (encryptedTimesOfDay = data['encryptedTimesOfDay']);
+    data?.['encryptedTimesOfDayIds'] && typeof data['encryptedTimesOfDayIds'] === 'string' && (encryptedTimesOfDayIds = data['encryptedTimesOfDayIds']);
 
     const description = await decrypt<string>(encryptedDescription, cryptoKey).then(protectObjectDecryption<string>(''));
-    const timesOfDay = await decrypt<{[key in string]: boolean}>(encryptedTimesOfDay, cryptoKey).then(protectObjectDecryption<{[key in string]: boolean}>({}));
+    const timesOfDay = await decrypt<{[key in string]: boolean}>(encryptedTimesOfDayIds, cryptoKey).then(protectObjectDecryption<{[key in string]: boolean}>({}));
 
     return new TodayTask(
       snap.id,
       encryptedDescription,
       description,
-      encryptedTimesOfDay,
+      encryptedTimesOfDayIds,
       timesOfDay,
       snap.exists
     );

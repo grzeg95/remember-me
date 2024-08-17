@@ -47,7 +47,7 @@ import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/ta
 export interface TaskForm {
   description: string | null;
   daysOfTheWeek: {[key in Day]: boolean | null};
-  timesOfDay: string[];
+  timesOfDayIds: string[];
 }
 
 @Component({
@@ -93,7 +93,7 @@ export class TaskComponent implements OnDestroy {
       sun: false
     },
     description: '',
-    timesOfDay: []
+    timesOfDayIds: []
   };
 
   private readonly _isNothingChangedSig = new Sig<boolean>(true);
@@ -116,12 +116,12 @@ export class TaskComponent implements OnDestroy {
       sat: new FormControl(false),
       sun: new FormControl(false)
     }, TaskComponent.daysOfTheWeekValidator),
-    timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator),
-    timeOfDay: new FormControl('')
+    timesOfDayIds: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator),
+    timeOfDayId: new FormControl('')
   });
 
-  protected readonly _timeOfDay = this._taskForm.controls.timeOfDay;
-  protected readonly _timesOfDay = this._taskForm.controls.timesOfDay;
+  protected readonly _timeOfDayId = this._taskForm.controls.timeOfDayId;
+  protected readonly _timesOfDayIds = this._taskForm.controls.timesOfDayIds;
   protected readonly _daysOfTheWeek = this._taskForm.controls.daysOfTheWeek;
   protected readonly _description = this._taskForm.controls.description;
 
@@ -154,11 +154,11 @@ export class TaskComponent implements OnDestroy {
     this._taskForm.valueChanges.subscribe(() => {
 
       const description = this._description.value || '';
-      const timesOfDay = this._timesOfDay.value;
+      const timesOfDayIds = this._timesOfDayIds.value;
       const daysOfTheWeek = this._daysOfTheWeek.value;
 
       const isValueInit = (this._initValues.description || '').trim() === description.trim() &&
-        this._initValues.timesOfDay.toSet().hasOnly(timesOfDay.toSet()) &&
+        this._initValues.timesOfDayIds.toSet().hasOnly(timesOfDayIds.toSet()) &&
         this._initValues.daysOfTheWeek.mon === daysOfTheWeek.mon &&
         this._initValues.daysOfTheWeek.tue === daysOfTheWeek.tue &&
         this._initValues.daysOfTheWeek.wed === daysOfTheWeek.wed &&
@@ -177,12 +177,12 @@ export class TaskComponent implements OnDestroy {
         return;
       }
 
-      const timesOfDays = (new Set(round.timesOfDayIds).difference(new Set(this._timesOfDay.value))).toArray();
+      const timesOfDays = (new Set(round.timesOfDayIds).difference(new Set(this._timesOfDayIds.value))).toArray();
       this._allOptionsSig.set(timesOfDays);
-      this.applyFilter(this._timeOfDay.value || '');
+      this.applyFilter(this._timeOfDayId.value || '');
     });
 
-    this._timesOfDay.valueChanges.subscribe((timesOfDay: string[]) => {
+    this._timesOfDayIds.valueChanges.subscribe((timesOfDay: string[]) => {
 
       const round = this._round();
 
@@ -192,11 +192,11 @@ export class TaskComponent implements OnDestroy {
 
       const timesOfDays = (new Set(round.timesOfDayIds).difference(new Set(timesOfDay))).toArray();
       this._allOptionsSig.set(timesOfDays);
-      this.applyFilter(this._timeOfDay.value || '');
+      this.applyFilter(this._timeOfDayId.value || '');
     });
 
-    this._timeOfDay.valueChanges.subscribe((timeOfDay) => {
-      this.applyFilter(timeOfDay || '');
+    this._timeOfDayId.valueChanges.subscribe((timeOfDayId) => {
+      this.applyFilter(timeOfDayId || '');
     });
 
     // task
@@ -215,6 +215,7 @@ export class TaskComponent implements OnDestroy {
         task_taskId = undefined;
         this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
         this._taskSig.set(undefined);
+        this._taskForm.enable();
         return;
       }
 
@@ -233,7 +234,7 @@ export class TaskComponent implements OnDestroy {
       const cryptoKey = user.cryptoKey;
 
       const userRef = User.ref(this._firestore, user.id);
-      const roundRef = Round.ref(userRef) as DocumentReference<Round, RoundDoc>;
+      const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
       const taskRef = Task.ref(roundRef, taskId) as DocumentReference<Task, TaskDoc>;
 
       this._loadingSig.set(true);
@@ -258,7 +259,7 @@ export class TaskComponent implements OnDestroy {
     });
   }
 
-  handleAddTimeOfDay(event: MatChipInputEvent): void {
+  handleAddTimeOfDayId(event: MatChipInputEvent): void {
 
     const value = (event.value || '').trim();
 
@@ -266,28 +267,28 @@ export class TaskComponent implements OnDestroy {
       return;
     }
 
-    if ((this._timesOfDay.value as string[]).includes(value)) {
+    if ((this._timesOfDayIds.value as string[]).includes(value)) {
       this._snackBar.open('Enter new one');
     } else if (value.length > 256) {
       this._snackBar.open('Enter time of day length from 1 to 256');
       this.basicInput.nativeElement.value = '';
-    } else if (((this._taskForm.get('timesOfDay') as FormArray).value as string[]).length >= 10) {
+    } else if (((this._timesOfDayIds as FormArray).value as string[]).length >= 10) {
       this._snackBar.open('Up to 10 times of day per task');
     } else {
-      this._timesOfDay.push(new FormControl<string>(value));
+      this._timesOfDayIds.push(new FormControl<string>(value));
       event.chipInput!.clear();
-      this._timeOfDay.setValue(null);
+      this._timeOfDayId.setValue(null);
     }
   }
 
   handleOptionSelected(event: MatAutocompleteSelectedEvent): void {
-    this._timesOfDay.push(new FormControl<string>(event.option.viewValue));
-    this._timeOfDay.setValue(null);
+    this._timesOfDayIds.push(new FormControl<string>(event.option.viewValue));
+    this._timeOfDayId.setValue(null);
   }
 
   handleRemoveTimeOfDay(index: number): void {
-    this._timesOfDay.markAsDirty();
-    this._timesOfDay.removeAt(index);
+    this._timesOfDayIds.markAsDirty();
+    this._timesOfDayIds.removeAt(index);
   }
 
   applyFilter(value: string): void {
@@ -313,7 +314,7 @@ export class TaskComponent implements OnDestroy {
       task: {
         description: task.description,
         daysOfTheWeek: this._taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
-        timesOfDay: task.timesOfDay
+        timesOfDayIds: task.timesOfDayIds
       },
       taskId: this._task()?.id || 'null',
       roundId: this._round()!.id
@@ -347,7 +348,7 @@ export class TaskComponent implements OnDestroy {
       }
     });
 
-    this._timesOfDay.clear();
+    this._timesOfDayIds.clear();
 
     this._initValues = {
       daysOfTheWeek: {
@@ -360,7 +361,7 @@ export class TaskComponent implements OnDestroy {
         sun: false
       },
       description: '',
-      timesOfDay: []
+      timesOfDayIds: []
     };
   }
 
@@ -399,7 +400,7 @@ export class TaskComponent implements OnDestroy {
     this._daysOfTheWeek.setValue(this._taskService.dayArrayToDaysBooleanMap(task.daysOfTheWeek));
 
     task.timesOfDayIds.forEach((timeOfDayId) => {
-      this._timesOfDay.push(new FormControl(timeOfDayId.trim()));
+      this._timesOfDayIds.push(new FormControl(timeOfDayId.trim()));
     });
 
     this._initValues = this._taskForm.getRawValue();

@@ -50,14 +50,14 @@ service cloud.firestore {
 
         allow list: if isUserVerifiedForModules();
 
-        match /task/{taskId} {
+        match /todayTask/{todayTaskId} {
 
           allow list: if isUserVerifiedForModules() && request.query.limit == 25;
 
           // set progress
           allow update: if (
             isUserVerifiedForModules() &&
-            exists(/databases/$(database)/documents/users/$(userId)/rounds/$(roundId)/task/$(taskId)) &&
+            exists(/databases/$(database)/documents/users/$(userId)/rounds/$(roundId)/task/$(todayTaskId)) &&
             request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet() &&
             request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1 &&
             request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1 &&
@@ -66,7 +66,7 @@ service cloud.firestore {
         }
       }
 
-      match /task/{taskId} {
+      match /tasks/{taskId} {
         allow get: if isUserVerifiedForModules();
         allow list: if isUserVerifiedForModules() && request.query.limit == 25;
       }

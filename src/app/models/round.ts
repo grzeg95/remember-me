@@ -5,6 +5,7 @@ import {User, UserDoc} from './user';
 
 export interface RoundDoc extends DocumentData {
   readonly timesOfDayIds: string[];
+  readonly timesOfDayEncryptedIds: string[];
   readonly timesOfDayIdsCardinality: number[];
   readonly todayIds: string[];
   readonly tasksIds: string[];
@@ -16,6 +17,7 @@ export class Round implements RoundDoc {
   private constructor(
     public readonly id: string,
     public readonly timesOfDayIds: string[],
+    public readonly timesOfDayEncryptedIds: string[],
     public readonly timesOfDayIdsCardinality: number[],
     public readonly todayIds: string[],
     public readonly tasksIds: string[],
@@ -43,28 +45,28 @@ export class Round implements RoundDoc {
   static ref(userRef: DocumentReference<User, UserDoc>, id?: string) {
 
     if (id) {
-      return doc(userRef, Collections.rounds, id).withConverter(Round._converter);
+      return doc(userRef, [Collections.rounds, id].join('/')).withConverter(Round._converter);
     }
 
-    return collection(userRef, Collections.rounds).withConverter(Round._converter);
+    return collection(userRef, [Collections.rounds].join('/')).withConverter(Round._converter);
   }
 
   static async data(snap: DocumentSnapshot<Round, RoundDoc> | QueryDocumentSnapshot<Round, RoundDoc>, cryptoKey: CryptoKey) {
 
     const data = snap.data();
 
-    let timesOfDaysIds: string[] = [];
+    let timesOfDayEncryptedIds: string[] = [];
     let timesOfDayIdsCardinality: number[] = [];
     let todayIds: string[] = [];
     let tasksIds: string[] = [];
     let encryptedName = '';
 
     if (
-      data?.['timesOfDayIds'] &&
-      Array.isArray(data['timesOfDayIds']) &&
-      !data['timesOfDayIds'].some((e) => typeof e !== 'string')
+      data?.['timesOfDayEncryptedIds'] &&
+      Array.isArray(data['timesOfDayEncryptedIds']) &&
+      !data['timesOfDayEncryptedIds'].some((e) => typeof e !== 'string')
     ) {
-      timesOfDaysIds = data['timesOfDayIds'];
+      timesOfDayEncryptedIds = data['timesOfDayEncryptedIds'];
     }
 
     if (
@@ -95,9 +97,16 @@ export class Round implements RoundDoc {
 
     const name = await decrypt<string>(encryptedName, cryptoKey).then(protectObjectDecryption<string>(''));
 
+    const timesOfDayIds: string[] = [];
+
+    for (const timesOfDayEncryptedId of timesOfDayEncryptedIds) {
+      timesOfDayIds.push(await decrypt<string>(timesOfDayEncryptedId, cryptoKey).then(protectObjectDecryption<string>('')));
+    }
+
     return new Round(
       snap.id,
-      timesOfDaysIds,
+      timesOfDayIds,
+      timesOfDayEncryptedIds,
       timesOfDayIdsCardinality,
       todayIds,
       tasksIds,

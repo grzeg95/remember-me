@@ -8,7 +8,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import 'global.prototype';
-import {CollectionReference, DocumentReference, Firestore} from 'firebase/firestore';
+import {CollectionReference, DocumentReference, Firestore, limit} from 'firebase/firestore';
 import {catchError, of, Subscription, takeWhile} from 'rxjs';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
@@ -87,12 +87,12 @@ export class TasksListComponent implements OnDestroy {
       const cryptoKey = user.cryptoKey;
 
       const userRef = User.ref(this._firestore, user.id);
-      const roundRef = Round.ref(userRef) as DocumentReference<Round, RoundDoc>;
+      const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
       const tasksRef = Task.ref(roundRef) as CollectionReference<Task, TaskDoc>;
 
       this._roundsService.todayTasksLoadingSig.set(true);
       this._tasksListSub && !this._tasksListSub.closed && this._tasksListSub.unsubscribe();
-      this._tasksListSub = collectionSnapshots(tasksRef).pipe(
+      this._tasksListSub = collectionSnapshots(tasksRef, limit(25)).pipe(
         takeUntilDestroyed(this._destroyRef),
         takeWhile(() => !!this._user() || !!this._round()),
         catchError(() => of(null))

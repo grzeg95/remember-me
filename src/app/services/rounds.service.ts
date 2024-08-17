@@ -25,7 +25,7 @@ export class RoundsService {
   readonly roundSig = new Sig<Round>();
   private readonly _round = this.roundSig.get();
 
-  readonly roundIdSig = new Sig<string>();
+  readonly roundIdSig = new Sig<string | null>();
 
   readonly editRoundSig = new Sig<Round>();
   readonly editRoundIdSig = new Sig<string | null>();
@@ -95,8 +95,8 @@ export class RoundsService {
 
   readonly daySig = new Sig<{full: string, short: Day}>();
 
-  readonly todayMapSig = new Sig<Map<string, Today>>();
-  readonly todayMapLoadingSig = new Sig<boolean>(false);
+  readonly todayListSig = new Sig<Today[]>();
+  readonly todayListLoadingSig = new Sig<boolean>(false);
 
   //
   // Tasks list
@@ -142,7 +142,7 @@ export class RoundsService {
   }
 
   deleteRound(id: string): Observable<HTTPSuccess> {
-    return this._functionsService.httpsCallable<string, any>('roundsDeleteRoundUrl', id);
+    return this._functionsService.httpsCallable<string, any>('rounds-deleteround', id);
   }
 
   setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<HTTPSuccess> {
@@ -157,25 +157,25 @@ export class RoundsService {
       timeOfDay: string,
       moveBy: number,
       roundId: string
-    }, HTTPSuccess>('roundsSetTimesOfDayOrderUrl', data);
+    }, HTTPSuccess>('rounds-settimesofdayorder', data);
   }
 
   saveTask(data: {
-    task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
+    task: {description: string, daysOfTheWeek: Day[], timesOfDayIds: string[]},
     taskId: string,
     roundId: string
   }): Observable<HTTPSuccess> {
     return this._functionsService.httpsCallable<{
-      task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
+      task: {description: string, daysOfTheWeek: Day[], timesOfDayIds: string[]},
       taskId: string,
       roundId: string
-    }, HTTPSuccess>('roundsSaveTaskUrl', data);
+    }, HTTPSuccess>('rounds-savetask', data);
   }
 
   deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
     return this._functionsService.httpsCallable<{
       taskId: string,
       roundId: string
-    }, HTTPSuccess>('roundsDeleteTaskUrl', data);
+    }, HTTPSuccess>('rounds-deletetask', data);
   }
 }

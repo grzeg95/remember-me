@@ -8,7 +8,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
-import {CollectionReference, DocumentReference, FieldPath, Firestore, updateDoc} from 'firebase/firestore';
+import {CollectionReference, DocumentReference, FieldPath, Firestore, limit, updateDoc} from 'firebase/firestore';
 import {catchError, defer, NEVER, of, Subscription, takeWhile} from 'rxjs';
 import {RouterDict} from '../../app.constants';
 import {Day} from '../../models/day';
@@ -42,7 +42,7 @@ export class TodayComponent {
   private _todaySub: Subscription | undefined;
   private _todayTasksMapSub: Subscription | undefined;
 
-  protected readonly _todayMap = this._roundsService.todayMapSig.get();
+  protected readonly _todayList = this._roundsService.todayListSig.get();
   protected readonly _todayTasks = this._roundsService.todayTasksSig.get();
   protected readonly _todayTasksLoading = this._roundsService.todayTasksLoadingSig.get();
 
@@ -52,11 +52,14 @@ export class TodayComponent {
 
   protected readonly _user = this._authService.userSig.get();
 
-  protected readonly _todayList = computed(() => {
+  protected readonly _todayView = computed(() => {
 
     const round = this._round();
     const todayTasks = this._todayTasks();
     const today = this._today();
+    const todayList = this._todayList();
+
+    console.log(todayTasks);
 
     if (!round || !todayTasks || !today) {
       return undefined;
@@ -103,9 +106,9 @@ export class TodayComponent {
     private readonly _destroyRef: DestroyRef
   ) {
 
-    // todayMap
-    let todayMap_userId: string | undefined;
-    let todayMap_roundId: string | undefined;
+    // todayList
+    let todayList_userId: string | undefined;
+    let todayList_roundId: string | undefined;
     effect(() => {
 
       const user = this._user();
@@ -113,51 +116,51 @@ export class TodayComponent {
 
       if (!user || !round) {
         this._router.navigate(['/']);
-        this._roundsService.todayMapSig.set(undefined);
-        todayMap_userId = undefined;
-        todayMap_roundId = undefined;
+        this._roundsService.todayListSig.set(undefined);
+        todayList_userId = undefined;
+        todayList_roundId = undefined;
         this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
         return;
       }
 
       if (
-        todayMap_userId === user.id &&
-        todayMap_roundId === round.id
+        todayList_userId === user.id &&
+        todayList_roundId === round.id
       ) {
         return;
       }
 
-      todayMap_userId = user.id;
-      todayMap_roundId = round.id;
+      todayList_userId = user.id;
+      todayList_roundId = round.id;
 
       const cryptoKey = user.cryptoKey;
 
       const userRef = User.ref(this._firestore, user.id);
-      const roundRef = Round.ref(userRef) as DocumentReference<Round, RoundDoc>;
+      const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
       const todayRef = Today.ref(roundRef) as CollectionReference<Today, TodayDoc>;
 
-      this._roundsService.todayMapLoadingSig.set(true);
+      this._roundsService.todayListLoadingSig.set(true);
       this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
       this._todayMapSub = collectionSnapshots(todayRef).pipe(
         takeUntilDestroyed(this._destroyRef),
         takeWhile(() => !!this._user() || !!this._round()),
-        catchError(() => of(null))
+        // catchError(() => of(null))
       ).subscribe(async (querySnapTodayList) => {
 
-        this._roundsService.todayMapLoadingSig.set(false);
+        this._roundsService.todayListLoadingSig.set(false);
 
         if (!querySnapTodayList) {
-          this._roundsService.todayMapSig.set(undefined);
+          this._roundsService.todayListSig.set(undefined);
           return;
         }
 
-        const querySnapBoardStatusesMap = new Map<string, Today>();
+        const todayList: Today[] = [];
 
         for (const querySnapToday of querySnapTodayList.docs) {
-          querySnapBoardStatusesMap.set(querySnapToday.id, await Today.data(querySnapToday, cryptoKey));
+          todayList.push(await Today.data(querySnapToday, cryptoKey));
         }
 
-        this._roundsService.todayMapSig.set(querySnapBoardStatusesMap);
+        this._roundsService.todayListSig.set(todayList);
       });
     });
 
@@ -167,9 +170,11 @@ export class TodayComponent {
     effect(() => {
 
       const user = this._user();
+      const round = this._round();
       const today = this._today();
+      const todayList = this._todayList();
 
-      if (!user || !today) {
+      if (!user || !round || !today || !todayList) {
         todayTasks_userId = undefined;
         todayTasks_todayNameShort = undefined;
         this._todaySub && !this._todaySub.closed && this._todaySub.unsubscribe();
@@ -187,16 +192,25 @@ export class TodayComponent {
       todayTasks_userId = user.id;
       todayTasks_todayNameShort = today.short;
 
+      const todayItem = todayList.find((todayItem) => todayItem.name === today.short)
+
+      if (!todayItem) {
+        this._roundsService.todayTasksSig.set([]);
+        return;
+      }
+
       const cryptoKey = user.cryptoKey;
 
       const userRef = User.ref(this._firestore, user.id);
-      const roundRef = Round.ref(userRef) as DocumentReference<Round, RoundDoc>;
-      const todayRef = Today.ref(roundRef, today.short) as DocumentReference<Today, TodayDoc>;
+      const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
+      const todayRef = Today.ref(roundRef, todayItem.id) as DocumentReference<Today, TodayDoc>;
       const todayTasksRef = TodayTask.ref(todayRef) as CollectionReference<TodayTask, TodayTaskDoc>;
+
+      console.log(todayTasksRef.path);
 
       this._roundsService.todayTasksLoadingSig.set(true);
       this._todayTasksMapSub && !this._todayTasksMapSub.closed && this._todayTasksMapSub.unsubscribe();
-      this._todayTasksMapSub = collectionSnapshots(todayTasksRef).pipe(
+      this._todayTasksMapSub = collectionSnapshots(todayTasksRef, limit(25)).pipe(
         takeUntilDestroyed(this._destroyRef),
         takeWhile(() => !!this._user()),
         catchError(() => of(null))
@@ -260,7 +274,8 @@ export class TodayComponent {
   }
 
   todayItemIsDone(timeOfDay: string): boolean {
-    return !this._todayList()?.find((todayItem) => todayItem.timeOfDay === timeOfDay)?.tasks.some((task) => !task.done);
+    return false;
+    // return !this._todayList()?.find((todayItem) => todayItem.timeOfDay === timeOfDay)?.tasks.some((task) => !task.done);
   }
 
   addNewTask(): void {

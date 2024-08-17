@@ -25,26 +25,26 @@
     </div>
     <div class="row">
       <div class="col form-group">
-        @if (!_taskForm.disabled && _timesOfDay.hasError('required') && _timesOfDay.dirty) {
+        @if (!_taskForm.disabled && _timesOfDayIds.hasError('required') && _timesOfDayIds.dirty) {
           <small class="form-text text-center text-muted error">Enter at leas one time of day</small>
         }
         <mat-form-field>
           <mat-label>Times of day</mat-label>
           <mat-chip-grid #chipGrid>
-            <div formArrayName="timesOfDay">
-              @for (timeOfDay of _timesOfDay.controls; track timeOfDay.value; let i = $index) {
+            <div formArrayName="timesOfDayIds">
+              @for (timeOfDayId of _timesOfDayIds.controls; track timeOfDayId.value; let i = $index) {
                 <mat-chip-row [class.disabled]="_taskForm.disabled || !_isOnline()"
                               [formGroupName]="i"
-                              [value]="timeOfDay.value"
+                              [value]="timeOfDayId.value"
                               [removable]="true"
                               [highlighted]="false"
-                              (removed)="handleRemoveTimeOfDay(i)">{{ timeOfDay.value }}
+                              (removed)="handleRemoveTimeOfDay(i)">{{ timeOfDayId.value }}
                   <img src="assets/img/chip-close.svg" class="mat-chip-close" matChipRemove>
                 </mat-chip-row>
               }
             </div>
             <input autocomplete="off"
-                   formControlName="timeOfDay"
+                   formControlName="timeOfDayId"
                    matInput
                    #input="matAutocompleteTrigger"
                    #basicInput
@@ -52,7 +52,7 @@
                    [matChipInputFor]="chipGrid"
                    [matChipInputSeparatorKeyCodes]="_separatorKeysCodes"
                    [matChipInputAddOnBlur]="true"
-                   (matChipInputTokenEnd)="handleAddTimeOfDay($event)">
+                   (matChipInputTokenEnd)="handleAddTimeOfDayId($event)">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="handleOptionSelected($event)">
               @for (option of _filteredOptions(); track option) {
                 <mat-option [value]="option">{{ option }}</mat-option>

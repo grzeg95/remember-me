@@ -1,5 +1,5 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
-import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
+import {constants, publicEncrypt, randomBytes, RsaPublicKey} from 'crypto';
 import {getAuth, UserRecord} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {EventContext} from 'firebase-functions';
@@ -8,7 +8,6 @@ import {UserDoc} from '../../models/user';
 import {testRequirement} from '../../utils/test-requirement';
 import {TransactionWrite} from '../../utils/transaction-write';
 import {getUserDocSnap} from '../../utils/user';
-import {createSampleUserData} from './user-before-create';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
 
@@ -57,24 +56,23 @@ export const handler = (user: UserRecord, context: EventContext) => {
       Buffer.from(key.toString('hex'))
     ).toString('hex');
 
-    const cryptoKey = await webcrypto.subtle.importKey(
-      'raw',
-      key,
-      {
-        name: 'AES-GCM'
-      },
-      false,
-      ['encrypt']
-    );
+    // const cryptoKey = await webcrypto.subtle.importKey(
+    //   'raw',
+    //   key,
+    //   {
+    //     name: 'AES-GCM'
+    //   },
+    //   false,
+    //   ['encrypt']
+    // );
 
     await getAuth().setCustomUserClaims(user.uid, {encryptedSymmetricKey});
     const userDocSnap = await getUserDocSnap(app, transaction, user.uid);
 
     // createSampleUserData
-    const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
+    // const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);
 
     transactionWrite.set(userDocSnap.ref, {
-      roundsIds: [roundId],
       hasEncryptedSecretKey: true
     } as UserDoc);
 

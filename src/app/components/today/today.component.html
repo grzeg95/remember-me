@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col">
 
-      @if (!_isOnline() && !_todayList()) {
+      @if (!_isOnline() && !_todayView()) {
         <div class="row message">
           <div class="col">
             <span>You are offline. Waiting for connection...</span>
@@ -10,7 +10,7 @@
         </div>
       }
 
-      @if (!_isOnline() && _todayList()) {
+      @if (!_isOnline() && _todayView()) {
         <ng-template *ngTemplateOutlet="showItems"></ng-template>
       }
 
@@ -22,14 +22,14 @@
         </div>
       }
 
-      @if (_isOnline() && _todayList() && !_todayTasksLoading()) {
+      @if (_isOnline() && _todayView() && !_todayTasksLoading()) {
         <ng-template *ngTemplateOutlet="showItems"></ng-template>
       }
 
       <ng-template #showItems>
 
-        @if (_todayList() && _todayList()!.length > 0) {
-            @for (todayItem of _todayList(); let i = $index; track i + todayItem.timeOfDay) {
+        @if (_todayView() && _todayView()!.length > 0) {
+            @for (todayItem of _todayView(); let i = $index; track i + todayItem.timeOfDay) {
               <div class="time-of-day-row">
 
                 <div class="row">
@@ -69,7 +69,7 @@
             }
         }
 
-        @if (_todayList() && _todayList()!.length === 0) {
+        @if (_todayView() && _todayView()!.length === 0) {
           <div class="row message">
             <div class="col">
               <span>Add some tasks for {{_today()?.full}}</span>

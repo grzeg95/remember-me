@@ -152,7 +152,7 @@ export class AuthService {
           if (!idTokenResult.claims['secretKey']) {
             return this._functionsService.httpsCallable<null, {
               customToken: string
-            }>('authGetTokenWithSecretKeyUrl', null).pipe(
+            }>('auth-gettokenwithsecretkey', null).pipe(
               switchMap((res) => signInWithCustomToken(this._auth, res.customToken)),
               mergeMap((userCredential) => {
                 return zip(

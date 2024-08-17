@@ -78,7 +78,7 @@ export class User implements UserDoc {
   } as FirestoreDataConverter<User, UserDoc>;
 
   static ref(firestore: Firestore, id: string) {
-    return doc(firestore, Collections.users, id).withConverter(User._converter);
+    return doc(firestore, [Collections.users, id].join('/')).withConverter(User._converter);
   }
 
   static async data(snap: DocumentSnapshot<User, UserDoc>, cryptoKey: CryptoKey) {

@@ -13,7 +13,7 @@ import {Today, TodayDoc} from './today';
 
 export interface TodayTaskDoc extends DocumentData {
   encryptedDescription: string;
-  encryptedTimesOfDay: string;
+  encryptedTimesOfDayIds: string;
 }
 
 export class TodayTask implements TodayTaskDoc {
@@ -22,7 +22,7 @@ export class TodayTask implements TodayTaskDoc {
     public readonly id: string,
     public readonly encryptedDescription: string,
     public readonly description: string,
-    public readonly encryptedTimesOfDay: string,
+    public readonly encryptedTimesOfDayIds: string,
     public readonly timesOfDay: { [key in string]: boolean },
     public readonly timesOfDayEncryptedMap: { [key in string]: string },
     public readonly exists: boolean
@@ -33,7 +33,7 @@ export class TodayTask implements TodayTaskDoc {
     toFirestore: (todayTask: TodayTask) => {
       return {
         encryptedDescription: todayTask.encryptedDescription,
-        encryptedTimesOfDay: todayTask.encryptedTimesOfDay
+        encryptedTimesOfDayIds: todayTask.encryptedTimesOfDayIds
       };
     },
     fromFirestore(snapshot: QueryDocumentSnapshot) {
@@ -44,10 +44,10 @@ export class TodayTask implements TodayTaskDoc {
   static ref(todayRef: DocumentReference<Today, TodayDoc>, id?: string) {
 
     if (id) {
-      return doc(todayRef, Collections.todayTask, id).withConverter(TodayTask._converter);
+      return doc(todayRef, [Collections.todayTask, id].join('/')).withConverter(TodayTask._converter);
     }
 
-    return collection(todayRef, Collections.todayTask).withConverter(TodayTask._converter);
+    return collection(todayRef, [Collections.todayTask].join('/')).withConverter(TodayTask._converter);
   }
 
   static async data(snap: DocumentSnapshot<TodayTask, TodayTaskDoc> | QueryDocumentSnapshot<TodayTask, TodayTaskDoc>, cryptoKey: CryptoKey) {
@@ -55,15 +55,18 @@ export class TodayTask implements TodayTaskDoc {
     const data = snap.data();
 
     let encryptedDescription: string = '';
-    let encryptedTimesOfDay: string = '';
+    let encryptedTimesOfDayIds: string = '';
 
     data?.['encryptedDescription'] && typeof data['encryptedDescription'] === 'string' && (encryptedDescription = data['encryptedDescription']);
-    data?.['encryptedTimesOfDay'] && typeof data['encryptedTimesOfDay'] === 'string' && (encryptedTimesOfDay = data['encryptedTimesOfDay']);
+    data?.['encryptedTimesOfDayIds'] && typeof data['encryptedTimesOfDayIds'] === 'string' && (encryptedTimesOfDayIds = data['encryptedTimesOfDayIds']);
 
     const description = await decrypt<string>(encryptedDescription, cryptoKey).then(protectObjectDecryption<string>(''));
 
     const decryptedKeysPromise: Promise<string | null>[] = [];
-    const encryptedKeys = Object.getOwnPropertyNames(data?.timesOfDay);
+
+    console.log(await decrypt(encryptedTimesOfDayIds, cryptoKey));
+
+    const encryptedKeys = Object.getOwnPropertyNames(encryptedTimesOfDayIds);
 
     for (const encryptedKey of encryptedKeys) {
       decryptedKeysPromise.push(decrypt(encryptedKey, cryptoKey));
@@ -83,7 +86,7 @@ export class TodayTask implements TodayTaskDoc {
       snap.id,
       encryptedDescription,
       description,
-      encryptedTimesOfDay,
+      encryptedTimesOfDayIds,
       timesOfDay,
       timesOfDayEncryptedMap,
       snap.exists()

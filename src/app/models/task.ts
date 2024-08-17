@@ -48,10 +48,10 @@ export class Task implements TaskDoc {
   static ref(roundRef: DocumentReference<Round, RoundDoc>, id?: string) {
 
     if (id) {
-      return doc(roundRef, Collections.tasks, id).withConverter(Task._converter);
+      return doc(roundRef, [Collections.tasks, id].join('/')).withConverter(Task._converter);
     }
 
-    return collection(roundRef, Collections.tasks).withConverter(Task._converter);
+    return collection(roundRef, [Collections.tasks].join('/')).withConverter(Task._converter);
   }
 
   static async data(snap: DocumentSnapshot<Task, TaskDoc>, cryptoKey: CryptoKey) {

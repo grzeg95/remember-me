@@ -34,10 +34,10 @@ export class Today implements TodayDoc {
   static ref(roundRef: DocumentReference<Round, RoundDoc>, id?: string) {
 
     if (id) {
-      return doc(roundRef, Collections.today, id).withConverter(Today._converter);
+      return doc(roundRef, [Collections.today, id].join('/')).withConverter(Today._converter);
     }
 
-    return collection(roundRef, Collections.today).withConverter(Today._converter);
+    return collection(roundRef, [Collections.today].join('/')).withConverter(Today._converter);
   }
 
   static async data(snap: DocumentSnapshot<Today, TodayDoc> | QueryDocumentSnapshot<Today, TodayDoc>, cryptoKey: CryptoKey) {

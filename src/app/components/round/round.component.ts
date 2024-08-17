@@ -31,9 +31,7 @@ export class RoundComponent implements OnDestroy {
   protected readonly _roundId = this._roundsService.roundIdSig.get();
 
   protected readonly _user = this._authService.userSig.get();
-  protected readonly _authStateReady = this._authService.authStateReady;
   readonly loadedSig = new Sig(false);
-  protected readonly _loaded = this.loadedSig.get();
 
   constructor(
     private readonly _activatedRoute: ActivatedRoute,
@@ -44,43 +42,9 @@ export class RoundComponent implements OnDestroy {
     private readonly _destroyRef: DestroyRef
   ) {
 
-    this._activatedRoute.params.pipe(
-      map((params) => params['id'])
-    ).subscribe((id) => {
-
-      const loaded = this._loaded();
-
-      if (loaded) {
-        this.loadedSig.set(false);
-        return;
-      }
-
-      const authStateReady = this._authStateReady();
-      const user = this._user();
-
-      if (loaded && authStateReady && !user) {
-        this._router.navigate(['/']);
-        return;
-      }
-
-      this._roundsService.roundIdSig.set(id);
-    });
-
-    effect(() => {
-
-      const loadingRound = this._loadingRound();
-
-      const round = this._round();
-
-      if (loadingRound) {
-        return;
-      }
-
-      if (!round) {
-        this.loadedSig.set(true);
-        this._router.navigate(['/']);
-      }
-    });
+    this._activatedRoute.paramMap.subscribe(
+      (params) => this._roundsService.roundIdSig.set(params.get('id'))
+    );
 
     // round
     let round_userId: string | undefined;
@@ -89,6 +53,10 @@ export class RoundComponent implements OnDestroy {
 
       const user = this._user();
       const roundId = this._roundId();
+
+      if (user === undefined || roundId === undefined) {
+        return;
+      }
 
       if (!user || !roundId) {
         this._router.navigate(['/']);

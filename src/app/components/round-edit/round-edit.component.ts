@@ -83,7 +83,7 @@ export class RoundEditComponent implements OnDestroy {
     });
 
     this._route.paramMap.subscribe((paramMap) => {
-      this._roundsService.editRoundIdSig.set(paramMap.get('id') || undefined);
+      this._roundsService.editRoundIdSig.set(paramMap.get('id'));
     });
 
     this._name?.valueChanges.subscribe((val) => {
