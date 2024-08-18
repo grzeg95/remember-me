@@ -12,7 +12,7 @@ import {User, UserDoc} from './user';
 export interface RoundDoc extends DocumentData {
   readonly encryptedTimesOfDayIds: string[];
   readonly timesOfDayIdsCardinality: number[];
-  readonly todayIds: string[];
+  readonly todayTasksIds: string[];
   readonly tasksIds: string[];
   readonly encryptedName: string;
 }
@@ -24,7 +24,7 @@ export class Round implements RoundDoc {
     public readonly encryptedTimesOfDayIds: string[],
     public readonly timesOfDayIds: string[],
     public readonly timesOfDayIdsCardinality: number[],
-    public readonly todayIds: string[],
+    public readonly todayTasksIds: string[],
     public readonly tasksIds: string[],
     public readonly encryptedName: string,
     public readonly name: string,
@@ -37,7 +37,7 @@ export class Round implements RoundDoc {
       return {
         encryptedTimesOfDayIds: round.encryptedTimesOfDayIds,
         timesOfDayIdsCardinality: round.timesOfDayIdsCardinality,
-        todayIds: round.todayIds,
+        todayTasksIds: round.todayTasksIds,
         tasksIds: round.tasksIds,
         encryptedName: round.encryptedName
       };
@@ -66,7 +66,7 @@ export class Round implements RoundDoc {
 
     let encryptedTimesOfDayIds: string[] = [];
     let timesOfDayIdsCardinality: number[] = [];
-    let todayIds: string[] = [];
+    let todayTasksIds: string[] = [];
     let tasksIds: string[] = [];
     let encryptedName = '';
 
@@ -93,11 +93,11 @@ export class Round implements RoundDoc {
     }
 
     if (
-      data?.['todayIds'] &&
-      Array.isArray(data['todayIds']) &&
-      !data['todayIds'].some((e) => typeof e !== 'string')
+      data?.['todayTasksIds'] &&
+      Array.isArray(data['todayTasksIds']) &&
+      !data['todayTasksIds'].some((e) => typeof e !== 'string')
     ) {
-      todayIds = data['todayIds'];
+      todayTasksIds = data['todayTasksIds'];
     }
 
     if (
@@ -117,7 +117,7 @@ export class Round implements RoundDoc {
       encryptedTimesOfDayIds,
       timesOfDaysIds,
       timesOfDayIdsCardinality,
-      todayIds,
+      todayTasksIds,
       tasksIds,
       encryptedName,
       name,

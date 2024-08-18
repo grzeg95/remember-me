@@ -63,7 +63,7 @@ export class TodayComponent {
       return [];
     }
 
-    console.log(todayTasks);
+    console.log(todayMap);
 
     const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
 
@@ -82,7 +82,7 @@ export class TodayComponent {
           done: todayTask.encryptedTimeOfDayIntoDoneMap[timeOfDay],
           id: todayTask.id,
           disabled: false,
-          dayOfTheWeekId: today.short,
+          dayOfTheWeekId: todayMap.get(today.short)?.id || '',
           timeOfDayIdEncrypted: encryptedTimeOfDay
         });
       });
