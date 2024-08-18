@@ -18,17 +18,16 @@ import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {provideClientHydration} from '@angular/platform-browser';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
 import {provideRouter} from '@angular/router';
-import {
-  AngularFirebaseAuthService,
-  AngularFirebaseFirestoreService,
-  AngularFirebaseFunctionsService,
-  AngularFirebaseRemoteConfigService,
-} from 'angular-firebase';
-import {AuthService} from 'auth';
 import {environment} from 'environment';
 import {fromEvent, merge} from 'rxjs';
-import {ConnectionService} from 'services';
-import {routes} from './app.routes';
+import {ConnectionService} from './services';
+import {AngularFirebaseAuthService} from './services/angular-firebase-auth.service';
+import {AngularFirebaseFirestoreService} from './services/angular-firebase-firestore.service';
+import {AngularFirebaseFunctionsService} from './services/angular-firebase-functions.service';
+import {AngularFirebaseRemoteConfigService} from './services/angular-firebase-remote-config.service';
+import {AuthService} from './services/auth.service';
+
+import {routes} from './views/app.routes';
 import {CookiebotService} from './services/cookiebot.service';
 
 const firebaseModules = [

@@ -25,10 +25,6 @@
       "dom"
     ],
     "paths": {
-      "auth": ["./src/app/auth/index"],
-      "angular-firebase": ["./src/app/angular-firebase/index"],
-      "services": ["./src/app/services/index"],
-      "utils": ["./src/app/utils/index"],
       "environment": ["./src/environments/environment"],
       "global.prototype": ["./global.prototype"]
     }

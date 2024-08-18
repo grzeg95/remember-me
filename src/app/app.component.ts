@@ -1,9 +1,9 @@
 import {Component} from '@angular/core';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {RouterOutlet} from '@angular/router';
-import {AuthService} from 'auth';
-import {ConnectionService} from 'services';
-import {NavComponent} from './nav/nav.component';
+import {NavComponent} from './components/nav/nav.component';
+import {ConnectionService} from './services';
+import {AuthService} from './services/auth.service';
 
 @Component({
   selector: 'app-root',

@@ -2,8 +2,8 @@
   "name": "remember-me-angular",
   "version": "0.0.0",
   "scripts": {
-    "serve:angular": "node scripts/set-env.js && node scripts/set-remote-config-default-env.js && ng serve",
-    "serve:emulators": "node scripts/close-parts-of-firebase-emulator.js && firebase use dev && firebase emulators:start",
+    "serve:angular": "node scripts/set-env.js && node scripts/set-remote-config-default-env.js && ng serve --host 127.0.0.1",
+    "serve:emulators": "node scripts/close-parts-of-firebase-emulator.js && firebase use default && firebase emulators:start",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
