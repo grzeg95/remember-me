@@ -12,14 +12,6 @@ const writeFileSync = require('fs').writeFileSync;
 const getEnvironmentString = () => {
   return `{
     "guestComponent": "${process.env.GUEST_COMPONENT}",
-    "roundsSetTimesOfDayOrderUrl": "${process.env.ROUNDS_SET_TIMES_OF_DAY_ORDER_URL}",
-    "authGetTokenWithSecretKeyUrl": "${process.env.AUTH_GET_TOKEN_WITH_SECRET_KEY_URL}",
-    "roundsDeleteTaskUrl": "${process.env.ROUNDS_DELETE_TASK_URL}",
-    "roundsDeleteRoundUrl": "${process.env.ROUNDS_DELETE_ROUND_URL}",
-    "roundsSaveRoundUrl": "${process.env.ROUNDS_SAVE_ROUND_URL}",
-    "userUploadProfileImageUrl": "${process.env.USER_UPLOAD_PROFILE_IMAGE_URL}",
-    "roundsSaveTaskUrl": "${process.env.ROUNDS_SAVE_TASK_URL}",
-    "roundsSetRoundsOrderUrl": "${process.env.ROUNDS_SET_ROUNDS_ORDER_URL}"
   }`;
 };
 

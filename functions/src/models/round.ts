@@ -10,7 +10,7 @@ import {Collections} from './collections';
 import {User, UserDoc} from './user';
 
 export interface RoundDoc extends DocumentData {
-  readonly timesOfDayIds: string[];
+  readonly encryptedTimesOfDayIds: string[];
   readonly timesOfDayIdsCardinality: number[];
   readonly todayIds: string[];
   readonly tasksIds: string[];
@@ -21,6 +21,7 @@ export class Round implements RoundDoc {
 
   constructor(
     public readonly id: string,
+    public readonly encryptedTimesOfDayIds: string[],
     public readonly timesOfDayIds: string[],
     public readonly timesOfDayIdsCardinality: number[],
     public readonly todayIds: string[],
@@ -34,7 +35,7 @@ export class Round implements RoundDoc {
   static converter = {
     toFirestore: (round: Round) => {
       return {
-        timesOfDayIds: round.timesOfDayIds,
+        encryptedTimesOfDayIds: round.encryptedTimesOfDayIds,
         timesOfDayIdsCardinality: round.timesOfDayIdsCardinality,
         todayIds: round.todayIds,
         tasksIds: round.tasksIds,
@@ -63,18 +64,24 @@ export class Round implements RoundDoc {
 
     const data = snap.data();
 
-    let timesOfDaysIds: string[] = [];
+    let encryptedTimesOfDayIds: string[] = [];
     let timesOfDayIdsCardinality: number[] = [];
     let todayIds: string[] = [];
     let tasksIds: string[] = [];
     let encryptedName = '';
 
     if (
-      data?.['timesOfDayIds'] &&
-      Array.isArray(data['timesOfDayIds']) &&
-      !data['timesOfDayIds'].some((e) => typeof e !== 'string')
+      data?.['encryptedTimesOfDayIds'] &&
+      Array.isArray(data['encryptedTimesOfDayIds']) &&
+      !data['encryptedTimesOfDayIds'].some((e) => typeof e !== 'string')
     ) {
-      timesOfDaysIds = data['timesOfDayIds'];
+      encryptedTimesOfDayIds = data['encryptedTimesOfDayIds'];
+    }
+
+    const timesOfDaysIds: string[] = [];
+
+    for (const encryptedTimesOfDayId of encryptedTimesOfDayIds) {
+      timesOfDaysIds.push(await decrypt(encryptedTimesOfDayId, cryptoKey) || '');
     }
 
     if (
@@ -107,6 +114,7 @@ export class Round implements RoundDoc {
 
     return new Round(
       snap.id,
+      encryptedTimesOfDayIds,
       timesOfDaysIds,
       timesOfDayIdsCardinality,
       todayIds,

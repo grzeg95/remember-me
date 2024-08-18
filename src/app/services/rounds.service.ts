@@ -95,8 +95,8 @@ export class RoundsService {
 
   readonly daySig = new Sig<{full: string, short: Day}>();
 
-  readonly todayListSig = new Sig<Today[]>();
-  readonly todayListLoadingSig = new Sig<boolean>(false);
+  readonly todayMapSig = new Sig<Map<string, Today>>();
+  readonly todayMapLoadingSig = new Sig<boolean>(false);
 
   //
   // Tasks list

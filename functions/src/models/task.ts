@@ -6,7 +6,7 @@ import {Round, RoundDoc} from './round';
 
 export interface TaskDoc extends DocumentData {
   readonly encryptedDescription: string;
-  readonly timesOfDayIds: string[];
+  readonly encryptedTimesOfDayIds: string[];
   readonly encryptedDaysOfTheWeek: string[];
 }
 
@@ -16,6 +16,7 @@ export class Task implements TaskDoc {
     public readonly id: string,
     public readonly encryptedDescription: string,
     public readonly description: string,
+    public readonly encryptedTimesOfDayIds: string[],
     public readonly timesOfDayIds: string[],
     public readonly encryptedDaysOfTheWeek: string[],
     public readonly daysOfTheWeek: Day[],
@@ -27,7 +28,7 @@ export class Task implements TaskDoc {
     toFirestore: (task: Task) => {
       return {
         encryptedDescription: task.encryptedDescription,
-        timesOfDayIds: task.timesOfDayIds,
+        encryptedTimesOfDayIds: task.encryptedTimesOfDayIds,
         encryptedDaysOfTheWeek: task.encryptedDaysOfTheWeek
       };
     },
@@ -54,17 +55,17 @@ export class Task implements TaskDoc {
     const data = snap.data();
 
     let encryptedDescription = '';
-    let timesOfDayIds: string[] = [];
+    let encryptedTimesOfDayIds: string[] = [];
     let encryptedDaysOfTheWeek: string[] = [];
 
     data?.['encryptedDescription'] && typeof data['encryptedDescription'] === 'string' && (encryptedDescription = data['encryptedDescription']);
 
     if (
-      data?.['timesOfDayIds'] &&
-      Array.isArray(data['timesOfDayIds']) &&
-      !data['timesOfDayIds'].some((e) => typeof e !== 'string')
+      data?.['encryptedTimesOfDayIds'] &&
+      Array.isArray(data['encryptedTimesOfDayIds']) &&
+      !data['encryptedTimesOfDayIds'].some((e) => typeof e !== 'string')
     ) {
-      timesOfDayIds = data['timesOfDayIds'];
+      encryptedTimesOfDayIds = data['encryptedTimesOfDayIds'];
     }
 
     if (
@@ -87,10 +88,17 @@ export class Task implements TaskDoc {
       }
     }
 
+    const timesOfDayIds: string[] = [];
+
+    for (const encryptedTimesOfDayId of encryptedTimesOfDayIds) {
+      timesOfDayIds.push(await decrypt(encryptedTimesOfDayId, cryptoKey) || '');
+    }
+
     return new Task(
       snap.id,
       encryptedDescription,
       description,
+      encryptedTimesOfDayIds,
       timesOfDayIds,
       encryptedDaysOfTheWeek,
       daysOfTheWeek,

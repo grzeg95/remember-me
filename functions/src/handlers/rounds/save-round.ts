@@ -41,6 +41,7 @@ export const handler = async (request: CallableRequest) => {
   testRequirement(!dataKeys.toSet().hasOnly(['roundId', 'name'].toSet()));
 
   // data.roundId is not empty string
+
   testRequirement(typeof data.roundId !== 'string' || data.roundId.length === 0);
 
   // data.name is not string
@@ -94,7 +95,7 @@ export const handler = async (request: CallableRequest) => {
       const encryptedName = await encrypt(data.name, cryptoKey);
       transactionWrite.create(roundDocSnap.ref, {
         encryptedName,
-        timesOfDayIds: [],
+        encryptedTimesOfDayIds: [],
         timesOfDayIdsCardinality: [],
         todayIds: [],
         tasksIds: []
@@ -111,10 +112,6 @@ export const handler = async (request: CallableRequest) => {
       const encryptedName = await encrypt(data.name, cryptoKey);
       transactionWrite.update(roundDocSnap.ref, {
         encryptedName,
-        timesOfDayIds: round.timesOfDayIds,
-        timesOfDayIdsCardinality: round.timesOfDayIdsCardinality,
-        todayIds: round.todayIds,
-        tasksIds: round.tasksIds
       } as RoundDoc);
     }
 

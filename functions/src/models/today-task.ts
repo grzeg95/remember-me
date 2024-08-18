@@ -5,7 +5,7 @@ import {Today, TodayDoc} from './today';
 
 export interface TodayTaskDoc extends DocumentData{
   encryptedDescription: string;
-  encryptedTimesOfDayIds: string;
+  encryptedTimeOfDayIntoDoneMap: { [key in string]: boolean };
 }
 
 export class TodayTask implements TodayTaskDoc {
@@ -14,8 +14,8 @@ export class TodayTask implements TodayTaskDoc {
     public readonly id: string,
     public readonly encryptedDescription: string,
     public readonly description: string,
-    public readonly encryptedTimesOfDayIds: string,
-    public readonly timesOfDay: {[key in string]: boolean},
+    public readonly timeOfDayIntoEncryptedTimeOfDayMap: {[key in string]: string},
+    public readonly encryptedTimeOfDayIntoDoneMap: {[key in string]: boolean},
     public readonly exists: boolean
   ) {
   }
@@ -24,7 +24,7 @@ export class TodayTask implements TodayTaskDoc {
     toFirestore: (todayTask: TodayTask) => {
       return {
         encryptedDescription: todayTask.encryptedDescription,
-        encryptedTimesOfDayIds: todayTask.encryptedTimesOfDayIds
+        encryptedTimeOfDayIntoDoneMap: todayTask.encryptedTimeOfDayIntoDoneMap
       };
     },
     fromFirestore(snap: FirebaseFirestore.QueryDocumentSnapshot) {
@@ -45,20 +45,33 @@ export class TodayTask implements TodayTaskDoc {
     const data = snap.data();
 
     let encryptedDescription = '';
-    let encryptedTimesOfDayIds = '';
+    let encryptedTimeOfDayIntoDoneMap: { [key in string]: boolean } = {};
 
     data?.['encryptedDescription'] && typeof data['encryptedDescription'] === 'string' && (encryptedDescription = data['encryptedDescription']);
-    data?.['encryptedTimesOfDayIds'] && typeof data['encryptedTimesOfDayIds'] === 'string' && (encryptedTimesOfDayIds = data['encryptedTimesOfDayIds']);
+    data?.['encryptedTimeOfDayIntoDoneMap'] && typeof data['encryptedTimeOfDayIntoDoneMap'] === 'string' && (encryptedTimeOfDayIntoDoneMap = data['encryptedTimeOfDayIntoDoneMap']);
+
+    if (
+      data?.['encryptedTimeOfDayIntoDoneMap'] &&
+      !Array.isArray(data['encryptedTimeOfDayIntoDoneMap']) &&
+      typeof data['encryptedTimeOfDayIntoDoneMap'] === 'object'
+    ) {
+      encryptedTimeOfDayIntoDoneMap = data['encryptedTimeOfDayIntoDoneMap'];
+    }
 
     const description = await decrypt<string>(encryptedDescription, cryptoKey).then(protectObjectDecryption<string>(''));
-    const timesOfDay = await decrypt<{[key in string]: boolean}>(encryptedTimesOfDayIds, cryptoKey).then(protectObjectDecryption<{[key in string]: boolean}>({}));
+
+    const encryptedTimeOfDayIntoTimeOfDayMap: { [key in string]: string } = {};
+
+    for (const encryptedTimeOfDayIntoDoneMapKey of Object.getOwnPropertyNames(encryptedTimeOfDayIntoDoneMap)) {
+      encryptedTimeOfDayIntoTimeOfDayMap[encryptedTimeOfDayIntoDoneMapKey] = await decrypt(encryptedTimeOfDayIntoDoneMapKey, cryptoKey) || '';
+    }
 
     return new TodayTask(
       snap.id,
       encryptedDescription,
       description,
-      encryptedTimesOfDayIds,
-      timesOfDay,
+      encryptedTimeOfDayIntoTimeOfDayMap,
+      encryptedTimeOfDayIntoDoneMap,
       snap.exists
     );
   }

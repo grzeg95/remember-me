@@ -42,7 +42,7 @@ export class TodayComponent {
   private _todaySub: Subscription | undefined;
   private _todayTasksMapSub: Subscription | undefined;
 
-  protected readonly _todayList = this._roundsService.todayListSig.get();
+  protected readonly _todayMap = this._roundsService.todayMapSig.get();
   protected readonly _todayTasks = this._roundsService.todayTasksSig.get();
   protected readonly _todayTasksLoading = this._roundsService.todayTasksLoadingSig.get();
 
@@ -57,19 +57,21 @@ export class TodayComponent {
     const round = this._round();
     const todayTasks = this._todayTasks();
     const today = this._today();
-    const todayList = this._todayList();
+    const todayMap = this._todayMap();
+
+    if (!round || !todayTasks || !today || !todayMap) {
+      return [];
+    }
 
     console.log(todayTasks);
-
-    if (!round || !todayTasks || !today) {
-      return undefined;
-    }
 
     const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
 
     for (const todayTask of todayTasks) {
 
-      Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
+      Object.keys(todayTask.encryptedTimeOfDayIntoDoneMap).forEach((encryptedTimeOfDay) => {
+
+        const timeOfDay = todayTask.encryptedTimeOfDayIntoTimeOfDayMap[encryptedTimeOfDay];
 
         if (!todayTasksByTimeOfDay[timeOfDay]) {
           todayTasksByTimeOfDay[timeOfDay] = [];
@@ -77,11 +79,11 @@ export class TodayComponent {
 
         todayTasksByTimeOfDay[timeOfDay].push({
           description: todayTask.description,
-          done: todayTask.timesOfDay[timeOfDay],
+          done: todayTask.encryptedTimeOfDayIntoDoneMap[timeOfDay],
           id: todayTask.id,
           disabled: false,
           dayOfTheWeekId: today.short,
-          timeOfDayIdEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
+          timeOfDayIdEncrypted: encryptedTimeOfDay
         });
       });
     }
@@ -106,9 +108,9 @@ export class TodayComponent {
     private readonly _destroyRef: DestroyRef
   ) {
 
-    // todayList
-    let todayList_userId: string | undefined;
-    let todayList_roundId: string | undefined;
+    // todayMap
+    let todayMap_userId: string | undefined;
+    let todayMap_roundId: string | undefined;
     effect(() => {
 
       const user = this._user();
@@ -116,22 +118,23 @@ export class TodayComponent {
 
       if (!user || !round) {
         this._router.navigate(['/']);
-        this._roundsService.todayListSig.set(undefined);
-        todayList_userId = undefined;
-        todayList_roundId = undefined;
+        this._roundsService.todayMapSig.set(undefined);
+        this._roundsService.todayMapLoadingSig.set(false);
+        todayMap_userId = undefined;
+        todayMap_roundId = undefined;
         this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
         return;
       }
 
       if (
-        todayList_userId === user.id &&
-        todayList_roundId === round.id
+        todayMap_userId === user.id &&
+        todayMap_roundId === round.id
       ) {
         return;
       }
 
-      todayList_userId = user.id;
-      todayList_roundId = round.id;
+      todayMap_userId = user.id;
+      todayMap_roundId = round.id;
 
       const cryptoKey = user.cryptoKey;
 
@@ -139,7 +142,7 @@ export class TodayComponent {
       const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
       const todayRef = Today.ref(roundRef) as CollectionReference<Today, TodayDoc>;
 
-      this._roundsService.todayListLoadingSig.set(true);
+      this._roundsService.todayMapLoadingSig.set(true);
       this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
       this._todayMapSub = collectionSnapshots(todayRef).pipe(
         takeUntilDestroyed(this._destroyRef),
@@ -147,20 +150,22 @@ export class TodayComponent {
         // catchError(() => of(null))
       ).subscribe(async (querySnapTodayList) => {
 
-        this._roundsService.todayListLoadingSig.set(false);
+        this._roundsService.todayMapLoadingSig.set(false);
 
         if (!querySnapTodayList) {
-          this._roundsService.todayListSig.set(undefined);
+          this._roundsService.todayMapSig.set(undefined);
           return;
         }
 
-        const todayList: Today[] = [];
+        const todayMap: Map<string, Today> = new Map<string, Today>();
 
         for (const querySnapToday of querySnapTodayList.docs) {
-          todayList.push(await Today.data(querySnapToday, cryptoKey));
+
+          const today = await Today.data(querySnapToday, cryptoKey);
+          todayMap.set(today.name, today);
         }
 
-        this._roundsService.todayListSig.set(todayList);
+        this._roundsService.todayMapSig.set(todayMap);
       });
     });
 
@@ -172,9 +177,9 @@ export class TodayComponent {
       const user = this._user();
       const round = this._round();
       const today = this._today();
-      const todayList = this._todayList();
+      const todayMap = this._todayMap();
 
-      if (!user || !round || !today || !todayList) {
+      if (!user || !round || !today || !todayMap) {
         todayTasks_userId = undefined;
         todayTasks_todayNameShort = undefined;
         this._todaySub && !this._todaySub.closed && this._todaySub.unsubscribe();
@@ -192,9 +197,9 @@ export class TodayComponent {
       todayTasks_userId = user.id;
       todayTasks_todayNameShort = today.short;
 
-      const todayItem = todayList.find((todayItem) => todayItem.name === today.short)
+      const todayMapItem = todayMap.get(today.short);
 
-      if (!todayItem) {
+      if (!todayMapItem) {
         this._roundsService.todayTasksSig.set([]);
         return;
       }
@@ -203,10 +208,8 @@ export class TodayComponent {
 
       const userRef = User.ref(this._firestore, user.id);
       const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
-      const todayRef = Today.ref(roundRef, todayItem.id) as DocumentReference<Today, TodayDoc>;
+      const todayRef = Today.ref(roundRef, todayMapItem.id) as DocumentReference<Today, TodayDoc>;
       const todayTasksRef = TodayTask.ref(todayRef) as CollectionReference<TodayTask, TodayTaskDoc>;
-
-      console.log(todayTasksRef.path);
 
       this._roundsService.todayTasksLoadingSig.set(true);
       this._todayTasksMapSub && !this._todayTasksMapSub.closed && this._todayTasksMapSub.unsubscribe();
