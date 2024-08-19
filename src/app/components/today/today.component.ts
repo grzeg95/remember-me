@@ -1,5 +1,5 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -7,13 +7,13 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
-import {FieldPath} from 'firebase/firestore';
-import {catchError, interval, NEVER, Subscription} from 'rxjs';
-import { RouterDict } from '../../app.constants';
+import {doc, FieldPath, Firestore, updateDoc} from 'firebase/firestore';
+import {catchError, defer, interval, NEVER, Subscription} from 'rxjs';
+import {RouterDict} from '../../app.constants';
+import {FirestoreInjectionToken} from '../../models/firebase';
 import {TodayItem} from '../../models/models';
 import {User} from '../../models/user-data.model';
 import {ConnectionService} from '../../services';
-import {AngularFirebaseFirestoreService} from '../../services/angular-firebase-firestore.service';
 import {AuthService} from '../../services/auth.service';
 import {RoundsService} from '../../services/rounds.service';
 
@@ -50,7 +50,7 @@ export class TodayComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private connectionService: ConnectionService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService
+    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore
   ) {
   }
 
@@ -96,11 +96,13 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     const user = this.authService.user$.value as User;
 
-    this.angularFirebaseFirestoreService.updateDoc(
-      `/users/${user.firebaseUser.uid}/rounds/${this.roundsService.selectedRound()?.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`,
+    const todayTaskRef = doc(this.firestore, `/users/${user.firebaseUser.uid}/rounds/${this.roundsService.selectedRound()?.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`);
+
+    defer(() => updateDoc(
+      todayTaskRef,
       new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
       !todayItem.done
-    ).pipe(catchError(() => {
+    )).pipe(catchError(() => {
       todayItem.disabled = false;
       this.snackBar.open('Some went wrong 🤫 Try again 🙂');
       this.changeDay();

@@ -1,88 +1,135 @@
 import {provideHttpClient} from '@angular/common/http';
-import {APP_INITIALIZER, ApplicationConfig, importProvidersFrom, Injector, Provider} from '@angular/core';
-import {getAnalytics, provideAnalytics, setConsent, initializeAnalytics} from '@angular/fire/analytics';
-import {getApp, initializeApp, provideFirebaseApp} from '@angular/fire/app';
-import {initializeAppCheck, provideAppCheck, ReCaptchaEnterpriseProvider} from '@angular/fire/app-check';
-import {connectAuthEmulator, getAuth, provideAuth} from '@angular/fire/auth';
-import {connectFirestoreEmulator, getFirestore, provideFirestore} from '@angular/fire/firestore';
-import {connectFunctionsEmulator, getFunctions, provideFunctions} from '@angular/fire/functions';
 import {
-  activate,
-  fetchAndActivate,
-  getRemoteConfig,
-  isSupported,
-  provideRemoteConfig,
-  RemoteConfig
-} from '@angular/fire/remote-config';
+  APP_INITIALIZER,
+  ApplicationConfig,
+  Injector,
+  provideExperimentalZonelessChangeDetection,
+  Provider
+} from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
 import {provideClientHydration} from '@angular/platform-browser';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
 import {provideRouter} from '@angular/router';
 import {environment} from 'environment';
+import {getAnalytics, initializeAnalytics, setConsent} from 'firebase/analytics';
+import {getApp, initializeApp} from 'firebase/app';
+import {initializeAppCheck, ReCaptchaEnterpriseProvider} from 'firebase/app-check';
+import {connectAuthEmulator, getAuth} from 'firebase/auth';
+import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
+import {connectFunctionsEmulator, getFunctions,} from 'firebase/functions';
+import {activate, fetchAndActivate, getRemoteConfig, isSupported} from 'firebase/remote-config';
 import {fromEvent, merge} from 'rxjs';
+import {
+  AnalyticsInjectionToken,
+  AppCheckInjectionToken,
+  AuthInjectionToken,
+  FirebaseAppInjectionToken,
+  FirestoreInjectionToken,
+  FunctionsInjectionToken, RemoteConfigInjectionToken
+} from './models/firebase';
 import {ConnectionService} from './services';
 import {AngularFirebaseAuthService} from './services/angular-firebase-auth.service';
-import {AngularFirebaseFirestoreService} from './services/angular-firebase-firestore.service';
-import {AngularFirebaseFunctionsService} from './services/angular-firebase-functions.service';
-import {AngularFirebaseRemoteConfigService} from './services/angular-firebase-remote-config.service';
 import {AuthService} from './services/auth.service';
-
-import {routes} from './views/app.routes';
 import {CookiebotService} from './services/cookiebot.service';
+import {FunctionsService} from './services/firebase/functions.service';
+import {routes} from './views/app.routes';
 
-const firebaseModules = [
-  provideFirebaseApp(() => initializeApp(environment.firebase)),
-  provideFirestore(() => {
+if (!environment.production) {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
 
-    const firestore = getFirestore();
+const provideFirebase = () => {
 
-    if (!environment.production) {
-      connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
-    }
+  const providers: Provider[] = [];
 
-    return firestore;
-  }),
-  provideAuth(() => {
+  // Firebase app
 
-    const auth = getAuth();
+  const app = initializeApp(environment.firebase);
 
-    if (!environment.production) {
-      connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`);
-    }
+  providers.push({
+    provide: FirebaseAppInjectionToken,
+    useValue: app
+  });
 
-    return auth;
-  }),
-  provideAppCheck(() => initializeAppCheck(getApp(), {
-    provider: new ReCaptchaEnterpriseProvider(environment.recaptcha),
+  // Firebase auth
+
+  const auth = getAuth();
+
+  if (!environment.production) {
+    connectAuthEmulator(auth, `${environment.emulators.auth.protocol}://${environment.emulators.auth.host}:${environment.emulators.auth.port}`);
+  }
+
+  providers.push({
+    provide: AuthInjectionToken,
+    useValue: auth
+  });
+
+  // Firebase app check
+
+  const provider = new ReCaptchaEnterpriseProvider(environment.recaptchaEnterprise);
+
+  const appCheck = initializeAppCheck(undefined, {
+    provider,
     isTokenAutoRefreshEnabled: true
-  })),
-  provideRemoteConfig(() => getRemoteConfig()),
-  provideAnalytics(() => getAnalytics()),
-  provideFunctions(() => {
-    const app = getApp();
-    const functions = getFunctions(app, environment.functionsRegionOrCustomDomain);
+  });
 
-    if (!environment.production) {
-      connectFunctionsEmulator(functions, environment.emulators.functions.host, environment.emulators.functions.port);
-    }
+  providers.push({
+    provide: AppCheckInjectionToken,
+    useValue: appCheck
+  });
 
-    return functions;
-  })
-];
+  // Firebase firestore
+
+  const firestore = getFirestore();
+
+  if (!environment.production) {
+    connectFirestoreEmulator(firestore, environment.emulators.firestore.host, environment.emulators.firestore.port);
+  }
+
+  providers.push({
+    provide: FirestoreInjectionToken,
+    useValue: firestore
+  });
+
+  // Firebase functions
+
+  const functions = getFunctions(app, 'europe-central2');
+
+  if (!environment.production) {
+    connectFunctionsEmulator(functions, environment.emulators.functions.host, environment.emulators.functions.port);
+  }
+
+  providers.push({
+    provide: FunctionsInjectionToken,
+    useValue: functions
+  });
+
+  // Analysis
+
+  const analysis = getAnalytics(app);
+
+  providers.push({
+    provide: AnalyticsInjectionToken,
+    useValue: analysis
+  });
+
+  // Remote config
+
+  const remoteConfig = getRemoteConfig(app);
+
+  providers.push({
+    provide: RemoteConfigInjectionToken,
+    useValue: remoteConfig
+  });
+
+  // return providers
+
+  return providers;
+};
 
 const firebaseInitializers: Provider[] = [
-  {
-    provide: APP_INITIALIZER,
-    multi: true,
-    useFactory: () => {
-      return () => {
-        if (!environment.production) {
-          // @ts-ignore
-          window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        }
-      }
-    }
-  },
   {
     provide: APP_INITIALIZER,
     multi: true,
@@ -92,7 +139,7 @@ const firebaseInitializers: Provider[] = [
 
         return isSupported().then((isSupported: boolean) => {
           if (isSupported) {
-            const remoteConfig = injector.get(RemoteConfig);
+            const remoteConfig = injector.get(RemoteConfigInjectionToken);
 
             remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
 
@@ -139,14 +186,13 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideClientHydration(),
+    provideExperimentalZonelessChangeDetection(),
     provideHttpClient(),
     provideAnimationsAsync(),
-    importProvidersFrom(...firebaseModules),
+    provideFirebase(),
     AuthService,
     AngularFirebaseAuthService,
-    AngularFirebaseFirestoreService,
-    AngularFirebaseRemoteConfigService,
-    AngularFirebaseFunctionsService,
+    FunctionsService,
     ConnectionService,
     CookiebotService,
     cookiebotInitializer,

@@ -1,6 +1,6 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {NgClass, TitleCasePipe} from '@angular/common';
-import {Component, ElementRef, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {Component, ElementRef, Inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -24,13 +24,15 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import 'global.prototype';
+import {doc, Firestore} from 'firebase/firestore';
 import {catchError, EMPTY, mergeMap, NEVER, Subscription, throwError} from 'rxjs';
 import {filter} from 'rxjs/operators';
 import {RouterDict} from '../../app.constants';
+import {FirestoreInjectionToken} from '../../models/firebase';
 import {User} from '../../models/user-data.model';
 import {ConnectionService, CustomValidators} from '../../services';
-import {AngularFirebaseFirestoreService} from '../../services/angular-firebase-firestore.service';
 import {AuthService} from '../../services/auth.service';
+import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
 import {BasicEncryptedValue, decryptTask} from '../../utils/crypto';
@@ -114,7 +116,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private connectionService: ConnectionService,
     private authService: AuthService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService
+    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore
   ) {
     this.taskForm.disable();
   }
@@ -233,7 +235,10 @@ export class TaskComponent implements OnInit, OnDestroy {
 
     const user = this.authService.user$.value as User;
 
-    this.editedTaskOnSnapSub = this.angularFirebaseFirestoreService.docOnSnapshot<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds/${this.selectedRound()!.id}/task/${id}`).pipe(
+    // BasicEncryptedValue
+    const taskRef = doc(this.firestore, `users/${user.firebaseUser.uid}/rounds/${this.selectedRound()!.id}/task/${id}`)
+
+    this.editedTaskOnSnapSub = docSnapshots(taskRef).pipe(
       mergeMap((docSnap) => {
 
         if (!docSnap.exists()) {
@@ -241,7 +246,7 @@ export class TaskComponent implements OnInit, OnDestroy {
           });
         }
 
-        return decryptTask(docSnap.data(), user.cryptoKey).then((task) => {
+        return decryptTask(docSnap.data() as BasicEncryptedValue, user.cryptoKey).then((task) => {
           task.id = docSnap.id;
           return task;
         });

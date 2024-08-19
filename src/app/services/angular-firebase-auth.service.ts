@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {
   Auth,
   AuthProvider,
@@ -15,8 +15,9 @@ import {
   updatePassword,
   User as FirebaseUser,
   UserCredential
-} from '@angular/fire/auth';
+} from 'firebase/auth';
 import {catchError, defer, map, Observable, shareReplay} from 'rxjs';
+import {AuthInjectionToken} from '../models/firebase';
 
 @Injectable()
 export class AngularFirebaseAuthService {
@@ -24,7 +25,7 @@ export class AngularFirebaseAuthService {
   firebaseUser$: Observable<FirebaseUser | null | undefined>;
 
   constructor(
-    private auth: Auth
+    @Inject(AuthInjectionToken) private readonly auth: Auth
   ) {
     this.firebaseUser$ = new Observable<FirebaseUser | null>((subscriber) => {
       const unsubscribe = onIdTokenChanged(this.auth,

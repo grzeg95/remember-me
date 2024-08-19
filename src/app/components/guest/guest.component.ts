@@ -1,6 +1,8 @@
-import {Component, signal} from '@angular/core';
-import {AngularFirebaseRemoteConfigService} from '../../services/angular-firebase-remote-config.service';
+import {Component, Inject, signal} from '@angular/core';
+import {RemoteConfig} from 'firebase/remote-config';
+import {RemoteConfigInjectionToken} from '../../models/firebase';
 import {AuthService} from '../../services/auth.service';
+import {getValue} from '../../services/firebase/remote-config';
 import {UserDataPolicyComponent} from '../user-data-policy/user-data-policy.component';
 
 interface GuestComponentConfig {
@@ -22,9 +24,9 @@ export class GuestComponent {
 
   constructor(
     private authService: AuthService,
-    private angularFirebaseRemoteConfigService: AngularFirebaseRemoteConfigService
+    @Inject(RemoteConfigInjectionToken) private readonly remoteConfig: RemoteConfig
   ) {
-    this.guestComponentConfig = this.angularFirebaseRemoteConfigService.getValue<GuestComponentConfig>('guestComponent');
+    this.guestComponentConfig = getValue<GuestComponentConfig>(this.remoteConfig, 'guestComponent');
   }
 
   toggleIsHiddenUserDataPolicy() {

@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ConsentSettings} from '@angular/fire/analytics';
+import {ConsentSettings} from 'firebase/analytics';
 
 export interface CookiebotConsent {
   marketing: boolean;

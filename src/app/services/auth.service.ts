@@ -1,6 +1,6 @@
-import {Injectable, signal} from '@angular/core';
-import {getIdTokenResult, GoogleAuthProvider, UserCredential, User as FirebaseUser} from '@angular/fire/auth';
-import {deleteField} from '@angular/fire/firestore';
+import {Inject, Injectable, signal} from '@angular/core';
+import {getIdTokenResult, GoogleAuthProvider, UserCredential, User as FirebaseUser} from 'firebase/auth';
+import {deleteField, doc, Firestore, updateDoc} from 'firebase/firestore';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 import {
@@ -20,12 +20,13 @@ import {
   zip
 } from 'rxjs';
 import {RouterDict} from '../app.constants';
+import {FirestoreInjectionToken} from '../models/firebase';
 import {EncryptedUser, User} from '../models/user-data.model';
 import {decryptUser, getCryptoKey} from '../utils/crypto';
 import {SubsContainer} from '../utils/subs-container';
 import {AngularFirebaseAuthService} from './angular-firebase-auth.service';
-import {AngularFirebaseFirestoreService} from './angular-firebase-firestore.service';
-import {AngularFirebaseFunctionsService} from './angular-firebase-functions.service';
+import {docSnapshots} from './firebase/firestore';
+import {FunctionsService} from './firebase/functions.service';
 
 @Injectable()
 export class AuthService {
@@ -40,8 +41,8 @@ export class AuthService {
     private router: Router,
     private snackBar: MatSnackBar,
     private angularFirebaseAuthService: AngularFirebaseAuthService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
-    private angularFirebaseFunctionsService: AngularFirebaseFunctionsService
+    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore,
+    private readonly functionsService: FunctionsService
   ) {
     this.angularFirebaseAuthService.firebaseUser$.subscribe(async (firebaseUser) => {
 
@@ -78,7 +79,7 @@ export class AuthService {
           retry({count: 10, delay: 2000}),
           switchMap((idTokenResult) => {
             if (!idTokenResult.claims['secretKey']) {
-              return this.angularFirebaseFunctionsService.httpsCallable<null, {customToken: string}>('authGetTokenWithSecretKeyUrl')(null).pipe(
+              return this.functionsService.httpsCallable<null, {customToken: string}>('authGetTokenWithSecretKeyUrl', null).pipe(
                 mergeMap((res) => {
                   return this.angularFirebaseAuthService.signInWithCustomToken(res.customToken);
                 }),
@@ -119,7 +120,10 @@ export class AuthService {
 
           this.unsubscribeUserDocSub();
 
-          this.userDocSub = this.angularFirebaseFirestoreService.docOnSnapshot<EncryptedUser>(`users/${firebaseUser.uid}`).pipe(
+          // EncryptedUser
+          const userRef = doc(this.firestore, `users/${firebaseUser.uid}`)
+
+          this.userDocSub = docSnapshots(userRef).pipe(
             catchError((error) => {
               if (error.code === 'permission-denied') {
                 this.signOut().subscribe();
@@ -128,10 +132,13 @@ export class AuthService {
             })
           ).pipe(
             switchMap((docSnapEncryptedUser) => {
+
+              const data = docSnapEncryptedUser.data() as EncryptedUser;
+
               return decryptUser({
-                rounds: docSnapEncryptedUser.data()?.rounds,
-                photoURL: docSnapEncryptedUser.data()?.photoURL,
-                hasEncryptedSecretKey: docSnapEncryptedUser.data()?.hasEncryptedSecretKey
+                rounds: data.rounds,
+                photoURL: data.photoURL,
+                hasEncryptedSecretKey: data.hasEncryptedSecretKey
               }, newUser.cryptoKey as CryptoKey)
             })
           ).subscribe((decryptedUser) => {
@@ -287,9 +294,9 @@ export class AuthService {
       })
     ).pipe(
       mergeMap((imageDataURL) => {
-        return this.angularFirebaseFunctionsService.httpsCallable<{imageDataURL: string}, {
+        return this.functionsService.httpsCallable<{imageDataURL: string}, {
           message: string
-        }>('userUploadProfileImageUrl')({imageDataURL});
+        }>('userUploadProfileImageUrl', {imageDataURL});
       })
     );
   }
@@ -299,7 +306,9 @@ export class AuthService {
     return defer(() => {
       const user = this.user$.value as User;
 
-      return this.angularFirebaseFirestoreService.updateDoc(`users/${user?.firebaseUser?.uid}`, {
+      const userRef = doc(this.firestore, `users/${user?.firebaseUser?.uid}`);
+
+      return updateDoc(userRef, {
         photoURL: deleteField()
       });
     });

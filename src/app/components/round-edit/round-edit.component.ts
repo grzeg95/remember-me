@@ -1,5 +1,5 @@
 import {JsonPipe, Location, NgIf} from '@angular/common';
-import {Component, effect, OnDestroy, OnInit, signal} from '@angular/core';
+import {Component, effect, Inject, OnDestroy, OnInit, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
@@ -7,13 +7,15 @@ import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
+import {doc, Firestore} from 'firebase/firestore';
 import {catchError, EMPTY, NEVER, Subscription, switchMap, throwError} from 'rxjs';
 import {RouterDict} from '../../app.constants';
+import {FirestoreInjectionToken} from '../../models/firebase';
 import {HTTPError} from '../../models/models';
 import {User} from '../../models/user-data.model';
 import {ConnectionService, CustomValidators} from '../../services';
-import {AngularFirebaseFirestoreService} from '../../services/angular-firebase-firestore.service';
 import {AuthService} from '../../services/auth.service';
+import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {BasicEncryptedValue, decryptRound} from '../../utils/crypto';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
@@ -56,7 +58,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     public dialog: MatDialog,
     public location: Location,
     private connectionService: ConnectionService,
-    private angularFirebaseFirestoreService: AngularFirebaseFirestoreService,
+    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore,
     private authService: AuthService
   ) {
     this.roundForm.enable();
@@ -96,14 +98,17 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
     const user = this.authService.user$.value as User;
 
-    return this.angularFirebaseFirestoreService.docOnSnapshot<BasicEncryptedValue>(`users/${user.firebaseUser.uid}/rounds/${id}`).pipe(
+    // BasicEncryptedValue
+    const roundRef = doc(this.firestore, `users/${user.firebaseUser.uid}/rounds/${id}`);
+
+    return docSnapshots(roundRef).pipe(
       switchMap((docSnap) => {
         if (!docSnap.exists()) {
           throw throwError(() => {
           });
         }
 
-        return decryptRound(docSnap.data(), user!.cryptoKey).then((round) => {
+        return decryptRound(docSnap.data() as BasicEncryptedValue, user!.cryptoKey).then((round) => {
           round.id = docSnap.id;
           return round;
         });
