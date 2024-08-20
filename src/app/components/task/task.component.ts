@@ -29,15 +29,17 @@ import {catchError, EMPTY, mergeMap, NEVER, Subscription, throwError} from 'rxjs
 import {filter} from 'rxjs/operators';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
-import {User} from '../../models/user-data.model';
+import {Round} from '../../models/round';
 import {ConnectionService, CustomValidators} from '../../services';
 import {AuthService} from '../../services/auth.service';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
-import {BasicEncryptedValue, decryptTask} from '../../utils/crypto';
-import {HTTPError, HTTPSuccess, Round, Task, TaskForm} from '../../models/models';
+import {BasicEncryptedValue} from '../../utils/crypto';
+import {HTTPError, HTTPSuccess, TaskForm} from '../../models/models';
 import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import {Task} from '../../models/task';
+import {User} from '../../models/user';
 
 @Component({
   selector: 'app-task',
@@ -233,10 +235,15 @@ export class TaskComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
 
-    // BasicEncryptedValue
-    const taskRef = doc(this.firestore, `users/${user.firebaseUser.uid}/rounds/${this.selectedRound()!.id}/task/${id}`)
+    if (!user) {
+      return;
+    }
+
+    const userRef = User.ref(this.firestore, user.id);
+    const roundRef = Round.ref(userRef, this.selectedRound()!.id);
+    const taskRef = Task.ref(roundRef, id);
 
     this.editedTaskOnSnapSub = docSnapshots(taskRef).pipe(
       mergeMap((docSnap) => {
@@ -246,10 +253,7 @@ export class TaskComponent implements OnInit, OnDestroy {
           });
         }
 
-        return decryptTask(docSnap.data() as BasicEncryptedValue, user.cryptoKey).then((task) => {
-          task.id = docSnap.id;
-          return task;
-        });
+        return Task.data(docSnap, user.cryptoKey!);
       }),
       catchError(() => {
         this.setGettingOfTaskById('');

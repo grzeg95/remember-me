@@ -21,12 +21,12 @@ import {
 } from 'rxjs';
 import {RouterDict} from '../app.constants';
 import {FirestoreInjectionToken} from '../models/firebase';
-import {EncryptedUser, User} from '../models/user-data.model';
-import {decryptUser, getCryptoKey} from '../utils/crypto';
+import {getCryptoKey} from '../utils/crypto';
 import {SubsContainer} from '../utils/subs-container';
 import {AngularFirebaseAuthService} from './angular-firebase-auth.service';
 import {docSnapshots} from './firebase/firestore';
 import {FunctionsService} from './firebase/functions.service';
+import { User } from '../models/user';
 
 @Injectable()
 export class AuthService {
@@ -46,7 +46,7 @@ export class AuthService {
   ) {
     this.angularFirebaseAuthService.firebaseUser$.subscribe(async (firebaseUser) => {
 
-      if (firebaseUser && !(this.user$.value && this.user$.value?.firebaseUser.uid !== firebaseUser.uid)) {
+      if (firebaseUser && !(this.user$.value && this.user$.value?.firebaseUser?.uid !== firebaseUser.uid)) {
 
         if (this.whileLoginIn()) {
           return;
@@ -79,7 +79,7 @@ export class AuthService {
           retry({count: 10, delay: 2000}),
           switchMap((idTokenResult) => {
             if (!idTokenResult.claims['secretKey']) {
-              return this.functionsService.httpsCallable<null, {customToken: string}>('authGetTokenWithSecretKeyUrl', null).pipe(
+              return this.functionsService.httpsCallable<null, {customToken: string}>('auth-gettokenwithsecretkey', null).pipe(
                 mergeMap((res) => {
                   return this.angularFirebaseAuthService.signInWithCustomToken(res.customToken);
                 }),
@@ -102,26 +102,10 @@ export class AuthService {
 
           const cryptoKey = await getCryptoKey(idTokenResult.claims['secretKey'] as string);
 
-          const newUser: User = {
-            cryptoKey,
-            photoURL: firebaseUser.photoURL as string,
-            hasCustomPhoto: false,
-            firebaseUser,
-            rounds: []
-          };
-
-          if (idTokenResult.claims['isAnonymous']) {
-            newUser.isAnonymous = true;
-            newUser.providerId = 'Anonymous';
-          } else {
-            newUser.isAnonymous = firebaseUser.isAnonymous;
-            newUser.providerId = firebaseUser.providerData[0].providerId;
-          }
-
           this.unsubscribeUserDocSub();
 
           // EncryptedUser
-          const userRef = doc(this.firestore, `users/${firebaseUser.uid}`)
+          const userRef = User.ref(this.firestore, firebaseUser.uid);
 
           this.userDocSub = docSnapshots(userRef).pipe(
             catchError((error) => {
@@ -132,30 +116,29 @@ export class AuthService {
             })
           ).pipe(
             switchMap((docSnapEncryptedUser) => {
-
-              const data = docSnapEncryptedUser.data() as EncryptedUser;
-
-              return decryptUser({
-                rounds: data.rounds,
-                photoURL: data.photoURL,
-                hasEncryptedSecretKey: data.hasEncryptedSecretKey
-              }, newUser.cryptoKey as CryptoKey)
+              return User.data(docSnapEncryptedUser, cryptoKey);
             })
-          ).subscribe((decryptedUser) => {
+          ).subscribe((user) => {
 
-            if (decryptedUser.rounds) {
-              newUser.rounds = decryptedUser.rounds;
-            }
-
-            if (decryptedUser.photoURL) {
-              newUser.photoURL = decryptedUser.photoURL;
-              newUser.hasCustomPhoto = true;
+            if (idTokenResult.claims['isAnonymous']) {
+              user.isAnonymous = true;
+              user.providerId = 'Anonymous';
             } else {
-              newUser.photoURL = firebaseUser.photoURL;
-              newUser.hasCustomPhoto = false;
+              user.isAnonymous = firebaseUser.isAnonymous;
+              user.providerId = firebaseUser.providerData[0].providerId;
             }
 
-            this.user$.next(newUser);
+            if (user.photoURL) {
+              user.hasCustomPhoto = true;
+            } else {
+              user.photoURL = firebaseUser.photoURL || '';
+              user.hasCustomPhoto = false;
+            }
+
+            user.cryptoKey = cryptoKey;
+            user.firebaseUser = firebaseUser;
+
+            this.user$.next(user);
 
             if (this.router.routerState.snapshot.url === '/') {
               this.router.navigate(['/', RouterDict.user]).then(() => {
@@ -296,7 +279,7 @@ export class AuthService {
       mergeMap((imageDataURL) => {
         return this.functionsService.httpsCallable<{imageDataURL: string}, {
           message: string
-        }>('userUploadProfileImageUrl', {imageDataURL});
+        }>('user-uploadprofileimage', {imageDataURL});
       })
     );
   }

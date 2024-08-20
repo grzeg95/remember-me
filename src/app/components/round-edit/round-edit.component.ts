@@ -7,18 +7,19 @@ import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
-import {doc, Firestore} from 'firebase/firestore';
+import {Firestore} from 'firebase/firestore';
 import {catchError, EMPTY, NEVER, Subscription, switchMap, throwError} from 'rxjs';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {HTTPError} from '../../models/models';
-import {User} from '../../models/user-data.model';
+import {Round} from '../../models/round';
 import {ConnectionService, CustomValidators} from '../../services';
 import {AuthService} from '../../services/auth.service';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
-import {BasicEncryptedValue, decryptRound} from '../../utils/crypto';
+import {BasicEncryptedValue} from '../../utils/crypto';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
+import {User} from '../../models/user';
 
 @Component({
   selector: 'app-times-of-day-list',
@@ -96,10 +97,15 @@ export class RoundEditComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
+
+    if (!user) {
+      return;
+    }
 
     // BasicEncryptedValue
-    const roundRef = doc(this.firestore, `users/${user.firebaseUser.uid}/rounds/${id}`);
+    const userRef = User.ref(this.firestore, user.id);
+    const roundRef = Round.ref(userRef, id);;
 
     return docSnapshots(roundRef).pipe(
       switchMap((docSnap) => {
@@ -108,10 +114,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
           });
         }
 
-        return decryptRound(docSnap.data() as BasicEncryptedValue, user!.cryptoKey).then((round) => {
-          round.id = docSnap.id;
-          return round;
-        });
+        return Round.data(docSnap, user.cryptoKey!);
       }),
       catchError(() => {
         this.setGettingOfRoundById('');

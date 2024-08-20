@@ -1,16 +1,18 @@
 import {Location} from '@angular/common';
 import {computed, effect, Inject, Injectable, signal} from '@angular/core';
-import {collection, DocumentData, Firestore, limit, QueryDocumentSnapshot} from 'firebase/firestore';
 import {Router} from '@angular/router';
-import {catchError, EMPTY, forkJoin, map, Observable, of, Subscription, switchMap, throwError,} from 'rxjs';
-import {filter} from 'rxjs/operators';
+import {collection, Firestore, limit, QueryDocumentSnapshot} from 'firebase/firestore';
+import {catchError, EMPTY, forkJoin, map, Observable, of, Subscription, switchMap, throwError} from 'rxjs';
 import {RouterDict} from '../app.constants';
 import {FirestoreInjectionToken} from '../models/firebase';
-import {Day, EncryptedTodayTask, HTTPSuccess, Round, TaskForm, TasksListItem, TodayItem} from '../models/models';
-import {User} from '../models/user-data.model';
-import {BasicEncryptedValue, decryptRound, decryptTask, decryptToday, decryptTodayTask} from '../utils/crypto';
+import {Day, HTTPSuccess, TasksListItem, TodayItem} from '../models/models';
+import {Round} from '../models/round';
+import {Task} from '../models/task';
+import {Today} from '../models/today';
+import {TodayTask} from '../models/today-task';
+import {User} from '../models/user';
 import {AuthService} from './auth.service';
-import {collectionSnapshots, doc, docSnapshots} from './firebase/firestore';
+import {collectionSnapshots, docSnapshots} from './firebase/firestore';
 import {FunctionsService} from './firebase/functions.service';
 
 @Injectable()
@@ -108,10 +110,13 @@ export class RoundsService {
       return;
     }
 
-    this.roundsOrderSub = this.authService.user$.pipe(
-      filter((user): user is User => !!user)
-    ).subscribe((user) => {
-      this.roundsOrder.set(user.rounds);
+    this.roundsOrderSub = this.authService.user$.subscribe((user) => {
+
+      if (!user) {
+        return;
+      }
+
+      this.roundsOrder.set(user.decryptedRounds);
       this.roundsOrderFirstLoading.set(false);
     });
 
@@ -124,13 +129,18 @@ export class RoundsService {
       return;
     }
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
+
+    if (!user) {
+      return;
+    }
 
     // BasicEncryptedValue
-    const roundsRef = collection(this.firestore, `users/${user.firebaseUser.uid}/rounds`);
+    const userRef = User.ref(this.firestore, user.id);
+    const roundsRefs = Round.refs(userRef);
 
-    this.roundsListSub = collectionSnapshots(roundsRef, limit(5)).pipe(
-      switchMap((querySnap) => {
+    this.roundsListSub = collectionSnapshots(roundsRefs, limit(5)).pipe(
+      switchMap(async (querySnap) => {
 
         if (!querySnap.docs.length) {
           return Promise.resolve<Round[]>([]);
@@ -139,17 +149,11 @@ export class RoundsService {
         // decrypt
         const roundsDecryptPromise: Promise<Round>[] = [];
 
-        for (const doc of querySnap.docs) {
-          roundsDecryptPromise.push(decryptRound(doc.data() as BasicEncryptedValue, user.cryptoKey));
+        for (const queryDocSnap of querySnap.docs) {
+          roundsDecryptPromise.push(Round.data(queryDocSnap, user.cryptoKey!));
         }
 
-        return Promise.all(roundsDecryptPromise).then((decryptedRoundList) => {
-          for (const [i, doc] of querySnap.docs.entries()) {
-            decryptedRoundList[i].id = doc.id;
-          }
-
-          return decryptedRoundList;
-        });
+        return await Promise.all(roundsDecryptPromise);
       })
     ).subscribe((roundsList) => {
       this._roundsList.set(roundsList);
@@ -190,10 +194,14 @@ export class RoundsService {
       this.selectedRoundOnSnapSub.unsubscribe();
     }
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
 
-    // BasicEncryptedValue
-    const roundRef = doc(this.firestore, `users/${user.firebaseUser.uid}/rounds/${id}`);
+    if (!user) {
+      return;
+    }
+
+    const userRef = User.ref(this.firestore, user.id);
+    const roundRef = Round.ref(userRef, id);
 
     this.selectedRoundOnSnapSub = docSnapshots(roundRef).pipe(
       switchMap((docSnap) => {
@@ -203,10 +211,7 @@ export class RoundsService {
           });
         }
 
-        return decryptRound(docSnap.data() as BasicEncryptedValue, user.cryptoKey).then((round) => {
-          round.id = docSnap.id;
-          return round;
-        });
+        return Round.data(docSnap, user.cryptoKey!);
       }),
       catchError(() => {
         this.setGettingOfRoundById('');
@@ -230,21 +235,21 @@ export class RoundsService {
       roundId: string,
       details: string,
       created: boolean
-    }>('roundsSaveRoundUrl',{
+    }>('rounds-saveround', {
       roundId,
       name
     });
   }
 
   deleteRound(id: string): Observable<HTTPSuccess> {
-    return this.functionsService.httpsCallable<string, HTTPSuccess>('roundsDeleteRoundUrl', id);
+    return this.functionsService.httpsCallable<string, HTTPSuccess>('rounds-deleteround', id);
   }
 
   setRoundsOrder(data: {moveBy: number, roundId: string}): Observable<HTTPSuccess> {
     return this.functionsService.httpsCallable<{
       moveBy: number,
       roundId: string
-    }, HTTPSuccess>('roundsSetRoundsOrderUrl', data);
+    }, HTTPSuccess>('rounds-setroundsorder', data);
   }
 
   clearCacheRounds() {
@@ -320,10 +325,15 @@ export class RoundsService {
     this.lastTodayName.set(this.todayName());
     this.now.set(new Date());
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
 
-    // BasicEncryptedValue
-    const todayRefs = collection(this.firestore, `/users/${user.firebaseUser.uid}/rounds/${round.id}/today`);
+    if (!user) {
+      return;
+    }
+
+    const userRef = User.ref(this.firestore, user.firebaseUser?.uid || '');
+    const roundRef = Round.ref(userRef, round.id);
+    const todayRefs = Today.refs(roundRef);
 
     this.todayNamesDocsSub = collectionSnapshots(todayRefs).subscribe((querySnap) => {
 
@@ -334,8 +344,9 @@ export class RoundsService {
       }
 
       forkJoin(
-        querySnap.docs.map((queryDocSnap) => decryptToday(queryDocSnap.data() as BasicEncryptedValue, user.cryptoKey))
+        querySnap.docs.map((queryDocSnap) => Today.data(queryDocSnap, user.cryptoKey!))
       ).subscribe((todays) => {
+
         const todayName = this.todayName();
 
         let today: QueryDocumentSnapshot | undefined = undefined;
@@ -355,31 +366,37 @@ export class RoundsService {
         }
 
         this.todayTasksSub?.unsubscribe();
-4
-        // EncryptedTodayTask
-        const todayTasksRef = collection(this.firestore, `/users/${user.firebaseUser.uid}/rounds/${round.id}/today/${today.id}/task`);
 
-        this.todayTasksSub = collectionSnapshots(todayTasksRef, limit(25)).subscribe((querySnap) => {
+        const userRef = User.ref(this.firestore, user.id);
+        const roundRef = Round.ref(userRef, round.id);
+        const todayRef = Today.ref(roundRef, today.id);
+        const todayTasksRefs = TodayTask.refs(todayRef);
+
+        this.todayTasksSub = collectionSnapshots(todayTasksRefs, limit(25)).subscribe((querySnap) => {
 
           const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
-          const todayTaskArrPromise = querySnap.docs.map((encryptedTodayTask) => decryptTodayTask(encryptedTodayTask.data() as EncryptedTodayTask, user.cryptoKey));
+          const todayTaskArrPromise = querySnap.docs.map((encryptedTodayTask) => TodayTask.data(encryptedTodayTask, user.cryptoKey!));
 
           forkJoin(todayTaskArrPromise).subscribe((todayTaskArr) => {
 
             for (const [i, todayTask] of todayTaskArr.entries()) {
 
-              Object.keys(todayTask.timesOfDay).forEach((timeOfDay) => {
+              Object.keys(todayTask.timesOfDayEncryptedMap).forEach((timeOfDay) => {
+
                 if (!todayTasksByTimeOfDay[timeOfDay]) {
                   todayTasksByTimeOfDay[timeOfDay] = [];
                 }
-                todayTasksByTimeOfDay[timeOfDay].push({
-                  description: todayTask.description,
-                  done: todayTask.timesOfDay[timeOfDay],
+
+                const todayTaskItem = {
+                  description: todayTask.decryptedDescription,
+                  done: todayTask.timesOfDay[todayTask.timesOfDayEncryptedMap[timeOfDay]],
                   id: querySnap.docs[i].id,
                   disabled: false,
                   dayOfTheWeekId: today!.id,
                   timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
-                });
+                };
+
+                todayTasksByTimeOfDay[timeOfDay].push(todayTaskItem);
               });
             }
 
@@ -404,7 +421,7 @@ export class RoundsService {
       timeOfDay: string,
       moveBy: number,
       roundId: string
-    }, HTTPSuccess>('roundsSetTimesOfDayOrderUrl', data);
+    }, HTTPSuccess>('rounds-settimesofdayorder', data);
   }
 
   setGettingOfTasksList(round: Round): void {
@@ -413,10 +430,17 @@ export class RoundsService {
       return;
     }
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
 
-    // BasicEncryptedValue
-    const tasksRefs = collection(this.firestore, `users/${user.firebaseUser.uid}/rounds/${round.id}/task`);
+    if (!user) {
+      return;
+    }
+
+    const userRef = User.ref(this.firestore, user.firebaseUser?.uid || '');
+    const roundRef = Round.ref(userRef, round.id);
+    const tasksRefs = Task.refs(roundRef);
+
+    console.log(tasksRefs.path);
 
     this.tasksListSub = collectionSnapshots(tasksRefs, limit(25)).pipe(
       switchMap((querySnap) => {
@@ -425,7 +449,7 @@ export class RoundsService {
           return of([]);
         }
 
-        return forkJoin(querySnap.docs.map((encryptTask) => decryptTask(encryptTask.data() as BasicEncryptedValue, user.cryptoKey))).pipe(
+        return forkJoin(querySnap.docs.map((docSnapTask) => Task.data(docSnapTask, user.cryptoKey!))).pipe(
           map((tasks) => {
             return tasks.map((task, index) => {
               return {
@@ -455,13 +479,13 @@ export class RoundsService {
       task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
       taskId: string,
       roundId: string
-    }, HTTPSuccess>('roundsSaveTaskUrl', data);
+    }, HTTPSuccess>('rounds-savetask', data);
   }
 
   deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
     return this.functionsService.httpsCallable<{
       taskId: string,
       roundId: string
-    }, HTTPSuccess>('roundsDeleteTaskUrl', data);
+    }, HTTPSuccess>('rounds-deletetask', data);
   }
 }

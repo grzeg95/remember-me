@@ -44,11 +44,11 @@
       @if (!user.isAnonymous) {
         <div class="item">
           <div class="name">Name</div>
-          <div class="data" [innerHTML]="user.firebaseUser.displayName"></div>
+          <div class="data" [innerHTML]="user.firebaseUser!.displayName"></div>
         </div>
         <div class="item">
           <div class="name">Email</div>
-          <div class="data" [innerHTML]="user.firebaseUser.email"></div>
+          <div class="data" [innerHTML]="user.firebaseUser!.email"></div>
         </div>
       }
     </div>

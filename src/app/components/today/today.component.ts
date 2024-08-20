@@ -94,9 +94,13 @@ export class TodayComponent implements OnInit, OnDestroy {
 
     todayItem.disabled = true;
 
-    const user = this.authService.user$.value as User;
+    const user = this.authService.user$.value;
 
-    const todayTaskRef = doc(this.firestore, `/users/${user.firebaseUser.uid}/rounds/${this.roundsService.selectedRound()?.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`);
+    if (!user) {
+      return;
+    }
+
+    const todayTaskRef = doc(this.firestore, `/users/${user.id}/rounds/${this.roundsService.selectedRound()?.id}/today/${todayItem.dayOfTheWeekId}/task/${todayItem.id}`);
 
     defer(() => updateDoc(
       todayTaskRef,

@@ -12,7 +12,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {catchError, NEVER} from 'rxjs';
 import {RouterDict} from '../../app.constants';
-import {Round} from '../../models/models';
+import {Round} from '../../models/round';
 import {ConnectionService} from '../../services';
 import {RoundsService} from '../../services/rounds.service';
 
