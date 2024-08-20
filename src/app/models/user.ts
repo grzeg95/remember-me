@@ -19,46 +19,6 @@ export type UserDoc = {
 
 export class User implements UserDoc {
 
-  private _firebaseUser: FirebaseUser | undefined
-
-  get firebaseUser() {
-    return this._firebaseUser;
-  }
-
-  set firebaseUser(firebaseUser: FirebaseUser | undefined) {
-    this._firebaseUser = firebaseUser;
-  }
-
-  private _cryptoKey: CryptoKey | undefined
-
-  get cryptoKey() {
-    return this._cryptoKey;
-  }
-
-  set cryptoKey(cryptoKey: CryptoKey | undefined) {
-    this._cryptoKey = cryptoKey;
-  }
-
-  private _isAnonymous = false;
-
-  get isAnonymous() {
-    return this._isAnonymous;
-  }
-
-  set isAnonymous(isAnonymous: boolean) {
-    this._isAnonymous = isAnonymous;
-  }
-
-  private _providerId = '';
-
-  get providerId() {
-    return this._providerId;
-  }
-
-  set providerId(providerId: string) {
-    this._providerId = providerId;
-  }
-
   private _hasCustomPhoto = false;
 
   get hasCustomPhoto() {
@@ -75,7 +35,6 @@ export class User implements UserDoc {
     public readonly decryptedRounds: string[],
     public readonly hasEncryptedSecretKey: boolean,
     public photoURL: string,
-    public photoURLInUse: string,
     public readonly exists: boolean
   ) {
   }
@@ -111,7 +70,6 @@ export class User implements UserDoc {
         data!.rounds,
         decryptedRounds!,
         data!.hasEncryptedSecretKey,
-        data!.photoURL,
         decryptedPhotoURL!,
         docSnap.exists()
       );
@@ -122,7 +80,6 @@ export class User implements UserDoc {
         '',
         [],
         false,
-        '',
         '',
         false
       );

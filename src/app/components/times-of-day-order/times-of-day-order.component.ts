@@ -9,9 +9,8 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {catchError, NEVER} from 'rxjs';
-import { RouterDict } from '../../app.constants';
-import {HTTPError} from '../../models/models';
-import {ConnectionService} from '../../services';
+import {RouterDict} from '../../app.constants';
+import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
 
 @Component({
@@ -32,19 +31,19 @@ import {RoundsService} from '../../services/rounds.service';
 })
 export class TimesOfDayOrderComponent {
 
-  selectedRound = this.roundsService.selectedRound;
-  isOnline = this.connectionService.isOnline;
-  isLoading = signal<boolean>(false);
+  protected readonly _round = this._roundsService.roundSig.get();
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _isLoading = signal<boolean>(false);
 
-  faGripLines = faGripLines;
-  RouterDict = RouterDict;
+  protected readonly _faGripLines = faGripLines;
+  protected readonly _RouterDict = RouterDict;
 
   constructor(
-    private roundsService: RoundsService,
-    private snackBar: MatSnackBar,
-    private route: ActivatedRoute,
-    private router: Router,
-    private connectionService: ConnectionService
+    private readonly _roundsService: RoundsService,
+    private readonly _snackBar: MatSnackBar,
+    private readonly _route: ActivatedRoute,
+    private readonly _router: Router,
+    private readonly _connectionService: ConnectionService
   ) {
   }
 
@@ -54,12 +53,12 @@ export class TimesOfDayOrderComponent {
       return;
     }
 
-    const order = this.selectedRound()!.timesOfDay;
+    const order = this._round()!.timesOfDay;
     const timeOfDay = order[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
     moveItemInArray(order, event.previousIndex, event.currentIndex);
-    this.selectedRound.update((currRound) => {
+    this._roundsService.roundSig.update((currRound) => {
       if (currRound) {
         return {
           ...currRound,
@@ -70,16 +69,16 @@ export class TimesOfDayOrderComponent {
       return undefined;
     });
 
-    this.isLoading.set(true);
-    this.roundsService.setTimesOfDayOrder({
+    this._isLoading.set(true);
+    this._roundsService.setTimesOfDayOrder({
       timeOfDay,
       moveBy,
-      roundId: this.selectedRound()!.id
-    }).pipe(catchError((error: HTTPError) => {
-      this.isLoading.set(false);
-      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      roundId: this._round()!.id
+    }).pipe(catchError((error) => {
+      this._isLoading.set(false);
+      this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       moveItemInArray(order, event.currentIndex, event.previousIndex);
-      this.selectedRound.update((currRound) => {
+      this._roundsService.roundSig.update((currRound) => {
         if (currRound) {
           return {
             ...currRound,
@@ -91,12 +90,12 @@ export class TimesOfDayOrderComponent {
       });
       return NEVER;
     })).subscribe((success) => {
-      this.isLoading.set(false);
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
+      this._isLoading.set(false);
+      this._snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }
 
   addNewTask(): void {
-    this.router.navigate(['../', RouterDict.taskEditor], {relativeTo: this.route});
+    this._router.navigate(['../', RouterDict.taskEditor], {relativeTo: this._route});
   }
 }

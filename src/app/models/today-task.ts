@@ -41,6 +41,10 @@ export class TodayTask implements TodayTaskDoc {
     }
   } as FirestoreDataConverter<TodayTask, TodayTaskDoc>;
 
+  static ref(todayRef: DocumentReference<Today, TodayDoc>, id: string) {
+    return doc(todayRef.firestore, [todayRef.path, Collection.task, id].join('/')).withConverter(TodayTask._converter);
+  }
+
   static refs(todayRef: DocumentReference<Today, TodayDoc>) {
     return collection(todayRef.firestore, [todayRef.path, Collection.task].join('/')).withConverter(TodayTask._converter);
   }

@@ -4,8 +4,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {catchError, NEVER} from 'rxjs';
-import {ConnectionService} from '../../services';
 import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
 
 @Component({
   selector: 'app-send-password-reset-email',
@@ -15,34 +15,35 @@ import {AuthService} from '../../services/auth.service';
 })
 export class SendPasswordResetEmailComponent {
 
-  recoveryForm: FormGroup = new FormGroup({
+  protected readonly _recoveryForm: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email])
   });
 
-  email = this.recoveryForm.get('email');
+  protected readonly _email = this._recoveryForm.get('email');
 
-  isOnline = this.connectionService.isOnline;
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
 
   @Output() doneEmitter = new EventEmitter<void>();
 
   constructor(
-    private authService: AuthService,
-    private connectionService: ConnectionService,
-    private snackBar: MatSnackBar
+    private readonly _authService: AuthService,
+    private readonly _connectionService: ConnectionService,
+    private readonly _snackBar: MatSnackBar
   ) {
   }
 
   sendPasswordResetEmail(): void {
-    this.recoveryForm.disable();
 
-    this.authService.sendPasswordResetEmail(this.email?.value).pipe(catchError(() => {
+    this._recoveryForm.disable();
+
+    this._authService.sendPasswordResetEmail(this._email?.value).pipe(catchError(() => {
       this.sendPasswordResetEmailProceed();
       return NEVER;
     })).subscribe(() => this.sendPasswordResetEmailProceed());
   }
 
   sendPasswordResetEmailProceed(): void {
-    this.snackBar.open('Password reset email has been sent 🙂', 'X', {duration: 10000});
+    this._snackBar.open('Password reset email has been sent 🙂', 'X', {duration: 10000});
     this.doneEmitter.next();
   }
 }

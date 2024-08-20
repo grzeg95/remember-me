@@ -17,7 +17,7 @@ import {SendPasswordResetEmailComponent} from '../send-password-reset-email/send
 })
 export class AuthFormComponent {
 
-  forms = [
+  protected readonly _forms = [
     {
       name: 'login',
       label: 'Login'
@@ -32,12 +32,12 @@ export class AuthFormComponent {
     }
   ];
 
-  selectedForm = signal<string>('login');
+  protected readonly _selectedForm = signal<string>('login');
 
   @ViewChild('matTabGroup') matTabGroup: MatTabGroup | undefined;
 
   constructor(
-    public dialogRef: MatDialogRef<AuthFormComponent>
+    protected readonly _dialogRef: MatDialogRef<AuthFormComponent>
   ) {
   }
 }

@@ -1,4 +1,4 @@
-@if (!whileLoginIn()) {
+@if (!_loadingUser()) {
 
   <div class="container">
     <h1>Hello there.</h1>
@@ -11,7 +11,7 @@
     </h6>
   </div>
 
-  @if (!isHiddenUserDataPolicy()) {
+  @if (!_isHiddenUserDataPolicy()) {
     <app-user-data-policy></app-user-data-policy>
   }
 
@@ -25,17 +25,17 @@
       </div>
       <div class="row features">
         <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/today.svg" class="icon">
+          <img src="/assets/img/today.svg" class="icon">
           <h3 class="name">Today's Tasks</h3>
           <p class="description">Stay organized and focused by managing your daily tasks. Review and mark completed tasks to keep your progress on track.</p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/clock.svg" class="icon">
+          <img src="/assets/img/clock.svg" class="icon">
           <h3 class="name">Sortable Task Groups</h3>
           <p class="description">Efficiently organize your day with up to 10 customizable task groups. Set the order that works best for your workflow.</p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/list.svg" class="icon">
+          <img src="/assets/img/list.svg" class="icon">
           <h3 class="name">Tasks List</h3>
           <p class="description">Maintain a comprehensive list of up to 25 tasks. Easily prioritize and manage your workload with our intuitive task management system.</p>
         </div>
@@ -89,18 +89,10 @@
           </p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="assets/img/csp.svg" class="icon csp">
+          <img src="/assets/img/csp.svg" class="icon csp">
           <h3 class="name">Content-security-policy</h3>
           <p class="description">
             Protecting your data against theft, site damage, and malware distribution. Our stringent content-security-policy safeguards your online experience.
-          </p>
-        </div>
-        <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/branding/cookiebot_blue_logo.svg" class="icon cookiebot"/>
-          <h3 class="name">Control privacy</h3>
-          <p class="description">
-            Check and manage your cookies with our user-friendly privacy control center. Take charge of your online privacy. <br/>
-            <a class="cookiebot-renew" (click)="renewCookie()">Check out your cookies.</a>
           </p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
@@ -115,7 +107,7 @@
   </div>
 
   <footer>
-    @for (line of guestComponentConfig?.footerLines; track line) {
+    @for (line of _guestComponentConfig?.footerLines; track line) {
       <p [innerHTML]="line"></p>
     }
   </footer>

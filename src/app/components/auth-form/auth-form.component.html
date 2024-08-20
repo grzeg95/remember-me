@@ -4,10 +4,10 @@
       <mat-toolbar>
         <mat-toolbar-row>
           <span class="app-name">Remember Me</span>
-          <img src="/assets/img/logo.svg" class="logo">
+          <img src="/src/assets/img/logo.svg" class="logo">
           <span class="example-spacer"></span>
           <div class="d-flex align-items-center right">
-            <button mat-stroked-button color="primary" (click)="dialogRef.close()">Close</button>
+            <button mat-stroked-button color="primary" (click)="_dialogRef.close()">Close</button>
           </div>
         </mat-toolbar-row>
       </mat-toolbar>
@@ -16,17 +16,17 @@
   <div class="row">
     <div class="col">
       <div class="nav">
-        @for (form of forms; track form.name) {
-          <button [ngClass]="{'active': form.name === selectedForm()}"
-                (click)="selectedForm.set(form.name)"
+        @for (form of _forms; track form.name) {
+          <button [ngClass]="{'active': form.name === _selectedForm()}"
+                (click)="_selectedForm.set(form.name)"
                 [innerHTML]="form.label"></button>
         }
       </div>
       <div class="selectedForm">
-        @switch (selectedForm()) {
-          @case ('login') { <app-login (doneEmitter)="dialogRef.close()"></app-login> }
-          @case ('register') { <app-register (doneEmitter)="dialogRef.close()"></app-register> }
-          @case ('send-password-reset-email') { <app-send-password-reset-email (doneEmitter)="dialogRef.close()"></app-send-password-reset-email> }
+        @switch (_selectedForm()) {
+          @case ('login') { <app-login (doneEmitter)="_dialogRef.close()"></app-login> }
+          @case ('register') { <app-register (doneEmitter)="_dialogRef.close()"></app-register> }
+          @case ('send-password-reset-email') { <app-send-password-reset-email (doneEmitter)="_dialogRef.close()"></app-send-password-reset-email> }
         }
       </div>
     </div>

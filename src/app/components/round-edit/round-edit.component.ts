@@ -1,5 +1,6 @@
-import {JsonPipe, Location, NgIf} from '@angular/common';
-import {Component, effect, Inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {NgIf} from '@angular/common';
+import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
@@ -8,18 +9,18 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Firestore} from 'firebase/firestore';
-import {catchError, EMPTY, NEVER, Subscription, switchMap, throwError} from 'rxjs';
+import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
-import {HTTPError} from '../../models/models';
-import {Round} from '../../models/round';
-import {ConnectionService, CustomValidators} from '../../services';
+import {Round, RoundDoc} from '../../models/round';
+import {User} from '../../models/user';
 import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
+import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
-import {BasicEncryptedValue} from '../../utils/crypto';
+import {Sig} from '../../utils/Sig';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
-import {User} from '../../models/user';
 
 @Component({
   selector: 'app-times-of-day-list',
@@ -30,164 +31,189 @@ import {User} from '../../models/user';
     MatProgressBarModule,
     MatInputModule,
     MatButtonModule,
-    NgIf,
-    JsonPipe
+    NgIf
   ],
   styleUrl: './round-edit.component.scss'
 })
-export class RoundEditComponent implements OnInit, OnDestroy {
+export class RoundEditComponent implements OnDestroy {
 
-  isOnline = this.connectionService.isOnline;
-  isLoading = signal<boolean>(true);
-  editedRound = this.roundsService.editedRound;
-  initValues = {name: ''};
-  isNothingChanged = signal(true);
+  protected readonly _user = this._authService.userSig.get();
+  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
 
-  roundForm: FormGroup = new FormGroup({
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+
+  private readonly _isLoadingSig = new Sig<boolean>(false);
+  protected readonly _isLoading = this._isLoadingSig.get();
+
+  protected readonly _editRoundIdSig = this._roundsService.editRoundIdSig;
+  protected readonly _editRoundId = this._editRoundIdSig.get();
+  protected readonly _editRound = this._roundsService.editRoundSig.get();
+
+  protected _initValues = {name: ''};
+
+  private readonly _isNothingChangedSig = new Sig<boolean>(true);
+  protected readonly _isNothingChanged = this._isNothingChangedSig.get();
+
+  protected readonly _roundForm: FormGroup = new FormGroup({
     name: new FormControl('', [CustomValidators.maxRequired(256)])
   });
 
-  name = this.roundForm.get('name');
-  editedRoundOnSnapSub!: Subscription;
+  protected readonly _name = this._roundForm.get('name');
+  private _editRoundSub: Subscription | undefined;
 
   constructor(
-    private activeRoute: ActivatedRoute,
-    private roundsService: RoundsService,
-    private snackBar: MatSnackBar,
-    private router: Router,
-    private route: ActivatedRoute,
-    public dialog: MatDialog,
-    public location: Location,
-    private connectionService: ConnectionService,
-    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore,
-    private authService: AuthService
+    private readonly _activeRoute: ActivatedRoute,
+    private readonly _roundsService: RoundsService,
+    private readonly _snackBar: MatSnackBar,
+    private readonly _router: Router,
+    private readonly _route: ActivatedRoute,
+    protected readonly _dialog: MatDialog,
+    private readonly _connectionService: ConnectionService,
+    @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
+    private readonly _authService: AuthService,
+    private readonly _destroyRef: DestroyRef
   ) {
-    this.roundForm.enable();
+    this._roundForm.enable();
 
     effect(() => {
-      if (this.isOnline()) {
-        this.setGettingOfRoundById(this.activeRoute.snapshot.params['id'] || 'null');
+      if (this._isOnline()) {
+        this._roundsService.editRoundIdSig.set(this._activeRoute.snapshot.params['id'] || undefined);
       } else {
-        this.roundForm.disable();
+        this._roundForm.disable();
       }
-    })
-  }
-
-  ngOnInit(): void {
-    this.route.paramMap.subscribe((paramMap) => {
-      this.setGettingOfRoundById(paramMap.get('id') || '');
     });
 
-    this.roundForm.get('name')?.valueChanges.subscribe((val) => {
-      this.isNothingChanged.set(this.initValues.name !== val);
+    this._route.paramMap.subscribe((paramMap) => {
+      this._roundsService.editRoundIdSig.set(paramMap.get('id'));
     });
-  }
 
-  setGettingOfRoundById(id: string) {
+    this._name?.valueChanges.subscribe((val) => {
+      this._isNothingChangedSig.set(this._initValues.name !== val);
+    });
 
-    if (this.editedRoundOnSnapSub && !this.editedRoundOnSnapSub.closed) {
-      this.editedRoundOnSnapSub.unsubscribe();
-    }
+    // editRound
+    let editRound_userId: string | undefined;
+    let editRound_editRoundId: string | undefined;
+    effect(() => {
 
-    if (!id) {
-      this.resetForm();
-      this.roundsService.editedRound.set(undefined);
-      this.roundForm.enable();
-      this.isLoading.set(false);
-      return;
-    }
+      const user = this._user();
+      const cryptoKey = this._cryptoKey();
+      const editRoundId = this._editRoundId();
 
-    const user = this.authService.user$.value;
+      if (user === undefined || editRoundId === undefined || !cryptoKey) {
+        return;
+      }
 
-    if (!user) {
-      return;
-    }
+      if (!user || !editRoundId) {
+        this.resetForm();
+        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]);
+        this._roundsService.roundSig.set(undefined);
+        this._roundsService.roundIdSig.set(undefined);
+        this._roundForm.enable();
+        editRound_userId = undefined;
+        editRound_editRoundId = undefined;
+        this._editRoundSub && !this._editRoundSub.closed && this._editRoundSub.unsubscribe();
+        return;
+      }
 
-    // BasicEncryptedValue
-    const userRef = User.ref(this.firestore, user.id);
-    const roundRef = Round.ref(userRef, id);;
+      if (
+        editRound_userId === user.id &&
+        editRound_editRoundId === editRoundId
+      ) {
+        return;
+      }
 
-    return docSnapshots(roundRef).pipe(
-      switchMap((docSnap) => {
-        if (!docSnap.exists()) {
-          throw throwError(() => {
-          });
+      editRound_userId = user.id;
+      editRound_editRoundId = editRoundId;
+
+      const userRef = User.ref(this._firestore, user.id);
+      const roundRef = Round.ref(userRef, editRoundId);
+
+      this._roundsService.loadingEditRoundSig.set(true);
+      this._editRoundSub && !this._editRoundSub.closed && this._editRoundSub.unsubscribe();
+      this._editRoundSub = docSnapshots<Round, RoundDoc>(roundRef).pipe(
+        takeUntilDestroyed(this._destroyRef),
+        takeWhile(() => !!this._user() || !!this._editRoundId()),
+        switchMap((docSnap) => Round.data(docSnap, cryptoKey)),
+        catchError(() => of(null))
+      ).subscribe((round) => {
+
+        this._roundsService.loadingEditRoundSig.set(false);
+
+        if (!round) {
+          this._roundsService.roundIdSig.set(undefined);
+          return;
         }
 
-        return Round.data(docSnap, user.cryptoKey!);
-      }),
-      catchError(() => {
-        this.setGettingOfRoundById('');
-        return EMPTY;
-      })
-    ).subscribe((round) => {
+        this._isLoadingSig.set(false);
 
-      this.isLoading.set(false);
+        this._roundsService.editRoundSig.set(round);
 
-      this.roundsService.editedRound.set(round);
+        this._roundForm.get('name')?.setValue(round.name);
+        this._initValues = {
+          name: round.name
+        };
+        this._roundForm.enable();
+      });
 
-      this.roundForm.get('name')?.setValue(round.name);
-      this.initValues = {
-        name: round.name
-      };
-      this.roundForm.enable();
     });
   }
 
   saveRound(): void {
 
-    this.isLoading.set(true);
-    this.roundForm.disable();
+    this._isLoadingSig.set(true);
+    this._roundForm.disable();
 
-    this.roundsService.saveRound(this.name?.value, this.editedRound()?.id).pipe(
-      catchError((error: HTTPError) => {
-        this.isLoading.set(false);
-        this.roundForm.enable();
-        this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+    this._roundsService.saveRound(this._name?.value, this._editRound()?.id).pipe(
+      catchError((error) => {
+        this._isLoadingSig.set(false);
+        this._roundForm.enable();
+        this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         return NEVER;
       })
     ).subscribe((success) => {
 
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
+      this._snackBar.open(success.details || 'Your operation has been done 😉');
 
       if (success.created) {
-        this.router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, success.roundId]).toString();
+        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, success.roundId]).toString();
       }
     });
   }
 
   deleteRound(): void {
-    const dialogRef = this.dialog.open(RoundDialogConfirmDeleteComponent);
+
+    const dialogRef = this._dialog.open(RoundDialogConfirmDeleteComponent);
 
     dialogRef.afterClosed().subscribe((isConfirmed) => {
 
       if (isConfirmed) {
-        this.roundForm.disable();
-        this.isLoading.set(true);
+        this._roundForm.disable();
+        this._isLoadingSig.set(true);
 
-        this.roundsService.deleteRound(this.editedRound()?.id as string).pipe(catchError((error: HTTPError) => {
-          this.isLoading.set(false);
-          this.roundForm.enable();
-          this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-          return NEVER;
-        })).subscribe((success) => {
-          this.snackBar.open(success.details || 'Your operation has been done 😉');
-          this.setGettingOfRoundById('');
+        this._roundsService.deleteRound(this._editRound()?.id as string).pipe(
+          catchError((error) => {
+            this._isLoadingSig.set(false);
+            this._roundForm.enable();
+            this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+            return NEVER;
+          })
+        ).subscribe((success) => {
+          this._snackBar.open(success.details || 'Your operation has been done 😉');
+          this._roundsService.editRoundIdSig.set(undefined);
         });
       }
     });
   }
 
   resetForm(): void {
-    this.roundForm.reset({name: ''});
-    this.initValues = {name: ''};
+    this._roundForm.reset({name: ''});
+    this._initValues = {name: ''};
   }
 
   ngOnDestroy(): void {
-    this.roundsService.editedRound.set(undefined);
-
-    if (this.editedRoundOnSnapSub && !this.editedRoundOnSnapSub.closed) {
-      this.editedRoundOnSnapSub.unsubscribe();
-    }
+    this._roundsService.editRoundIdSig.set(undefined);
+    this._roundsService.editRoundSig.set(undefined);
+    this._roundsService.loadingEditRoundSig.set(false);
   }
 }

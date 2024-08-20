@@ -7,24 +7,24 @@
         Rounds | Round edit | Round name
         Rounds | Round name
         -->
-        <img src="../../../assets/img/rounds.svg" class="rounds-icon">
-        <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundsList]">Rounds</a>
+        <img src="assets/img/rounds.svg" class="rounds-icon">
+        <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundsList]">Rounds</a>
 
-        <input type="hidden" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]" routerLinkActive="roundEdit" #roundEdit="routerLinkActive"/>
+        <input type="hidden" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]" routerLinkActive="roundEdit" #roundEdit="routerLinkActive"/>
 
         @if (roundEdit.isActive) {
           <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]">Round edit</a>
+          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]">Round edit</a>
         }
 
-        @if (roundEdit.isActive && editedRound()) {
+        @if (roundEdit.isActive && _editRound()) {
           <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor, editedRound()?.id]">{{ editedRound()?.name }}</a>
+          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor, _editRound()?.id]">{{ _editRound()?.name }}</a>
         }
 
-        @if (!roundEdit.isActive && selectedRound()) {
+        @if (!roundEdit.isActive && _round()) {
           <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', RouterDict.user, RouterDict.rounds, selectedRound()?.id, RouterDict.todayTasks]"> {{ selectedRound()?.name }}</a>
+          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _round()?.id, _RouterDict.todayTasks]"> {{ _round()?.name }}</a>
         }
 
       </div>

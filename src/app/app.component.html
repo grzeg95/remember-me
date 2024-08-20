@@ -1,12 +1,12 @@
 <app-nav></app-nav>
 
-@if (whileLoginIn()) {
+@if (_whileLoginIn()) {
     <mat-spinner [strokeWidth]="5" [color]="'primary'"></mat-spinner>
 }
 
 <router-outlet></router-outlet>
 
-<div [class.active]="!isOnline()" class="offline">
+<div [class.active]="!_isOnline()" class="offline">
   <div class="text">rem.grzeg.pl is currently offline</div>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="1.325rem" height="1.325rem">
     <path d="M0 0h24v24H0z" fill="none"/>

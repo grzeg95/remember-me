@@ -14,6 +14,8 @@ import {MatDialogActions, MatDialogRef, MatDialogTitle} from '@angular/material/
 })
 export class RoundDialogConfirmDeleteComponent {
 
-  constructor(public dialogRef: MatDialogRef<RoundDialogConfirmDeleteComponent>) {
+  constructor(
+    protected readonly _dialogRef: MatDialogRef<RoundDialogConfirmDeleteComponent>
+  ) {
   }
 }

@@ -5,8 +5,8 @@ import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {UserCredential} from 'firebase/auth';
 import {catchError, NEVER} from 'rxjs';
-import {ConnectionService} from '../../services';
 import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
 
 @Component({
   selector: 'app-login',
@@ -16,59 +16,62 @@ import {AuthService} from '../../services/auth.service';
 })
 export class LoginComponent {
 
-  loginForm: FormGroup = new FormGroup({
+  protected readonly _loginForm: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [Validators.required])
   });
 
-  email = this.loginForm.get('email');
-  password = this.loginForm.get('password');
+  protected readonly _email = this._loginForm.get('email');
+  protected readonly _password = this._loginForm.get('password');
 
-  isOnline = this.connectionService.isOnline;
-  userCredential = signal<UserCredential | undefined>(undefined);
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _userCredential = signal<UserCredential | undefined>(undefined);
 
   @Output() doneEmitter = new EventEmitter<void>();
 
   constructor(
-    private authService: AuthService,
-    private connectionService: ConnectionService,
-    private snackBar: MatSnackBar
+    private readonly _authService: AuthService,
+    private readonly _connectionService: ConnectionService,
+    private readonly _snackBar: MatSnackBar
   ) {
   }
 
   sendEmailVerification(): void {
 
-    const userCredential = this.userCredential();
+    const userCredential = this._userCredential();
 
     if (userCredential) {
 
-      this.loginForm.disable();
+      this._loginForm.disable();
 
-      this.authService.sendEmailVerification(userCredential.user).pipe(catchError(() => {
-        this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-        this.loginForm.enable();
+      this._authService.sendEmailVerification(userCredential.user).pipe(catchError(() => {
+        this._snackBar.open('Some went wrong 🤫 Try again 🙂');
+        this._loginForm.enable();
         return NEVER;
       })).subscribe(() => {
-        this.snackBar.open('Email verification has been sent 🙂', 'X', {duration: 10000});
+        this._snackBar.open('Email verification has been sent 🙂', 'X', {duration: 10000});
         this.doneEmitter.next();
       });
     }
   }
 
   login() {
-    this.loginForm.disable();
+    this._loginForm.disable();
 
-    this.authService.signInWithEmailAndPassword(this.loginForm.get('email')?.value, this.loginForm.get('password')?.value).pipe(catchError(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
-      this.loginForm.enable();
-      return NEVER;
-    })).subscribe((userCredential) => {
-      this.loginForm.enable();
+    this._authService.signInWithEmailAndPassword(this._loginForm.get('email')?.value, this._loginForm.get('password')?.value).pipe(
+      catchError(() => {
+        this._snackBar.open('Some went wrong 🤫 Try again 🙂');
+        this._loginForm.enable();
+        return NEVER;
+      })
+    ).subscribe((userCredential) => {
+
+      this._loginForm.enable();
 
       if (userCredential) {
 
         if (!userCredential.user.emailVerified) {
-          this.userCredential.set(userCredential);
+          this._userCredential.set(userCredential);
         }
 
         if (userCredential.user.emailVerified) {

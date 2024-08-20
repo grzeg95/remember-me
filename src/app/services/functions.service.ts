@@ -1,7 +1,8 @@
 import {Inject, Injectable} from '@angular/core';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Functions, httpsCallable} from 'firebase/functions';
 import {defer} from 'rxjs';
-import {FunctionsInjectionToken} from '../../models/firebase';
+import {FunctionsInjectionToken} from '../models/firebase';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,8 @@ import {FunctionsInjectionToken} from '../../models/firebase';
 export class FunctionsService {
 
   constructor(
-    @Inject(FunctionsInjectionToken) private readonly _functions: Functions
+    @Inject(FunctionsInjectionToken) private readonly _functions: Functions,
+    private readonly _matSnackBar: MatSnackBar
   ) {
   }
 
@@ -17,6 +19,10 @@ export class FunctionsService {
     return defer(
       () => httpsCallable<RequestData, ResponseData>(this._functions, name)(data)
         .then((res) => res.data)
+        .catch((error) => {
+          this._matSnackBar.open(error.message);
+          throw error;
+        })
     );
   }
 }

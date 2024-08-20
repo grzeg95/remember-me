@@ -9,6 +9,9 @@ import {MatDialogActions, MatDialogRef, MatDialogTitle} from '@angular/material/
   templateUrl: './user-dialog-confirm-delete.component.html'
 })
 export class UserDialogConfirmDeleteComponent {
-  constructor(public dialogRef: MatDialogRef<UserDialogConfirmDeleteComponent>) {
+
+  constructor(
+    protected _dialogRef: MatDialogRef<UserDialogConfirmDeleteComponent>
+  ) {
   }
 }

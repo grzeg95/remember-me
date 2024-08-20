@@ -1,192 +1,222 @@
-import {Inject, Injectable, signal} from '@angular/core';
-import {getIdTokenResult, GoogleAuthProvider, UserCredential, User as FirebaseUser} from 'firebase/auth';
-import {deleteField, doc, Firestore, updateDoc} from 'firebase/firestore';
+import {computed, effect, Inject, Injectable} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 import {
-  BehaviorSubject,
-  catchError,
-  defer,
-  from,
-  map,
-  mergeMap,
-  NEVER,
-  Observable,
-  of,
-  retry,
-  Subscription,
-  switchMap,
-  throwError,
-  zip
-} from 'rxjs';
+  Auth,
+  createUserWithEmailAndPassword,
+  deleteUser,
+  getIdTokenResult,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInAnonymously,
+  signInWithCustomToken,
+  signInWithEmailAndPassword,
+  signInWithRedirect,
+  signOut,
+  updatePassword,
+  User as FirebaseUser,
+  UserCredential
+} from 'firebase/auth';
+import firebase from 'firebase/compat';
+import {Firestore} from 'firebase/firestore';
+import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap} from 'rxjs';
 import {RouterDict} from '../app.constants';
-import {FirestoreInjectionToken} from '../models/firebase';
+import {AuthInjectionToken, FirestoreInjectionToken} from '../models/firebase';
+import {User} from '../models/user';
 import {getCryptoKey} from '../utils/crypto';
-import {SubsContainer} from '../utils/subs-container';
-import {AngularFirebaseAuthService} from './angular-firebase-auth.service';
+import {Sig} from '../utils/Sig';
 import {docSnapshots} from './firebase/firestore';
-import {FunctionsService} from './firebase/functions.service';
-import { User } from '../models/user';
+import {FunctionsService} from './functions.service';
+import IdTokenResult = firebase.auth.IdTokenResult;
 
 @Injectable()
 export class AuthService {
 
-  user$ = new BehaviorSubject<User | null | undefined>(undefined);
-  userDocSub: Subscription | undefined;
-  whileLoginIn = signal(false);
-  onSnapshotSubs = new SubsContainer();
-  wasUserCreatedWithEmailAndPassword = signal(false);
+  readonly authStateReady = toSignal(from(this._auth.authStateReady()).pipe(
+    map(() => true)
+  ));
+
+  private readonly __firebaseUser = toSignal(new Observable<FirebaseUser | null>((subscriber) => {
+    const unsubscribe = onAuthStateChanged(this._auth, {
+      next: subscriber.next.bind(subscriber),
+      error: subscriber.error.bind(subscriber),
+      complete: subscriber.complete.bind(subscriber)
+    });
+    return {unsubscribe};
+  }));
+
+  readonly firebaseUserSig = new Sig<FirebaseUser>();
+  private _firebaseUser = this.firebaseUserSig.get();
+
+  readonly isLoggedIn = computed(() => {
+    return !!this._firebaseUser();
+  });
+
+  readonly loadingUserSig = new Sig<boolean>(false);
+  readonly userSig = new Sig<User | null>();
+  private _userSub: Subscription | undefined;
+
+  readonly cryptoKeySig = new Sig<CryptoKey>();
+  private _cryptoKey = this.cryptoKeySig.get();
+
+  readonly whileLoginInSig = new Sig<boolean>(false);
+  readonly whileLoginIn = this.whileLoginInSig.get();
+
+  private _wasUserCreatedWithEmailAndPassword = false;
 
   constructor(
-    private router: Router,
-    private snackBar: MatSnackBar,
-    private angularFirebaseAuthService: AngularFirebaseAuthService,
-    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore,
+    private readonly _router: Router,
+    private readonly _snackBar: MatSnackBar,
+    @Inject(AuthInjectionToken) private readonly _auth: Auth,
+    @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
     private readonly functionsService: FunctionsService
   ) {
-    this.angularFirebaseAuthService.firebaseUser$.subscribe(async (firebaseUser) => {
 
-      if (firebaseUser && !(this.user$.value && this.user$.value?.firebaseUser?.uid !== firebaseUser.uid)) {
+    // firebaseUser
+    let firebaseUser_IdToken: string | undefined;
+    effect(async () => {
 
-        if (this.whileLoginIn()) {
-          return;
-        }
+      const __firebaseUser = this.__firebaseUser();
 
-        if (this.wasUserCreatedWithEmailAndPassword()) {
-          this.wasUserCreatedWithEmailAndPassword.set(false);
-          this.signOut().subscribe();
-          return;
-        }
-
-        const isAnonymous = firebaseUser.isAnonymous || !firebaseUser.providerData.length;
-
-        if (!isAnonymous && !firebaseUser.emailVerified) {
-          this.snackBar.open('Please verify your email 🤫 and try again 🙂');
-          this.signOut().subscribe();
-          return;
-        }
-
-        if (!this.user$.value) {
-          this.whileLoginIn.set(true);
-        }
-
-        from(getIdTokenResult(firebaseUser, true).then((idTokenResult) => {
-          if (!idTokenResult.claims['encryptedSymmetricKey']) {
-            throw new Error('without/encrypted-symmetric-key');
-          }
-          return idTokenResult;
-        })).pipe(
-          retry({count: 10, delay: 2000}),
-          switchMap((idTokenResult) => {
-            if (!idTokenResult.claims['secretKey']) {
-              return this.functionsService.httpsCallable<null, {customToken: string}>('auth-gettokenwithsecretkey', null).pipe(
-                mergeMap((res) => {
-                  return this.angularFirebaseAuthService.signInWithCustomToken(res.customToken);
-                }),
-                mergeMap((userCredential) => {
-                  return zip(
-                    getIdTokenResult(userCredential.user, true),
-                    of(userCredential.user)
-                  );
-                })
-              )
-            }
-
-            return zip(of(idTokenResult), of(firebaseUser));
-          }),
-          catchError(() => {
-            this.angularFirebaseAuthService.signOut().subscribe();
-            return NEVER;
-          }),
-        ).subscribe(async ([idTokenResult, firebaseUser]) => {
-
-          const cryptoKey = await getCryptoKey(idTokenResult.claims['secretKey'] as string);
-
-          this.unsubscribeUserDocSub();
-
-          // EncryptedUser
-          const userRef = User.ref(this.firestore, firebaseUser.uid);
-
-          this.userDocSub = docSnapshots(userRef).pipe(
-            catchError((error) => {
-              if (error.code === 'permission-denied') {
-                this.signOut().subscribe();
-              }
-              throw error;
-            })
-          ).pipe(
-            switchMap((docSnapEncryptedUser) => {
-              return User.data(docSnapEncryptedUser, cryptoKey);
-            })
-          ).subscribe((user) => {
-
-            if (idTokenResult.claims['isAnonymous']) {
-              user.isAnonymous = true;
-              user.providerId = 'Anonymous';
-            } else {
-              user.isAnonymous = firebaseUser.isAnonymous;
-              user.providerId = firebaseUser.providerData[0].providerId;
-            }
-
-            if (user.photoURL) {
-              user.hasCustomPhoto = true;
-            } else {
-              user.photoURL = firebaseUser.photoURL || '';
-              user.hasCustomPhoto = false;
-            }
-
-            user.cryptoKey = cryptoKey;
-            user.firebaseUser = firebaseUser;
-
-            this.user$.next(user);
-
-            if (this.router.routerState.snapshot.url === '/') {
-              this.router.navigate(['/', RouterDict.user]).then(() => {
-                this.whileLoginIn.set(false);
-              });
-            } else {
-              this.whileLoginIn.set(false);
-            }
-          });
-        });
-
-      } else {
-        this.unsubscribeAllUserSubs();
-        this.user$.next(null);
-        this.whileLoginIn.set(false);
-        this.router.navigate(['/']);
-        this.wasUserCreatedWithEmailAndPassword.set(false);
+      if (!__firebaseUser) {
+        this.whileLoginInSig.set(false);
+        firebaseUser_IdToken = undefined;
+        return;
       }
+
+      this.whileLoginInSig.set(true);
+
+      const idToken = await __firebaseUser.getIdToken();
+
+      if (firebaseUser_IdToken === idToken) {
+        return;
+      }
+
+      firebaseUser_IdToken = idToken;
+
+      if (this._wasUserCreatedWithEmailAndPassword) {
+        this._wasUserCreatedWithEmailAndPassword = false;
+        this.signOut().subscribe();
+        return;
+      }
+
+      let idTokenResult: IdTokenResult;
+
+      for (let i = 0; i < 10; ++i) {
+        try {
+          idTokenResult = await getIdTokenResult(__firebaseUser, true).then((idTokenResult) => {
+            if (!idTokenResult.claims['encryptedSymmetricKey']) {
+              throw new Error('without/encrypted-symmetric-key');
+            }
+            return idTokenResult;
+          });
+        } catch {
+          if (i === 9) {
+            return;
+          }
+        }
+      }
+
+      if (!idTokenResult!.claims['secretKey']) {
+        const customTokenWithSecretKeyResult = await firstValueFrom(this.functionsService.httpsCallable<null, {
+          customToken: string
+        }>('auth-gettokenwithsecretkey', null));
+        const userCredential = await signInWithCustomToken(this._auth, customTokenWithSecretKeyResult.customToken);
+        this.firebaseUserSig.set(userCredential.user);
+        idTokenResult = await getIdTokenResult(__firebaseUser, true);
+        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
+      } else {
+        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
+        this.firebaseUserSig.set(__firebaseUser);
+      }
+
+      this.whileLoginInSig.set(false);
+    });
+
+    // user
+    let user_userId: string | undefined;
+    effect(() => {
+
+      const firebaseUser = this._firebaseUser();
+      const cryptoKey = this._cryptoKey();
+
+      if (!firebaseUser || !cryptoKey) {
+        this.userSig.set(null);
+        this.whileLoginInSig.set(false);
+        user_userId = undefined;
+        return;
+      }
+
+      if (user_userId === firebaseUser.uid) {
+        return;
+      }
+
+      user_userId = firebaseUser.uid;
+
+      const userRef = User.ref(this._firestore, firebaseUser.uid);
+
+      this.loadingUserSig.set(true);
+      this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
+      this._userSub = docSnapshots(userRef).pipe(
+        catchError((error) => {
+          if (error.code === 'permission-denied') {
+            this.signOut().subscribe();
+          }
+          throw error;
+        })
+      ).pipe(
+        switchMap((userDocSnap) => User.data(userDocSnap, cryptoKey))
+      ).subscribe((user) => {
+
+        if (user.photoURL) {
+          user.hasCustomPhoto = true;
+        } else {
+          user.photoURL = firebaseUser.photoURL || '';
+          user.hasCustomPhoto = false;
+        }
+
+        this.userSig.set(user);
+
+        if (this._router.routerState.snapshot.url === '/') {
+          this._router.navigate(['/', RouterDict.user]).then(() => {
+
+            this.loadingUserSig.set(false);
+          });
+        } else {
+          this.loadingUserSig.set(false);
+        }
+      });
     });
   }
 
   googleSignIn(): Observable<void> {
 
     return defer(() => {
-      this.whileLoginIn.set(true);
-      return this.angularFirebaseAuthService.signInWithRedirect(new GoogleAuthProvider()).pipe(
-        catchError((e) => {
-          this.whileLoginIn.set(false);
-          throw e;
-        })
-      );
+      this.whileLoginInSig.set(true);
+      return signInWithRedirect(this._auth, new GoogleAuthProvider()).catch((e) => {
+        this.whileLoginInSig.set(false);
+        throw e;
+      });
     });
   }
 
   anonymouslySignIn(): Observable<UserCredential> {
-    return this.angularFirebaseAuthService.signInAnonymously();
+    return defer(() => signInAnonymously(this._auth));
   }
 
   signInWithEmailAndPassword(email: string, password: string): Observable<UserCredential | void> {
-    return this.angularFirebaseAuthService.signInWithEmailAndPassword(email, password);
+    return defer(() => signInWithEmailAndPassword(this._auth, email, password));
   }
 
   createUserWithEmailAndPassword(email: string, password: string): Observable<{code: string, message: string}> {
 
     return defer(() => {
-      this.wasUserCreatedWithEmailAndPassword.set(true);
+      this._wasUserCreatedWithEmailAndPassword = true;
 
-      return this.angularFirebaseAuthService.createUserWithEmailAndPassword(email, password).pipe(
+      return defer(() => createUserWithEmailAndPassword(this._auth, email, password)).pipe(
         catchError((error: {code: string, message: string}) => {
           if (error.code === 'auth/weak-password') {
             error.message = 'Password should has at least 6 characters 😩';
@@ -198,113 +228,68 @@ export class AuthService {
 
           throw error;
         }),
-        mergeMap((userCredential) => {
-          return this.angularFirebaseAuthService.sendEmailVerification(userCredential.user).pipe(
-            catchError(() => {
-              throw {
-                code: 'user-created',
-                message: 'User has been created 🤗 Please try to login 🙈'
-              }
-            }),
-            map(() => {
-              return {
-                code: 'user-created',
-                message: 'User has been created 🤗 To login verify your email address by link in that has been sent to you 🧐'
-              };
-            })
-          )
+        switchMap((userCredential) => {
+          return sendEmailVerification(userCredential.user).catch(() => {
+            throw {
+              code: 'user-created',
+              message: 'User has been created 🤗 Please try to login 🙈'
+            }
+          }).then(() => {
+            return {
+              code: 'user-created',
+              message: 'User has been created 🤗 To login verify your email address by link in that has been sent to you 🧐'
+            };
+          })
         }));
     });
   }
 
   sendEmailVerification(user: FirebaseUser): Observable<void> {
-    return this.angularFirebaseAuthService.sendEmailVerification(user);
+    return defer(() => sendEmailVerification(user));
   }
 
   sendPasswordResetEmail(email: string): Observable<void> {
-    return this.angularFirebaseAuthService.sendPasswordResetEmail(email);
+    return defer(() => sendPasswordResetEmail(this._auth, email));
   }
 
   updatePassword(newPassword: string): Observable<{code: string; message: string;}> {
 
     return defer(() => {
-      const user = this.user$.value;
+
+      const firebaseUser = this._firebaseUser();
 
       // was created by email password
-      if (!user || user.firebaseUser?.providerData[0]?.providerId !== 'password') {
-
-        return throwError(() => {
-          return {
-            code: 'auth/unauthorized',
-            message: `Password hasn't been updated 🤫`
-          }
-        });
+      if (!firebaseUser || firebaseUser.providerData[0]?.providerId !== 'password') {
+        throw {
+          code: 'auth/unauthorized',
+          message: `Password hasn't been updated 🤫`
+        }
       }
 
-      return this.angularFirebaseAuthService.updatePassword(user.firebaseUser, newPassword);
+      return updatePassword(firebaseUser, newPassword).then(() => {
+        return {
+          code: 'auth/password-updated',
+          message: 'Password has been updated 🤫'
+        }
+      });
     });
   }
 
   signOut(): Observable<void> {
-    return this.angularFirebaseAuthService.signOut();
+    return defer(() => signOut(this._auth));
   }
 
   deleteUser(): Observable<void> {
-    return this.angularFirebaseAuthService.deleteUser();
-  }
-
-  uploadProfileImage(file: File): Observable<{message: string}> {
-
-    // max 9MB picture file
-    // PayloadTooLargeError: request entity too large
-    if (file.size > 9 * 1024 * 1024) {
-      return throwError(() => {
-        return {
-          error: {
-            details: 'You can upload up to 9MB image 🙄'
-          }
-        };
-      });
-    }
-
-    return from(
-      new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.addEventListener('loadend', function () {
-          resolve(reader.result as string);
-        }, false);
-      })
-    ).pipe(
-      mergeMap((imageDataURL) => {
-        return this.functionsService.httpsCallable<{imageDataURL: string}, {
-          message: string
-        }>('user-uploadprofileimage', {imageDataURL});
-      })
-    );
-  }
-
-  removePhoto(): Observable<void> {
 
     return defer(() => {
-      const user = this.user$.value as User;
 
-      const userRef = doc(this.firestore, `users/${user?.firebaseUser?.uid}`);
+      const firebaseUser = this._firebaseUser();
 
-      return updateDoc(userRef, {
-        photoURL: deleteField()
-      });
+      if (!firebaseUser) {
+        return Promise.resolve();
+      }
+
+      return deleteUser(firebaseUser);
     });
-  }
-
-  unsubscribeUserDocSub(): void {
-    if (this.userDocSub && !this.userDocSub.closed) {
-      this.userDocSub.unsubscribe();
-    }
-  }
-
-  unsubscribeAllUserSubs(): void {
-    this.onSnapshotSubs.clear();
-    this.unsubscribeUserDocSub();
   }
 }

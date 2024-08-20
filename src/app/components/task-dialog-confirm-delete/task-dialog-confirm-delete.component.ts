@@ -14,6 +14,8 @@ import {MatDialogActions, MatDialogRef, MatDialogTitle} from '@angular/material/
 })
 export class TaskDialogConfirmDeleteComponent {
 
-  constructor(public dialogRef: MatDialogRef<TaskDialogConfirmDeleteComponent>) {
+  constructor(
+    protected readonly _dialogRef: MatDialogRef<TaskDialogConfirmDeleteComponent>
+  ) {
   }
 }

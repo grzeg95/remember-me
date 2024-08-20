@@ -4,8 +4,9 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {catchError, NEVER} from 'rxjs';
-import {ConnectionService, CustomValidators} from '../../services';
 import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
+import {CustomValidators} from '../../services/custom-validators';
 
 @Component({
   selector: 'app-new-password',
@@ -15,44 +16,46 @@ import {AuthService} from '../../services/auth.service';
 })
 export class NewPasswordComponent implements OnInit {
 
-  newPasswordForm: FormGroup = new FormGroup({
+  protected readonly _newPasswordForm: FormGroup = new FormGroup({
     newPassword: new FormControl('', [Validators.required]),
     confirmNewPassword: new FormControl('', [Validators.required])
   });
 
-  newPassword = this.newPasswordForm.get('newPassword') as FormControl;
-  confirmNewPassword = this.newPasswordForm.get('confirmNewPassword') as FormControl;
+  protected readonly _newPassword = this._newPasswordForm.get('newPassword') as FormControl;
+  protected readonly _confirmNewPassword = this._newPasswordForm.get('confirmNewPassword') as FormControl;
 
-  isOnline = this.connectionService.isOnline;
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
 
   constructor(
-    private authService: AuthService,
-    private snackBar: MatSnackBar,
-    private connectionService: ConnectionService
+    private readonly _authService: AuthService,
+    private readonly _snackBar: MatSnackBar,
+    private readonly _connectionService: ConnectionService
   ) {
   }
 
   ngOnInit(): void {
-    this.confirmNewPassword.addValidators(CustomValidators.equalsToOtherFormControl(this.newPassword));
+    this._confirmNewPassword.addValidators(CustomValidators.equalsToOtherFormControl(this._newPassword));
 
-    this.newPassword.valueChanges.subscribe(() => {
-      if (!this.newPasswordForm.disabled && (this.confirmNewPassword.dirty || this.confirmNewPassword.touched)) {
-        this.confirmNewPassword.updateValueAndValidity();
+    this._newPassword.valueChanges.subscribe(() => {
+      if (!this._newPasswordForm.disabled && (this._confirmNewPassword.dirty || this._confirmNewPassword.touched)) {
+        this._confirmNewPassword.updateValueAndValidity();
       }
     });
   }
 
   changePassword(): void {
-    this.authService.updatePassword(this.newPassword.value).pipe(catchError((e) => {
-      this.snackBar.open(e.message);
-      return NEVER;
-    })).subscribe((r) => {
-      this.snackBar.open(r.message);
+    this._authService.updatePassword(this._newPassword.value).pipe(
+      catchError((e) => {
+        this._snackBar.open(e.message);
+        return NEVER;
+      })
+    ).subscribe((r) => {
+      this._snackBar.open(r.message);
       if (r.code === 'auth/password-updated') {
-        this.newPasswordForm.reset();
-        this.newPasswordForm.markAsPristine();
-        this.newPasswordForm.markAsUntouched();
-        this.newPasswordForm.updateValueAndValidity();
+        this._newPasswordForm.reset();
+        this._newPasswordForm.markAsPristine();
+        this._newPasswordForm.markAsUntouched();
+        this._newPasswordForm.updateValueAndValidity();
       }
     });
   }

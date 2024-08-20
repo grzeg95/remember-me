@@ -1,11 +1,11 @@
 <div class="container">
-  <div class="col" [formGroup]="taskForm">
+  <div class="col" [formGroup]="_taskForm">
     <div class="row">
       <div class="col form-group">
         <mat-form-field floatLabel="always">
           <mat-label>Task description</mat-label>
           <input autocomplete="off" matInput formControlName="description" [placeholder]="'Your task description'">
-          @if (!taskForm.disabled && !description!.valid && (description!.dirty || description!.touched)) {
+          @if (!_taskForm.disabled && !_description.valid && (_description.dirty || _description.untouched)) {
             <mat-error>Enter description from 1 to 256 characters</mat-error>
           }
         </mat-form-field>
@@ -13,11 +13,11 @@
     </div>
     <div class="row">
       <div class="col form-group">
-        <small class="form-text text-center text-muted" [ngClass]="!taskForm.disabled && !daysOfTheWeek.valid && daysOfTheWeek.dirty ? 'error' : ''">Mark days</small>
+        <small class="form-text text-center text-muted" [ngClass]="!_taskForm.disabled && !_daysOfTheWeek.valid && _daysOfTheWeek.dirty ? 'error' : ''">Mark days</small>
         <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
           @for (dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; track $index) {
-            <mat-slide-toggle [checked]="daysOfTheWeek.get(dayOfTheWeek)!.value == true"
-                              [class.disabled]="taskForm.disabled || !isOnline()"
+            <mat-slide-toggle [checked]="_daysOfTheWeek.get(dayOfTheWeek)!.value == true"
+                              [class.disabled]="_taskForm.disabled || !_isOnline()"
                               [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
           }
         </div>
@@ -25,36 +25,36 @@
     </div>
     <div class="row">
       <div class="col form-group">
-        @if (!taskForm.disabled && timesOfDay.hasError('required') && timesOfDay.dirty) {
+        @if (!_taskForm.disabled && _timesOfDay.hasError('required') && _timesOfDay.dirty) {
           <small class="form-text text-center text-muted error">Enter at leas one time of day</small>
         }
         <mat-form-field>
           <mat-label>Times of day</mat-label>
           <mat-chip-grid #chipGrid>
             <div formArrayName="timesOfDay">
-              @for (timeOfDay of timesOfDay.controls; track timeOfDay.value; let i = $index) {
-                <mat-chip-row [class.disabled]="taskForm.disabled || !isOnline()"
+              @for (timeOfDayId of _timesOfDay.controls; track timeOfDayId.value; let i = $index) {
+                <mat-chip-row [class.disabled]="_taskForm.disabled || !_isOnline()"
                               [formGroupName]="i"
-                              [value]="timeOfDay.value"
+                              [value]="timeOfDayId.value"
                               [removable]="true"
                               [highlighted]="false"
-                              (removed)="handleRemoveTimeOfDay(i)">{{ timeOfDay.value }}
+                              (removed)="handleRemoveTimeOfDay(i)">{{ timeOfDayId.value }}
                   <img src="assets/img/chip-close.svg" class="mat-chip-close" matChipRemove>
                 </mat-chip-row>
               }
             </div>
             <input autocomplete="off"
-                   formControlName="timeOfDay"
+                   formControlName="timeOfDayId"
                    matInput
                    #input="matAutocompleteTrigger"
                    #basicInput
                    [matAutocomplete]="auto"
                    [matChipInputFor]="chipGrid"
-                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                   [matChipInputSeparatorKeyCodes]="_separatorKeysCodes"
                    [matChipInputAddOnBlur]="true"
-                   (matChipInputTokenEnd)="handleAddTimeOfDay($event)">
+                   (matChipInputTokenEnd)="handleAddTimeOfDayId($event)">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="handleOptionSelected($event)">
-              @for (option of filteredOptions(); track option) {
+              @for (option of _filteredOptions(); track option) {
                 <mat-option [value]="option">{{ option }}</mat-option>
               }
             </mat-autocomplete>
@@ -64,23 +64,23 @@
     </div>
     <div class="row">
       <div class="col">
-        <mat-progress-bar [style.opacity]="isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+        <mat-progress-bar [style.opacity]="_loading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
       </div>
     </div>
     <div class="row">
       <div class="col text-center actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="taskForm.disabled || taskForm.invalid || !isOnline() || !isNothingChanged()"
-                (click)="saveTask()">{{ !editedTask() ? 'Create' : 'Save' }}</button>
-          @if (editedTask()) {
+                [disabled]="_taskForm.disabled || _taskForm.invalid || !_isOnline() || !_isNothingChanged()"
+                (click)="saveTask()">{{ !_task() ? 'Create' : 'Save' }}</button>
+          @if (_task()) {
             <button mat-stroked-button
               color="primary"
-              [disabled]="taskForm.disabled || !isOnline()"
-              (click)="setGettingOfTaskById('')">New</button>
+              [disabled]="_taskForm.disabled || !_isOnline()"
+              (click)="_taskIdSig.set(undefined)">New</button>
             <button mat-stroked-button
               color="warn"
-              [disabled]="taskForm.disabled || !isOnline()"
+              [disabled]="_taskForm.disabled || !_isOnline()"
               (click)="deleteTask()">Delete</button>
           }
       </div>

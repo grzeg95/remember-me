@@ -1,7 +1,7 @@
 <div class="container">
   <div class="col">
 
-    @if (!isOnline() && !roundsList().length) {
+    @if (!_isOnline() && _roundsList()!.length) {
       <div class="row message">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
@@ -9,11 +9,11 @@
       </div>
     }
 
-    @if (!isOnline() && roundsList().length) {
+    @if (!_isOnline() && _roundsList() && _roundsList().length) {
       <ng-container *ngTemplateOutlet="showItems"></ng-container>
     }
 
-    @if (isOnline() && roundsListFirstLoading()) {
+    @if (_isOnline() && _loadingRoundsMap()) {
       <div class="row message">
         <div class="col">
           <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -21,21 +21,21 @@
       </div>
     }
 
-    @if (isOnline() && roundsList() && !roundsListFirstLoading()) {
+    @if (_isOnline() && _roundsList() && !_loadingRoundsMap()) {
       <ng-container *ngTemplateOutlet="showItems"></ng-container>
     }
 
     <ng-template #showItems>
 
-      @if (roundsList().length > 0) {
+      @if (_roundsList() && _roundsList()!.length > 0) {
         <div class="row" #roundListTableWrapper>
           <table  [trackBy]="trackRoundList"
                   class="rounds-list no-select"
                   mat-table
-                  [dataSource]="roundsList()"
+                  [dataSource]="_roundsList()"
                   cdkDropList
                   (cdkDropListDropped)="drop($event)"
-                  [cdkDropListDisabled]="!isOnline()">
+                  [cdkDropListDisabled]="!_isOnline()">
 
             <ng-container matColumnDef="roundName">
               <th mat-header-cell *matHeaderCellDef>Round</th>
@@ -55,13 +55,13 @@
             <ng-container matColumnDef="edit">
               <th mat-header-cell *matHeaderCellDef></th>
               <td mat-cell class="edit-button" *matCellDef="let element" (click)="editRound(element)">
-                <fa-icon [icon]="faEdit"></fa-icon>
+                <fa-icon [icon]="_faEdit"></fa-icon>
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr cdkDrag [class.disabled]="isRoundsOrderUpdating() || ((!isOnline() || isRoundsOrderUpdating()) && (!isOnline() && !!selectedRound() && selectedRound()?.id !== row.id)) || ((!isOnline() || isRoundsOrderUpdating()) && !selectedRound())" mat-row
-                *matRowDef="let row; columns: displayedColumns;" (click)="goToRound(row.id)"></tr>
+            <tr mat-header-row *matHeaderRowDef="_displayedColumns"></tr>
+            <tr cdkDrag [class.disabled]="_loadingUser() || ((!_isOnline() || _loadingUser()) && (!_isOnline() && !!_round() && _round()?.id !== row.id)) || ((!_isOnline() || _loading()) && !_round())" mat-row
+                *matRowDef="let row; columns: _displayedColumns;" (click)="goToRound(row.id)"></tr>
 
           </table>
 
@@ -74,7 +74,7 @@
         </div>
       }
 
-      @if (roundsList().length === 0) {
+      @if (_roundsList() && _roundsList().length === 0) {
         <div class="row message">
           <div class="col">
             <span>Add some rounds to this empty list</span>
@@ -94,6 +94,6 @@
   </div>
 </div>
 
-@if (isRoundsOrderUpdating()) {
+@if (_loading()) {
   <mat-spinner [diameter]="50" [strokeWidth]="5"></mat-spinner>
 }

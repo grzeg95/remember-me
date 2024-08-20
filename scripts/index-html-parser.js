@@ -14,9 +14,7 @@ const link = $('link');
 script.each((i, elem) => $(elem).attr('nonce', 'random-csp-nonce'));
 
 // crossorigin
-const crossOriginNonAnonymousUrls = new Set([
-  'https://consent.cookiebot.com/uc.js'
-]);
+const crossOriginNonAnonymousUrls = new Set([]);
 const addOriginAnonymous = (elem) => {
 
   const href = $(elem).attr('href');

@@ -1,6 +1,5 @@
 import {NgClass, NgStyle} from '@angular/common';
 import {Component, computed, ElementRef, ViewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatMenuModule} from '@angular/material/menu';
@@ -18,8 +17,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, NEVER} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
-import {ConnectionService} from '../../services';
 import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
 import {AuthFormComponent} from '../auth-form/auth-form.component';
 import {UserSettingsComponent} from '../user-settings/user-settings.component';
 
@@ -32,46 +31,49 @@ import {UserSettingsComponent} from '../user-settings/user-settings.component';
 })
 export class NavComponent {
 
-  user = toSignal(this.authService.user$);
-  isButtonDisabled = computed(() => !this.connectionService.isOnline() || this.authService.whileLoginIn());
+  protected readonly _user = this._authService.userSig.get();
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _loadingUser = this._authService.loadingUserSig.get();
 
-  faUser = faUser;
-  faGoogle = faGoogle;
-  faEllipsisV = faEllipsisV;
-  faGear = faGear;
-  faArrowRightFromBracket = faArrowRightFromBracket;
-  faEyeSlash = faEyeSlash;
-  faAt = faAt;
+  protected readonly _isButtonDisabled = computed(() => !this._isOnline() || this._loadingUser());
+
+  protected readonly _faUser = faUser;
+  protected readonly _faGoogle = faGoogle;
+  protected readonly _faEllipsisV = faEllipsisV;
+  protected readonly _faGear = faGear;
+  protected readonly _faArrowRightFromBracket = faArrowRightFromBracket;
+  protected readonly _faEyeSlash = faEyeSlash;
+  protected readonly _faAt = faAt;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox!: ElementRef;
 
   constructor(
-    private authService: AuthService,
-    private dialog: MatDialog,
-    private connectionService: ConnectionService,
-    private snackBar: MatSnackBar
+    private readonly _authService: AuthService,
+    private readonly _dialog: MatDialog,
+    private readonly _connectionService: ConnectionService,
+    private readonly _snackBar: MatSnackBar
   ) {
   }
 
   googleSignIn(): void {
-    this.authService.googleSignIn().pipe(catchError(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    this._authService.googleSignIn().pipe(catchError(() => {
+      this._snackBar.open('Some went wrong 🤫 Try again 🙂');
       return NEVER;
     })).subscribe();
   }
 
   anonymouslySignIn(): void {
-    this.authService.anonymouslySignIn().pipe(catchError(() => {
-      this.snackBar.open('Some went wrong 🤫 Try again 🙂');
+    this._authService.anonymouslySignIn().pipe(catchError(() => {
+      this._snackBar.open('Some went wrong 🤫 Try again 🙂');
       return NEVER;
     })).subscribe();
   }
 
   signOut(): void {
-    this.authService.signOut().subscribe();
+    this._authService.signOut().subscribe();
   }
 
   openAuthFormComponent(): void {
-    this.dialog.open(AuthFormComponent, {
+    this._dialog.open(AuthFormComponent, {
       maxWidth: '100vw',
       maxHeight: '100vh',
       height: '100%',
@@ -81,7 +83,7 @@ export class NavComponent {
   }
 
   openUserSetting() {
-    this.dialog.open(UserSettingsComponent, {
+    this._dialog.open(UserSettingsComponent, {
       maxWidth: '100vw',
       maxHeight: '100vh',
       height: '100%',

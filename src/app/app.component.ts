@@ -2,8 +2,8 @@ import {Component} from '@angular/core';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {RouterOutlet} from '@angular/router';
 import {NavComponent} from './components/nav/nav.component';
-import {ConnectionService} from './services';
 import {AuthService} from './services/auth.service';
+import {ConnectionService} from './services/connection.service';
 
 @Component({
   selector: 'app-root',
@@ -14,8 +14,8 @@ import {AuthService} from './services/auth.service';
 })
 export class AppComponent {
 
-  whileLoginIn = this.authService.whileLoginIn;
-  isOnline = this.connectionService.isOnline;
+  protected readonly _whileLoginIn = this.authService.whileLoginIn;
+  protected readonly _isOnline = this.connectionService.isOnlineSig.get();
 
   constructor(
     private authService: AuthService,

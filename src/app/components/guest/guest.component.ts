@@ -18,23 +18,18 @@ interface GuestComponentConfig {
 })
 export class GuestComponent {
 
-  isHiddenUserDataPolicy = signal(true);
-  whileLoginIn = this.authService.whileLoginIn;
-  guestComponentConfig: GuestComponentConfig | undefined;
+  protected readonly _isHiddenUserDataPolicy = signal(true);
+  protected readonly _loadingUser = this._authService.loadingUserSig.get();
+  protected readonly _guestComponentConfig: GuestComponentConfig | undefined;
 
   constructor(
-    private authService: AuthService,
-    @Inject(RemoteConfigInjectionToken) private readonly remoteConfig: RemoteConfig
+    private readonly _authService: AuthService,
+    @Inject(RemoteConfigInjectionToken) private readonly _remoteConfig: RemoteConfig
   ) {
-    this.guestComponentConfig = getValue<GuestComponentConfig>(this.remoteConfig, 'guestComponent');
+    this._guestComponentConfig = getValue<GuestComponentConfig>(this._remoteConfig, 'guestComponent');
   }
 
   toggleIsHiddenUserDataPolicy() {
-    this.isHiddenUserDataPolicy.update((val) => !val);
-  }
-
-  renewCookie() {
-    // @ts-ignore
-    Cookiebot.renew();
+    this._isHiddenUserDataPolicy.update((val) => !val);
   }
 }

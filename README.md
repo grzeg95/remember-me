@@ -1,7 +1,7 @@
 # Remember Me
 Firebase based project.
 
-Create separate prod and dev projects for Firebase and Google Cloud KMS. Be ready for additional costs and learn heavily more about billings. Configure Service accounts. Create and configure Cookiebot account. Buy domain name or use that was provided by Firebase project. Set DNS and what? Keep hacking 🧐
+Create separate prod and dev projects for Firebase and Google Cloud KMS. Be ready for additional costs and learn heavily more about billings. Configure Service accounts. Buy domain name or use that was provided by Firebase project. Set DNS and what? Keep hacking 🧐
 
 ### Official website
 https://rem.grzeg.pl
@@ -23,7 +23,6 @@ Before developing make sure to:
 - in `./public/nginx.conf` replace `CLOUD_FUNCTIONS_SUBDOMAIN` with provided by Google. This is `region-id`-`project-id`
 - in `./public/nginx.conf` replace `FIREBASE_PROJECT_ID`
 - in `./public/nginx.conf` replace `CLOUD_FUNCTIONS_V2_CUSTOM_DOMAIN` with provided in console cloud run domain mappings
-- in `index.html` replace `DATA-CBID` for Cookiebot
 - create and fill `.evn.hosting` and `.env.hosting.prod` for corresponding variables in `set-env.js`
 - create and fill `.evn.remote-config-default` and `.env.remote-config-default.prod` for corresponding variables in `set-remote-config-default-env.js`
 - create and fill `.evn.functions` and `.env.functions.prod` into `functions` folder for corresponding variables in `./functions/src/config.ts`

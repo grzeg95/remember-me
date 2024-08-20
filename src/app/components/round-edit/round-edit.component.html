@@ -1,11 +1,11 @@
 <div class="container">
-  <div class="col" [formGroup]="roundForm">
+  <div class="col" [formGroup]="_roundForm">
     <div class="row">
       <div class="col form-group">
         <mat-form-field floatLabel="always">
           <mat-label>Round name</mat-label>
           <input autocomplete="off" matInput formControlName="name">
-          @if (!roundForm.disabled && !name?.valid && (name?.dirty || name?.touched)) {
+          @if (!_roundForm.disabled && !_name?.valid && (_name?.dirty || !_name?.untouched)) {
             <mat-error>Enter name from 1 to 256 characters</mat-error>
           }
         </mat-form-field>
@@ -13,23 +13,23 @@
     </div>
     <div class="row">
       <div class="col">
-        <mat-progress-bar [style.opacity]="isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+        <mat-progress-bar [style.opacity]="_isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
       </div>
     </div>
     <div class="row">
       <div class="col text-center actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="roundForm.disabled || roundForm.invalid || !isOnline() || !isNothingChanged()"
-                (click)="saveRound()">{{ !editedRound() ? 'Create' : 'Save' }}</button>
-        @if (editedRound()) {
+                [disabled]="_roundForm.disabled || _roundForm.invalid || !_isOnline() || !_isNothingChanged()"
+                (click)="saveRound()">{{ !_editRound() ? 'Create' : 'Save' }}</button>
+        @if (_editRound()) {
           <button mat-stroked-button
                   color="primary"
-                  [disabled]="roundForm.disabled || !isOnline()"
-                  (click)="setGettingOfRoundById('')">New</button>
+                  [disabled]="_roundForm.disabled || !_isOnline()"
+                  (click)="_editRoundIdSig.set(null)">New</button>
           <button mat-stroked-button
                   color="warn"
-                  [disabled]="roundForm.disabled || !isOnline()"
+                  [disabled]="_roundForm.disabled || !_isOnline()"
                   (click)="deleteRound()">Delete</button>
         }
       </div>

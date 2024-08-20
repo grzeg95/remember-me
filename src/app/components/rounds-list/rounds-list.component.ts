@@ -13,8 +13,10 @@ import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {catchError, NEVER} from 'rxjs';
 import {RouterDict} from '../../app.constants';
 import {Round} from '../../models/round';
-import {ConnectionService} from '../../services';
+import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
+import {Sig} from '../../utils/Sig';
 
 @Component({
   selector: 'app-rounds-list',
@@ -34,16 +36,23 @@ import {RoundsService} from '../../services/rounds.service';
 })
 export class RoundsListComponent implements AfterViewChecked {
 
-  displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
-  faEdit = faEdit;
+  protected readonly _displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
+  protected readonly _faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper!: ElementRef;
 
-  isOnline = this.connectionsService.isOnline;
-  isRoundsOrderUpdating = signal<boolean>(false);
-  roundsListFirstLoading = this.roundsService.roundsListFirstLoading;
-  selectedRound = this.roundsService.selectedRound;
-  roundsList = this.roundsService.roundsList;
-  roundsOrder = this.roundsService.roundsOrder;
+  protected readonly _isOnline = this._connectionsService.isOnlineSig.get();
+
+  private readonly _loadingSig = new Sig<boolean>(false);
+  protected readonly _loading = this._loadingSig.get();
+
+  protected readonly _loadingRoundsMap = this._roundsService.loadingRoundsMapSig.get();
+
+  protected readonly _round = this._roundsService.roundSig.get();
+
+  protected readonly _roundsList = this._roundsService.roundsList;
+  protected readonly _roundsOrder = this._roundsService.roundsOrder;
+
+  protected readonly _loadingUser = this._authService.loadingUserSig.get();
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -51,26 +60,27 @@ export class RoundsListComponent implements AfterViewChecked {
   }
 
   constructor(
-    private roundsService: RoundsService,
-    private router: Router,
-    public dialog: MatDialog,
-    private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
-    private renderer: Renderer2,
-    private connectionsService: ConnectionService
+    private readonly _roundsService: RoundsService,
+    private readonly _router: Router,
+    public readonly dialog: MatDialog,
+    private readonly _route: ActivatedRoute,
+    private readonly _snackBar: MatSnackBar,
+    private readonly _renderer: Renderer2,
+    private readonly _connectionsService: ConnectionService,
+    private readonly _authService: AuthService
   ) {
   }
 
   addRound(): void {
-    this.router.navigate(['../', RouterDict.roundEditor], {relativeTo: this.route});
+    this._router.navigate(['../', RouterDict.roundEditor], {relativeTo: this._route});
   }
 
   editRound(round: Round): void {
-    this.router.navigate(['../', RouterDict.roundEditor, round.id], {relativeTo: this.route});
+    this._router.navigate(['../', RouterDict.roundEditor, round.id], {relativeTo: this._route});
   }
 
   goToRound(roundId: string): void {
-    this.router.navigate(['../', roundId, RouterDict.todayTasks], {relativeTo: this.route});
+    this._router.navigate(['../', roundId, RouterDict.todayTasks], {relativeTo: this._route});
   }
 
   drop(event: CdkDragDrop<any, any>): void {
@@ -79,23 +89,28 @@ export class RoundsListComponent implements AfterViewChecked {
       return;
     }
 
-    this.isRoundsOrderUpdating.set(true);
-    const roundsOrder = this.roundsOrder();
+    const roundsOrder = this._roundsOrder();
+
+    if (!roundsOrder) {
+      return;
+    }
+
+    this._loadingSig.set(true);
     const moveBy = event.currentIndex - event.previousIndex;
     const roundId = roundsOrder[event.previousIndex];
 
     moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
-    this.roundsOrder.set([...roundsOrder]);
+    this._roundsService.roundsOrderUpdatedSig.set([...roundsOrder]);
 
-    this.roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
-      this.isRoundsOrderUpdating.set(false);
-      this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+    this._roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
+      this._loadingSig.set(false);
+      this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
       moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
-      this.roundsOrder.set([...roundsOrder]);
+      this._roundsService.roundsOrderUpdatedSig.set([...roundsOrder]);
       return NEVER;
     })).subscribe((success) => {
-      this.isRoundsOrderUpdating.set(false);
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
+      this._loadingSig.set(false);
+      this._snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }
 
@@ -110,7 +125,7 @@ export class RoundsListComponent implements AfterViewChecked {
           for (let i = 0; i < row.cells.length - 1; ++i) {
             const cell = row.cells.item(i);
             if (cell) {
-              this.renderer.setStyle(cell, 'width', `${cell.offsetWidth}px`);
+              this._renderer.setStyle(cell, 'width', `${cell.offsetWidth}px`);
             }
           }
         }

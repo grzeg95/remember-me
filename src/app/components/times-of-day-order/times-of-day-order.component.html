@@ -1,8 +1,8 @@
 <div class="container">
 
-  <div class="col" [ngClass]="{'disabled': isLoading()}">
+  <div class="col" [ngClass]="{'disabled': _isLoading()}">
 
-    @if (!selectedRound() || (selectedRound() && selectedRound()?.timesOfDay && selectedRound()?.timesOfDay?.length === 0)) {
+    @if (!_round() || (_round() && _round()?.timesOfDay && _round()?.timesOfDay?.length === 0)) {
       <ng-container *ngTemplateOutlet="waitForItems"></ng-container>
     }
     @else {
@@ -11,7 +11,7 @@
 
     <ng-template #waitForItems>
 
-      @if (!selectedRound() || !selectedRound()?.timesOfDay && isOnline()) {
+      @if (!_round() || !_round()?.timesOfDay && _isOnline()) {
         <div class="row message">
           <div class="col">
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -24,7 +24,7 @@
 
       <ng-template #onOneExists>
 
-        @if (isOnline()) {
+        @if (_isOnline()) {
           <div class="row message">
             <div class="col">
               <span>Add some tasks and change the order of the times of day</span>
@@ -39,7 +39,7 @@
           </div>
         }
 
-        @if (!isOnline()) {
+        @if (!_isOnline()) {
           <div class="row message">
             <div class="col">
               <span>You are offline. Waiting for connection...</span>
@@ -54,11 +54,11 @@
       <div class="row">
         <div class="drag-container">
           <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
-          <div [cdkDropListDisabled]="!isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
-            @for (item of selectedRound()?.timesOfDay; let i = $index; track item) {
-              <div cdkDrag class="drag-item mat-cell" [class.disabled]="!isOnline()">
-                <span class="drag-span">{{ item }}</span>
-                <fa-icon class="drag-icon" [icon]="faGripLines"></fa-icon>
+          <div [cdkDropListDisabled]="!_isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
+            @for (timesOfDay of _round()?.timesOfDay; let i = $index; track timesOfDay) {
+              <div cdkDrag class="drag-item mat-cell" [class.disabled]="!_isOnline()">
+                <span class="drag-span">{{ timesOfDay }}</span>
+                <fa-icon class="drag-icon" [icon]="_faGripLines"></fa-icon>
               </div>
             }
           </div>
@@ -69,6 +69,6 @@
   </div>
 </div>
 
-@if (isLoading()) {
+@if (_isLoading()) {
   <mat-spinner [diameter]="50" [strokeWidth]="5"></mat-spinner>
 }

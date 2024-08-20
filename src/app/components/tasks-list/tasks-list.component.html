@@ -1,7 +1,7 @@
 <div class="container">
   <div class="col">
 
-    @if (!isOnline() && !tasksList()) {
+    @if (!_isOnline() && !_tasks()) {
       <div class="row message">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
@@ -9,11 +9,11 @@
       </div>
     }
 
-    @if (!isOnline() && tasksList()) {
+    @if (!_isOnline() && _tasks()) {
       <ng-template *ngTemplateOutlet="showItems"></ng-template>
     }
 
-    @if (isOnline() && tasksListFirstLoading()) {
+    @if (_isOnline() && _tasksLoading()) {
       <div class="row message">
         <div class="col">
           <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -21,18 +21,18 @@
       </div>
     }
 
-    @if (isOnline() && tasksList() && !tasksListFirstLoading()) {
+    @if (_isOnline() && _tasks() && !_tasksLoading()) {
       <ng-template *ngTemplateOutlet="showItems"></ng-template>
     }
 
     <ng-template #showItems>
 
-      @if (tasksList()!.length > 0) {
+      @if (_tasks()!.length > 0) {
 
         <div class="row">
 
-          @if ((selectedRound()!.timesOfDay || []); as timesOfDay) {
-            <table mat-table [dataSource]="tasksList()!">
+          @if ((_round()!.timesOfDay || []); as timesOfDay) {
+            <table mat-table [dataSource]="_tasks()!">
 
               <ng-container matColumnDef="description">
                 <th mat-header-cell *matHeaderCellDef>Description</th>
@@ -52,12 +52,12 @@
               <ng-container matColumnDef="edit">
                 <th mat-header-cell *matHeaderCellDef></th>
                 <td mat-cell class="edit-button" *matCellDef="let element" (click)="goToTask(element.id)">
-                  <fa-icon [icon]="faEdit"></fa-icon>
+                  <fa-icon [icon]="_faEdit"></fa-icon>
                 </td>
               </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              <tr mat-header-row *matHeaderRowDef="_displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: _displayedColumns;"></tr>
 
             </table>
           }
@@ -70,7 +70,7 @@
         </div>
       }
 
-      @if (tasksList()!.length === 0) {
+      @if (_tasks()!.length === 0) {
         <div class="row message">
           <div class="col">
             <span>Add some tasks to this empty list</span>

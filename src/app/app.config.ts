@@ -11,27 +11,25 @@ import {provideClientHydration} from '@angular/platform-browser';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
 import {provideRouter} from '@angular/router';
 import {environment} from 'environment';
-import {getAnalytics, initializeAnalytics, setConsent} from 'firebase/analytics';
-import {getApp, initializeApp} from 'firebase/app';
+import {getAnalytics} from 'firebase/analytics';
+import {initializeApp} from 'firebase/app';
 import {initializeAppCheck, ReCaptchaEnterpriseProvider} from 'firebase/app-check';
 import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
 import {connectFunctionsEmulator, getFunctions,} from 'firebase/functions';
 import {activate, fetchAndActivate, getRemoteConfig, isSupported} from 'firebase/remote-config';
-import {fromEvent, merge} from 'rxjs';
 import {
   AnalyticsInjectionToken,
   AppCheckInjectionToken,
   AuthInjectionToken,
   FirebaseAppInjectionToken,
   FirestoreInjectionToken,
-  FunctionsInjectionToken, RemoteConfigInjectionToken
+  FunctionsInjectionToken,
+  RemoteConfigInjectionToken
 } from './models/firebase';
-import {ConnectionService} from './services';
-import {AngularFirebaseAuthService} from './services/angular-firebase-auth.service';
 import {AuthService} from './services/auth.service';
-import {CookiebotService} from './services/cookiebot.service';
-import {FunctionsService} from './services/firebase/functions.service';
+import {ConnectionService} from './services/connection.service';
+import {FunctionsService} from './services/functions.service';
 import {routes} from './views/app.routes';
 
 if (!environment.production) {
@@ -158,24 +156,6 @@ const firebaseInitializers: Provider[] = [
   }
 ];
 
-const cookiebotInitializer: Provider = {
-  provide: APP_INITIALIZER,
-  multi: true,
-  deps: [CookiebotService],
-  useFactory: (cookiebotService: CookiebotService) => {
-    return () => {
-      merge(
-        fromEvent(window, 'CookiebotOnLoad'),
-        fromEvent(window, 'CookiebotOnDecline'),
-        fromEvent(window, 'CookiebotOnAccept')
-      ).subscribe(() => {
-        setConsent(cookiebotService.getConsentSettings());
-        initializeAnalytics(getApp());
-      })
-    }
-  }
-};
-
 const angularMaterialProviders = [
   {
     provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2000}
@@ -191,11 +171,8 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideFirebase(),
     AuthService,
-    AngularFirebaseAuthService,
-    FunctionsService,
     ConnectionService,
-    CookiebotService,
-    cookiebotInitializer,
+    FunctionsService,
     ...firebaseInitializers,
     ...angularMaterialProviders,
   ]

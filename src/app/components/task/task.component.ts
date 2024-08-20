@@ -1,7 +1,7 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {NgClass, TitleCasePipe} from '@angular/common';
-import {Component, ElementRef, Inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
-import {toObservable} from '@angular/core/rxjs-interop';
+import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
+import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormArray,
@@ -24,22 +24,30 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import 'global.prototype';
-import {doc, Firestore} from 'firebase/firestore';
-import {catchError, EMPTY, mergeMap, NEVER, Subscription, throwError} from 'rxjs';
+import {DocumentReference} from 'firebase/firestore';
+import {catchError, EMPTY, mergeMap, NEVER, of, Subscription, switchMap, takeWhile, throwError} from 'rxjs';
 import {filter} from 'rxjs/operators';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
-import {Round} from '../../models/round';
-import {ConnectionService, CustomValidators} from '../../services';
+import {Day, HTTPError, HTTPSuccess} from '../../models/models';
+import {Round, RoundDoc} from '../../models/round';
+import {Task, TaskDoc} from '../../models/task';
+import {User} from '../../models/user';
 import {AuthService} from '../../services/auth.service';
+import {ConnectionService} from '../../services/connection.service';
+import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
-import {BasicEncryptedValue} from '../../utils/crypto';
-import {HTTPError, HTTPSuccess, TaskForm} from '../../models/models';
+import {Firestore} from 'firebase/firestore'
+import {Sig} from '../../utils/Sig';
 import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/task-dialog-confirm-delete.component';
-import {Task} from '../../models/task';
-import {User} from '../../models/user';
+
+export interface TaskForm {
+  description: string | null;
+  daysOfTheWeek: {[key in Day]: boolean | null};
+  timesOfDay: string[];
+}
 
 @Component({
   selector: 'app-task',
@@ -58,12 +66,24 @@ import {User} from '../../models/user';
   ],
   styleUrls: ['./task.component.scss']
 })
-export class TaskComponent implements OnInit, OnDestroy {
+export class TaskComponent implements OnDestroy {
 
-  isOnline = this.connectionService.isOnline;
-  isLoading = signal<boolean>(true);
-  editedTask = signal<Task | undefined>(undefined);
-  initValues: TaskForm = {
+  protected readonly _taskIdSig = new Sig<string>();
+  protected readonly _taskId = this._taskIdSig.get();
+
+  protected readonly _round = this._roundsService.roundSig.get();
+  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+
+  protected readonly _user = this._authService.userSig.get();
+  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
+
+  private readonly _loadingSig = new Sig(false);
+  protected readonly _loading = this._loadingSig.get();
+
+  private readonly _taskSig = new Sig<Task>();
+  protected readonly _task = this._taskSig.get();
+
+  private _initValues: TaskForm = {
     daysOfTheWeek: {
       mon: false,
       tue: false,
@@ -76,13 +96,17 @@ export class TaskComponent implements OnInit, OnDestroy {
     description: '',
     timesOfDay: []
   };
-  isNothingChanged = signal<boolean>(true);
-  selectedRound = this.roundsService.selectedRound;
-  selectedRound$ = toObservable(this.roundsService.selectedRound)
-  filteredOptions = signal<string[]>([]);
-  allOptions = signal<string[]>([]);
 
-  taskForm = new FormGroup({
+  private readonly _isNothingChangedSig = new Sig<boolean>(true);
+  protected readonly _isNothingChanged = this._isNothingChangedSig.get();
+
+  private readonly _filteredOptionsSig = new Sig<string[]>([]);
+  protected readonly _filteredOptions = this._filteredOptionsSig.get();
+
+  private readonly _allOptionsSig = new Sig<string[]>([]);
+  protected readonly _allOptions = this._allOptionsSig.get();
+
+  protected readonly _taskForm = new FormGroup({
     description: new FormControl('', CustomValidators.maxRequired(256)),
     daysOfTheWeek: new FormGroup({
       mon: new FormControl(false),
@@ -94,216 +118,224 @@ export class TaskComponent implements OnInit, OnDestroy {
       sun: new FormControl(false)
     }, TaskComponent.daysOfTheWeekValidator),
     timesOfDay: new FormArray([] as AbstractControl[], TaskComponent.timesOfDayValidator),
-    timeOfDay: new FormControl('')
+    timeOfDayId: new FormControl('')
   });
 
-  timeOfDay = this.taskForm.controls.timeOfDay;
-  timesOfDay = this.taskForm.controls.timesOfDay;
-  daysOfTheWeek = this.taskForm.controls.daysOfTheWeek;
-  description = this.taskForm.controls.description;
+  protected readonly _timeOfDayId = this._taskForm.controls.timeOfDayId;
+  protected readonly _timesOfDay = this._taskForm.controls.timesOfDay;
+  protected readonly _daysOfTheWeek = this._taskForm.controls.daysOfTheWeek;
+  protected readonly _description = this._taskForm.controls.description;
 
-  separatorKeysCodes: number[] = [ENTER];
+  protected readonly _separatorKeysCodes: number[] = [ENTER];
 
   @ViewChild(MatAutocompleteTrigger, {read: MatAutocompleteTrigger}) input!: MatAutocompleteTrigger;
   @ViewChild('basicInput') basicInput!: ElementRef<HTMLInputElement>;
 
-  editedTaskOnSnapSub: Subscription | undefined;
+  private _taskSub: Subscription | undefined;
 
   constructor(
-    public dialog: MatDialog,
-    private snackBar: MatSnackBar,
-    private taskService: TaskService,
-    private roundsService: RoundsService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private connectionService: ConnectionService,
-    private authService: AuthService,
-    @Inject(FirestoreInjectionToken) private readonly firestore: Firestore
+    public readonly dialog: MatDialog,
+    private readonly _snackBar: MatSnackBar,
+    private readonly _taskService: TaskService,
+    private readonly _roundsService: RoundsService,
+    private readonly _router: Router,
+    private readonly _route: ActivatedRoute,
+    private readonly _connectionService: ConnectionService,
+    private readonly _authService: AuthService,
+    @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
+    private readonly _destroyRef: DestroyRef
   ) {
-    this.taskForm.disable();
+
+    this._taskForm.disable();
+
+    this._route.paramMap.subscribe((paramMap) => {
+      this._taskIdSig.set(paramMap.get('id') || undefined);
+    });
+
+    this._taskForm.valueChanges.subscribe(() => {
+
+      const description = this._description.value || '';
+      const timesOfDay = this._timesOfDay.value;
+      const daysOfTheWeek = this._daysOfTheWeek.value;
+
+      const isValueInit = (this._initValues.description || '').trim() === description.trim() &&
+        this._initValues.timesOfDay.toSet().hasOnly(timesOfDay.toSet()) &&
+        this._initValues.daysOfTheWeek.mon === daysOfTheWeek.mon &&
+        this._initValues.daysOfTheWeek.tue === daysOfTheWeek.tue &&
+        this._initValues.daysOfTheWeek.wed === daysOfTheWeek.wed &&
+        this._initValues.daysOfTheWeek.thu === daysOfTheWeek.thu &&
+        this._initValues.daysOfTheWeek.fri === daysOfTheWeek.fri &&
+        this._initValues.daysOfTheWeek.sat === daysOfTheWeek.sat &&
+        this._initValues.daysOfTheWeek.sun === daysOfTheWeek.sun;
+      this._isNothingChangedSig.set(!isValueInit);
+    });
+
+    effect(() => {
+
+      const round = this._round();
+
+      if (!round) {
+        return;
+      }
+
+      const timesOfDays = (new Set(round.timesOfDay).difference(new Set(this._timesOfDay.value))).toArray();
+      this._allOptionsSig.set(timesOfDays);
+      this.applyFilter(this._timeOfDayId.value || '');
+    });
+
+    this._timesOfDay.valueChanges.subscribe((timesOfDay: string[]) => {
+
+      const round = this._round();
+
+      if (!round) {
+        return;
+      }
+
+      const timesOfDays = (new Set(round.timesOfDay).difference(new Set(timesOfDay))).toArray();
+      this._allOptionsSig.set(timesOfDays);
+      this.applyFilter(this._timeOfDayId.value || '');
+    });
+
+    this._timeOfDayId.valueChanges.subscribe((timeOfDayId) => {
+      this.applyFilter(timeOfDayId || '');
+    });
+
+    // task
+    let task_roundId: string | undefined;
+    let task_taskId: string | undefined;
+    let task_userId: string | undefined;
+    effect(() => {
+
+      const user = this._user();
+      const round = this._round();
+      const taskId = this._taskId();
+      const cryptoKey = this._cryptoKey();
+
+      if (!user || !round || !taskId || !cryptoKey) {
+        task_userId = undefined;
+        task_roundId = undefined;
+        task_taskId = undefined;
+        this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
+        this._taskSig.set(undefined);
+        this._taskForm.enable();
+        return;
+      }
+
+      if (
+        task_userId === user.id &&
+        task_roundId === round.id &&
+        task_taskId === taskId
+      ) {
+        return;
+      }
+
+      task_userId = user.id;
+      task_roundId = round.id;
+      task_taskId = taskId;
+
+      const userRef = User.ref(this._firestore, user.id);
+      const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
+      const taskRef = Task.ref(roundRef, taskId) as DocumentReference<Task, TaskDoc>;
+
+      this._loadingSig.set(true);
+      this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
+      this._taskSub = docSnapshots(taskRef).pipe(
+        takeUntilDestroyed(this._destroyRef),
+        takeWhile(() => !!this._user() || !!this._round() || !this._taskId()),
+        switchMap((docSnap) => Task.data(docSnap, cryptoKey)),
+        catchError(() => of(null))
+      ).subscribe((task) => {
+
+        this._loadingSig.set(false);
+
+        if (task) {
+          this._taskSig.set(task);
+          this.setAll(task);
+        }
+
+        this._taskForm.enable();
+      });
+
+    });
   }
 
-  ngOnInit(): void {
+  handleAddTimeOfDayId(event: MatChipInputEvent): void {
 
-    this.route.paramMap.subscribe((paramMap) => {
-      this.setGettingOfTaskById(paramMap.get('id') || '');
-    });
-
-    this.taskForm.valueChanges.subscribe(() => {
-
-      const description = this.description.value || '';
-      const timesOfDay = this.timesOfDay.value;
-      const daysOfTheWeek = this.daysOfTheWeek.value;
-
-      const isValueInit = (this.initValues.description || '').trim() === description.trim() &&
-        this.initValues.timesOfDay.toSet().hasOnly(timesOfDay.toSet()) &&
-        this.initValues.daysOfTheWeek.mon === daysOfTheWeek.mon &&
-        this.initValues.daysOfTheWeek.tue === daysOfTheWeek.tue &&
-        this.initValues.daysOfTheWeek.wed === daysOfTheWeek.wed &&
-        this.initValues.daysOfTheWeek.thu === daysOfTheWeek.thu &&
-        this.initValues.daysOfTheWeek.fri === daysOfTheWeek.fri &&
-        this.initValues.daysOfTheWeek.sat === daysOfTheWeek.sat &&
-        this.initValues.daysOfTheWeek.sun === daysOfTheWeek.sun;
-      this.isNothingChanged.set(!isValueInit);
-    });
-
-    this.selectedRound$.pipe(
-      filter((round): round is Round => !!round)
-    ).subscribe((round) => {
-      const timesOfDays = (new Set(round.timesOfDay).difference(new Set(this.timesOfDay.value))).toArray();
-      this.allOptions.set(timesOfDays);
-      this.applyFilter(this.timeOfDay.value || '');
-    });
-
-    this.timesOfDay.valueChanges.subscribe((timesOfDay: string[]) => {
-      const timesOfDays = (new Set(this.roundsService.selectedRound()!.timesOfDay).difference(new Set(timesOfDay))).toArray();
-      this.allOptions.set(timesOfDays);
-      this.applyFilter(this.timeOfDay.value || '');
-    });
-
-    this.timeOfDay.valueChanges.subscribe((timeOfDay) => {
-      this.applyFilter(timeOfDay || '');
-    });
-  }
-
-  ngOnDestroy(): void {
-    if (this.editedTaskOnSnapSub && !this.editedTaskOnSnapSub.closed) {
-      this.editedTaskOnSnapSub.unsubscribe();
-    }
-  }
-
-  handleAddTimeOfDay(event: MatChipInputEvent): void {
     const value = (event.value || '').trim();
 
     if (!value) {
       return;
     }
 
-    if ((this.timesOfDay.value as string[]).includes(value)) {
-      this.snackBar.open('Enter new one');
+    if ((this._timesOfDay.value as string[]).includes(value)) {
+      this._snackBar.open('Enter new one');
     } else if (value.length > 256) {
-      this.snackBar.open('Enter time of day length from 1 to 256');
+      this._snackBar.open('Enter time of day length from 1 to 256');
       this.basicInput.nativeElement.value = '';
-    } else if (((this.taskForm.get('timesOfDay') as FormArray).value as string[]).length >= 10) {
-      this.snackBar.open('Up to 10 times of day per task');
+    } else if (((this._timesOfDay as FormArray).value as string[]).length >= 10) {
+      this._snackBar.open('Up to 10 times of day per task');
     } else {
-      this.timesOfDay.push(new FormControl<string>(value));
+      this._timesOfDay.push(new FormControl<string>(value));
       event.chipInput!.clear();
-      this.timeOfDay.setValue(null);
+      this._timeOfDayId.setValue(null);
     }
   }
 
   handleOptionSelected(event: MatAutocompleteSelectedEvent): void {
-    this.timesOfDay.push(new FormControl<string>(event.option.viewValue));
-    this.timeOfDay.setValue(null);
+    this._timesOfDay.push(new FormControl<string>(event.option.viewValue));
+    this._timeOfDayId.setValue(null);
   }
 
   handleRemoveTimeOfDay(index: number): void {
-    this.timesOfDay.markAsDirty();
-    this.timesOfDay.removeAt(index);
+    this._timesOfDay.markAsDirty();
+    this._timesOfDay.removeAt(index);
   }
 
   applyFilter(value: string): void {
     if (value) {
       const filterValue = value.toLowerCase();
-      this.filteredOptions.set(this.allOptions().filter((option) => option.toLowerCase().includes(filterValue)));
+      this._filteredOptionsSig.set(this._allOptions()?.filter((option) => option.toLowerCase().includes(filterValue)));
     } else {
-      this.filteredOptions.set(this.allOptions());
+      this._filteredOptionsSig.set(this._allOptions());
     }
-  }
-
-  setGettingOfTaskById(id: string) {
-
-    if (this.editedTaskOnSnapSub && !this.editedTaskOnSnapSub.closed) {
-      this.editedTaskOnSnapSub.unsubscribe();
-    }
-
-    if (!id) {
-      this.resetForm();
-      this.editedTask.set(undefined);
-      this.router.navigate(['/', RouterDict.user, RouterDict.rounds, this.selectedRound()!.id, RouterDict.taskEditor]);
-      this.taskForm.enable();
-      this.isLoading.set(false);
-
-      const dayToApply = this.roundsService.dayToApply();
-
-      if (dayToApply) {
-        this.daysOfTheWeek.get(dayToApply)?.setValue(true);
-        this.roundsService.dayToApply.set(null);
-      }
-
-      return;
-    }
-
-    const user = this.authService.user$.value;
-
-    if (!user) {
-      return;
-    }
-
-    const userRef = User.ref(this.firestore, user.id);
-    const roundRef = Round.ref(userRef, this.selectedRound()!.id);
-    const taskRef = Task.ref(roundRef, id);
-
-    this.editedTaskOnSnapSub = docSnapshots(taskRef).pipe(
-      mergeMap((docSnap) => {
-
-        if (!docSnap.exists()) {
-          throw throwError(() => {
-          });
-        }
-
-        return Task.data(docSnap, user.cryptoKey!);
-      }),
-      catchError(() => {
-        this.setGettingOfTaskById('');
-        return EMPTY;
-      }),
-    ).subscribe((task) => {
-
-      this.isLoading.set(false);
-      this.editedTask.set(task);
-      this.setAll(task);
-
-      this.taskForm.enable();
-    });
   }
 
   saveTask(): void {
 
-    this.isLoading.set(true);
-    this.taskForm.disable();
+    this._loadingSig.set(true);
+    this._taskForm.disable();
 
-    const task = this.taskForm.getRawValue() as TaskForm;
+    const task = this._taskForm.getRawValue();
     const trimDescription = (task.description || '').trim();
     task.description = trimDescription;
-    this.description.setValue(trimDescription);
+    this._description.setValue(trimDescription);
 
-    this.roundsService.saveTask({
+    this._roundsService.saveTask({
       task: {
         description: task.description,
-        daysOfTheWeek: this.taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
+        daysOfTheWeek: this._taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
         timesOfDay: task.timesOfDay
       },
-      taskId: this.editedTask()?.id || 'null',
-      roundId: this.roundsService.selectedRound()!.id
+      taskId: this._task()?.id || 'null',
+      roundId: this._round()!.id
     }).pipe(catchError((error: HTTPError) => {
-      this.isLoading.set(false);
-      this.taskForm.enable();
-      this.snackBar.open(error.message || 'Some went wrong 🤫 Try again 🙂');
+      this._loadingSig.set(false);
+      this._taskForm.enable();
+      this._snackBar.open(error.message || 'Some went wrong 🤫 Try again 🙂');
       return NEVER;
     })).subscribe((success) => {
 
-      this.snackBar.open(success.details || 'Your operation has been done 😉');
+      this._snackBar.open(success.details || 'Your operation has been done 😉');
 
       if (success.created) {
-        this.router.navigate(['/', RouterDict.user, RouterDict.rounds, this.selectedRound()!.id, RouterDict.taskEditor, success.taskId], {relativeTo: this.route});
+        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, this._round()!.id, RouterDict.taskEditor, success.taskId], {relativeTo: this._route});
       }
     });
   }
 
   resetForm(): void {
-    this.taskForm.reset({
+
+    this._taskForm.reset({
       description: '',
       daysOfTheWeek: {
         mon: false,
@@ -316,9 +348,9 @@ export class TaskComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.timesOfDay.clear();
+    this._timesOfDay.clear();
 
-    this.initValues = {
+    this._initValues = {
       daysOfTheWeek: {
         mon: false,
         tue: false,
@@ -334,25 +366,26 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   deleteTask(): void {
+
     const dialogRef = this.dialog.open(TaskDialogConfirmDeleteComponent);
 
     dialogRef.afterClosed().subscribe((isConfirmed) => {
 
       if (isConfirmed) {
-        this.taskForm.disable();
-        this.isLoading.set(true);
+        this._taskForm.disable();
+        this._loadingSig.set(true);
 
-        this.roundsService.deleteTask({
-          taskId: this.editedTask()!.id,
-          roundId: this.selectedRound()!.id
+        this._roundsService.deleteTask({
+          taskId: this._task()!.id,
+          roundId: this._round()!.id
         }).pipe(catchError((error: HTTPError) => {
-          this.isLoading.set(false);
-          this.taskForm.enable();
-          this.snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+          this._loadingSig.set(false);
+          this._taskForm.enable();
+          this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           return NEVER;
         })).subscribe((success: HTTPSuccess) => {
-          this.snackBar.open(success.details || 'Your operation has been done 😉');
-          this.setGettingOfTaskById('');
+          this._snackBar.open(success.details || 'Your operation has been done 😉');
+          this._taskIdSig.set(undefined);
         });
       }
     });
@@ -361,17 +394,17 @@ export class TaskComponent implements OnInit, OnDestroy {
   setAll(task: Task): void {
 
     this.resetForm();
-    this.taskForm.disable();
+    this._taskForm.disable();
 
-    this.description.setValue(task.description);
-    this.daysOfTheWeek.setValue(this.taskService.dayArrayToDaysBooleanMap(task.daysOfTheWeek));
+    this._description.setValue(task.description);
+    this._daysOfTheWeek.setValue(this._taskService.dayArrayToDaysBooleanMap(task.daysOfTheWeek));
 
-    task.timesOfDay.forEach((timeOfDay) => {
-      this.timesOfDay.push(new FormControl(timeOfDay.trim()));
+    task.timesOfDay.forEach((timeOfDayId) => {
+      this._timesOfDay.push(new FormControl(timeOfDayId.trim()));
     });
 
-    this.initValues = this.taskForm.getRawValue();
-    this.taskForm.enable();
+    this._initValues = this._taskForm.getRawValue();
+    this._taskForm.enable();
   }
 
   static daysOfTheWeekValidator(g: AbstractControl<any, any>): ValidationErrors | null {
@@ -382,5 +415,10 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   static timesOfDayValidator(g: AbstractControl<any, any>): ValidationErrors | null {
     return g.value.length > 0 && g.value.length <= 10 ? null : {required: true};
+  }
+
+  ngOnDestroy(): void {
+    this._taskIdSig.set(undefined);
+    this._taskSig.set(undefined);
   }
 }
