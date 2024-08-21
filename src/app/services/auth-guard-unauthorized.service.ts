@@ -1,12 +1,11 @@
 import {inject} from '@angular/core';
 import {toObservable} from '@angular/core/rxjs-interop';
 import {Router, UrlTree} from '@angular/router';
-import {combineLatest, Observable, skip, tap} from 'rxjs';
-import {filter, map, take} from 'rxjs/operators';
-import {RouterDict} from '../app.constants';
+import {combineLatest, map, Observable, skip, take, tap} from 'rxjs';
+import {filter} from 'rxjs/operators';
 import {AuthService} from './auth.service';
 
-export const authGuardLoggedIn = (): Observable<true | UrlTree> => {
+export const authGuardUnauthorized = (): Observable<true | UrlTree> => {
 
   const router = inject(Router);
   const authService = inject(AuthService);
@@ -20,9 +19,9 @@ export const authGuardLoggedIn = (): Observable<true | UrlTree> => {
     map(([user, authStateReady]) => !!user),
     map((can: boolean) => {
 
-      // redirect to default user view
-      if (can) {
-        return router.createUrlTree(['/', RouterDict.user]);
+      // redirect to guest view
+      if (!can) {
+        return router.createUrlTree(['/']);
       }
       return true;
     })

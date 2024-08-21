@@ -80,10 +80,16 @@ export class AuthService {
     effect(async () => {
 
       const __firebaseUser = this.__firebaseUser();
+      const authStateReady = this.authStateReady();
+
+      if (authStateReady === undefined) {
+        return;
+      }
 
       if (!__firebaseUser) {
         this.whileLoginInSig.set(false);
         firebaseUser_IdToken = undefined;
+        this._router.navigate(['/']);
         return;
       }
 
@@ -142,6 +148,11 @@ export class AuthService {
 
       const firebaseUser = this._firebaseUser();
       const cryptoKey = this._cryptoKey();
+      const authStateReady = this.authStateReady();
+
+      if (authStateReady === undefined || firebaseUser === undefined) {
+        return;
+      }
 
       if (!firebaseUser || !cryptoKey) {
         this.userSig.set(null);
@@ -180,9 +191,13 @@ export class AuthService {
 
         this.userSig.set(user);
 
+
+        // this._router.routerState.snapshot.url is empty for user round views
+        // so there is no reason for creating separate function for checking
+        // if client is on user rounds view
+
         if (this._router.routerState.snapshot.url === '/') {
           this._router.navigate(['/', RouterDict.user]).then(() => {
-
             this.loadingUserSig.set(false);
           });
         } else {

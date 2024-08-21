@@ -1,6 +1,7 @@
 import {Routes} from '@angular/router';
 import {RouterDict} from '../app.constants';
 import {UserComponent} from '../components/user/user.component';
+import {authGuardUnauthorized} from '../services/auth-guard-unauthorized.service';
 
 export const userRoutes: Routes = [
   {
@@ -12,6 +13,7 @@ export const userRoutes: Routes = [
     path: '',
     component: UserComponent,
     providers: [],
+    canActivate: [authGuardUnauthorized],
     children: [
       {
         path: RouterDict.rounds,
