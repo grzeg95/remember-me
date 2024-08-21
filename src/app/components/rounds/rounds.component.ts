@@ -1,4 +1,4 @@
-import {Component, DestroyRef, effect, Inject} from '@angular/core';
+import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {Firestore, limit} from 'firebase/firestore';
@@ -18,7 +18,7 @@ import {RoundsService} from '../../services/rounds.service';
   templateUrl: './rounds.component.html',
   styleUrl: './rounds.component.scss'
 })
-export class RoundsComponent {
+export class RoundsComponent implements OnDestroy {
 
   protected readonly _round = this._roundsService.roundSig.get();
   protected readonly _RouterDict = RouterDict;
