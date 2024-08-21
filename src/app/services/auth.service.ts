@@ -22,7 +22,7 @@ import {
 } from 'firebase/auth';
 import firebase from 'firebase/compat';
 import {Firestore} from 'firebase/firestore';
-import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap} from 'rxjs';
+import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap, takeWhile} from 'rxjs';
 import {RouterDict} from '../app.constants';
 import {AuthInjectionToken, FirestoreInjectionToken} from '../models/firebase';
 import {User} from '../models/user';
@@ -79,6 +79,13 @@ export class AuthService {
     let firebaseUser_IdToken: string | undefined;
     effect(async () => {
 
+      const defend = () => {
+        this.whileLoginInSig.set(false);
+        this.userSig.set(null);
+        firebaseUser_IdToken = undefined;
+        setTimeout(() => this._router.navigate(['/']));
+      };
+
       const __firebaseUser = this.__firebaseUser();
       const authStateReady = this.authStateReady();
 
@@ -87,11 +94,7 @@ export class AuthService {
       }
 
       if (!__firebaseUser) {
-        this.whileLoginInSig.set(false);
-        this.userSig.set(null);
-        firebaseUser_IdToken = undefined;
-        this._router.navigate(['/']);
-        return;
+        return defend();
       }
 
       this.whileLoginInSig.set(true);
@@ -112,7 +115,7 @@ export class AuthService {
 
       let idTokenResult: IdTokenResult;
 
-      for (let i = 0; i < 15; ++i) {
+      for (let i = 9; i >= 0; --i) {
         try {
           idTokenResult = await getIdTokenResult(__firebaseUser, true).then((idTokenResult) => {
             if (!idTokenResult.claims['encryptedSymmetricKey']) {
@@ -120,13 +123,16 @@ export class AuthService {
             }
             return idTokenResult;
           });
+          break;
         } catch {
-          if (i === 9) {
+          if (i === 0) {
+            defend();
+            this._snackBar.open('Some went wrong 🤫 Try again 🙂');
             return;
           }
         }
         await new Promise<void>((resolve) => {
-          setTimeout(() => resolve(), 500);
+          setTimeout(() => resolve(), 1000);
         });
       }
 
@@ -136,7 +142,28 @@ export class AuthService {
         }>('auth-gettokenwithsecretkey', null));
         const userCredential = await signInWithCustomToken(this._auth, customTokenWithSecretKeyResult.customToken);
         this.firebaseUserSig.set(userCredential.user);
-        idTokenResult = await getIdTokenResult(__firebaseUser, true);
+
+        for (let i = 9; i >= 9; --i) {
+          try {
+            idTokenResult = await getIdTokenResult(__firebaseUser, true).then((idTokenResult) => {
+              if (!idTokenResult.claims['secretKey']) {
+                throw new Error('without/secret-key');
+              }
+              return idTokenResult;
+            });
+            break;
+          } catch {
+            if (i === 0) {
+              defend();
+              this._snackBar.open('Some went wrong 🤫 Try again 🙂');
+              return
+            }
+          }
+          await new Promise<void>((resolve) => {
+            setTimeout(() => resolve(), 1000);
+          });
+        }
+
         this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
       } else {
         this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
@@ -176,7 +203,9 @@ export class AuthService {
       this.loadingUserSig.set(true);
       this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
       this._userSub = docSnapshots(userRef).pipe(
+        takeWhile(() => !!this._firebaseUser() && !!this._cryptoKey() && !!this.authStateReady()),
         catchError((error) => {
+          console.error(error);
           if (error.code === 'permission-denied') {
             this.signOut().subscribe();
           }
@@ -194,7 +223,6 @@ export class AuthService {
         }
 
         this.userSig.set(user);
-
 
         // this._router.routerState.snapshot.url is empty for user round views
         // so there is no reason for creating separate function for checking
