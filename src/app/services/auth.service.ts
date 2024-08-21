@@ -112,7 +112,7 @@ export class AuthService {
 
       let idTokenResult: IdTokenResult;
 
-      for (let i = 0; i < 10; ++i) {
+      for (let i = 0; i < 15; ++i) {
         try {
           idTokenResult = await getIdTokenResult(__firebaseUser, true).then((idTokenResult) => {
             if (!idTokenResult.claims['encryptedSymmetricKey']) {
@@ -125,6 +125,9 @@ export class AuthService {
             return;
           }
         }
+        await new Promise<void>((resolve) => {
+          setTimeout(() => resolve(), 500);
+        });
       }
 
       if (!idTokenResult!.claims['secretKey']) {
