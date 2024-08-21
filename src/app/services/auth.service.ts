@@ -83,6 +83,7 @@ export class AuthService {
         this.whileLoginInSig.set(false);
         this.userSig.set(null);
         firebaseUser_IdToken = undefined;
+        this.signOut().subscribe();
         setTimeout(() => this._router.navigate(['/']));
       };
 
