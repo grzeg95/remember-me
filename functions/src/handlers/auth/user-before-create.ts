@@ -1,13 +1,15 @@
 import {google} from '@google-cloud/kms/build/protos/protos';
 import {constants, publicEncrypt, randomBytes, RsaPublicKey, webcrypto} from 'crypto';
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
-import {
-  AuthBlockingEvent,
-  BeforeCreateResponse
-} from 'firebase-functions/lib/common/providers/identity';
+import {AuthBlockingEvent, BeforeCreateResponse} from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {Task} from '../../models';
-import {encrypt, encryptRound, encryptTask, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
+import {Round, RoundDocUncrypded} from '../../models/round';
+import {Task} from '../../models/task';
+import {User} from '../../models/user';
+import {encrypt, encryptRound, encryptTask} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 import {prepareTimesOfDay, proceedTodayTasks} from '../rounds/save-task';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
@@ -16,35 +18,46 @@ const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
 
-export const createSampleUserData = async (userDocSnap: DocumentSnapshot, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
+const firestore = getFirestore();
+
+export const createSampleUserData = async (userDocSnap: DocumentSnapshot<User>, transaction: Transaction, cryptoKey: CryptoKey, transactionWrite: TransactionWrite) => {
 
   const decryptedRound = {
+    value: '',
+    id: '',
+    timesOfDayEncrypted: [],
     timesOfDay: [],
     timesOfDayCardinality: [],
     name: 'Daily',
     todaysIds: [],
-    tasksIds: []
-  };
+    tasksIds: [],
+    exists: false
+  } as Round;
 
-  const task: Task = {
+  const task = {
     timesOfDay: ['Before start'],
     daysOfTheWeek: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
     description: 'Drink coffee 🤠'
-  };
+  } as Task;
 
   // get round
-  const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc());
+  const roundRef = Round.ref(userDocSnap.ref);
+  const roundDocSnap = await transaction.get(roundRef);
 
   const roundId = roundDocSnap.id;
 
   // get task
-  const taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc());
+  const taskRef = Task.ref(roundDocSnap.ref);
+  const taskDocSnap = await transaction.get(taskRef);
 
   const todaysIds = await proceedTodayTasks(transaction, task, taskDocSnap, {
+    value: '',
+    id: '',
     description: '',
     daysOfTheWeek: [],
     timesOfDay: [],
-  }, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
+    exists: false
+  } as Task, roundDocSnap, decryptedRound, transactionWrite, cryptoKey);
 
   const timesOfDaysToStoreMetadata = prepareTimesOfDay(transaction, [], ['Before start'], [], []);
 
@@ -55,7 +68,7 @@ export const createSampleUserData = async (userDocSnap: DocumentSnapshot, transa
     name: 'Daily',
     todaysIds,
     tasksIds: [taskDocSnap.id]
-  }, cryptoKey));
+  } as RoundDocUncrypded, cryptoKey));
 
   transactionWrite.set(taskDocSnap.ref, encryptTask(task, cryptoKey));
 
@@ -66,9 +79,8 @@ export const handler = (event: AuthBlockingEvent) => {
 
   const key = randomBytes(32);
   let transactionWrite: TransactionWrite;
-  const app = getFirestore();
 
-  return app.runTransaction(async (transaction) => {
+  return firestore.runTransaction(async (transaction) => {
 
     if (!publicKey) {
       [publicKey] = await keyManagementServiceClient.getPublicKey({
@@ -103,7 +115,7 @@ export const handler = (event: AuthBlockingEvent) => {
       ['encrypt']
     );
 
-    const userDocSnap = await getUserDocSnap(app, transaction, event.data.uid);
+    const userDocSnap = await getUserDocSnap(firestore, transaction, event.data.uid);
 
     // createSampleUserData
     const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);

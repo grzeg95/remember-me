@@ -1,18 +1,15 @@
 import {DocumentSnapshot, getFirestore} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {
-  decrypt,
-  decryptRound,
-  decryptToday,
-  encrypt,
-  getCryptoKey,
-  getUserDocSnap,
-  testRequirement,
-  TransactionWrite,
-  writeUser
-} from '../../tools';
+import {Round} from '../../models/round';
+import {Task} from '../../models/task';
+import {Today} from '../../models/today';
+import {User} from '../../models/user';
+import {encrypt, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap, writeUser} from '../../utils/user';
 
-const app = getFirestore();
+const firestore = getFirestore();
 
 export const handler = async (request: CallableRequest) => {
 
@@ -33,31 +30,34 @@ export const handler = async (request: CallableRequest) => {
 
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-  return app.runTransaction(async (transaction) => {
+  return firestore.runTransaction(async (transaction) => {
 
     const transactionWrite = new TransactionWrite(transaction);
 
-    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
+    const userDocSnap = await getUserDocSnap(firestore, transaction, auth?.uid as string);
+    const user = await User.data(userDocSnap, cryptoKey);
 
-    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const roundRef = Round.ref(userDocSnap.ref, roundId);
+    const roundDocSnap = await transaction.get(roundRef);
 
     // check if round exists
     testRequirement(!roundDocSnap.exists);
 
-    const roundDocSnapData = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+    const roundDocSnapData = await Round.data(roundDocSnap, cryptoKey);
 
     // get all tasks
     const docsToRemovePromise: (Promise<DocumentSnapshot> | DocumentSnapshot)[] = [];
     for (const taskId of roundDocSnapData.tasksIds) {
-      docsToRemovePromise.push(transaction.get(roundDocSnap.ref.collection('task').doc(taskId)));
+      const taskRef = Task.ref(roundDocSnap.ref, taskId);
+      docsToRemovePromise.push(transaction.get(taskRef));
     }
 
-    const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot>[] = [];
+    const allTasksListOfDayRefsPromise: Promise<DocumentSnapshot<Today>>[] = [];
 
     // get all today's
     for (const todayId of roundDocSnapData.todaysIds) {
-      const today = roundDocSnap.ref.collection('today').doc(todayId);
-      allTasksListOfDayRefsPromise.push(transaction.get(today));
+      const todayRef = Today.ref(roundDocSnap.ref, todayId);
+      allTasksListOfDayRefsPromise.push(transaction.get(todayRef));
     }
 
     transactionWrite.delete(roundDocSnap.ref);
@@ -68,9 +68,7 @@ export const handler = async (request: CallableRequest) => {
 
     for (const todaySnap of allTasksListOfDayRefs) {
       docsToRemovePromise.push(todaySnap);
-      decryptTodaysPromise.push(decryptToday(todaySnap.data() as {
-        value: string
-      }, cryptoKey).then((decryptedToday) => {
+      decryptTodaysPromise.push(Today.data(todaySnap, cryptoKey).then((decryptedToday) => {
         for (const todayTaskId of decryptedToday.tasksIds) {
           docsToRemovePromise.push(transaction.get(todaySnap.ref.collection('task').doc(todayTaskId)));
         }
@@ -84,19 +82,13 @@ export const handler = async (request: CallableRequest) => {
       transactionWrite.delete(doc.ref);
     }
 
-    let roundsInUser: string[] = [];
-
-    if (userDocSnap.data()?.rounds) {
-      roundsInUser = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => JSON.parse(text) as string []);
-    }
-
     // update user
-    const roundIndexInUser = roundsInUser.indexOf(roundId);
+    const roundIndexInUser = user.decryptedRounds.indexOf(roundId);
 
     testRequirement(roundIndexInUser === -1);
-    roundsInUser.splice(roundIndexInUser, 1);
+    user.decryptedRounds.splice(roundIndexInUser, 1);
 
-    writeUser(transactionWrite, userDocSnap, encrypt(roundsInUser, cryptoKey).then((encryptedRounds) => {
+    writeUser(transactionWrite, userDocSnap, encrypt(user.decryptedRounds, cryptoKey).then((encryptedRounds) => {
       return {
         rounds: encryptedRounds
       };

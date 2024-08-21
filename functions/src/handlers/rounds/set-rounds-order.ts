@@ -1,10 +1,13 @@
 import {getFirestore} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {decrypt, encrypt, getCryptoKey, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
+import '../../utils/global.prototype';
+import {User} from '../../models/user';
+import {encrypt, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 
-import '../../tools/global.prototype';
-
-const app = getFirestore();
+const firestore = getFirestore();
 
 /**
  * Set rounds order
@@ -46,19 +49,18 @@ export const handler = async (request: CallableRequest) => {
 
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-  return app.runTransaction(async (transaction) => {
+  return firestore.runTransaction(async (transaction) => {
 
     const transactionWrite = new TransactionWrite(transaction);
 
-    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
+    const userDocSnap = await getUserDocSnap(firestore, transaction, auth?.uid as string);
     const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const user = await User.data(userDocSnap, cryptoKey);
 
     // check if round exists
     testRequirement(!roundDocSnap.exists);
 
-    const rounds = await decrypt(userDocSnap.data()?.rounds, cryptoKey).then((text) => {
-      return JSON.parse(text) as string[];
-    });
+    const rounds = user.decryptedRounds;
 
     const toMoveIndex = rounds.indexOf(data.roundId);
 

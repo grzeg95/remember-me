@@ -4,7 +4,10 @@ import {getAuth, UserRecord} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
-import {encrypt, getUserDocSnap, testRequirement, TransactionWrite} from '../../tools';
+import {encrypt} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 import {createSampleUserData} from './user-before-create';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
@@ -12,6 +15,8 @@ import {createSampleUserData} from './user-before-create';
 const crc32c = require('fast-crc32c');
 
 let publicKey: google.cloud.kms.v1.IPublicKey | null;
+
+const firestore = getFirestore();
 
 export const handler = (user: UserRecord, context: EventContext) => {
 
@@ -27,9 +32,8 @@ export const handler = (user: UserRecord, context: EventContext) => {
   }
 
   const key = randomBytes(32);
-  const app = getFirestore();
 
-  return app.runTransaction(async (transaction) => {
+  return firestore.runTransaction(async (transaction) => {
 
     if (!publicKey) {
       [publicKey] = await keyManagementServiceClient.getPublicKey({
@@ -65,7 +69,7 @@ export const handler = (user: UserRecord, context: EventContext) => {
     );
 
     await getAuth().setCustomUserClaims(user.uid, {encryptedSymmetricKey});
-    const userDocSnap = await getUserDocSnap(app, transaction, user.uid);
+    const userDocSnap = await getUserDocSnap(firestore, transaction, user.uid);
 
     // createSampleUserData
     const roundId = await createSampleUserData(userDocSnap, transaction, cryptoKey, transactionWrite);

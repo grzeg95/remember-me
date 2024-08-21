@@ -1,10 +1,13 @@
 import {DocumentSnapshot, Firestore, Transaction} from 'firebase-admin/firestore';
 import {HttpsError} from 'firebase-functions/v2/https';
+import {User} from '../models/user';
 import {TransactionWrite} from './transaction-write';
 
-export const getUserDocSnap = async (app: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot> => {
+export const getUserDocSnap = async (firestore: Firestore, transaction: Transaction, uid: string): Promise<DocumentSnapshot<User>> => {
 
-  return transaction.get(app.collection('users').doc(uid)).then((userDocSnap) => {
+  const userRef = User.ref(firestore, uid);
+
+  return transaction.get(userRef).then((userDocSnap) => {
     const userData = userDocSnap.data();
     const isDisabled = userData?.hasOwnProperty('disabled') ? userData.disabled : false;
 

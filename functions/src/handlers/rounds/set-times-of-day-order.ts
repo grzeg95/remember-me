@@ -1,16 +1,13 @@
 import {getFirestore} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {
-  decryptRound,
-  encryptRound,
-  getCryptoKey,
-  getUserDocSnap,
-  testRequirement,
-  TransactionWrite
-} from '../../tools';
-import '../../tools/global.prototype';
+import '../../utils/global.prototype';
+import {Round, RoundDocUncrypded} from '../../models/round';
+import {encryptRound, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 
-const app = getFirestore();
+const firestore = getFirestore();
 
 /**
  * Set times of day order
@@ -52,20 +49,22 @@ export const handler = async (request: CallableRequest) => {
 
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-  return app.runTransaction(async (transaction) => {
+  return firestore.runTransaction(async (transaction) => {
 
     const transactionWrite = new TransactionWrite(transaction);
     const timeOfDay = data.timeOfDay;
     const roundId = data.roundId;
     const moveBy = data.moveBy;
 
-    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
-    const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+    const userDocSnap = await getUserDocSnap(firestore, transaction, auth?.uid as string);
+
+    const roundRef = Round.ref(userDocSnap.ref, roundId);
+    const roundDocSnap = await transaction.get(roundRef);
 
     // check if timeOfDay exists
     testRequirement(!roundDocSnap.exists);
 
-    const round = await decryptRound(roundDocSnap.data() as {value: string}, cryptoKey);
+    const round = await Round.data(roundDocSnap, cryptoKey);
 
     const timesOfDay = round.timesOfDay;
     const timesOfDayCardinality = round.timesOfDayCardinality;
@@ -85,7 +84,7 @@ export const handler = async (request: CallableRequest) => {
       name: round.name,
       todaysIds: round.todaysIds,
       tasksIds: round.tasksIds
-    }, cryptoKey));
+    } as RoundDocUncrypded, cryptoKey));
 
     return transactionWrite.execute();
   }).then(() => ({

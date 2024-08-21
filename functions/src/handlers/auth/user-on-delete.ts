@@ -1,6 +1,9 @@
 import {getFirestore} from 'firebase-admin/firestore';
 import {UserRecord} from 'firebase-admin/lib/auth';
 import {EventContext} from 'firebase-functions';
+import {User} from '../../models/user';
+
+const firestore = getFirestore();
 
 export const handler = async (user: UserRecord, context: EventContext) => {
 
@@ -11,9 +14,7 @@ export const handler = async (user: UserRecord, context: EventContext) => {
     return Promise.resolve();
   }
 
-  const app = getFirestore();
-
-  const bulkWriter = app.bulkWriter();
+  const bulkWriter = firestore.bulkWriter();
   const maxRetryAttempts = 10;
 
   bulkWriter.onWriteError((error) => {
@@ -25,5 +26,6 @@ export const handler = async (user: UserRecord, context: EventContext) => {
     }
   });
 
-  return app.recursiveDelete(app.collection('users').doc(user.uid), bulkWriter);
+  const userRef = User.ref(firestore, user.uid);
+  return firestore.recursiveDelete(userRef, bulkWriter);
 };

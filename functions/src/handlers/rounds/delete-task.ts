@@ -1,32 +1,31 @@
 import {DocumentSnapshot, getFirestore, Transaction} from 'firebase-admin/firestore';
 import {CallableRequest} from 'firebase-functions/v2/https';
-import {
-  decryptRound,
-  decryptTask,
-  decryptToday,
-  encryptRound,
-  encryptToday,
-  getCryptoKey,
-  getUserDocSnap,
-  testRequirement,
-  TransactionWrite
-} from '../../tools';
+import '../../utils/global.prototype';
+import {Round, RoundDocUncrypded} from '../../models/round';
+import {Task} from '../../models/task';
+import {Today} from '../../models/today';
+import {TodayTask} from '../../models/today-task';
+import {User} from '../../models/user';
+import {encryptRound, encryptToday, getCryptoKey} from '../../utils/crypto';
+import {testRequirement} from '../../utils/test-requirement';
+import {TransactionWrite} from '../../utils/transaction-write';
+import {getUserDocSnap} from '../../utils/user';
 
-import '../../tools/global.prototype';
+const firestore = getFirestore();
 
-const app = getFirestore();
-
-export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot): Promise<Transaction> => {
+export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string, taskId: string, transaction: Transaction, userDocSnap: DocumentSnapshot<User>): Promise<Transaction> => {
 
   const transactionWrite = new TransactionWrite(transaction);
-  const todaySnapsToCheckToRemove: DocumentSnapshot[] = [];
+  const todaySnapsToCheckToRemove: DocumentSnapshot<Today>[] = [];
 
-  const roundDocSnap = await transaction.get(userDocSnap.ref.collection('rounds').doc(roundId));
+  const roundRef = Round.ref(userDocSnap.ref, roundId);
+  const roundDocSnap = await transaction.get(roundRef);
 
   // interrupt if user has not this timesOfDay
   testRequirement(!roundDocSnap.exists);
 
-  const taskDocSnap = await transaction.get(roundDocSnap.ref.collection('task').doc(taskId));
+  const taskRef = Task.ref(roundDocSnap.ref, taskId);
+  const taskDocSnap = await transaction.get(taskRef);
 
   // interrupt if user has not this task
   testRequirement(!taskDocSnap.exists);
@@ -36,8 +35,8 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
    * */
 
   const [task, round] = await Promise.all([
-    decryptTask(taskDocSnap.data() as {value: string}, cryptoKey),
-    decryptRound(roundDocSnap.data() as {value: string}, cryptoKey)
+    Task.data(taskDocSnap, cryptoKey),
+    Round.data(roundDocSnap, cryptoKey)
   ]);
 
   const timesOfDay = round.timesOfDay;
@@ -49,9 +48,15 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
   const todayTaskDocSnapsToUpdatePromises = [];
 
   for (const docId of todaysIds) {
+
+    const todayRef = Today.ref(roundDocSnap.ref, docId);
+
     todayTaskDocSnapsToUpdatePromises.push(
-      transaction.get(roundDocSnap.ref.collection('today').doc(docId)).then((snap) => {
-        return transaction.get(snap.ref.collection('task').doc(`${taskDocSnap.id}`)).then((docSnap) => {
+      transaction.get(todayRef).then((snap) => {
+
+        const todayTaskRef = TodayTask.ref(snap.ref, taskDocSnap.id);
+
+        return transaction.get(todayTaskRef).then((docSnap) => {
 
           if (docSnap.exists) {
             todaySnapsToCheckToRemove.push(snap);
@@ -89,7 +94,7 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
 
   for (const todayDocSnap of todaySnapsToCheckToRemove) {
     todaySnapsToCheckToRemoveDecryptedPromise.push(
-      decryptToday(todayDocSnap.data() as {value: string}, cryptoKey)
+      Today.data(todayDocSnap, cryptoKey)
     );
   }
 
@@ -109,7 +114,7 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
       transactionWrite.update(todayDocSnap.ref, encryptToday({
         name: todayTask.name,
         tasksIds: todayTasksIds.toArray()
-      }, cryptoKey));
+      } as Today, cryptoKey));
     }
   }
 
@@ -133,7 +138,7 @@ export const proceedTaskRemoving = async (cryptoKey: CryptoKey, roundId: string,
     name: round.name,
     todaysIds: todaysIds.toArray(),
     tasksIds: tasksIds.toArray()
-  }, cryptoKey));
+  } as RoundDocUncrypded, cryptoKey));
 
   return transactionWrite.execute();
 };
@@ -174,9 +179,9 @@ export const handler = async (request: CallableRequest) => {
 
   const cryptoKey = await getCryptoKey(auth?.token.secretKey);
 
-  return app.runTransaction(async (transaction) => {
+  return firestore.runTransaction(async (transaction) => {
 
-    const userDocSnap = await getUserDocSnap(app, transaction, auth?.uid as string);
+    const userDocSnap = await getUserDocSnap(firestore, transaction, auth?.uid as string);
     return proceedTaskRemoving(cryptoKey, data.roundId, data.taskId, transaction, userDocSnap);
 
   }).then(() => ({

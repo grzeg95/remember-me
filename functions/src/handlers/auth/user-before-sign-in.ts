@@ -4,16 +4,17 @@ import {
   BeforeSignInResponse
 } from 'firebase-functions/lib/common/providers/identity';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
+import {User} from '../../models/user';
 
 /* eslint-disable @typescript-eslint/no-var-requires*/
 
 const crc32c = require('fast-crc32c');
 
+const firestore = getFirestore();
+
 export const handler = async (event: AuthBlockingEvent): Promise<BeforeSignInResponse> => {
 
-  const app = getFirestore();
-
-  const snap = await app.doc(`users/${event.data.uid}`).get();
+  const snap = await User.ref(firestore, event.data.uid).get();
 
   const customClaims = event.data.customClaims || {};
 

@@ -36,6 +36,7 @@ module.exports = {
     'camelcase': 0,
     'no-extend-native': 0,
     'no-var-requires': 0,
-    'no-prototype-builtins': 0
+    'no-prototype-builtins': 0,
+    'require-jsdoc': 0
   },
 };
