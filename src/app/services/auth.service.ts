@@ -88,6 +88,7 @@ export class AuthService {
 
       if (!__firebaseUser) {
         this.whileLoginInSig.set(false);
+        this.userSig.set(null);
         firebaseUser_IdToken = undefined;
         this._router.navigate(['/']);
         return;
