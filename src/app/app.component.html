@@ -2,9 +2,9 @@
 
 @if (_whileLoginIn()) {
     <mat-spinner [strokeWidth]="5" [color]="'primary'"></mat-spinner>
+} @else {
+  <router-outlet></router-outlet>
 }
-
-<router-outlet></router-outlet>
 
 <div [class.active]="!_isOnline()" class="offline">
   <div class="text">rem.grzeg.pl is currently offline</div>
