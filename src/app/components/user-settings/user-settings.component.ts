@@ -27,7 +27,7 @@ export class UserSettingsComponent {
   protected readonly _faGear = faGear;
 
   protected readonly _user = this._authService.userSig.get();
-  protected readonly _firebaseUser = this._authService.firebaseUserSig.get();
+  protected readonly _firebaseUser = this._authService.firebaseUser;
   protected readonly _isPhotoUploading = signal(false);
 
   constructor(

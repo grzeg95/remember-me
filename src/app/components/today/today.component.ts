@@ -239,7 +239,7 @@ export class TodayComponent {
       return;
     }
 
-    const firebaseUser = this._authService.firebaseUserSig.get()();
+    const firebaseUser = this._authService.firebaseUser();
     const round = this._roundsService.roundSig.get()();
 
     if (!firebaseUser || !round) {

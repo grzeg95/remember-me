@@ -15,6 +15,7 @@ export type UserDoc = {
   readonly rounds?: string;
   readonly hasEncryptedSecretKey?: boolean;
   readonly photoURL?: string;
+  readonly hasInitialData?: boolean;
 } & DocumentData;
 
 export class User implements UserDoc {
@@ -35,6 +36,8 @@ export class User implements UserDoc {
     public readonly decryptedRounds: string[],
     public readonly hasEncryptedSecretKey: boolean,
     public photoURL: string,
+    public readonly hasInitialData: boolean,
+    public readonly disabled: boolean,
     public readonly exists: boolean
   ) {
   }
@@ -67,10 +70,12 @@ export class User implements UserDoc {
 
       return new User(
         docSnap.id,
-        data!.rounds,
+        data?.rounds || '',
         decryptedRounds!,
-        data!.hasEncryptedSecretKey,
+        !!data?.hasEncryptedSecretKey,
         decryptedPhotoURL!,
+        !!data?.hasInitialData,
+        !!data?.disabled,
         docSnap.exists()
       );
 
@@ -81,6 +86,8 @@ export class User implements UserDoc {
         [],
         false,
         '',
+        false,
+        false,
         false
       );
     }

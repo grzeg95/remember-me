@@ -4,6 +4,7 @@ import {getAuth, UserRecord} from 'firebase-admin/auth';
 import {getFirestore} from 'firebase-admin/firestore';
 import {EventContext} from 'firebase-functions';
 import {cryptoKeyVersionPath, keyManagementServiceClient} from '../../config';
+import {User} from '../../models/user';
 import {encrypt} from '../../utils/crypto';
 import {testRequirement} from '../../utils/test-requirement';
 import {TransactionWrite} from '../../utils/transaction-write';
@@ -77,8 +78,9 @@ export const handler = (user: UserRecord, context: EventContext) => {
     transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
       return {
         rounds,
-        hasEncryptedSecretKey: true
-      };
+        hasEncryptedSecretKey: true,
+        hasInitialData: true
+      } as User;
     }));
 
     return transactionWrite.execute();

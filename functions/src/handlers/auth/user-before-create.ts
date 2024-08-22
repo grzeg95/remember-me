@@ -122,8 +122,9 @@ export const handler = (event: AuthBlockingEvent) => {
     transactionWrite.set(userDocSnap.ref, encrypt([roundId], cryptoKey).then((rounds) => {
       return {
         rounds,
-        hasEncryptedSecretKey: true
-      };
+        hasEncryptedSecretKey: true,
+        hasInitialData: true
+      } as User;
     }));
 
     await transactionWrite.execute();

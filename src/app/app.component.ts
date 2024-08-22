@@ -14,7 +14,7 @@ import {ConnectionService} from './services/connection.service';
 })
 export class AppComponent {
 
-  protected readonly _whileLoginIn = this.authService.whileLoginIn;
+  protected readonly _whileLoginIn = this.authService.whileLoginInSig.get();
   protected readonly _isOnline = this.connectionService.isOnlineSig.get();
 
   constructor(

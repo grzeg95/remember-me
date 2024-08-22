@@ -12,6 +12,7 @@ export type UserDoc = {
   readonly rounds?: string;
   readonly hasEncryptedSecretKey?: boolean;
   readonly photoURL?: string;
+  readonly hasInitialData?: boolean;
 } | DocumentData;
 
 export class User {
@@ -22,6 +23,7 @@ export class User {
     public readonly decryptedRounds: string[],
     public readonly hasEncryptedSecretKey: boolean,
     public photoURL: string,
+    public readonly hasInitialData: boolean,
     public readonly disabled: boolean,
     public readonly exists: boolean
   ) {
@@ -35,7 +37,8 @@ export class User {
       return {
         rounds: user.rounds,
         hasEncryptedSecretKey: user.hasEncryptedSecretKey,
-        photoURL: user.photoURL
+        photoURL: user.photoURL,
+        hasInitialData: user.hasInitialData
       } as UserDoc;
     }
   } as FirestoreDataConverter<User>;
@@ -55,11 +58,12 @@ export class User {
 
       return new User(
         docSnap.id,
-        data!.rounds,
+        data?.rounds || '',
         decryptedRounds!,
-        data!.hasEncryptedSecretKey,
+        !!data?.hasEncryptedSecretKey,
         decryptedPhotoURL!,
-        !!data!.disabled,
+        !!data?.hasInitialData,
+        !!data?.disabled,
         docSnap.exists
       );
 
@@ -70,6 +74,7 @@ export class User {
         [],
         false,
         '',
+        false,
         false,
         false
       );

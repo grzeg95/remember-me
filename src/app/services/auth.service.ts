@@ -39,7 +39,7 @@ export class AuthService {
     map(() => true)
   ));
 
-  private readonly __firebaseUser = toSignal(new Observable<FirebaseUser | null>((subscriber) => {
+  readonly firebaseUser = toSignal(new Observable<FirebaseUser | null>((subscriber) => {
     const unsubscribe = onAuthStateChanged(this._auth, {
       next: subscriber.next.bind(subscriber),
       error: subscriber.error.bind(subscriber),
@@ -48,22 +48,24 @@ export class AuthService {
     return {unsubscribe};
   }));
 
-  readonly firebaseUserSig = new Sig<FirebaseUser>();
-  private _firebaseUser = this.firebaseUserSig.get();
-
   readonly isLoggedIn = computed(() => {
-    return !!this._firebaseUser();
+    return !!this.firebaseUser();
   });
 
   readonly loadingUserSig = new Sig<boolean>(false);
+  private readonly _loadingUser = this.loadingUserSig.get();
+
   readonly userSig = new Sig<User | null>();
+  private _user = this.userSig.get();
   private _userSub: Subscription | undefined;
 
+  readonly hasEncryptedSecretKeySig = new Sig<boolean>(false);
+  private readonly _hasEncryptedSecretKey = this.hasEncryptedSecretKeySig.get();
+
   readonly cryptoKeySig = new Sig<CryptoKey>();
-  private _cryptoKey = this.cryptoKeySig.get();
+  private readonly _cryptoKey = this.cryptoKeySig.get();
 
   readonly whileLoginInSig = new Sig<boolean>(false);
-  readonly whileLoginIn = this.whileLoginInSig.get();
 
   private _wasUserCreatedWithEmailAndPassword = false;
 
@@ -75,110 +77,12 @@ export class AuthService {
     private readonly functionsService: FunctionsService
   ) {
 
-    // firebaseUser
-    let firebaseUser_IdToken: string | undefined;
-    effect(async () => {
-
-      const defend = () => {
-        this.whileLoginInSig.set(false);
-        this.userSig.set(null);
-        firebaseUser_IdToken = undefined;
-        this.signOut().subscribe();
-        setTimeout(() => this._router.navigate(['/']));
-      };
-
-      const __firebaseUser = this.__firebaseUser();
-      const authStateReady = this.authStateReady();
-
-      if (authStateReady === undefined) {
-        return;
-      }
-
-      if (!__firebaseUser) {
-        return defend();
-      }
-
-      this.whileLoginInSig.set(true);
-
-      const idToken = await __firebaseUser.getIdToken();
-
-      if (firebaseUser_IdToken === idToken) {
-        return;
-      }
-
-      firebaseUser_IdToken = idToken;
-
-      if (this._wasUserCreatedWithEmailAndPassword) {
-        this._wasUserCreatedWithEmailAndPassword = false;
-        this.signOut().subscribe();
-        return;
-      }
-
-      let idTokenResult: IdTokenResult;
-
-      for (let i = 9; i >= 0; --i) {
-        try {
-          idTokenResult = await getIdTokenResult(__firebaseUser, true).then((idTokenResult) => {
-            if (!idTokenResult.claims['encryptedSymmetricKey']) {
-              throw new Error('without/encrypted-symmetric-key');
-            }
-            return idTokenResult;
-          });
-          break;
-        } catch {
-          if (i === 0) {
-            defend();
-            this._snackBar.open('Some went wrong 🤫 Try again 🙂');
-            return;
-          }
-        }
-        await new Promise<void>((resolve) => {
-          setTimeout(() => resolve(), 1000);
-        });
-      }
-
-      if (!idTokenResult!.claims['secretKey']) {
-        const customTokenWithSecretKeyResult = await firstValueFrom(this.functionsService.httpsCallable<null, {
-          customToken: string
-        }>('auth-gettokenwithsecretkey', null));
-        const userCredential = await signInWithCustomToken(this._auth, customTokenWithSecretKeyResult.customToken);
-        this.firebaseUserSig.set(userCredential.user);
-
-        for (let i = 9; i >= 9; --i) {
-          try {
-            idTokenResult = await getIdTokenResult(__firebaseUser, true).then((idTokenResult) => {
-              if (!idTokenResult.claims['secretKey']) {
-                throw new Error('without/secret-key');
-              }
-              return idTokenResult;
-            });
-            break;
-          } catch {
-            if (i === 0) {
-              defend();
-              this._snackBar.open('Some went wrong 🤫 Try again 🙂');
-              return
-            }
-          }
-          await new Promise<void>((resolve) => {
-            setTimeout(() => resolve(), 1000);
-          });
-        }
-
-        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
-      } else {
-        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
-        this.firebaseUserSig.set(__firebaseUser);
-      }
-
-      this.whileLoginInSig.set(false);
-    });
-
     // user
     let user_userId: string | undefined;
-    effect(() => {
+    let user_cryptoKey: CryptoKey | undefined;
+    effect(async () => {
 
-      const firebaseUser = this._firebaseUser();
+      const firebaseUser = this.firebaseUser();
       const cryptoKey = this._cryptoKey();
       const authStateReady = this.authStateReady();
 
@@ -186,25 +90,31 @@ export class AuthService {
         return;
       }
 
-      if (!firebaseUser || !cryptoKey) {
+      if (!firebaseUser) {
         this.userSig.set(null);
-        this.whileLoginInSig.set(false);
+        this.hasEncryptedSecretKeySig.set(undefined);
+        this.loadingUserSig.set(false);
         user_userId = undefined;
+        user_cryptoKey = undefined;
+        this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
         return;
       }
 
-      if (user_userId === firebaseUser.uid) {
+      if (
+        user_userId === firebaseUser.uid &&
+        user_cryptoKey === cryptoKey
+      ) {
         return;
       }
 
       user_userId = firebaseUser.uid;
+      user_cryptoKey = cryptoKey;
 
       const userRef = User.ref(this._firestore, firebaseUser.uid);
 
       this.loadingUserSig.set(true);
       this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
       this._userSub = docSnapshots(userRef).pipe(
-        takeWhile(() => !!this._firebaseUser() && !!this._cryptoKey() && !!this.authStateReady()),
         catchError((error) => {
           console.error(error);
           if (error.code === 'permission-denied') {
@@ -212,9 +122,14 @@ export class AuthService {
           }
           throw error;
         })
-      ).pipe(
-        switchMap((userDocSnap) => User.data(userDocSnap, cryptoKey))
-      ).subscribe((user) => {
+      ).subscribe(async (userDocSnap) => {
+
+        if (!cryptoKey) {
+          this.hasEncryptedSecretKeySig.set(userDocSnap.data()?.hasEncryptedSecretKey);
+          return;
+        }
+
+        const user = await User.data(userDocSnap, cryptoKey);
 
         if (user.photoURL) {
           user.hasCustomPhoto = true;
@@ -223,21 +138,82 @@ export class AuthService {
           user.hasCustomPhoto = false;
         }
 
-        this.userSig.set(user);
+        if (user.hasInitialData) {
+          this.userSig.set(user);
+          this.loadingUserSig.set(false);
+          this.whileLoginInSig.set(false);
+        }
 
         // this._router.routerState.snapshot.url is empty for user round views
         // so there is no reason for creating separate function for checking
         // if client is on user rounds view
 
         if (this._router.routerState.snapshot.url === '/') {
-          this._router.navigate(['/', RouterDict.user]).then(() => {
-            this.loadingUserSig.set(false);
-          });
-        } else {
-          this.loadingUserSig.set(false);
+          setTimeout(() => this._router.navigate(['/', RouterDict.user]));
         }
       });
     });
+
+    // cryptoKey
+    let cryptoKey_firebaseUserId: string | undefined;
+    let cryptoKey_userHasEncryptedSecretKey: boolean | undefined;
+    effect(async () => {
+
+      const defend = () => {
+        this.cryptoKeySig.set(undefined);
+        cryptoKey_firebaseUserId = undefined;
+        cryptoKey_userHasEncryptedSecretKey = undefined;
+        this.signOut().subscribe();
+        setTimeout(() => this._router.navigate(['/']));
+      };
+
+      if (this._wasUserCreatedWithEmailAndPassword) {
+        this._wasUserCreatedWithEmailAndPassword = false;
+        defend();
+        return;
+      }
+
+      const firebaseUser = this.firebaseUser();
+      const hasEncryptedSecretKey = this._hasEncryptedSecretKey();
+
+      if (firebaseUser === undefined || !hasEncryptedSecretKey) {
+        return;
+      }
+
+      if (!firebaseUser) {
+        return defend();
+      }
+
+      if (
+        cryptoKey_firebaseUserId === firebaseUser.uid &&
+        cryptoKey_userHasEncryptedSecretKey === hasEncryptedSecretKey
+      ) {
+        return;
+      }
+
+      cryptoKey_firebaseUserId = firebaseUser.uid;
+      cryptoKey_userHasEncryptedSecretKey = hasEncryptedSecretKey;
+
+      // encryptedSymmetricKey and secretKey
+      let idTokenResult = await getIdTokenResult(firebaseUser, true);
+
+      if (!idTokenResult!.claims['secretKey']) {
+        const customTokenWithSecretKeyResult = await firstValueFrom(this.functionsService.httpsCallable<null, {
+          customToken: string
+        }>('auth-gettokenwithsecretkey', null));
+
+        const userCredential = await signInWithCustomToken(this._auth, customTokenWithSecretKeyResult.customToken);
+
+        // secretKey
+        idTokenResult = await getIdTokenResult(userCredential.user, true);
+
+        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
+      } else {
+        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
+      }
+    });
+
+    // this.signOut().subscribe();
   }
 
   googleSignIn(): Observable<void> {
@@ -304,7 +280,7 @@ export class AuthService {
 
     return defer(() => {
 
-      const firebaseUser = this._firebaseUser();
+      const firebaseUser = this.firebaseUser();
 
       // was created by email password
       if (!firebaseUser || firebaseUser.providerData[0]?.providerId !== 'password') {
@@ -331,7 +307,7 @@ export class AuthService {
 
     return defer(() => {
 
-      const firebaseUser = this._firebaseUser();
+      const firebaseUser = this.firebaseUser();
 
       if (!firebaseUser) {
         return Promise.resolve();
