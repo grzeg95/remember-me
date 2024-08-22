@@ -1,6 +1,5 @@
-import {computed, effect, Inject, Injectable} from '@angular/core';
+import {effect, Inject, Injectable} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from '@angular/router';
 import {
   Auth,
@@ -20,9 +19,8 @@ import {
   User as FirebaseUser,
   UserCredential
 } from 'firebase/auth';
-import firebase from 'firebase/compat';
 import {Firestore} from 'firebase/firestore';
-import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap, takeWhile} from 'rxjs';
+import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap} from 'rxjs';
 import {RouterDict} from '../app.constants';
 import {AuthInjectionToken, FirestoreInjectionToken} from '../models/firebase';
 import {User} from '../models/user';
@@ -30,7 +28,6 @@ import {getCryptoKey} from '../utils/crypto';
 import {Sig} from '../utils/Sig';
 import {docSnapshots} from './firebase/firestore';
 import {FunctionsService} from './functions.service';
-import IdTokenResult = firebase.auth.IdTokenResult;
 
 @Injectable()
 export class AuthService {
@@ -48,15 +45,9 @@ export class AuthService {
     return {unsubscribe};
   }));
 
-  readonly isLoggedIn = computed(() => {
-    return !!this.firebaseUser();
-  });
-
   readonly loadingUserSig = new Sig<boolean>(false);
-  private readonly _loadingUser = this.loadingUserSig.get();
 
   readonly userSig = new Sig<User | null>();
-  private _user = this.userSig.get();
   private _userSub: Subscription | undefined;
 
   readonly hasEncryptedSecretKeySig = new Sig<boolean>(false);
@@ -71,7 +62,6 @@ export class AuthService {
 
   constructor(
     private readonly _router: Router,
-    private readonly _snackBar: MatSnackBar,
     @Inject(AuthInjectionToken) private readonly _auth: Auth,
     @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
     private readonly functionsService: FunctionsService
@@ -212,8 +202,6 @@ export class AuthService {
         this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
       }
     });
-
-    // this.signOut().subscribe();
   }
 
   googleSignIn(): Observable<void> {
