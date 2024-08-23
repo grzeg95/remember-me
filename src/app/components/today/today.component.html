@@ -10,31 +10,31 @@
         </div>
       }
 
-      @if (!_isOnline() && _todayView()) {
-        <ng-template *ngTemplateOutlet="showItems"></ng-template>
-      }
-
       @if (_isOnline() && _todayTasksLoading()) {
-        <div class="row message">
-          <div class="col">
-            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        @defer {
+        } @loading (after 100ms; minimum 500ms) {
+          <div class="row message">
+            <div class="col">
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            </div>
           </div>
-        </div>
-      }
-
-      @if (_isOnline() && _todayView() && !_todayTasksLoading()) {
+        }
+      } @else if (_isOnline()) {
         <ng-template *ngTemplateOutlet="showItems"></ng-template>
       }
 
       <ng-template #showItems>
 
-        @if (_todayView() && _todayView()!.length > 0) {
-            @for (todayItem of _todayView(); let i = $index; track i + todayItem.timeOfDay) {
-              <div class="time-of-day-row">
+        @if (_todayView(); as todayView) {
+
+          @if (todayView.length > 0) {
+
+            @for (todayItem of todayView; let i = $index; track i + todayItem.timeOfDay) {
+              <div class="time-of-day-row" [@fadeZoomInOutTrigger]>
 
                 <div class="row">
                   <div class="col">
-                  <span><fa-icon [hidden]="!todayItemIsDone(todayItem.timeOfDay)" [icon]="_faCheckCircle"></fa-icon>
+                  <span><fa-icon [hidden]="!todayItem.done" [icon]="_faCheckCircle"></fa-icon>
                     {{todayItem.timeOfDay}}</span>
                   </div>
                 </div>
@@ -50,7 +50,7 @@
                                   [color]="'primary'"
                                   [disabled]="false"
                                   (click)="setProgress(button, $event)">
-                                  {{ button.description }}
+                            {{ button.description }}
                           </button>
                         }
 
@@ -58,7 +58,7 @@
                           <button mat-stroked-button
                                   [disabled]="false"
                                   (click)="setProgress(button, $event)">
-                                  {{ button.description }}
+                            {{ button.description }}
                           </button>
                         }
                       </div>
@@ -67,22 +67,24 @@
                 </div>
               </div>
             }
-        }
+          }
 
-        @if (_todayView() && _todayView()!.length === 0) {
-          <div class="row message">
-            <div class="col">
-              <span>Add some tasks for {{_today()?.full}}</span>
-            </div>
-            <div class="col">
-              <div class="add-task">
-                <button mat-flat-button
-                        color="primary"
-                        (click)="addNewTask()">Add new task
-                </button>
+          @if (todayView.length === 0) {
+
+            <div class="row message" [@fadeZoomInOutTrigger]>
+              <div class="col">
+                <span>Add some tasks for {{_today()?.full}}</span>
+              </div>
+              <div class="col">
+                <div class="add-task">
+                  <button mat-flat-button
+                          color="primary"
+                          (click)="addNewTask()">Add new task
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          }
         }
       </ng-template>
     </div>

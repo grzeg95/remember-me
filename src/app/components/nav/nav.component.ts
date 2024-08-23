@@ -34,6 +34,7 @@ export class NavComponent {
   protected readonly _user = this._authService.userSig.get();
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
   protected readonly _loadingUser = this._authService.loadingUserSig.get();
+  protected readonly _whileLoginIn = this._authService.whileLoginInSig.get();
 
   protected readonly _isButtonDisabled = computed(() => !this._isOnline() || this._loadingUser());
 

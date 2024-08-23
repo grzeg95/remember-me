@@ -11,6 +11,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import {catchError, NEVER} from 'rxjs';
+import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {Round} from '../../models/round';
 import {AuthService} from '../../services/auth.service';
@@ -32,7 +33,10 @@ import {Sig} from '../../utils/Sig';
     MatProgressSpinnerModule,
     NgTemplateOutlet
   ],
-  styleUrl: './rounds-list.component.scss'
+  styleUrl: './rounds-list.component.scss',
+  animations: [
+    fadeZoomInOutTrigger
+  ]
 })
 export class RoundsListComponent implements AfterViewChecked {
 

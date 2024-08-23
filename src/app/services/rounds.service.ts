@@ -55,8 +55,12 @@ export class RoundsService {
 
   readonly roundsList = computed(() => {
 
-    const roundsOrder = this.roundsOrder() || [];
-    const roundsMap = this._roundsMap() || new Map<string, Round>();
+    const roundsOrder = this.roundsOrder();
+    const roundsMap = this._roundsMap();
+
+    if (!roundsOrder || !roundsMap) {
+      return undefined;
+    }
 
     return roundsOrder.filter((roundId) => roundsMap.get(roundId)).map((roundId) => roundsMap.get(roundId)) as Round[];
   });

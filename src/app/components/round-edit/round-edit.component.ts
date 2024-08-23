@@ -10,6 +10,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Firestore} from 'firebase/firestore';
 import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round, RoundDoc} from '../../models/round';
@@ -33,7 +34,10 @@ import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/
     MatButtonModule,
     NgIf
   ],
-  styleUrl: './round-edit.component.scss'
+  styleUrl: './round-edit.component.scss',
+  animations: [
+    fadeZoomInOutTrigger
+  ]
 })
 export class RoundEditComponent implements OnDestroy {
 

@@ -1,30 +1,50 @@
-<div class="container">
+<div class="container" [@fadeZoomInOutTrigger]>
 
   <div class="col" [ngClass]="{'disabled': _isLoading()}">
 
-    @if (!_round() || (_round() && _round()?.timesOfDay && _round()?.timesOfDay?.length === 0)) {
-      <ng-container *ngTemplateOutlet="waitForItems"></ng-container>
-    }
-    @else {
-      <ng-container *ngTemplateOutlet="showItems"></ng-container>
+    @if (!_isOnline() && !_round()) {
+      <div class="row message">
+        <div class="col">
+          <span>You are offline. Waiting for connection...</span>
+        </div>
+      </div>
     }
 
-    <ng-template #waitForItems>
-
-      @if (!_round() || !_round()?.timesOfDay && _isOnline()) {
+    @if (_isOnline() && _loadingRound()) {
+      @defer {
+      } @loading (after 100ms; minimum 500ms) {
         <div class="row message">
           <div class="col">
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           </div>
         </div>
       }
-      @else {
-        <ng-container *ngTemplateOutlet="onOneExists"></ng-container>
-      }
+    } @else if (_isOnline()) {
+      <ng-template *ngTemplateOutlet="showItems"></ng-template>
+    }
 
-      <ng-template #onOneExists>
+    <ng-template #showItems>
 
-        @if (_isOnline()) {
+      @if (_round(); as round) {
+
+        @if (round.timesOfDay.length) {
+
+          <div class="row">
+            <div class="drag-container">
+              <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
+              <div [cdkDropListDisabled]="!_isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
+                @for (timesOfDay of _round()?.timesOfDay; let i = $index; track timesOfDay) {
+                  <div cdkDrag class="drag-item mat-cell" [class.disabled]="!_isOnline()">
+                    <span class="drag-span">{{ timesOfDay }}</span>
+                    <fa-icon class="drag-icon" [icon]="_faGripLines"></fa-icon>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+        } @else {
+
           <div class="row message">
             <div class="col">
               <span>Add some tasks and change the order of the times of day</span>
@@ -37,33 +57,9 @@
               </div>
             </div>
           </div>
+
         }
-
-        @if (!_isOnline()) {
-          <div class="row message">
-            <div class="col">
-              <span>You are offline. Waiting for connection...</span>
-            </div>
-          </div>
-        }
-
-      </ng-template>
-    </ng-template>
-
-    <ng-template #showItems>
-      <div class="row">
-        <div class="drag-container">
-          <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
-          <div [cdkDropListDisabled]="!_isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
-            @for (timesOfDay of _round()?.timesOfDay; let i = $index; track timesOfDay) {
-              <div cdkDrag class="drag-item mat-cell" [class.disabled]="!_isOnline()">
-                <span class="drag-span">{{ timesOfDay }}</span>
-                <fa-icon class="drag-icon" [icon]="_faGripLines"></fa-icon>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
+      }
     </ng-template>
 
   </div>

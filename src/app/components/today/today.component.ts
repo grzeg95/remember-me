@@ -10,6 +10,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {CollectionReference, DocumentReference, FieldPath, Firestore, limit, updateDoc} from 'firebase/firestore';
 import {catchError, defer, NEVER, of, Subscription, takeWhile} from 'rxjs';
+import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Day, TodayItem} from '../../models/models';
@@ -33,7 +34,10 @@ import {RoundsService} from '../../services/rounds.service';
     MatProgressBarModule,
     NgTemplateOutlet
   ],
-  styleUrl: './today.component.scss'
+  styleUrl: './today.component.scss',
+  animations: [
+    fadeZoomInOutTrigger
+  ]
 })
 export class TodayComponent {
 
@@ -60,7 +64,7 @@ export class TodayComponent {
     const todayMap = this._todayMap();
 
     if (!round || !todayTasks || !today || !todayMap) {
-      return [];
+      return undefined;
     }
 
     const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
@@ -86,6 +90,7 @@ export class TodayComponent {
 
     return round.timesOfDay.filter((timeOfDayId) => todayTasksByTimeOfDay[timeOfDayId]).map((timeOfDay) => ({
       timeOfDay,
+      done: todayTasksByTimeOfDay[timeOfDay].every((task) => task.done),
       tasks: todayTasksByTimeOfDay[timeOfDay]
     })) || [];
   });

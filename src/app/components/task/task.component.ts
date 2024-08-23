@@ -1,7 +1,7 @@
 import {ENTER} from '@angular/cdk/keycodes';
 import {NgClass, TitleCasePipe} from '@angular/common';
-import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, OnInit, signal, ViewChild} from '@angular/core';
-import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
+import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, ViewChild} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormArray,
@@ -24,9 +24,9 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import 'global.prototype';
-import {DocumentReference} from 'firebase/firestore';
-import {catchError, EMPTY, mergeMap, NEVER, of, Subscription, switchMap, takeWhile, throwError} from 'rxjs';
-import {filter} from 'rxjs/operators';
+import {DocumentReference, Firestore} from 'firebase/firestore';
+import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Day, HTTPError, HTTPSuccess} from '../../models/models';
@@ -39,13 +39,12 @@ import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
-import {Firestore} from 'firebase/firestore'
 import {Sig} from '../../utils/Sig';
 import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 
 export interface TaskForm {
   description: string | null;
-  daysOfTheWeek: {[key in Day]: boolean | null};
+  daysOfTheWeek: { [key in Day]: boolean | null };
   timesOfDay: string[];
 }
 
@@ -64,7 +63,10 @@ export interface TaskForm {
     MatProgressBarModule,
     MatButtonModule
   ],
-  styleUrls: ['./task.component.scss']
+  styleUrls: ['./task.component.scss'],
+  animations: [
+    fadeZoomInOutTrigger
+  ]
 })
 export class TaskComponent implements OnDestroy {
 

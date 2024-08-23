@@ -10,6 +10,7 @@ import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import 'global.prototype';
 import {Firestore, limit} from 'firebase/firestore';
 import {catchError, of, Subscription, takeWhile} from 'rxjs';
+import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round} from '../../models/round';
@@ -31,7 +32,10 @@ import {RoundsService} from '../../services/rounds.service'
     FontAwesomeModule,
     NgTemplateOutlet
   ],
-  styleUrls: ['./tasks-list.component.scss']
+  styleUrls: ['./tasks-list.component.scss'],
+  animations: [
+    fadeZoomInOutTrigger
+  ]
 })
 export class TasksListComponent implements OnDestroy {
 

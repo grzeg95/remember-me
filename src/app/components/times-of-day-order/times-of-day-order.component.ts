@@ -9,6 +9,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faGripLines} from '@fortawesome/free-solid-svg-icons';
 import {catchError, NEVER} from 'rxjs';
+import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
@@ -27,11 +28,15 @@ import {RoundsService} from '../../services/rounds.service';
     CdkDrag,
     NgTemplateOutlet,
   ],
-  styleUrls: ['./times-of-day-order.component.scss']
+  styleUrls: ['./times-of-day-order.component.scss'],
+  animations: [
+    fadeZoomInOutTrigger
+  ]
 })
 export class TimesOfDayOrderComponent {
 
   protected readonly _round = this._roundsService.roundSig.get();
+  protected readonly _loadingRound = this._roundsService.loadingRoundSig.get();
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
   protected readonly _isLoading = signal<boolean>(false);
 
