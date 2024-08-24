@@ -3,8 +3,10 @@
     <div class="col d-flex">
       <mat-toolbar>
         <mat-toolbar-row>
-          <span class="app-name">Remember Me</span>
-          <img src="/src/assets/img/logo.svg" class="logo">
+          <div class="app-name-logo-wrapper" [ngClass]="{'opacity-loading': (_user() === undefined || _whileLoginIn() || _loadingUser())}">
+            <span class="app-name">Remember Me</span>
+            <img src="/assets/img/logo.svg" class="logo">
+          </div>
           <span class="example-spacer"></span>
           <div class="d-flex align-items-center right">
             <button mat-stroked-button color="primary" (click)="_dialogRef.close()">Close</button>
