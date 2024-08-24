@@ -8,8 +8,8 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "build:hosting:static": "node scripts/set-env.js && node scripts/set-remote-config-default-env.js && ng build --configuration=production && node scripts/index-html-parser.js",
-    "build:hosting:image": "cd public && gcloud builds submit --tag gcr.io/remember-me-adb22/web-site",
-    "deploy:hosting:image": "cd public && gcloud run deploy web-site --region=europe-west4 --image gcr.io/remember-me-adb22/web-site --platform managed",
+    "build:hosting:image": "cd public && gcloud builds submit --tag gcr.io/remember-me-8e524/web-site",
+    "deploy:hosting:image": "cd public && gcloud run deploy web-site --region=europe-west4 --image gcr.io/remember-me-8e524/web-site --platform managed",
     "build:functions:dev": "npm run build:dev --prefix functions",
     "deploy:functions": "npm run deploy:prod --prefix functions"
   },
