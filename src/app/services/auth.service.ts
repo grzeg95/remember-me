@@ -13,7 +13,7 @@ import {
   signInAnonymously,
   signInWithCustomToken,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   updatePassword,
   User as FirebaseUser,
@@ -204,11 +204,11 @@ export class AuthService {
     });
   }
 
-  googleSignIn(): Observable<void> {
+  googleSignIn() {
 
     return defer(() => {
       this.whileLoginInSig.set(true);
-      return signInWithRedirect(this._auth, new GoogleAuthProvider()).catch((e) => {
+      return signInWithPopup(this._auth, new GoogleAuthProvider()).catch((e) => {
         this.whileLoginInSig.set(false);
         throw e;
       });
