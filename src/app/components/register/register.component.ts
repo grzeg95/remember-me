@@ -2,6 +2,7 @@ import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
+import {MatProgressBar} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {catchError, NEVER} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
@@ -11,7 +12,7 @@ import {CustomValidators} from '../../services/custom-validators';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule],
+  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule, MatProgressBar],
   templateUrl: './register.component.html'
 })
 export class RegisterComponent implements OnInit {
