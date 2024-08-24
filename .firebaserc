@@ -1,5 +1,12 @@
 {
   "projects": {
-    "default": "remember-me-adb22"
-  }
+    "default": "remember-me-8e524"
+  },
+  "targets": {},
+  "etags": {
+    "remember-me-8e524": {
+      "extensionInstances": {}
+    }
+  },
+  "dataconnectEmulatorConfig": {}
 }
