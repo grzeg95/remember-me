@@ -20,6 +20,8 @@ export class GuestComponent {
 
   protected readonly _isHiddenUserDataPolicy = signal(true);
   protected readonly _loadingUser = this._authService.loadingUserSig.get();
+  protected readonly _firebaseUser = this._authService.firebaseUser;
+
   protected readonly _guestComponentConfig: GuestComponentConfig | undefined;
 
   constructor(
