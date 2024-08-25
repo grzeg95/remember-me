@@ -8,7 +8,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
-import {CollectionReference, DocumentReference, FieldPath, Firestore, limit, updateDoc} from 'firebase/firestore';
+import {DocumentReference, FieldPath, Firestore, limit, updateDoc} from 'firebase/firestore';
 import {catchError, defer, NEVER, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
@@ -95,7 +95,6 @@ export class TodayComponent implements OnDestroy {
     })) || [];
   });
 
-  protected readonly _RouterDict = RouterDict;
   protected readonly _faCheckCircle = faCheckCircle;
 
   constructor(
@@ -273,11 +272,6 @@ export class TodayComponent implements OnDestroy {
       todayItem.disabled = false;
       todayItem.done = !todayItem.done;
     }
-  }
-
-  todayItemIsDone(timeOfDay: string): boolean {
-    return false;
-    // return !this._todayList()?.find((todayItem) => todayItem.timeOfDay === timeOfDay)?.tasks.some((task) => !task.done);
   }
 
   addNewTask(): void {
