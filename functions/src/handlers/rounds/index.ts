@@ -21,11 +21,15 @@ export const deleteround = onCall(optsV2, getDeleteRoundHandler());
 const getSetRoundsOrderHandler = () => require('./set-rounds-order').handler;
 export const setroundsorder = onCall(optsV2, getSetRoundsOrderHandler());
 
+const getUnmarkTodayTasks = () => require('./unmark-today-tasks').handler;
+export const unmarktodaytasks = onCall(optsV2, getUnmarkTodayTasks());
+
 export const handlersGetters = {
   getDeleteTaskHandler,
   getSaveTaskHandler,
   getSetTimesOfDayOrderHandler,
   getSaveRoundHandler,
   getDeleteRoundHandler,
-  getSetRoundsOrderHandler
+  getSetRoundsOrderHandler,
+  getUnmarkTodayTasks
 };

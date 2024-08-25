@@ -1,5 +1,6 @@
 .round-nav {
   box-shadow: inset 0 -1px 0 var(--color-separator);
+  user-select: none;
 
   button {
     margin: 0 1rem;
@@ -9,6 +10,7 @@
     color: var(--color-inactive);
     font-size: 1rem;
     font-weight: 500;
+    user-select: none;
 
     &.active {
       border-bottom: solid 2px var(--color-active);

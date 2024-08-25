@@ -2,9 +2,10 @@
   <div class="row">
     <div class="col">
       <div class="round-nav">
-        @for (route of routes; track route.label) {
-          <button [routerLink]="route.href" routerLinkActive="active">{{ route.label }}</button>
-        }
+        <button [routerLink]="'./' + _RouterDict.todayTasks" routerLinkActive="active" (mousedown)="_todayTasksViewActive(); mouseDown()" (mouseup)="_todayTasksViewActive(); mouseUp()">Today</button>
+        <button [routerLink]="'./' + _RouterDict.tasksList" routerLinkActive="active">Tasks</button>
+        <button [routerLink]="'./' + _RouterDict.taskEditor" routerLinkActive="active">Editor</button>
+        <button [routerLink]="'./' + _RouterDict.timesOfDayOrder" routerLinkActive="active">Order</button>
       </div>
     </div>
   </div>
