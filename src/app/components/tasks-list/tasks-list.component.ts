@@ -13,6 +13,7 @@ import {catchError, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
+import {Day} from '../../models/models';
 import {Round} from '../../models/round';
 import {Task} from '../../models/task';
 import {User} from '../../models/user';
@@ -118,6 +119,15 @@ export class TasksListComponent implements OnDestroy {
         this._roundsService.tasksSig.set(tasks);
       });
     });
+  }
+
+  getDaysOfTheWeek(daysOfTheWeek: Day[]) {
+
+    if (daysOfTheWeek.length === 7) {
+      return 'Every day';
+    }
+
+    return daysOfTheWeek.join(', ');
   }
 
   getTimesOfDay(timesOfDayOrder: string[], taskTimesOfDay: string[]): string[] {

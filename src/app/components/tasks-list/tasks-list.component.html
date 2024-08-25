@@ -40,7 +40,7 @@
 
                 <ng-container matColumnDef="daysOfTheWeek">
                   <th mat-header-cell *matHeaderCellDef>Days</th>
-                  <td mat-cell *matCellDef="let element">{{ element.daysOfTheWeek }}</td>
+                  <td mat-cell *matCellDef="let element">{{ getDaysOfTheWeek(element.daysOfTheWeek) }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="timesOfDays">
