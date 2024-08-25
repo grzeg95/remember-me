@@ -1,5 +1,5 @@
 import {NgTemplateOutlet} from '@angular/common';
-import {Component, computed, DestroyRef, effect, Inject} from '@angular/core';
+import {Component, computed, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -39,7 +39,7 @@ import {RoundsService} from '../../services/rounds.service';
     fadeZoomInOutTrigger
   ]
 })
-export class TodayComponent {
+export class TodayComponent implements OnDestroy {
 
   private _todayMapSub: Subscription | undefined;
   private _todaySub: Subscription | undefined;
@@ -290,5 +290,12 @@ export class TodayComponent {
 
     this._roundsService.dayToSetInEditorSig.set(todayName.short);
     this._router.navigate(['../', RouterDict.taskEditor], {relativeTo: this._route});
+  }
+
+  ngOnDestroy(): void {
+    this._roundsService.todayMapSig.set(undefined);
+    this._roundsService.todayMapLoadingSig.set(false);
+    this._roundsService.todayTasksSig.set(undefined);
+    this._roundsService.todayTasksLoadingSig.set(false);
   }
 }
