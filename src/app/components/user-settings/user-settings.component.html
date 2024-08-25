@@ -16,7 +16,7 @@
         <div class="item photo">
           <div class="name">
             <span>Photo</span>
-            @if (!!user.photoURL && !_isPhotoUploading()) {
+            @if (!!user.photoURL && user.hasCustomPhoto && !_isPhotoUploading()) {
               <div (click)="removePhoto()" class="mat-chip-close">
                 <img src="assets/img/chip-close.svg">
               </div>
