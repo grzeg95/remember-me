@@ -78,7 +78,7 @@ export class RoundNavComponent {
     });
   }
 
-  mouseDown() {
+  beginUnmarkTodayTasks() {
 
     this._unmarkTodayTasksIntervalSub && !this._unmarkTodayTasksIntervalSub.closed && this._unmarkTodayTasksIntervalSub.unsubscribe();
 
@@ -89,7 +89,7 @@ export class RoundNavComponent {
     });
   }
 
-  mouseUp() {
+  endUnmarkTodayTasks() {
     this._unmarkTodayTasksIntervalSub && !this._unmarkTodayTasksIntervalSub.closed && this._unmarkTodayTasksIntervalSub.unsubscribe();
   }
 }
