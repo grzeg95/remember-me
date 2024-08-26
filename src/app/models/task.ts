@@ -8,7 +8,7 @@ import {
 } from 'firebase/firestore';
 import {BasicEncryptedValue, decrypt} from '../utils/crypto';
 import {Collection} from './collections';
-import {Day} from './models';
+import {Day} from './day';
 import {Round, RoundDoc} from './round';
 
 export type TaskDoc = DocumentData | BasicEncryptedValue;

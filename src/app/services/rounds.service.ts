@@ -1,8 +1,10 @@
 import {computed, effect, Injectable, signal} from '@angular/core';
 import {Observable} from 'rxjs';
-import {Day, HTTPSuccess, TodayItem} from '../models/models';
+import {Day} from '../models/day';
+import {HTTPSuccess} from '../models/http';
 import {Round} from '../models/round';
 import {Today} from '../models/today';
+import {TodayItem} from '../models/today-item';
 import {TodayTask} from '../models/today-task';
 import {Sig} from '../utils/Sig';
 import {AuthService} from './auth.service';

@@ -1,4 +1,4 @@
-import {Day} from '../models/models';
+import {Day} from '../models/day';
 
 
 export class TaskService {

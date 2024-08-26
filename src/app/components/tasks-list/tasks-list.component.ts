@@ -13,7 +13,7 @@ import {catchError, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
-import {Day} from '../../models/models';
+import {Day} from '../../models/day';
 import {Round} from '../../models/round';
 import {Task} from '../../models/task';
 import {User} from '../../models/user';
