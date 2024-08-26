@@ -76,7 +76,7 @@ export class UserSettingsComponent {
       })).subscribe((success) => {
         input.value = '';
         this._isPhotoUploading.set(false);
-        this._snackBar.open(success.message || 'Your operation has been done 😉');
+        this._snackBar.open(success.details || 'Your operation has been done 😉');
       });
     }
   }

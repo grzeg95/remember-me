@@ -1,13 +1,10 @@
-import {NgForOf} from '@angular/common';
 import {Component, signal} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, RouterLink, RouterLinkActive} from '@angular/router';
 import {interval, Subscription} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {RouterDict} from '../../app.constants';
-import {HTTPSuccess} from '../../models/models';
 import {AuthService} from '../../services/auth.service';
-import {FunctionsService} from '../../services/functions.service';
 import {RoundsService} from '../../services/rounds.service';
 
 @Component({
@@ -15,7 +12,6 @@ import {RoundsService} from '../../services/rounds.service';
   standalone: true,
   templateUrl: './round-nav.component.html',
   imports: [
-    NgForOf,
     RouterLink,
     RouterLinkActive
   ],
@@ -38,7 +34,6 @@ export class RoundNavComponent {
   constructor(
     private readonly _authService: AuthService,
     private readonly _roundsService: RoundsService,
-    private readonly _functionsService: FunctionsService,
     private readonly _activatedRoute: ActivatedRoute,
     private readonly _router: Router,
     private readonly _matSnackBar: MatSnackBar
@@ -67,10 +62,7 @@ export class RoundNavComponent {
 
     this._matSnackBar.open('Unmarking today tasks 👀');
 
-    this._functionsService.httpsCallable<{
-      roundId: string,
-      todayId: string
-    }, HTTPSuccess>('rounds-unmarktodaytasks', {
+    this._roundsService.unmarkTodayTasks({
       roundId: round.id,
       todayId
     }).subscribe((success) => {

@@ -185,9 +185,6 @@ export const handler = async (request: CallableRequest) => {
     return proceedTaskRemoving(cryptoKey, data.roundId, data.taskId, transaction, userDocSnap);
 
   }).then(() => ({
-    code: 200,
-    body: {
-      details: 'Your task has been deleted 🤭'
-    }
+    details: 'Your task has been deleted 🤭'
   }));
 };

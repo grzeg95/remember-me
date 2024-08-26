@@ -74,9 +74,6 @@ export const handler = async (request: CallableRequest) => {
 
     return transactionWrite.execute();
   }).then(() => ({
-    code: 200,
-    body: {
-      details: 'Today tasks has been untouched 🙈'
-    }
+    details: 'Today tasks has been unmarked 🙈'
   }));
 };

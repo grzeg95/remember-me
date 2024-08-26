@@ -97,9 +97,6 @@ export const handler = async (request: CallableRequest) => {
     return transactionWrite.execute();
 
   }).then(() => ({
-    code: 200,
-    body: {
-      details: 'Your round has been deleted 🤭'
-    }
+    details: 'Your round has been deleted 🤭'
   }));
 };

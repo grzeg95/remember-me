@@ -54,9 +54,7 @@ export const handler = async (request: CallableRequest) => {
     });
 
     return transactionWrite.execute();
-  }).then(() => {
-    return {
-      message: 'Your picture has been updated 🙃'
-    };
-  });
+  }).then(() => ({
+    details: 'Your picture has been updated 🙃'
+  }));
 };

@@ -81,5 +81,4 @@ export const handler = async (request: CallableRequest) => {
   }).then(() => ({
     details: 'Order has been updated 🙃'
   }));
-
 };

@@ -18,7 +18,7 @@ export class UserService {
     private readonly _authService: AuthService,
   ) { }
 
-  uploadProfileImage(file: File): Observable<{message: string}> {
+  uploadProfileImage(file: File) {
 
     // max 9MB picture file
     // PayloadTooLargeError: request entity too large
@@ -43,7 +43,7 @@ export class UserService {
     ).pipe(
       mergeMap((imageDataURL) => {
         return this._functionsService.httpsCallable<{imageDataURL: string}, {
-          message: string
+          details: string
         }>('user-uploadprofileimage', {imageDataURL});
       })
     );

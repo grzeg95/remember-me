@@ -132,18 +132,21 @@ export class RoundsService {
     });
   }
 
-  saveRound(name: string, roundId: string = 'null'): Observable<{roundId: string, details: string, created: boolean}> {
-    return this._functionsService.httpsCallable<{roundId: string, name: string}, {
-      roundId: string,
-      details: string,
-      created: boolean
+  saveRound(name: string, roundId: string = 'null') {
+    return this._functionsService.httpsCallable<{
+      roundId: string;
+      name: string;
+    }, {
+      roundId: string;
+      details: string;
+      created: boolean;
     }>('rounds-saveround', {
       roundId,
       name
     });
   }
 
-  deleteRound(id: string): Observable<HTTPSuccess> {
+  deleteRound(id: string) {
     return this._functionsService.httpsCallable<string, any>('rounds-deleteround', id);
   }
 
@@ -154,7 +157,7 @@ export class RoundsService {
     }, HTTPSuccess>('rounds-setroundsorder', data);
   }
 
-  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}): Observable<HTTPSuccess> {
+  setTimesOfDayOrder(data: {timeOfDay: string, moveBy: number, roundId: string}) {
     return this._functionsService.httpsCallable<{
       timeOfDay: string,
       moveBy: number,
@@ -163,21 +166,43 @@ export class RoundsService {
   }
 
   saveTask(data: {
-    task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
-    taskId: string,
-    roundId: string
-  }): Observable<HTTPSuccess> {
+    task: {
+      description: string;
+      daysOfTheWeek: Day[];
+      timesOfDay: string[];
+    };
+    taskId: string;
+    roundId: string;
+  }) {
     return this._functionsService.httpsCallable<{
-      task: {description: string, daysOfTheWeek: Day[], timesOfDay: string[]},
-      taskId: string,
-      roundId: string
-    }, HTTPSuccess>('rounds-savetask', data);
+      task: {
+        description: string;
+        daysOfTheWeek: Day[];
+        timesOfDay: string[];
+      },
+      taskId: string;
+      roundId: string;
+    }, {
+      created: boolean;
+      taskId: string;
+      details: string;
+    }>('rounds-savetask', data);
   }
 
-  deleteTask(data: {taskId: string, roundId: string}): Observable<HTTPSuccess> {
+  deleteTask(data: {taskId: string; roundId: string}): Observable<HTTPSuccess> {
     return this._functionsService.httpsCallable<{
       taskId: string,
       roundId: string
     }, HTTPSuccess>('rounds-deletetask', data);
+  }
+
+  unmarkTodayTasks(data: {roundId: string; todayId: string;}): Observable<HTTPSuccess> {
+    return this._functionsService.httpsCallable<{
+      roundId: string,
+      todayId: string
+    }, HTTPSuccess>('rounds-unmarktodaytasks', {
+      roundId: data.roundId,
+      todayId: data.todayId
+    })
   }
 }
