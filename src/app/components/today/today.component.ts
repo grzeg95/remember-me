@@ -48,7 +48,6 @@ export class TodayComponent implements OnDestroy {
 
   protected readonly _todayMap = this._roundsService.todayMapSig.get();
   protected readonly _todayTasks = this._roundsService.todayTasksSig.get();
-  protected readonly _todayTasksLoading = this._roundsService.todayTasksLoadingSig.get();
 
   protected readonly _today = this._roundsService.todaySig.get();
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();

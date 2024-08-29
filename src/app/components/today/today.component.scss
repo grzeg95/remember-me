@@ -12,24 +12,22 @@
     }
   }
 
-  .time-of-day-row {
+  .col.time-of-day-col {
     margin-bottom: 0;
 
-    &:first-child {
-      margin-top: 0;
+    .time-of-day {
+      margin-top: 2rem;
 
-      .row:first-child .col {
+      &:first-child {
         margin-top: 1rem;
       }
-    }
 
-    .row {
-
-      &:first-child .col {
-        margin-top: 2rem;
+      .title {
+        font-size: 1.5rem;
+        font-weight: 400;
       }
 
-      .col {
+      .tasks {
         margin-top: 1rem;
 
         .form-check {
@@ -41,11 +39,6 @@
             margin: 0.15rem;
           }
         }
-      }
-
-      span {
-        font-size: 1.5rem;
-        font-weight: 400;
       }
     }
   }

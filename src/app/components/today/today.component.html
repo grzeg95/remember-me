@@ -1,69 +1,62 @@
 <div class="container">
-  <div class="row">
-    <div class="col">
+  <div class="row" style="position: relative;">
 
-      @if (!_isOnline() && !_todayView()) {
-        <div class="row message">
-          <div class="col">
-            <span>You are offline. Waiting for connection...</span>
-          </div>
+    @if (!_isOnline() && !_todayView()) {
+      <div class="col time-of-day-col">
+        <div class="message">
+          <span>You are offline. Waiting for connection...</span>
+        </div>
+      </div>
+    }
+
+    @defer (when !!_todayView()) {
+      <ng-template *ngTemplateOutlet="showItems"></ng-template>
+    } @placeholder {
+      @defer (on timer(250ms)) {
+        <div style="position: absolute; width: 100%;" [@fadeZoomInOutTrigger]>
+          <mat-progress-bar mode="indeterminate"/>
         </div>
       }
+    }
 
-      @if (_isOnline() && _todayTasksLoading()) {
-        @defer {
-        } @loading (after 100ms; minimum 500ms) {
-          <div class="row message">
-            <div class="col">
-              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-            </div>
-          </div>
-        }
-      } @else if (_isOnline()) {
-        <ng-template *ngTemplateOutlet="showItems"></ng-template>
-      }
-
-      <ng-template #showItems>
-
+    <ng-template #showItems>
+      <div class="col time-of-day-col">
         @if (_todayView(); as todayView) {
 
           @if (todayView.length > 0) {
 
             @for (todayItem of todayView; let i = $index; track i + todayItem.timeOfDay) {
-              <div class="time-of-day-row" [@fadeZoomInOutTrigger]>
 
-                <div class="row">
-                  <div class="col">
-                  <span><fa-icon [hidden]="!todayItem.done" [icon]="_faCheckCircle"></fa-icon>
-                    {{todayItem.timeOfDay}}</span>
-                  </div>
+              <div class="time-of-day" [@fadeZoomInOutTrigger]>
+
+                <div class="title">
+                  <fa-icon [hidden]="!todayItem.done" [icon]="_faCheckCircle"/>
+                  {{todayItem.timeOfDay}}
                 </div>
 
-                <div class="row tasks">
-                  <div class="col">
+                <div [@fadeZoomInOutTrigger] class="tasks">
 
-                    @for (button of todayItem.tasks; let j = $index; track j + ('' + button.done) + button.description) {
-                      <div class="form-check">
+                  @for (button of todayItem.tasks; let j = $index; track j + ('' + button.done) + button.description) {
+                    <div class="form-check">
 
-                        @if (button.done) {
-                          <button mat-flat-button
-                                  [color]="'primary'"
-                                  [disabled]="false"
-                                  (click)="setProgress(button, $event)">
-                            {{ button.description }}
-                          </button>
-                        }
+                      @if (button.done) {
+                        <button mat-flat-button
+                                [color]="'primary'"
+                                [disabled]="false"
+                                (click)="setProgress(button, $event)">
+                          {{ button.description }}
+                        </button>
+                      }
 
-                        @if (!button.done) {
-                          <button mat-stroked-button
-                                  [disabled]="false"
-                                  (click)="setProgress(button, $event)">
-                            {{ button.description }}
-                          </button>
-                        }
-                      </div>
-                    }
-                  </div>
+                      @if (!button.done) {
+                        <button mat-stroked-button
+                                [disabled]="false"
+                                (click)="setProgress(button, $event)">
+                          {{ button.description }}
+                        </button>
+                      }
+                    </div>
+                  }
                 </div>
               </div>
             }
@@ -86,7 +79,7 @@
             </div>
           }
         }
-      </ng-template>
-    </div>
+        </div>
+    </ng-template>
   </div>
 </div>
