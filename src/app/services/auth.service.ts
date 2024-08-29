@@ -185,7 +185,11 @@ export class AuthService {
       cryptoKey_userHasEncryptedSecretKey = hasEncryptedSecretKey;
 
       // encryptedSymmetricKey and secretKey
-      let idTokenResult = await getIdTokenResult(firebaseUser, true);
+      let idTokenResult = await getIdTokenResult(firebaseUser, false);
+
+      if (!idTokenResult!.claims['secretKey']) {
+        idTokenResult = await getIdTokenResult(firebaseUser, true);
+      }
 
       if (!idTokenResult!.claims['secretKey']) {
         const customTokenWithSecretKeyResult = await firstValueFrom(this.functionsService.httpsCallable<null, {
