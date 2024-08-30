@@ -12,7 +12,7 @@
     @defer (when !!_todayView()) {
       <ng-template *ngTemplateOutlet="showItems"></ng-template>
     } @placeholder {
-      @defer (on timer(250ms)) {
+      @defer (when _isOnline(); on timer(250ms)) {
         <div style="position: absolute; width: 100%;" [@fadeZoomInOutTrigger]>
           <mat-progress-bar mode="indeterminate"/>
         </div>
