@@ -43,7 +43,6 @@ export class TasksListComponent implements OnDestroy {
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
   protected readonly _round = this._roundsService.roundSig.get();
   protected readonly _tasks = this._roundsService.tasksSig.get();
-  protected readonly _tasksLoading = this._roundsService.tasksLoadingSig.get();
 
   protected readonly _user = this._authService.userSig.get();
   protected readonly _cryptoKey = this._authService.cryptoKeySig.get();

@@ -9,17 +9,16 @@
       </div>
     }
 
-    @if (_isOnline() && _tasksLoading()) {
-      @defer {
-      } @loading (after 100ms; minimum 500ms) {
+    @defer (when !!_tasks()) {
+      <ng-template *ngTemplateOutlet="showItems"></ng-template>
+    } @placeholder {
+      @defer (on timer(250ms)){
         <div class="row message">
           <div class="col">
             <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           </div>
         </div>
       }
-    } @else if (_isOnline()) {
-      <ng-template *ngTemplateOutlet="showItems"></ng-template>
     }
 
     <ng-template #showItems>
