@@ -14,7 +14,7 @@
 
         @if (roundEdit.isActive) {
           <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]">Round edit</a>
+          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]">Round</a>
         }
 
         @if (roundEdit.isActive && _editRound()) {

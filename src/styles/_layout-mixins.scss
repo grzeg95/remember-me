@@ -1,0 +1,23 @@
+@mixin from-small {
+  @media (min-width: 576px) {
+    @content;
+  }
+}
+
+@mixin from-medium {
+  @media (min-width: 768px) {
+    @content;
+  }
+}
+
+@mixin from-large {
+  @media (min-width: 992px) {
+    @content;
+  }
+}
+
+@mixin from-extra-large {
+  @media (min-width: 1200px) {
+    @content;
+  }
+}

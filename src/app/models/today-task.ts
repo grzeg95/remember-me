@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import {User as FirebaseUser} from 'firebase/auth';
 import {decrypt} from '../utils/crypto';
-import {Collection} from './collections';
+import {Collection} from '../services/firebase/collections';
 import {Today, TodayDoc} from './today';
 
 export type TodayTaskDoc = {

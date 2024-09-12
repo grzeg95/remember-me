@@ -1,9 +1,6 @@
-export enum Collections {
-  configs = 'configs',
+export enum Collection {
   users = 'users',
-  boards = 'boards',
-  boardStatuses = 'boardStatuses',
-  boardTasks = 'boardTasks',
-  boardTaskSubtasks = 'boardTaskSubtasks',
-  userBoards = 'userBoards'
+  rounds = 'rounds',
+  task = 'task',
+  today = 'today'
 }

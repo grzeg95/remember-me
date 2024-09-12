@@ -19,13 +19,15 @@ import {catchError, NEVER} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
+import {ThemeSelectorService} from '../../services/theme-selector.service';
 import {AuthFormComponent} from '../auth-form/auth-form.component';
+import {ButtonComponent} from '../button/button.component';
 import {UserSettingsComponent} from '../user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss'
 })
@@ -36,7 +38,7 @@ export class NavComponent {
   protected readonly _loadingUser = this._authService.loadingUserSig.get();
   protected readonly _whileLoginIn = this._authService.whileLoginInSig.get();
 
-  protected readonly _isButtonDisabled = computed(() => !this._isOnline() || this._loadingUser());
+  protected readonly _isButtonDisabled = computed(() => !this._isOnline() || this._loadingUser() || this._whileLoginIn());
 
   protected readonly _faUser = faUser;
   protected readonly _faGoogle = faGoogle;
@@ -47,11 +49,14 @@ export class NavComponent {
   protected readonly _faAt = faAt;
   @ViewChild('menuToggleCheckbox') menuToggleCheckbox!: ElementRef;
 
+  protected readonly _darkMode = this._themeSelectorService.darkModeSig.get();
+
   constructor(
     private readonly _authService: AuthService,
     private readonly _dialog: MatDialog,
     private readonly _connectionService: ConnectionService,
-    private readonly _snackBar: MatSnackBar
+    private readonly _snackBar: MatSnackBar,
+    private readonly _themeSelectorService: ThemeSelectorService
   ) {
   }
 

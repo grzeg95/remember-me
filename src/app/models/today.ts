@@ -7,7 +7,7 @@ import {
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 import {BasicEncryptedValue, decrypt} from '../utils/crypto';
-import {Collection} from './collections';
+import {Collection} from '../services/firebase/collections';
 import {Round, RoundDoc} from './round';
 
 export type TodayDoc = DocumentData | BasicEncryptedValue;

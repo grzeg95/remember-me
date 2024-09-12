@@ -1,0 +1,26 @@
+@import 'layout-mixins';
+
+.container {
+
+  max-width: none;
+  display: block;
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+
+  @include from-small() {
+    max-width: 540px
+  }
+
+  @include from-medium() {
+    max-width: 720px;
+  }
+
+  @include from-large() {
+    max-width: 960px;
+  }
+
+  @include from-extra-large() {
+    max-width: 1140px;
+  }
+}

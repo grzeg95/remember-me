@@ -10,10 +10,6 @@
   border-radius: 0;
 }
 
-.app-name {
-  font-size: 1.2rem;
-}
-
 img {
   width: 2.1rem;
   margin-left: 1rem;
@@ -32,33 +28,4 @@ img {
     margin: auto;
     color: #212529;
   }
-}
-
-.container {
-  position: relative;
-  padding: 0;
-  background-color: white;
-  overflow: hidden;
-  user-select: none;
-}
-
-.mat-toolbar {
-  margin: 0;
-  background: white;
-  font: inherit;
-  letter-spacing: inherit;
-}
-
-.loginButton {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.app-name-logo-wrapper {
-  display: flex;
-}
-
-.mat-menu-trigger {
-  cursor: pointer;
 }

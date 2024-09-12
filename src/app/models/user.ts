@@ -9,13 +9,14 @@ import {
 } from 'firebase/firestore';
 import {User as FirebaseUser} from 'firebase/auth';
 import {decrypt} from '../utils/crypto';
-import {Collection} from './collections';
+import {Collection} from '../services/firebase/collections';
 
 export type UserDoc = {
   readonly rounds?: string;
   readonly hasEncryptedSecretKey?: boolean;
   readonly photoURL?: string;
   readonly hasInitialData?: boolean;
+  readonly darkMode?: boolean | null;
 } & DocumentData;
 
 export class User implements UserDoc {
@@ -36,6 +37,7 @@ export class User implements UserDoc {
     public readonly decryptedRounds: string[],
     public readonly hasEncryptedSecretKey: boolean,
     public photoURL: string,
+    public darkMode: boolean | null,
     public readonly hasInitialData: boolean,
     public readonly disabled: boolean,
     public readonly exists: boolean
@@ -50,7 +52,8 @@ export class User implements UserDoc {
       return {
         rounds: user.rounds,
         hasEncryptedSecretKey: user.hasEncryptedSecretKey,
-        photoURL: user.photoURL
+        photoURL: user.photoURL,
+        darkMode: user.darkMode
       } as UserDoc
     }
   } as FirestoreDataConverter<User, UserDoc>;
@@ -74,6 +77,7 @@ export class User implements UserDoc {
         decryptedRounds!,
         !!data?.hasEncryptedSecretKey,
         decryptedPhotoURL!,
+        typeof data?.darkMode === 'boolean' ? data?.darkMode : null,
         !!data?.hasInitialData,
         !!data?.disabled,
         docSnap.exists()
@@ -86,6 +90,7 @@ export class User implements UserDoc {
         [],
         false,
         '',
+        null,
         false,
         false,
         false
