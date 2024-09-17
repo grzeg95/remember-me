@@ -17,7 +17,8 @@ import {
   signOut,
   updatePassword,
   User as FirebaseUser,
-  UserCredential
+  UserCredential,
+  confirmPasswordReset
 } from 'firebase/auth';
 import {Firestore} from 'firebase/firestore';
 import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap} from 'rxjs';
@@ -47,13 +48,13 @@ export class AuthService {
 
   readonly loadingUserSig = new Sig<boolean>(false);
 
-  readonly userSig = new Sig<User | null>();
+  readonly userSig = new Sig<User | null | undefined>(undefined);
   private _userSub: Subscription | undefined;
 
-  readonly hasEncryptedSecretKeySig = new Sig<boolean>(false);
+  readonly hasEncryptedSecretKeySig = new Sig<boolean | undefined>(false);
   private readonly _hasEncryptedSecretKey = this.hasEncryptedSecretKeySig.get();
 
-  readonly cryptoKeySig = new Sig<CryptoKey>();
+  readonly cryptoKeySig = new Sig<CryptoKey | undefined>(undefined);
   private readonly _cryptoKey = this.cryptoKeySig.get();
 
   readonly whileLoginInSig = new Sig<boolean>(false);

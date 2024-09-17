@@ -1,0 +1,44 @@
+@mixin theme($theme) {
+
+  .app-select {
+
+    $font-family: map-get($theme, 'font-family');
+    $color: map-get($theme, 'color');
+    $color-option: map-get($theme, 'color-option');
+    $color-placeholder: map-get($theme, 'color-placeholder');
+    $background: map-get($theme, 'background');
+    $border-color: map-get($theme, 'border-color');
+    $border-color-hover: map-get($theme, 'border-color-hover');
+    $border-color-active: map-get($theme, 'border-color-active');
+    $border-color-focus: map-get($theme, 'border-color-focus');
+    $border-color-error: map-get($theme, 'border-color-error');
+
+    background: $background;
+
+    &__select {
+
+      font-family: $font-family;
+      color: $color;
+      border: solid 1px $border-color;
+      background: $background;
+
+      &:hover {
+        border: solid 1px $border-color-hover;
+      }
+
+      &--active {
+        border: solid 1px $border-color-active;
+      }
+
+      &:focus-visible {
+        border: solid 1px $border-color-focus;
+      }
+    }
+
+    &.ng-invalid.ng-touched {
+      select {
+        border: solid 1px $border-color-error;
+      }
+    }
+  }
+}

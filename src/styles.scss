@@ -1,10 +1,59 @@
+@use 'app/components/button/button' as button;
+
 @import 'styles/typography';
 @import 'styles/overlay';
+@import 'styles/layout';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  overflow: auto;
+  font-family: $font-family;
+}
 
 .light {
 
+  @include button.theme((
+    font-family: $font-family,
+    primary-background: #DFEBFF,
+    primary-color: #1A2536,
+    primary-hover-background: #90BAFF,
+    primary-hover-color: #09090A,
+    secondary-background: white,
+    secondary-color: #1A2536,
+    secondary-hover-background: white,
+    secondary-hover-color: #2C6FDD,
+    warn-background: #D91715,
+    warn-color: #DFEBFF,
+    warn-hover-background: #F51512,
+    warn-hover-color: #DFEBFF
+  ));
 }
 
 .dark {
 
+  @include button.theme((
+    font-family: $font-family,
+    primary-background: #DFEBFF,
+    primary-color: #1A2536,
+    primary-hover-background: #90BAFF,
+    primary-hover-color: #09090A,
+    secondary-background: #1A2536,
+    secondary-color: #DFEBFF,
+    secondary-hover-background: #1A2536,
+    secondary-hover-color: #90BAFF,
+    warn-background: #D91715,
+    warn-color: #DFEBFF,
+    warn-hover-background: #FF6161,
+    warn-hover-color: #DFEBFF
+  ));
 }

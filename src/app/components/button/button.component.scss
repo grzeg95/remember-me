@@ -1,0 +1,48 @@
+@use 'styles/typography-mixins' as typography;
+
+.app-button {
+
+  height: 36px;
+  padding: 9px 17px;
+  cursor: pointer;
+  position: relative;
+
+  @include typography.body-m();
+  @include typography.font-semibold();
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-wrap: nowrap;
+  border-radius: 18px;
+  border: none;
+
+  &[disabled] {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  svg {
+    height: 15px;
+  }
+
+  &__span {
+
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+    display: flex;
+
+    &__svg-left {
+      margin-right: 8px;
+    }
+
+    &__svg-right {
+      margin-left: 8px;
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+}

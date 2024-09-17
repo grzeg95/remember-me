@@ -1,5 +1,6 @@
-import {NgClass, NgStyle} from '@angular/common';
-import {Component, computed, ElementRef, ViewChild} from '@angular/core';
+import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
+import {NgClass, NgStyle, NgTemplateOutlet} from '@angular/common';
+import {Component, computed, ElementRef, ViewChild, ViewEncapsulation} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatMenuModule} from '@angular/material/menu';
@@ -19,24 +20,32 @@ import {catchError, NEVER} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
+import {LayoutService} from '../../services/layout.service';
 import {ThemeSelectorService} from '../../services/theme-selector.service';
+import {handleTabIndex} from '../../utils/handle-tabindex';
 import {AuthFormComponent} from '../auth-form/auth-form.component';
 import {ButtonComponent} from '../button/button.component';
+import {MenuComponent} from '../menu/menu.component';
 import {UserSettingsComponent} from '../user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent, CdkConnectedOverlay, CdkOverlayOrigin, MenuComponent, NgTemplateOutlet],
   templateUrl: './nav.component.html',
-  styleUrl: './nav.component.scss'
+  styleUrl: './nav.component.scss',
+  encapsulation: ViewEncapsulation.None
 })
 export class NavComponent {
+
+  protected readonly _showNavMenuLogin = this._layoutService.showNavMenuLoginSig.get();
+  protected readonly _popUpView = this._layoutService.popUpView.get();
 
   protected readonly _user = this._authService.userSig.get();
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
   protected readonly _loadingUser = this._authService.loadingUserSig.get();
   protected readonly _whileLoginIn = this._authService.whileLoginInSig.get();
+  protected readonly _authStateReady = this._authService.authStateReady;
 
   protected readonly _isButtonDisabled = computed(() => !this._isOnline() || this._loadingUser() || this._whileLoginIn());
 
@@ -51,12 +60,15 @@ export class NavComponent {
 
   protected readonly _darkMode = this._themeSelectorService.darkModeSig.get();
 
+  protected readonly _closePopUpButtonRef = this._layoutService.closePopUpButtonRefSig.get();
+
   constructor(
     private readonly _authService: AuthService,
     private readonly _dialog: MatDialog,
     private readonly _connectionService: ConnectionService,
     private readonly _snackBar: MatSnackBar,
-    private readonly _themeSelectorService: ThemeSelectorService
+    private readonly _themeSelectorService: ThemeSelectorService,
+    private readonly _layoutService: LayoutService
   ) {
   }
 
@@ -96,5 +108,35 @@ export class NavComponent {
       width: '100%',
       panelClass: 'full-screen-modal'
     });
+  }
+
+  setShowNavMenuLogin($event: KeyboardEvent | MouseEvent) {
+
+    if (handleTabIndex($event)) return;
+    $event.preventDefault();
+    $event.stopPropagation();
+
+    if ($event instanceof KeyboardEvent) {
+      if ($event.code !== 'Space' && $event.code !== 'Enter') {
+        return;
+      }
+    }
+
+    this._layoutService.showNavMenuLoginSig.set(!this._showNavMenuLogin());
+  }
+
+  protected closeLoginView($event: KeyboardEvent | MouseEvent) {
+
+    if (handleTabIndex($event)) return;
+    $event.preventDefault();
+    $event.stopPropagation();
+
+    if ($event instanceof KeyboardEvent) {
+      if ($event.code !== 'Space' && $event.code !== 'Enter') {
+        return;
+      }
+    }
+
+    this._layoutService.popUpView.set(false);
   }
 }

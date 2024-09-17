@@ -4,11 +4,11 @@ export class Sig<T> {
 
   private readonly _sig;
 
-  set(value: T | undefined) {
+  set(value: T) {
     setTimeout(() => this._sig.set(value));
   }
 
-  update(fn: (value: T | undefined) => T | undefined) {
+  update(fn: (value: T | undefined) => T) {
     setTimeout(() => this._sig.update(fn));
   }
 
@@ -17,8 +17,8 @@ export class Sig<T> {
   }
 
   constructor(
-    private readonly value?: T
+    private readonly value: T
   ) {
-    this._sig = signal<T | undefined>(value);
+    this._sig = signal<T>(value);
   }
 }

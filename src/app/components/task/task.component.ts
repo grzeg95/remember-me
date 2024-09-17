@@ -71,7 +71,7 @@ export interface TaskForm {
 })
 export class TaskComponent implements OnDestroy {
 
-  protected readonly _taskIdSig = new Sig<string>();
+  protected readonly _taskIdSig = new Sig<string | undefined>(undefined);
   protected readonly _taskId = this._taskIdSig.get();
 
   protected readonly _round = this._roundsService.roundSig.get();
@@ -83,7 +83,7 @@ export class TaskComponent implements OnDestroy {
   private readonly _loadingSig = new Sig(false);
   protected readonly _loading = this._loadingSig.get();
 
-  private readonly _taskSig = new Sig<Task>();
+  private readonly _taskSig = new Sig<Task | undefined>(undefined);
   protected readonly _task = this._taskSig.get();
 
   private _initValues: TaskForm = {

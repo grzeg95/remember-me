@@ -1,0 +1,34 @@
+@use 'styles/typography-mixins' as typography;
+
+.app-select {
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+  user-select: none;
+
+  &__select {
+    @include typography.body-l();
+    padding: 7px 15px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  &__app-pop-menu {
+    max-height: 300px;
+  }
+
+  &--disabled {
+    opacity: 0.75;
+    cursor: default;
+    pointer-events: none;
+  }
+}

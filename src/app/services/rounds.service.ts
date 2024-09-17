@@ -22,20 +22,20 @@ export class RoundsService {
 
   readonly loadingRoundSig = new Sig<boolean>(false);
 
-  readonly roundSig = new Sig<Round>();
+  readonly roundSig = new Sig<Round | undefined>(undefined);
   private readonly _round = this.roundSig.get();
 
-  readonly roundIdSig = new Sig<string | null>();
+  readonly roundIdSig = new Sig<string | null | undefined>(undefined);
 
-  readonly editRoundSig = new Sig<Round>();
-  readonly editRoundIdSig = new Sig<string | null>();
+  readonly editRoundSig = new Sig<Round | undefined>(undefined);
+  readonly editRoundIdSig = new Sig<string | null | undefined>(undefined);
   readonly loadingEditRoundSig = new Sig<boolean>(false);
 
-  readonly roundsMapSig = new Sig<Map<string, Round>>();
+  readonly roundsMapSig = new Sig<Map<string, Round> | undefined>(undefined);
   private readonly _roundsMap = this.roundsMapSig.get();
   readonly loadingRoundsMapSig = new Sig<boolean>(false);
 
-  readonly roundsOrderUpdatedSig = new Sig<string[]>();
+  readonly roundsOrderUpdatedSig = new Sig<string[] | undefined>(undefined);
   private readonly _roundsOrderUpdated = this.roundsOrderUpdatedSig.get();
 
   readonly roundsOrder = computed(() => {
@@ -72,7 +72,7 @@ export class RoundsService {
   //
 
   readonly todayTasksLoadingSig = new Sig<boolean>(false);
-  readonly todayTasksSig = new Sig<TodayTask[]>();
+  readonly todayTasksSig = new Sig<TodayTask[] | undefined>(undefined);
 
   private _todayItems = signal<{[p: string]: TodayItem[]}>({});
 
@@ -91,23 +91,23 @@ export class RoundsService {
     }));
   });
 
-  readonly todaySig = new Sig<{full: string, short: Day}>();
-  readonly dayToSetInEditorSig = new Sig<Day>();
+  readonly todaySig = new Sig<{full: string, short: Day} | undefined>(undefined);
+  readonly dayToSetInEditorSig = new Sig<Day | undefined>(undefined);
 
   readonly nowSig = new Sig<Date>(new Date());
   private readonly _now = this.nowSig.get();
 
-  readonly daySig = new Sig<{full: string, short: Day}>();
+  readonly daySig = new Sig<{full: string, short: Day} | undefined>(undefined);
 
-  readonly todayMapSig = new Sig<Map<string, Today>>();
+  readonly todayMapSig = new Sig<Map<string, Today> | undefined>(undefined);
   readonly todayMapLoadingSig = new Sig<boolean>(false);
 
   //
   // Tasks list
   //
 
-  readonly tasksSig = new Sig<Task[]>();
-  readonly tasksLoadingSig = new Sig(false);
+  readonly tasksSig = new Sig<Task[] | undefined>(undefined);
+  readonly tasksLoadingSig = new Sig<boolean | undefined>(false);
 
   //
   // Task edit

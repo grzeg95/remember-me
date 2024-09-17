@@ -1,0 +1,36 @@
+@use 'styles/typography-mixins' as typography-mixins;
+
+.app-input {
+
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+
+  &__input {
+
+    @include typography-mixins.body-m();
+
+    padding: 7px 15px;
+    border-radius: 4px;
+    width: 100%;
+
+    &::placeholder {
+      @include typography-mixins.body-m();
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  &--disabled {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+  }
+}

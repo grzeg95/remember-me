@@ -8,68 +8,70 @@
   <div class="app-nav__right">
 
     @if (_darkMode()) {
-      <app-button>Light</app-button>
+      <button app-button appearance="primary">Light</button>
     } @else {
-      <app-button>Dark</app-button>
+      <button app-button appearance="primary">Dark</button>
     }
 
-    <app-button>Sign In</app-button>
+    @if (_popUpView()) {
+      <ng-container [ngTemplateOutlet]="_closePopUpButtonRef()"/>
+    } @else {
 
+      @if (_authStateReady() && _user(); as user) {
+        <img
+          cdkOverlayOrigin
+          #menuUserTrigger="cdkOverlayOrigin"
+          [internalImgSecure]="user.photoURL"
+          [tabindex]="-1"
+          (click)="setShowNavMenuLogin($event)"
+          (keydown)="setShowNavMenuLogin($event)"
+        />
+
+        <ng-template
+          cdkConnectedOverlay
+          #cdkConnectedOverlay="cdkConnectedOverlay"
+          [cdkConnectedOverlayOrigin]="menuUserTrigger"
+          [cdkConnectedOverlayOpen]="!!_showNavMenuLogin()"
+          [cdkConnectedOverlayDisposeOnNavigation]="true"
+          (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); setShowNavMenuLogin($event);"
+        >
+          <app-menu
+            [disabled]="_isButtonDisabled()"
+          >
+            <button app-menu-item (click)="signOut()"><fa-icon [icon]="_faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</button>
+            <button app-menu-item (click)="openUserSetting()"><fa-icon [icon]="_faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</button>
+          </app-menu>
+        </ng-template>
+      } @else {
+        <button
+          app-button
+          cdkOverlayOrigin
+          #menuLoginTrigger="cdkOverlayOrigin"
+          [tabindex]="-1"
+          (click)="setShowNavMenuLogin($event)"
+          (keydown)="setShowNavMenuLogin($event)"
+        >Sign In</button>
+
+        <ng-template
+          cdkConnectedOverlay
+          #cdkConnectedOverlay="cdkConnectedOverlay"
+          [cdkConnectedOverlayOrigin]="menuLoginTrigger"
+          [cdkConnectedOverlayOpen]="!!_showNavMenuLogin()"
+          [cdkConnectedOverlayDisposeOnNavigation]="true"
+          (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); setShowNavMenuLogin($event);"
+        >
+
+          <app-menu
+            [disabled]="_isButtonDisabled()"
+          >
+            <span app-menu-item (click)="googleSignIn()"><fa-icon [icon]="_faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
+            <span app-menu-item (click)="openAuthFormComponent()"><fa-icon [icon]="_faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</span>
+            <span app-menu-item (click)="anonymouslySignIn()"><fa-icon [icon]="_faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</span>
+          </app-menu>
+
+        </ng-template>
+      }
+    }
 
   </div>
-
-</div>
-
-    @if (_user() !== undefined) {
-      <div>
-        @if (!_user()) {
-          <div class="d-flex align-items-center right">
-            <button mat-flat-button
-                    color="primary"
-                    [matMenuTriggerFor]="menu"
-                    [disabled]="_isButtonDisabled()"
-                    aria-label="Log in">
-              <span class="loginButton">Sign in <fa-icon [icon]="_faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
-            </button>
-
-            <mat-menu #menu="matMenu" xPosition="before">
-              <button mat-menu-item
-                      [disabled]="_isButtonDisabled()"
-                      (click)="googleSignIn()">
-                <span><fa-icon [icon]="_faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
-              </button>
-
-              <button mat-menu-item
-                      [disabled]="_isButtonDisabled()"
-                      (click)="openAuthFormComponent()">
-                <span><fa-icon [icon]="_faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</span>
-              </button>
-
-              <button mat-menu-item
-                      [disabled]="_isButtonDisabled()"
-                      (click)="anonymouslySignIn()">
-                <span><fa-icon [icon]="_faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</span>
-              </button>
-            </mat-menu>
-          </div>
-        }
-
-        @if (_user(); as user) {
-          <div class="d-flex align-items-center right">
-
-            @if (user.photoURL) {
-              <img [matMenuTriggerFor]="menu" [internalImgSecure]="user.photoURL"/>
-            }
-            @else {
-              <div [matMenuTriggerFor]="menu" class="no-photo"><fa-icon [icon]="_faUser"></fa-icon></div>
-            }
-
-            <mat-menu #menu="matMenu" xPosition="before">
-              <button mat-menu-item (click)="signOut()"><fa-icon [icon]="_faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</button>
-              <button mat-menu-item (click)="openUserSetting()"><fa-icon [icon]="_faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</button>
-            </mat-menu>
-          </div>
-        }
-      </div>
-    }
 </div>

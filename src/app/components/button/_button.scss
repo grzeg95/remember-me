@@ -1,0 +1,68 @@
+@mixin theme($theme) {
+
+  .app-button {
+
+    $font-family: map-get($theme, 'font-family');
+    $primary-background: map-get($theme, 'primary-background');
+    $primary-color: map-get($theme, 'primary-color');
+    $primary-hover-background: map-get($theme, 'primary-hover-background');
+    $primary-hover-color: map-get($theme, 'primary-hover-color');
+    $secondary-background: map-get($theme, 'secondary-background');
+    $secondary-color: map-get($theme, 'secondary-color');
+    $secondary-hover-background: map-get($theme, 'secondary-hover-background');
+    $secondary-hover-color: map-get($theme, 'secondary-hover-color');
+    $warn-background: map-get($theme, 'warn-background');
+    $warn-color: map-get($theme, 'warn-color');
+    $warn-hover-background: map-get($theme, 'warn-hover-background');
+    $warn-hover-color: map-get($theme, 'warn-hover-color');
+
+    font-family: $font-family;
+
+    &--primary {
+
+      background: $primary-background;
+      color: $primary-color;
+
+      &:hover {
+        background: $primary-hover-background;
+        color: $primary-hover-color;
+      }
+
+      &:focus-visible {
+        background: $primary-hover-background;
+      }
+    }
+
+    &--secondary {
+
+      background: $secondary-background;
+      color: $secondary-color;
+      border: solid 1px $secondary-color;
+
+      &:hover {
+        background: $secondary-hover-background;
+        color: $secondary-hover-color;
+        border: solid 1px $secondary-hover-color;
+      }
+
+      &:focus-visible {
+        background: $secondary-hover-background;
+      }
+    }
+
+    &--warn {
+
+      background: $warn-background;
+      color: $warn-color;
+
+      &:hover {
+        background: $warn-hover-background;
+        color: $warn-hover-color;
+      }
+
+      &:focus-visible {
+        background: $warn-hover-background;
+      }
+    }
+  }
+}

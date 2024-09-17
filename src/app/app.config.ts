@@ -30,6 +30,7 @@ import {
 import {AuthService} from './services/auth.service';
 import {ConnectionService} from './services/connection.service';
 import {FunctionsService} from './services/functions.service';
+import {ThemeSelectorService} from './services/theme-selector.service';
 import {routes} from './views/app.routes';
 
 if (!environment.production) {
@@ -175,5 +176,14 @@ export const appConfig: ApplicationConfig = {
     FunctionsService,
     ...firebaseInitializers,
     ...angularMaterialProviders,
+    ThemeSelectorService,
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [ThemeSelectorService],
+      useFactory: (themeSelectorService: ThemeSelectorService) => {
+        return () => themeSelectorService.loadTheme();
+      }
+    },
   ]
 };

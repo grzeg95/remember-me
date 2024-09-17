@@ -1,57 +1,34 @@
-@mixin font-normal {
-  font-weight: 400;
-}
+@use 'typography-mixins' as typography-mixins;
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap');
+
+$font-family: 'Open Sans', sans-serif;
 
 .font-normal {
-  @include font-normal();
-}
-
-@mixin font-semibold {
-  font-weight: 600;
+  @include typography-mixins.font-normal();
 }
 
 .font-semibold {
-  @include font-normal();
-}
-
-@mixin heading-xl {
-  font-size: 24px;
+  @include typography-mixins.font-normal();
 }
 
 .heading-xl {
-  @include heading-xl();
-}
-
-@mixin heading-l {
-  font-size: 20px;
+  @include typography-mixins.heading-xl();
 }
 
 .heading-l {
-  @include heading-l();
-}
-
-@mixin heading-m {
-  font-size: 18px;
+  @include typography-mixins.heading-l();
 }
 
 .heading-m {
-  @include heading-m();
-}
-
-@mixin body-l {
-  font-size: 16px;
+  @include typography-mixins.heading-m();
 }
 
 .body-l {
-  @include body-l();
-}
-
-@mixin body-m {
-  font-size: 14px;
+  @include typography-mixins.body-l();
 }
 
 .body-m {
-  @include body-m();
+  @include typography-mixins.body-m();
 }
 
 .text-center {
