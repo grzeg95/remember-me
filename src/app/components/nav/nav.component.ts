@@ -1,4 +1,4 @@
-import {CdkConnectedOverlay, CdkOverlayOrigin} from '@angular/cdk/overlay';
+import {CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition} from '@angular/cdk/overlay';
 import {NgClass, NgStyle, NgTemplateOutlet} from '@angular/common';
 import {Component, computed, ElementRef, ViewChild, ViewEncapsulation} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
@@ -6,6 +6,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatToolbarModule} from '@angular/material/toolbar';
+import {Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faGoogle} from '@fortawesome/free-brands-svg-icons';
 import {
@@ -43,8 +44,18 @@ import {UserSettingsComponent} from '../user-settings/user-settings.component';
 })
 export class NavComponent {
 
+  protected _cdkConnectedOverlayPositions: ConnectedPosition[] = [
+    {
+      overlayX: "end",
+      overlayY: "top",
+      originX: "end",
+      originY: "bottom"
+    }
+  ]
+
   protected readonly _showNavMenuLogin = this._layoutService.showNavMenuLoginSig.get();
   protected readonly _popUpView = this._layoutService.popUpView.get();
+  protected readonly _closePopUpButtonRef = this._layoutService.closePopUpButtonRefSig.get();
 
   protected readonly _user = this._authService.userSig.get();
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
@@ -65,15 +76,14 @@ export class NavComponent {
 
   protected readonly _darkMode = this._themeSelectorService.darkModeSig.get();
 
-  protected readonly _closePopUpButtonRef = this._layoutService.closePopUpButtonRefSig.get();
-
   constructor(
     private readonly _authService: AuthService,
     private readonly _dialog: MatDialog,
     private readonly _connectionService: ConnectionService,
     private readonly _snackBar: MatSnackBar,
     private readonly _themeSelectorService: ThemeSelectorService,
-    private readonly _layoutService: LayoutService
+    private readonly _layoutService: LayoutService,
+    private readonly _router: Router
   ) {
   }
 
@@ -96,13 +106,14 @@ export class NavComponent {
   }
 
   openAuthFormComponent(): void {
-    this._dialog.open(AuthFormComponent, {
-      maxWidth: '100vw',
-      maxHeight: '100vh',
-      height: '100%',
-      width: '100%',
-      panelClass: ['full-screen-modal', 'full-screen-modal-without-padding']
-    });
+    this._router.navigate(['/auth'])
+    // this._dialog.open(AuthFormComponent, {
+    //   maxWidth: '100vw',
+    //   maxHeight: '100vh',
+    //   height: '100%',
+    //   width: '100%',
+    //   panelClass: ['full-screen-modal', 'full-screen-modal-without-padding']
+    // });
   }
 
   openUserSetting() {

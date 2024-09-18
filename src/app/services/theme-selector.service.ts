@@ -3,7 +3,7 @@ import {effect, Inject, Injectable, PLATFORM_ID, Renderer2, RendererFactory2} fr
 import {Firestore, updateDoc} from 'firebase/firestore';
 import {User} from '../models/user';
 import {FirestoreInjectionToken} from '../models/firebase';
-import {Sig} from '../utils/Sig';
+import {Sig} from '../utils/sig';
 import {AuthService} from './auth.service';
 
 @Injectable({

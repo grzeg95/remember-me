@@ -6,7 +6,7 @@ import {Round} from '../models/round';
 import {Today} from '../models/today';
 import {TodayItem} from '../models/today-item';
 import {TodayTask} from '../models/today-task';
-import {Sig} from '../utils/Sig';
+import {Sig} from '../utils/sig';
 import {AuthService} from './auth.service';
 import { Task } from '../models/task';
 import {FunctionsService} from './functions.service';

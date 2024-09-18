@@ -17,7 +17,7 @@ import {Round} from '../../models/round';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
-import {Sig} from '../../utils/Sig';
+import {Sig} from '../../utils/sig';
 
 @Component({
   selector: 'app-rounds-list',

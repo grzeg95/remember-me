@@ -9,7 +9,7 @@ import {User} from '../../models/user';
 import {AuthService} from '../../services/auth.service';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
-import {Sig} from '../../utils/Sig';
+import {Sig} from '../../utils/sig';
 import {RoundNavComponent} from '../round-nav/round-nav.component';
 
 @Component({

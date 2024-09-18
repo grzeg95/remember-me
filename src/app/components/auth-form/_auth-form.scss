@@ -1,0 +1,25 @@
+@mixin theme($theme) {
+
+  .app-auth-form {
+
+    $font-family: map-get($theme, 'font-family');
+    $color: map-get($theme, 'color');
+    $color-active: map-get($theme, 'color-active');
+    $line-color: map-get($theme, 'line-color');
+
+    &__nav {
+
+      box-shadow: inset 0 -1px 0 $line-color;
+
+      &__button {
+
+        font-family: $font-family;
+        color: $color;
+
+        &--active {
+          color: $color-active;
+        }
+      }
+    }
+  }
+}

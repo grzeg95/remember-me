@@ -20,7 +20,7 @@ import {ConnectionService} from '../../services/connection.service';
 import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
-import {Sig} from '../../utils/Sig';
+import {Sig} from '../../utils/sig';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 
 @Component({

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {fromEvent, merge} from 'rxjs';
-import {Sig} from '../utils/Sig';
+import {Sig} from '../utils/sig';
 
 @Injectable()
 export class ConnectionService {

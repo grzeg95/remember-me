@@ -1,3 +1,4 @@
+@use 'app/components/auth-form/auth-form' as auth-form;
 @use 'app/components/button/button' as button;
 @use 'app/components/menu/menu' as menu;
 @use 'app/components/menu/menu-item/menu-item' as menu-item;
@@ -35,6 +36,13 @@ body {
 
 .light {
 
+  @include auth-form.theme((
+    font-family: $font-family,
+    color: #636363,
+    color-active: #09090A,
+    line-color: #636363
+  ));
+
   @include button.theme((
     font-family: $font-family,
     primary-background: #DFEBFF,
@@ -62,6 +70,13 @@ body {
 }
 
 .dark {
+
+  @include auth-form.theme((
+    font-family: $font-family,
+    color: #8C98AD,
+    color-active: #DFEBFF,
+    line-color: #8C98AD
+  ));
 
   @include button.theme((
     font-family: $font-family,

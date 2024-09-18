@@ -2,7 +2,7 @@ import {BreakpointObserver} from '@angular/cdk/layout';
 import {Injectable, TemplateRef} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Breakpoints, BreakpointsDevices} from '../models/breakpoints';
-import {Sig} from '../utils/Sig';
+import {Sig} from '../utils/sig';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +12,7 @@ export class LayoutService {
   readonly showNavMenuLoginSig = new Sig<boolean>(false);
   readonly popUpView = new Sig<boolean>(false);
 
-  closePopUpButtonRefSig = new Sig<TemplateRef<any> | null>(null);
+  readonly closePopUpButtonRefSig = new Sig<TemplateRef<any> | null>(null);
 
   private readonly _displayNameMap = new Map([
     [Breakpoints[BreakpointsDevices.extraSmall].selector, BreakpointsDevices.extraSmall],

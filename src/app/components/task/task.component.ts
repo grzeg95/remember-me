@@ -40,7 +40,7 @@ import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
-import {Sig} from '../../utils/Sig';
+import {Sig} from '../../utils/sig';
 import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 
 export interface TaskForm {

@@ -17,8 +17,7 @@ import {
   signOut,
   updatePassword,
   User as FirebaseUser,
-  UserCredential,
-  confirmPasswordReset
+  UserCredential
 } from 'firebase/auth';
 import {Firestore} from 'firebase/firestore';
 import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap} from 'rxjs';
@@ -26,7 +25,7 @@ import {RouterDict} from '../app.constants';
 import {AuthInjectionToken, FirestoreInjectionToken} from '../models/firebase';
 import {User} from '../models/user';
 import {getCryptoKey} from '../utils/crypto';
-import {Sig} from '../utils/Sig';
+import {Sig} from '../utils/sig';
 import {docSnapshots} from './firebase/firestore';
 import {FunctionsService} from './functions.service';
 

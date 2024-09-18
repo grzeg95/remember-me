@@ -5,23 +5,25 @@
 
 <div class="app-nav__right">
 
-  @if (_darkMode()) {
-    <button
-      app-button
-      appearance="primary"
-      svg="alone"
-      (click)="setDarkMode(false)"
-    >
-      <svg appSvg="light-mode"/>
-    </button>
-  } @else {
-    <button
-      app-button
-      appearance="primary"
-      svg="alone"
-      (click)="setDarkMode(true)">
-      <svg appSvg="dark-mode"/>
-    </button>
+  @if (!_popUpView()) {
+    @if (_darkMode()) {
+      <button
+        app-button
+        appearance="primary"
+        svg="alone"
+        (click)="setDarkMode(false)"
+      >
+        <svg appSvg="light-mode"/>
+      </button>
+    } @else {
+      <button
+        app-button
+        appearance="primary"
+        svg="alone"
+        (click)="setDarkMode(true)">
+        <svg appSvg="dark-mode"/>
+      </button>
+    }
   }
 
   @if (_popUpView()) {
@@ -44,6 +46,7 @@
         [cdkConnectedOverlayOrigin]="menuUserTrigger"
         [cdkConnectedOverlayOpen]="!!_showNavMenuLogin()"
         [cdkConnectedOverlayDisposeOnNavigation]="true"
+        [cdkConnectedOverlayPositions]="_cdkConnectedOverlayPositions"
         (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); setShowNavMenuLogin($event);"
       >
         <app-menu
@@ -70,6 +73,7 @@
         [cdkConnectedOverlayOrigin]="menuLoginTrigger"
         [cdkConnectedOverlayOpen]="!!_showNavMenuLogin()"
         [cdkConnectedOverlayDisposeOnNavigation]="true"
+        [cdkConnectedOverlayPositions]="_cdkConnectedOverlayPositions"
         (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); setShowNavMenuLogin($event);"
       >
 

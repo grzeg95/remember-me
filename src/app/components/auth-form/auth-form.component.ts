@@ -1,10 +1,10 @@
 import {NgClass} from '@angular/common';
-import {Component, signal, ViewChild} from '@angular/core';
-import {MatButtonModule} from '@angular/material/button';
-import {MatDialogRef} from '@angular/material/dialog';
+import {AfterViewInit, Component, signal, TemplateRef, ViewChild, ViewEncapsulation} from '@angular/core';
 import {MatTabGroup} from '@angular/material/tabs';
-import {MatToolbarModule} from '@angular/material/toolbar';
+import {Router} from '@angular/router';
 import {AuthService} from '../../services/auth.service';
+import {LayoutService} from '../../services/layout.service';
+import {ButtonComponent} from '../button/button.component';
 import {LoginComponent} from '../login/login.component';
 import {RegisterComponent} from '../register/register.component';
 import {SendPasswordResetEmailComponent} from '../send-password-reset-email/send-password-reset-email.component';
@@ -12,15 +12,19 @@ import {SendPasswordResetEmailComponent} from '../send-password-reset-email/send
 @Component({
   selector: 'app-auth-form',
   standalone: true,
-  imports: [LoginComponent, RegisterComponent, SendPasswordResetEmailComponent, MatToolbarModule, MatButtonModule, NgClass],
+  imports: [LoginComponent, RegisterComponent, SendPasswordResetEmailComponent, NgClass, ButtonComponent],
   templateUrl: './auth-form.component.html',
-  styleUrl: './auth-form.component.scss'
+  styleUrl: './auth-form.component.scss',
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-auth-form'
+  }
 })
-export class AuthFormComponent {
+export class AuthFormComponent implements AfterViewInit {
+
+  @ViewChild('closeButtonRef') closeButtonRef: TemplateRef<any> | undefined;
 
   protected readonly _user = this._authService.userSig.get();
-  protected readonly _loadingUser = this._authService.loadingUserSig.get();
-  protected readonly _whileLoginIn = this._authService.whileLoginInSig.get();
 
   protected readonly _forms = [
     {
@@ -42,8 +46,20 @@ export class AuthFormComponent {
   @ViewChild('matTabGroup') matTabGroup: MatTabGroup | undefined;
 
   constructor(
-    protected readonly _dialogRef: MatDialogRef<AuthFormComponent>,
-    private readonly _authService: AuthService
+    private readonly _authService: AuthService,
+    private readonly _router: Router,
+    private readonly _layoutService: LayoutService
   ) {
+  }
+
+  ngAfterViewInit(): void {
+    this._layoutService.closePopUpButtonRefSig.set(this.closeButtonRef!);
+    this._layoutService.popUpView.set(true);
+  }
+
+  closeView() {
+    this._router.navigate(['/']);
+    this._layoutService.closePopUpButtonRefSig.set(null);
+    this._layoutService.popUpView.set(false);
   }
 }
