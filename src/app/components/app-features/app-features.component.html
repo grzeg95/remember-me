@@ -1,64 +1,63 @@
-<div class="container">
-
-  <div class="features">
-    <div class="features__intro">
-      <div class="text-center">Rounds&nbsp;<img [style]="{width: '64px'}" src="/assets/img/rounds.svg">
-      </div>
-      <div class="text-center">Welcome to Rounds – Your Productivity Hub</div>
-      <div class="text-center">Empower your productivity with the ability to create up to 5 rounds of tasks. Structure your day with distinct sets of activities and enhance your efficiency.</div>
+<div class="features">
+  <div class="features__intro">
+    <div class="features__intro__heading-xl">
+      Rounds
+      <svg [appSvg]="'rounds-' + (_darkMode() ? 'dark' : 'light')" [style]="{width: '33px', marginLeft: '4px'}" />
     </div>
-    <div class="features__items">
-      <div class="features__items__item">
-        <img src="/assets/img/today.svg" class="features__items__item__icon">
-        <div class="features__items__item__name">Today's Tasks</div>
-        <div class="features__items__item__description">Stay organized and focused by managing your daily tasks. Review and mark completed tasks to keep your progress on track.</div>
-      </div>
-      <div class="features__items__item">
-        <img src="/assets/img/clock.svg" class="features__items__item__icon">
-        <div class="features__items__item__name">Sortable Task Groups</div>
-        <div class="features__items__item__description">Efficiently organize your day with up to 10 customizable task groups. Set the order that works best for your workflow.</div>
-      </div>
-      <div class="features__items__item">
-        <img src="/assets/img/list.svg" class="features__items__item__icon">
-        <div class="features__items__item__name">Tasks List</div>
-        <div class="features__items__item__description">Maintain a comprehensive list of up to 25 tasks. Easily prioritize and manage your workload with our intuitive task management system.</div>
-      </div>
+    <div class="features__intro__heading-m">Your Productivity Hub</div>
+    <div class="features__intro__body-m">Empower your productivity with the ability to create up to 5 rounds of tasks. Structure your day with distinct sets of activities and enhance your efficiency.</div>
+  </div>
+  <div class="features__items">
+    <div class="features__items__item">
+      <svg appSvg="today-tasks" class="features__items__item__icon"/>
+      <div class="features__items__item__name">Today's Tasks</div>
+      <div class="features__items__item__description">Stay organized and focused by managing your daily tasks. Review and mark completed tasks to keep your progress on track.</div>
+    </div>
+    <div class="features__items__item">
+      <svg appSvg="clock" class="features__items__item__icon"/>
+      <div class="features__items__item__name">Sortable Task Groups</div>
+      <div class="features__items__item__description">Efficiently organize your day with up to 10 customizable task groups. Set the order that works best for your workflow.</div>
+    </div>
+    <div class="features__items__item">
+      <svg appSvg="today-tasks" class="features__items__item__icon"/>
+      <div class="features__items__item__name">Tasks List</div>
+      <div class="features__items__item__description">Maintain a comprehensive list of up to 25 tasks. Easily prioritize and manage your workload with our intuitive task management system.</div>
     </div>
   </div>
+</div>
 
-  <div class="features">
-    <div class="features__intro">
-      <div class="text-center">Security Assurance 🤞</div>
-      <p class="text-center">Your privacy and data security are our top priorities. Our robust security measures ensure the utmost protection against unauthorized access.</p>
+<div class="features">
+  <div class="features__intro">
+    <div class="features__intro__heading-xl">Security Assurance 🤞</div>
+    <p class="features__intro__body-m">Your privacy and data security are our top priorities. Our robust security measures ensure the utmost protection against unauthorized access.</p>
+  </div>
+  <div class="features__items">
+    <div class="features__items__item">
+      <img src="/src/assets/branding/angular_gradient.png" class="icon angular"/>
+      <div class="features__items__item__name">Angular</div>
+      <div class="features__items__item__description">Rely on the power of Angular for seamless scalability and top-notch performance. Our platform works effortlessly at any scale.</div>
     </div>
-    <div class="features__items">
-      <div class="features__items__item">
-        <img src="/src/assets/branding/angular_gradient.png" class="icon angular"/>
-        <div class="features__items__item__name">Angular</div>
-        <div class="features__items__item__description">Rely on the power of Angular for seamless scalability and top-notch performance. Our platform works effortlessly at any scale.</div>
+    <div class="features__items__item">
+      <img src="/src/assets/branding/key_management_service.svg" class="features__items__item__icon kms"/>
+      <div class="features__items__item__name">Encryption Excellence 🙄</div>
+      <div class="features__items__item__description">
+        Your data is encrypted with the utmost precision.<br/>
+        <a href="/assets/myId.json">Sample data of the user "myId".</a><br/>
+        <a href="https://cloud.google.com/security-key-management">Learn more.</a>
       </div>
-      <div class="features__items__item">
-        <img src="/src/assets/branding/key_management_service.svg" class="features__items__item__icon kms"/>
-        <div class="features__items__item__name">Encryption Excellence 🙄</div>
-        <div class="features__items__item__description">
-          Your data is encrypted with the utmost precision.<br/>
-          <a href="/assets/myId.json">Sample data of the user "myId".</a><br/>
-          <a href="https://cloud.google.com/security-key-management">Learn more.</a>
-        </div>
+    </div>
+    <div class="features__items__item">
+      <img src="/src/assets/branding/cloud_run.svg" class="features__items__item__icon"/>
+      <div class="features__items__item__name">Cloud Run</div>
+      <div class="features__items__item__description">
+        Experience swift resource handling with Cloud Run, ensuring optimal performance and responsiveness.
       </div>
-      <div class="features__items__item">
-        <img src="/src/assets/branding/cloud_run.svg" class="features__items__item__icon"/>
-        <div class="features__items__item__name">Cloud Run</div>
-        <div class="features__items__item__description">
-          Experience swift resource handling with Cloud Run, ensuring optimal performance and responsiveness.
-        </div>
-      </div>
-      <div class="features__items__item">
-        <img src="/src/assets/branding/firebase_logo_logomark.svg" class="features__items__item__icon firebase"/>
-        <div class="features__items__item__name">Built with Firebase</div>
-        <div class="features__items__item__description">
-          Backed by Google, loved by app development teams worldwide. From startups to global enterprises, Firebase powers our seamless platform.
-        </div>
+    </div>
+    <div class="features__items__item">
+      <img src="/src/assets/branding/firebase_logo_logomark.svg" class="features__items__item__icon firebase"/>
+      <div class="features__items__item__name">Built with Firebase</div>
+      <div class="features__items__item__description">
+        Backed by Google, loved by app development teams worldwide. From startups to global enterprises, Firebase powers our seamless platform.
       </div>
     </div>
   </div>

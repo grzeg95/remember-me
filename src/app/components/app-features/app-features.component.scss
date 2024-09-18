@@ -1,0 +1,60 @@
+@import "styles/layout-mixins";
+@import "styles/typography-mixins";
+
+.app-features {
+
+  @include container();
+}
+
+.features {
+
+  &__intro {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 350px;
+    margin: auto;
+
+    &__heading-xl {
+
+      @include heading-xl();
+      display: flex;
+    }
+
+    &__heading-m {
+
+      @include heading-m();
+      margin-top: 3px;
+    }
+
+    &__body-m {
+
+      @include body-m();
+      margin-top: 16px;
+      text-align: center;
+    }
+  }
+
+  &__items {
+
+    &__item {
+
+      margin-bottom: 32px;
+      padding-left: 71px;
+
+      &__icon {
+        margin-left: -49px;
+        float: left;
+      }
+
+      &__name {
+
+      }
+
+      &__description {
+
+      }
+    }
+  }
+}

@@ -1,5 +1,9 @@
 [
   {
+    "name": "clock",
+    "src": "clock.svg"
+  },
+  {
     "name": "dark-mode",
     "src": "dark-mode.svg"
   },
@@ -14,5 +18,21 @@
   {
     "name": "logo-light",
     "src": "logo-light.svg"
+  },
+  {
+    "name": "rounds-dark",
+    "src": "rounds-dark.svg"
+  },
+  {
+    "name": "rounds-light",
+    "src": "rounds-light.svg"
+  },
+  {
+    "name": "tasks-list",
+    "src": "tasks-list.svg"
+  },
+  {
+    "name": "today-tasks",
+    "src": "today-tasks.svg"
   }
 ]
