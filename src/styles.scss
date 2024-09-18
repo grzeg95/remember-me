@@ -1,4 +1,6 @@
 @use 'app/components/button/button' as button;
+@use 'app/components/menu/menu' as menu;
+@use 'app/components/menu/menu-item/menu-item' as menu-item;
 
 @import 'styles/typography';
 @import 'styles/overlay';
@@ -15,9 +17,20 @@ html {
 }
 
 body {
+
   margin: 0;
   overflow: auto;
   font-family: $font-family;
+
+  &.light {
+    background: white;
+    color: #09090A;
+  }
+
+  &.dark {
+    background: #1A2536;
+    color: #DFEBFF;
+  }
 }
 
 .light {
@@ -37,6 +50,15 @@ body {
     warn-hover-background: #F51512,
     warn-hover-color: #DFEBFF
   ));
+
+  @include menu.theme((
+    background: white,
+    box-shadow-color: rgba(0, 0, 0, 0.25)
+  ));
+
+  @include menu-item.theme((
+    background-hover: #D9D9D9
+  ));
 }
 
 .dark {
@@ -55,5 +77,14 @@ body {
     warn-color: #DFEBFF,
     warn-hover-background: #FF6161,
     warn-hover-color: #DFEBFF
+  ));
+
+  @include menu.theme((
+    background: #1A2536,
+    box-shadow-color: rgba(0, 0, 0, 0.25)
+  ));
+
+  @include menu-item.theme((
+    background-hover: #2A384F
   ));
 }

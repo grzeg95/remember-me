@@ -1,4 +1,4 @@
-import {provideHttpClient} from '@angular/common/http';
+import {HttpClient, provideHttpClient} from '@angular/common/http';
 import {
   APP_INITIALIZER,
   ApplicationConfig,
@@ -18,6 +18,7 @@ import {connectAuthEmulator, getAuth} from 'firebase/auth';
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore';
 import {connectFunctionsEmulator, getFunctions,} from 'firebase/functions';
 import {activate, fetchAndActivate, getRemoteConfig, isSupported} from 'firebase/remote-config';
+import {forkJoin, mergeMap} from 'rxjs';
 import {
   AnalyticsInjectionToken,
   AppCheckInjectionToken,
@@ -30,6 +31,7 @@ import {
 import {AuthService} from './services/auth.service';
 import {ConnectionService} from './services/connection.service';
 import {FunctionsService} from './services/functions.service';
+import {SvgService} from './services/svg.service';
 import {ThemeSelectorService} from './services/theme-selector.service';
 import {routes} from './views/app.routes';
 
@@ -183,6 +185,25 @@ export const appConfig: ApplicationConfig = {
       deps: [ThemeSelectorService],
       useFactory: (themeSelectorService: ThemeSelectorService) => {
         return () => themeSelectorService.loadTheme();
+      }
+    },
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      deps: [SvgService, HttpClient],
+      useFactory: (svgService: SvgService, http: HttpClient) => {
+
+        const path = '/assets/svg';
+
+        return () => http.get<{name: string, src: string}[]>(
+          path + '/index.json'
+        ).pipe(
+          mergeMap((svgs) => {
+            return forkJoin(
+              svgs.map((svg) => svgService.registerSvg(svg.name, path + '/' + svg.src))
+            );
+          })
+        )
       }
     },
   ]

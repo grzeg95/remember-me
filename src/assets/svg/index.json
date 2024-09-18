@@ -1,0 +1,18 @@
+[
+  {
+    "name": "dark-mode",
+    "src": "dark-mode.svg"
+  },
+  {
+    "name": "light-mode",
+    "src": "light-mode.svg"
+  },
+  {
+    "name": "logo-dark",
+    "src": "logo-dark.svg"
+  },
+  {
+    "name": "logo-light",
+    "src": "logo-light.svg"
+  }
+]

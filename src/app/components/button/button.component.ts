@@ -35,7 +35,7 @@ export class ButtonComponent implements AfterViewChecked {
   protected readonly _innerText = signal<string>('');
   readonly appearance = input<Appearance | null | undefined>(undefined);
   disabled = input<boolean>(false);
-  svg = input<false | 'left' | 'right'>(false);
+  svg = input<false | 'left' | 'right' | 'alone'>(false);
 
   @HostListener('click', ['$event'])
   handleOnClick($event: MouseEvent) {

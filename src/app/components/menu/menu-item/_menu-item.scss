@@ -1,0 +1,12 @@
+@mixin theme($theme) {
+
+  .app-menu-item {
+
+    $background-hover: map-get($theme, 'background-hover');
+
+    &:hover {
+
+      background: $background-hover;
+    }
+  }
+}

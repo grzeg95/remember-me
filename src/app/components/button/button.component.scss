@@ -6,10 +6,6 @@
   padding: 9px 17px;
   cursor: pointer;
   position: relative;
-
-  @include typography.body-m();
-  @include typography.font-semibold();
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,6 +24,8 @@
 
   &__span {
 
+    @include typography.body-m();
+    @include typography.font-semibold();
     text-overflow: ellipsis;
     overflow: hidden;
     text-wrap: nowrap;

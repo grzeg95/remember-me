@@ -18,6 +18,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, NEVER} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
+import {SvgDirective} from '../../directives/svg.directive';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {LayoutService} from '../../services/layout.service';
@@ -25,16 +26,20 @@ import {ThemeSelectorService} from '../../services/theme-selector.service';
 import {handleTabIndex} from '../../utils/handle-tabindex';
 import {AuthFormComponent} from '../auth-form/auth-form.component';
 import {ButtonComponent} from '../button/button.component';
+import {MenuItemComponent} from '../menu/menu-item/menu-item.component';
 import {MenuComponent} from '../menu/menu.component';
 import {UserSettingsComponent} from '../user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent, CdkConnectedOverlay, CdkOverlayOrigin, MenuComponent, NgTemplateOutlet],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent, CdkConnectedOverlay, CdkOverlayOrigin, MenuComponent, NgTemplateOutlet, SvgDirective, MenuItemComponent],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss',
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-nav'
+  }
 })
 export class NavComponent {
 
@@ -138,5 +143,14 @@ export class NavComponent {
     }
 
     this._layoutService.popUpView.set(false);
+  }
+
+  setDarkMode(darkMode: boolean) {
+
+    if (darkMode) {
+      this._themeSelectorService.setDark();
+    } else {
+      this._themeSelectorService.setLight();
+    }
   }
 }

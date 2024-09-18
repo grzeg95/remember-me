@@ -1,0 +1,11 @@
+@mixin theme($theme) {
+
+  .app-menu {
+
+    $background: map-get($theme, 'background');
+    $box-shadow-color: map-get($theme, 'box-shadow-color');
+
+    background: $background;
+    box-shadow: 0 4px 4px 0 $box-shadow-color;
+  }
+}

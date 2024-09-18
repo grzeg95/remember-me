@@ -12,6 +12,10 @@
   class="app-button__span"
 ><ng-content/></span>
 
+@if (svg() === 'alone') {
+  <ng-container [ngTemplateOutlet]="svgTemplateRef"/>
+}
+
 @if (svg() === 'right') {
   <ng-container [ngTemplateOutlet]="svgTemplateRef"/>
 }
