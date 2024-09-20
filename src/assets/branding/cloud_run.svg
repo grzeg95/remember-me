@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24"><defs><style>.cls-1{fill:#aecbfa;}.cls-1,.cls-2{fill-rule:evenodd;}.cls-2{fill:#4285f4;}</style></defs><title>Icon_24px_CloudRun_Color</title><g data-name="Product Icons"><g ><polygon class="cls-1" points="8.9 2.63 12.02 12 21.38 12 8.9 2.63"/><polygon class="cls-2" points="21.38 12 12.02 12 8.9 21.38 21.38 12"/><polygon class="cls-2" points="3.44 21.38 6.57 19.81 8.9 12 5.78 12 3.44 21.38"/><polygon class="cls-1" points="3.44 2.63 5.78 12 8.9 12 6.57 4.19 3.44 2.63"/></g></g></svg>
+<svg width="32" height="34" viewBox="0 0 32 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M9.57498 0.602539L15.035 17H31.415L9.57498 0.602539Z" fill="#AECBFA"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M31.415 17H15.035L9.57498 33.415L31.415 17Z" fill="#4285F4"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0.019989 33.415L5.49749 30.6675L9.57499 17H4.11499L0.019989 33.415Z" fill="#4285F4"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0.019989 0.602539L4.11499 17H9.57499L5.49749 3.33254L0.019989 0.602539Z" fill="#AECBFA"/>
+</svg>

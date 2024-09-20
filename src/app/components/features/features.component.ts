@@ -3,19 +3,19 @@ import {SvgDirective} from '../../directives/svg.directive';
 import {ThemeSelectorService} from '../../services/theme-selector.service';
 
 @Component({
-  selector: 'app-app-features',
+  selector: 'app-features',
   standalone: true,
   imports: [
     SvgDirective
   ],
-  templateUrl: './app-features.component.html',
-  styleUrl: './app-features.component.scss',
+  templateUrl: './features.component.html',
+  styleUrl: './features.component.scss',
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'app-features'
   }
 })
-export class AppFeaturesComponent {
+export class FeaturesComponent {
 
   protected readonly _darkMode = this._themeSelectorService.darkModeSig.get();
 

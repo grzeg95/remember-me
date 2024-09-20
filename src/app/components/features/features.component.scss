@@ -19,6 +19,7 @@
     &__heading-xl {
 
       @include heading-xl();
+      @include font-semibold();
       display: flex;
     }
 
@@ -33,10 +34,14 @@
       @include body-m();
       margin-top: 16px;
       text-align: center;
+      margin-bottom: 32px;
     }
   }
 
   &__items {
+
+    display: flex;
+    flex-wrap: wrap;
 
     &__item {
 
@@ -46,14 +51,43 @@
       &__icon {
         margin-left: -49px;
         float: left;
+        max-width: 32px;
       }
 
       &__name {
 
+        @include heading-m();
+        @include font-semibold();
+        margin-bottom: 4px;
+
+        @include from-medium() {
+          width: 289px;
+        }
+
+        @include from-large() {
+          width: 249px;
+        }
+
+        @include from-extra-large() {
+          width: 309px;
+        }
       }
 
       &__description {
 
+        @include body-m();
+
+        @include from-medium() {
+          width: 289px;
+        }
+
+        @include from-large() {
+          width: 249px;
+        }
+
+        @include from-extra-large() {
+          width: 309px;
+        }
       }
     }
   }

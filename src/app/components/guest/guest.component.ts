@@ -3,7 +3,7 @@ import {RemoteConfig} from 'firebase/remote-config';
 import {RemoteConfigInjectionToken} from '../../models/firebase';
 import {AuthService} from '../../services/auth.service';
 import {getValue} from '../../services/firebase/remote-config';
-import {AppFeaturesComponent} from '../app-features/app-features.component';
+import {FeaturesComponent} from '../features/features.component';
 import {UserDataPolicyComponent} from '../user-data-policy/user-data-policy.component';
 
 interface GuestComponentConfig {
@@ -14,7 +14,7 @@ interface GuestComponentConfig {
   selector: 'app-guest',
   standalone: true,
   templateUrl: './guest.component.html',
-  imports: [UserDataPolicyComponent, AppFeaturesComponent],
+  imports: [UserDataPolicyComponent, FeaturesComponent],
   styleUrls: ['./guest.component.scss']
 })
 export class GuestComponent {
