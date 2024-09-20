@@ -1,5 +1,6 @@
 @use 'app/components/auth-form/auth-form' as auth-form;
 @use 'app/components/button/button' as button;
+@use 'app/components/input/input' as input;
 @use 'app/components/menu/menu' as menu;
 @use 'app/components/menu/menu-item/menu-item' as menu-item;
 
@@ -72,6 +73,21 @@ a[href] {
     warn-hover-color: #DFEBFF
   ));
 
+  @include input.theme((
+    font-family: $font-family,
+    background-color: #F8F5F5,
+    background-color-hover: #ECECEC,
+    background-color-focus: #E4E4E4,
+    color: #09090A,
+    label-active-background: white,
+    label-error-color: #F51512,
+    line-color: #A3A3A3,
+    line-color-error: #F51512,
+    line-color-hover: #09090A,
+    line-color-focus: #09090A,
+    placeholder-color: #A3A3A3
+  ));
+
   @include menu.theme((
     background: white,
     box-shadow-color: rgba(0, 0, 0, 0.25)
@@ -109,6 +125,21 @@ a[href] {
     warn-color: #DFEBFF,
     warn-hover-background: #FF6161,
     warn-hover-color: #DFEBFF
+  ));
+
+  @include input.theme((
+    font-family: $font-family,
+    background-color: #2A3C57,
+    background-color-hover: #2A384F,
+    background-color-focus: #243146,
+    color: #DFEBFF,
+    label-active-background: #1A2536,
+    label-error-color: #F51512,
+    line-color: #8E8E8E,
+    line-color-error: #F51512,
+    line-color-hover: #DFEBFF,
+    line-color-focus: #DFEBFF,
+    placeholder-color: #A3A3A3
   ));
 
   @include menu.theme((

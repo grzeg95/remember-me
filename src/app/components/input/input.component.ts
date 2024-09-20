@@ -1,20 +1,83 @@
-import {Component, HostBinding, Input} from '@angular/core';
+import {NgClass} from '@angular/common';
+import {
+  AfterViewInit,
+  Component,
+  computed,
+  forwardRef,
+  HostBinding,
+  Injector,
+  Input,
+  signal,
+  ViewEncapsulation
+} from '@angular/core';
+import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, NgControl} from '@angular/forms';
 
 @Component({
   selector: 'app-input',
   standalone: true,
-  imports: [],
+  imports: [
+    NgClass
+  ],
   templateUrl: './input.component.html',
-  styleUrl: './input.component.scss'
+  styleUrl: './input.component.scss',
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-input'
+  },
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => InputComponent),
+      multi: true,
+    }
+  ]
 })
-export class InputComponent {
+export class InputComponent implements ControlValueAccessor, AfterViewInit {
+
+  protected _inputFocused = signal<boolean>(false);
+  protected _errors = signal<{ [key in string]: string } | null>(null);
+
+  protected _placeholderActive = computed(() => {
+
+    const label = this.label;
+    const inputFocused = this._inputFocused();
+
+    return inputFocused || !label;
+  });
+
+  protected _labelActive = computed(() => {
+
+    const value = this.value;
+    const inputFocused = this._inputFocused();
+
+    return inputFocused || value.length;
+  });
 
   @Input({required: true}) placeholder!: string;
+  @Input() label: string | undefined;
   @Input() removeAble = false;
   @Input() withHint = false;
 
   @HostBinding('class.app-input--disabled') @Input() disabled!: boolean;
   value = '';
+
+  private control: FormControl | undefined;
+
+  constructor(
+    private readonly _injector: Injector
+  ) {
+  }
+
+  ngAfterViewInit(): void {
+
+    const ngControl = this._injector.get(NgControl, null);
+
+    if (ngControl) {
+      setTimeout(() => {
+        this.control = ngControl.control as FormControl;
+      })
+    }
+  }
 
   onChange = (_: any) => {
   };
@@ -38,7 +101,12 @@ export class InputComponent {
     this.value = value;
   }
 
-  _onChange($event: Event) {
+  protected _onFocus() {
+    this._inputFocused.set(true);
+  }
+
+  protected _onChange($event: Event) {
+
     $event.stopPropagation();
 
     if (this.disabled) {
@@ -46,10 +114,16 @@ export class InputComponent {
       return;
     }
 
-    this.onChange(($event.target as HTMLInputElement).value);
+    const value = ($event.target as HTMLInputElement).value;
+
+    this.onChange(value);
+    this.writeValue(value);
+
+    this._errors.set((this.control?.touched && this.control?.errors) || null);
   }
 
-  _onInput($event: Event) {
+  protected _onInput($event: Event) {
+
     $event.stopPropagation();
 
     if (this.disabled) {
@@ -57,10 +131,17 @@ export class InputComponent {
       return;
     }
 
-    this.onChange(($event.target as HTMLInputElement).value);
+    const value = ($event.target as HTMLInputElement).value;
+
+    this.onChange(value);
+    this.writeValue(value);
+
+    this._errors.set((this.control?.touched && this.control?.errors) || null);
   }
 
-  _onTouched() {
+  protected _onTouched() {
     this.onTouched();
+    this._inputFocused.set(false);
+    this._errors.set((this.control?.touched && this.control?.errors) || null);
   }
 }

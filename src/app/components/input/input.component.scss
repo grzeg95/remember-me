@@ -11,9 +11,13 @@
 
     @include typography-mixins.body-m();
 
-    padding: 7px 15px;
-    border-radius: 4px;
+    padding: 12px 15px 4px 15px;
+    border: none;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom: solid 1px;
     width: 100%;
+    margin-bottom: 1px;
 
     &::placeholder {
       @include typography-mixins.body-m();
@@ -21,10 +25,25 @@
 
     &:focus {
       outline: none;
+      border-bottom: solid 2px;
+      margin-bottom: 0;
     }
 
     &:focus-visible {
       outline: none;
+    }
+  }
+
+  &__label {
+
+    position: absolute;
+    top: 8px;
+    left: 15px;
+    transition: all 133ms ease-in-out;
+
+    &--active {
+      top: -7px;
+      font-size: 11px;
     }
   }
 

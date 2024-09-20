@@ -1,10 +1,16 @@
 <input
   type="text"
   class="app-input__input"
+  [ngClass]="{'app-input__input--error': _errors()}"
   (change)="_onChange($event)"
   (input)="_onInput($event)"
   (blur)="_onTouched()"
+  (focus)="_onFocus()"
   [disabled]="disabled"
   [value]="value"
-  [placeholder]="placeholder"
+  [placeholder]="_placeholderActive() ? placeholder : ''"
 />
+
+@if (label) {
+  <div class="app-input__label" [ngClass]="{'app-input__label--active': _labelActive(), 'app-input__label--error': _errors()}">{{ label }}</div>
+}
