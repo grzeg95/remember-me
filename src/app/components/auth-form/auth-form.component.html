@@ -12,10 +12,8 @@
   }
 </div>
 
-<div class="app-auth-form__selected-form">
-  @switch (_selectedForm()) {
-    @case ('login') { <app-login (doneEmitter)="closeView()"></app-login> }
-    @case ('register') { <app-register (doneEmitter)="closeView()"></app-register> }
-    @case ('send-password-reset-email') { <app-send-password-reset-email (doneEmitter)="closeView()"></app-send-password-reset-email> }
-  }
-</div>
+@switch (_selectedForm()) {
+  @case ('login') { <app-login (doneEmitter)="closeView()"></app-login> }
+  @case ('register') { <app-register (doneEmitter)="closeView()"></app-register> }
+  @case ('send-password-reset-email') { <app-send-password-reset-email (doneEmitter)="closeView()"></app-send-password-reset-email> }
+}

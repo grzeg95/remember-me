@@ -1,4 +1,4 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output, ViewEncapsulation} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
@@ -13,7 +13,12 @@ import {CustomValidators} from '../../services/custom-validators';
   selector: 'app-register',
   standalone: true,
   imports: [MatInputModule, ReactiveFormsModule, MatButtonModule, MatProgressBar],
-  templateUrl: './register.component.html'
+  styleUrl: './register.component.scss',
+  templateUrl: './register.component.html',
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-register'
+  }
 })
 export class RegisterComponent implements OnInit {
 

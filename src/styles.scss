@@ -44,6 +44,29 @@ a[href] {
   }
 }
 
+.input-group {
+
+  position: relative;
+  margin-bottom: 30px;
+
+  .input-error {
+    position: absolute;
+    bottom: -21px;
+  }
+}
+
+.input-error {
+  font-size: 13px;
+  margin-top: 2px;
+  height: 18px;
+  color: #F51512;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
 .light {
 
   a[href] {

@@ -53,10 +53,9 @@ export class InputComponent implements ControlValueAccessor, AfterViewInit {
     return inputFocused || value.length;
   });
 
-  @Input({required: true}) placeholder!: string;
+  @Input() placeholder = '';
   @Input() label: string | undefined;
-  @Input() removeAble = false;
-  @Input() withHint = false;
+  @Input() type: 'text' | 'password' | 'email' = 'text';
 
   @HostBinding('class.app-input--disabled') @Input() disabled!: boolean;
   value = '';
