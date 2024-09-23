@@ -1,44 +1,46 @@
-<div class="container">
-  <div class="col" [formGroup]="_registerForm">
-    <div class="row">
-      <mat-form-field>
-        <mat-label>Email</mat-label>
-        <input autocomplete="off" matInput formControlName="email" type="email">
-        @if (!_registerForm.disabled && !_email?.valid && (_email?.dirty || !_email?.untouched)) {
-          <mat-error>Enter email</mat-error>
-        }
-      </mat-form-field>
-    </div>
-    <div class="row">
-      <mat-form-field>
-        <mat-label>Password</mat-label>
-        <input autocomplete="off" matInput formControlName="password" type="password">
-        @if (!_registerForm.disabled && !_password?.valid && (_password?.dirty || !_password?.untouched)) {
-          <mat-error>Enter password</mat-error>
-        }
-      </mat-form-field>
-    </div>
-    <div class="row">
-      <mat-form-field>
-        <mat-label>Confirm password</mat-label>
-        <input autocomplete="off" matInput formControlName="confirmPassword" type="password">
-        @if (!_registerForm.disabled && !_confirmPassword?.valid && (_confirmPassword?.dirty || !_confirmPassword?.untouched)) {
-          <mat-error>Confirm password</mat-error>
-        }
-      </mat-form-field>
-    </div>
-    <div class="row">
-      <div class="col">
-        <mat-progress-bar [style.opacity]="_registerForm.disabled ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
-      </div>
-    </div>
-    <div class="row">
-      <div class="action-buttons actions">
-        <button mat-flat-button
-                color="primary"
-                [disabled]="_registerForm.disabled || _registerForm.invalid || !_isOnline()"
-                (click)="register()">Register</button>
-      </div>
-    </div>
+<form [formGroup]="_registerForm">
+
+  <div class="input-group email">
+    <app-input
+      label="Email"
+      formControlName="email"
+      type="email"
+    />
+    @if (!_registerForm.disabled && !_email?.valid && !_email?.untouched) {
+      <span class="input-error">Enter email</span>
+    }
   </div>
-</div>
+
+  <div class="input-group password">
+    <app-input
+      label="Password"
+      formControlName="password"
+      type="password"
+    />
+    @if (!_registerForm.disabled && !_password?.valid && !_password?.untouched) {
+      <span class="input-error">Enter password</span>
+    }
+  </div>
+
+  <div class="input-group confirm-password">
+    <app-input
+      label="Confirm password"
+      formControlName="confirmPassword"
+      type="password"
+    />
+    @if (!_registerForm.disabled && !_confirmPassword?.valid && !_confirmPassword?.untouched) {
+      <span class="input-error">Enter password</span>
+    }
+  </div>
+
+  <mat-progress-bar [style.opacity]="_registerForm.disabled ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+
+  <div class="action-buttons">
+    <button
+      app-button
+      appearance="primary"
+      [disabled]="_registerForm.disabled || _registerForm.invalid || !_isOnline()"
+      (click)="register()">Login</button>
+  </div>
+
+</form>

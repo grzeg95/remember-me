@@ -8,11 +8,13 @@ import {catchError, NEVER} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {CustomValidators} from '../../services/custom-validators';
+import {InputComponent} from "../input/input.component";
+import {ButtonComponent} from "../button/button.component";
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule, MatProgressBar],
+  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule, MatProgressBar, InputComponent, ButtonComponent],
   styleUrl: './register.component.scss',
   templateUrl: './register.component.html',
   encapsulation: ViewEncapsulation.None,

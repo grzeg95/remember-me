@@ -3,4 +3,15 @@
   margin: auto;
   max-width: 340px;
   display: block;
+
+  .input-group {
+
+    &.email {
+      margin-bottom: 43px;
+    }
+
+    &.password {
+      margin-bottom: 34px;
+    }
+  }
 }

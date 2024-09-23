@@ -1,23 +1,23 @@
 <form [formGroup]="_loginForm">
 
-  <div class="input-group">
+  <div class="input-group email">
     <app-input
       label="Email"
       formControlName="email"
       type="email"
     />
-    @if (!_loginForm.disabled && !_email?.valid && (_email?.dirty || !_email?.untouched)) {
+    @if (!_loginForm.disabled && !_email?.valid && !_email?.untouched) {
       <span class="input-error">Enter email</span>
     }
   </div>
 
-  <div class="input-group">
+  <div class="input-group password">
     <app-input
       label="Password"
       formControlName="password"
       type="password"
     />
-    @if (!_loginForm.disabled && !_password?.valid && (_password?.dirty || !_password?.untouched)) {
+    @if (!_loginForm.disabled && !_password?.valid && !_password?.untouched) {
       <span class="input-error">Enter password</span>
     }
   </div>
