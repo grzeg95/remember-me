@@ -31,31 +31,31 @@
   } @else {
 
     @if (_authStateReady() && _user(); as user) {
-      <img
+      <app-user-photo
         cdkOverlayOrigin
         #menuUserTrigger="cdkOverlayOrigin"
-        [internalImgSecure]="user.photoURL"
         [tabindex]="-1"
-        (click)="setShowNavMenuLogin($event)"
-        (keydown)="setShowNavMenuLogin($event)"
+        (click)="toggleShowNavUserMenu($event)"
+        (keydown)="toggleShowNavUserMenu($event)"
       />
 
       <ng-template
         cdkConnectedOverlay
         #cdkConnectedOverlay="cdkConnectedOverlay"
         [cdkConnectedOverlayOrigin]="menuUserTrigger"
-        [cdkConnectedOverlayOpen]="!!_showNavMenuLogin()"
+        [cdkConnectedOverlayOpen]="!!_showNavMenuUser()"
         [cdkConnectedOverlayDisposeOnNavigation]="true"
         [cdkConnectedOverlayPositions]="_cdkConnectedOverlayPositions"
-        (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); setShowNavMenuLogin($event);"
+        (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); toggleShowNavUserMenu($event);"
       >
         <app-menu
           [disabled]="_isButtonDisabled()"
         >
-          <app-menu-item (click)="signOut()"><fa-icon [icon]="_faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</app-menu-item>
-          <app-menu-item (click)="openUserSetting()"><fa-icon [icon]="_faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</app-menu-item>
+          <app-menu-item (click)="signOut(); toggleShowNavUserMenu();"><fa-icon [icon]="_faArrowRightFromBracket" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Sign out</app-menu-item>
+          <app-menu-item (click)="openUserSetting(); toggleShowNavUserMenu();"><fa-icon [icon]="_faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Setting</app-menu-item>
         </app-menu>
       </ng-template>
+
     } @else {
       <button
         app-button
@@ -63,8 +63,8 @@
         cdkOverlayOrigin
         #menuLoginTrigger="cdkOverlayOrigin"
         [tabindex]="-1"
-        (click)="setShowNavMenuLogin($event)"
-        (keydown)="setShowNavMenuLogin($event)"
+        (click)="toggleShowNavMenuLogin($event)"
+        (keydown)="toggleShowNavMenuLogin($event)"
       >Sign In</button>
 
       <ng-template
@@ -74,15 +74,15 @@
         [cdkConnectedOverlayOpen]="!!_showNavMenuLogin()"
         [cdkConnectedOverlayDisposeOnNavigation]="true"
         [cdkConnectedOverlayPositions]="_cdkConnectedOverlayPositions"
-        (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); setShowNavMenuLogin($event);"
+        (overlayOutsideClick)="cdkConnectedOverlay.overlayRef.detach(); toggleShowNavMenuLogin($event);"
       >
 
         <app-menu
           [disabled]="_isButtonDisabled()"
         >
-          <app-menu-item (click)="googleSignIn()"><fa-icon [icon]="_faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</app-menu-item>
-          <app-menu-item (click)="openAuthFormComponent()"><fa-icon [icon]="_faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</app-menu-item>
-          <app-menu-item (click)="anonymouslySignIn()"><fa-icon [icon]="_faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</app-menu-item>
+          <app-menu-item (click)="googleSignIn(); toggleShowNavMenuLogin();"><fa-icon [icon]="_faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</app-menu-item>
+          <app-menu-item (click)="openAuthFormComponent(); toggleShowNavMenuLogin();"><fa-icon [icon]="_faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</app-menu-item>
+          <app-menu-item (click)="anonymouslySignIn(); toggleShowNavMenuLogin();"><fa-icon [icon]="_faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</app-menu-item>
         </app-menu>
 
       </ng-template>

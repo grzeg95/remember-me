@@ -10,6 +10,7 @@ import {Sig} from '../utils/sig';
 export class LayoutService {
 
   readonly showNavMenuLoginSig = new Sig<boolean>(false);
+  readonly showNavMenuUserSig = new Sig<boolean>(false);
   readonly popUpView = new Sig<boolean>(false);
 
   readonly closePopUpButtonRefSig = new Sig<TemplateRef<any> | null>(null);

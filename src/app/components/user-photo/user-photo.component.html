@@ -1,0 +1,14 @@
+@if (_authStateReady() && _user(); as user) {
+
+  @if (user.photoURL) {
+    <img
+      class="user-photo__img"
+      [internalImgSecure]="user.photoURL"
+      [tabindex]="-1"
+    />
+  } @else {
+    <svg
+      [appSvg]="'user-' + (_darkMode() ? 'dark' : 'light')"
+      class="user-photo__no-photo"/>
+  }
+}

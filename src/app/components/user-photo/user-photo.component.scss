@@ -1,0 +1,12 @@
+.user-photo {
+
+  &__img {
+    border-radius: 100%;
+    width: 32px;
+    display: block;
+  }
+
+  &_no-photo {
+    height: 32px;
+  }
+}

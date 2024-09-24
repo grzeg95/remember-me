@@ -29,12 +29,13 @@ import {AuthFormComponent} from '../auth-form/auth-form.component';
 import {ButtonComponent} from '../button/button.component';
 import {MenuItemComponent} from '../menu/menu-item/menu-item.component';
 import {MenuComponent} from '../menu/menu.component';
+import {UserPhotoComponent} from '../user-photo/user-photo.component';
 import {UserSettingsComponent} from '../user-settings/user-settings.component';
 
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent, CdkConnectedOverlay, CdkOverlayOrigin, MenuComponent, NgTemplateOutlet, SvgDirective, MenuItemComponent],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, ButtonComponent, CdkConnectedOverlay, CdkOverlayOrigin, MenuComponent, NgTemplateOutlet, SvgDirective, MenuItemComponent, UserPhotoComponent],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -54,6 +55,8 @@ export class NavComponent {
   ]
 
   protected readonly _showNavMenuLogin = this._layoutService.showNavMenuLoginSig.get();
+  protected readonly _showNavMenuUser = this._layoutService.showNavMenuUserSig.get();
+
   protected readonly _popUpView = this._layoutService.popUpView.get();
   protected readonly _closePopUpButtonRef = this._layoutService.closePopUpButtonRefSig.get();
 
@@ -107,13 +110,6 @@ export class NavComponent {
 
   openAuthFormComponent(): void {
     this._router.navigate(['/auth'])
-    // this._dialog.open(AuthFormComponent, {
-    //   maxWidth: '100vw',
-    //   maxHeight: '100vh',
-    //   height: '100%',
-    //   width: '100%',
-    //   panelClass: ['full-screen-modal', 'full-screen-modal-without-padding']
-    // });
   }
 
   openUserSetting() {
@@ -126,34 +122,38 @@ export class NavComponent {
     });
   }
 
-  setShowNavMenuLogin($event: KeyboardEvent | MouseEvent) {
+  toggleShowNavMenuLogin($event?: KeyboardEvent | MouseEvent) {
 
-    if (handleTabIndex($event)) return;
-    $event.preventDefault();
-    $event.stopPropagation();
+    if ($event) {
+      if (handleTabIndex($event)) return;
+      $event.preventDefault();
+      $event.stopPropagation();
 
-    if ($event instanceof KeyboardEvent) {
-      if ($event.code !== 'Space' && $event.code !== 'Enter') {
-        return;
+      if ($event instanceof KeyboardEvent) {
+        if ($event.code !== 'Space' && $event.code !== 'Enter') {
+          return;
+        }
       }
     }
 
     this._layoutService.showNavMenuLoginSig.set(!this._showNavMenuLogin());
   }
 
-  protected closeLoginView($event: KeyboardEvent | MouseEvent) {
+  toggleShowNavUserMenu($event?: KeyboardEvent | MouseEvent) {
 
-    if (handleTabIndex($event)) return;
-    $event.preventDefault();
-    $event.stopPropagation();
+    if ($event) {
+      if (handleTabIndex($event)) return;
+      $event.preventDefault();
+      $event.stopPropagation();
 
-    if ($event instanceof KeyboardEvent) {
-      if ($event.code !== 'Space' && $event.code !== 'Enter') {
-        return;
+      if ($event instanceof KeyboardEvent) {
+        if ($event.code !== 'Space' && $event.code !== 'Enter') {
+          return;
+        }
       }
     }
 
-    this._layoutService.popUpView.set(false);
+    this._layoutService.showNavMenuUserSig.set(!this._showNavMenuUser());
   }
 
   setDarkMode(darkMode: boolean) {

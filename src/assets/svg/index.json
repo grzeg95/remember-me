@@ -34,5 +34,13 @@
   {
     "name": "today-tasks",
     "src": "today-tasks.svg"
+  },
+  {
+    "name": "user-dark",
+    "src": "user-dark.svg"
+  },
+  {
+    "name": "user-light",
+    "src": "user-light.svg"
   }
 ]
