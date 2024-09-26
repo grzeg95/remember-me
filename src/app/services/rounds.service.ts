@@ -27,8 +27,8 @@ export class RoundsService {
 
   readonly roundIdSig = new Sig<string | null | undefined>(undefined);
 
-  readonly editRoundSig = new Sig<Round | undefined>(undefined);
-  readonly editRoundIdSig = new Sig<string | null | undefined>(undefined);
+  readonly editedRoundSig = new Sig<Round | undefined>(undefined);
+  readonly editedRoundIdSig = new Sig<string | null | undefined>(undefined);
   readonly loadingEditRoundSig = new Sig<boolean>(false);
 
   readonly roundsMapSig = new Sig<Map<string, Round> | undefined>(undefined);

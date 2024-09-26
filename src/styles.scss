@@ -3,6 +3,7 @@
 @use 'app/components/input/input' as input;
 @use 'app/components/menu/menu' as menu;
 @use 'app/components/menu/menu-item/menu-item' as menu-item;
+@use 'app/components/rounds/rounds' as rounds;
 
 @import 'styles/typography';
 @import 'styles/overlay';
@@ -119,6 +120,10 @@ a[href] {
   @include menu-item.theme((
     background-hover: #D9D9D9
   ));
+
+  @include rounds.theme((
+    anchor-color: #09090A
+  ));
 }
 
 .dark {
@@ -172,5 +177,9 @@ a[href] {
 
   @include menu-item.theme((
     background-hover: #2A384F
+  ));
+
+  @include rounds.theme((
+    anchor-color: #DFEBFF
   ));
 }

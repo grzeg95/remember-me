@@ -1,0 +1,15 @@
+@mixin theme($theme) {
+
+
+  .app-rounds {
+
+    $anchor-color: map-get($theme, 'anchor-color');
+
+    &__rounds-bar {
+
+      a {
+        color: $anchor-color;
+      }
+    }
+  }
+}

@@ -49,9 +49,9 @@ export class RoundEditComponent implements OnDestroy {
   private readonly _isLoadingSig = new Sig<boolean>(false);
   protected readonly _isLoading = this._isLoadingSig.get();
 
-  protected readonly _editRoundIdSig = this._roundsService.editRoundIdSig;
-  protected readonly _editRoundId = this._editRoundIdSig.get();
-  protected readonly _editRound = this._roundsService.editRoundSig.get();
+  protected readonly _editedRoundIdSig = this._roundsService.editedRoundIdSig;
+  protected readonly _editedRoundId = this._editedRoundIdSig.get();
+  protected readonly _editedRound = this._roundsService.editedRoundSig.get();
 
   protected _initValues = {name: ''};
 
@@ -81,14 +81,14 @@ export class RoundEditComponent implements OnDestroy {
 
     effect(() => {
       if (this._isOnline()) {
-        this._roundsService.editRoundIdSig.set(this._activeRoute.snapshot.params['id'] || undefined);
+        this._roundsService.editedRoundIdSig.set(this._activeRoute.snapshot.params['id'] || undefined);
       } else {
         this._roundForm.disable();
       }
     });
 
     this._route.paramMap.subscribe((paramMap) => {
-      this._roundsService.editRoundIdSig.set(paramMap.get('id'));
+      this._roundsService.editedRoundIdSig.set(paramMap.get('id'));
     });
 
     this._name?.valueChanges.subscribe((val) => {
@@ -102,7 +102,7 @@ export class RoundEditComponent implements OnDestroy {
 
       const user = this._user();
       const cryptoKey = this._cryptoKey();
-      const editRoundId = this._editRoundId();
+      const editRoundId = this._editedRoundId();
 
       if (user === undefined || editRoundId === undefined || !cryptoKey) {
         return;
@@ -137,7 +137,7 @@ export class RoundEditComponent implements OnDestroy {
       this._editRoundSub && !this._editRoundSub.closed && this._editRoundSub.unsubscribe();
       this._editRoundSub = docSnapshots<Round, RoundDoc>(roundRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user() || !!this._editRoundId()),
+        takeWhile(() => !!this._user() || !!this._editedRoundId()),
         switchMap((docSnap) => Round.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((round) => {
@@ -151,7 +151,7 @@ export class RoundEditComponent implements OnDestroy {
 
         this._isLoadingSig.set(false);
 
-        this._roundsService.editRoundSig.set(round);
+        this._roundsService.editedRoundSig.set(round);
 
         this._roundForm.get('name')?.setValue(round.name);
         this._initValues = {
@@ -168,7 +168,7 @@ export class RoundEditComponent implements OnDestroy {
     this._isLoadingSig.set(true);
     this._roundForm.disable();
 
-    this._roundsService.saveRound(this._name?.value, this._editRound()?.id).pipe(
+    this._roundsService.saveRound(this._name?.value, this._editedRound()?.id).pipe(
       catchError((error) => {
         this._isLoadingSig.set(false);
         this._roundForm.enable();
@@ -195,7 +195,7 @@ export class RoundEditComponent implements OnDestroy {
         this._roundForm.disable();
         this._isLoadingSig.set(true);
 
-        this._roundsService.deleteRound(this._editRound()?.id as string).pipe(
+        this._roundsService.deleteRound(this._editedRound()?.id as string).pipe(
           catchError((error) => {
             this._isLoadingSig.set(false);
             this._roundForm.enable();
@@ -204,7 +204,7 @@ export class RoundEditComponent implements OnDestroy {
           })
         ).subscribe((success) => {
           this._snackBar.open(success.details || 'Your operation has been done 😉');
-          this._roundsService.editRoundIdSig.set(undefined);
+          this._roundsService.editedRoundIdSig.set(undefined);
         });
       }
     });
@@ -216,8 +216,8 @@ export class RoundEditComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._roundsService.editRoundIdSig.set(undefined);
-    this._roundsService.editRoundSig.set(undefined);
+    this._roundsService.editedRoundIdSig.set(undefined);
+    this._roundsService.editedRoundSig.set(undefined);
     this._roundsService.loadingEditRoundSig.set(false);
   }
 }

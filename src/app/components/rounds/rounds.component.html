@@ -1,35 +1,22 @@
-<div class="container">
-  <div class="row">
-    <div class="col">
-      <div class="vertical-links">
+<div class="app-rounds__rounds-bar">
+  <!--
+  Rounds | Round edit | Round name
+  Rounds | Round name
+  -->
 
-        <!--
-        Rounds | Round edit | Round name
-        Rounds | Round name
-        -->
-        <img src="assets/img/rounds.svg" class="rounds-icon">
-        <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundsList]">Rounds</a>
+  <svg [appSvg]="'rounds-' + (_darkMode() ? 'dark' : 'light')" class="app-rounds__rounds-bar__rounds-icon" />
 
-        <input type="hidden" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]" routerLinkActive="roundEdit" #roundEdit="routerLinkActive"/>
+  <a [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundsList]">Rounds</a>
 
-        @if (roundEdit.isActive) {
-          <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]">Round</a>
-        }
+  @if (_editedRound()) {
+    <span> | </span>
+    <a [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor, _editedRound()?.id]">{{ _editedRound()?.name }}</a>
+  }
 
-        @if (roundEdit.isActive && _editRound()) {
-          <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor, _editRound()?.id]">{{ _editRound()?.name }}</a>
-        }
-
-        @if (!roundEdit.isActive && _round()) {
-          <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _round()?.id, _RouterDict.todayTasks]"> {{ _round()?.name }}</a>
-        }
-
-      </div>
-    </div>
-  </div>
+  @if (_round()) {
+    <span> | </span>
+    <a [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _round()?.id, _RouterDict.todayTasks]"> {{ _round()?.name }}</a>
+  }
 </div>
 
 <router-outlet></router-outlet>

@@ -21,12 +21,12 @@
         <button mat-flat-button
                 color="primary"
                 [disabled]="_roundForm.disabled || _roundForm.invalid || !_isOnline() || !_isNothingChanged()"
-                (click)="saveRound()">{{ !_editRound() ? 'Create' : 'Save' }}</button>
-        @if (_editRound()) {
+                (click)="saveRound()">{{ !_editedRound() ? 'Create' : 'Save' }}</button>
+        @if (_editedRound()) {
           <button mat-stroked-button
                   color="primary"
                   [disabled]="_roundForm.disabled || !_isOnline()"
-                  (click)="_editRoundIdSig.set(null)">New</button>
+                  (click)="_editedRoundIdSig.set(null)">New</button>
           <button mat-stroked-button
                   color="warn"
                   [disabled]="_roundForm.disabled || !_isOnline()"

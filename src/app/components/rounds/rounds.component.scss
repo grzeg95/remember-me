@@ -1,12 +1,19 @@
-.vertical-link {
-  color: black;
-}
+@import 'styles/layout-mixins';
+@import 'styles/typography-mixins';
 
-.vertical-links {
-  margin: 0 0.3125rem 0.625rem 0.3125rem;
-}
+.app-rounds {
 
-.rounds-icon {
-  width: 30px;
-  margin-right: 0.5rem;
+  @include container();
+
+  &__rounds-bar {
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &__rounds-icon {
+      width: 33px;
+      height: 33px;
+    }
+  }
 }
