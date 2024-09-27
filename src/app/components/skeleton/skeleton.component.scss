@@ -1,20 +1,12 @@
-:host {
-  display: block;
-  background: rgb(223, 223, 223) no-repeat;
-  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  animation-delay: 0.5s;
-  border-radius: 6px;
-  width: 100%;
+:root {
+  --app-skeleton-background-begin: white;
+  --app-skeleton-background-end: silver;
 }
 
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
+.app-skeleton {
+  display: block;
+  background: var(--app-skeleton-background-begin);
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 3px;
+  width: 100%;
 }

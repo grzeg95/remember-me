@@ -1,0 +1,22 @@
+@mixin theme($theme) {
+
+  $background-begin: map-get($theme, 'background-begin');
+  $background-end: map-get($theme, 'background-end');
+
+  .app-skeleton {
+    --app-skeleton-background-begin: #{$background-begin};
+    --app-skeleton-background-end: #{$background-end};
+  }
+
+  @keyframes pulse {
+    0% {
+      background: var(--app-skeleton-background-begin);
+    }
+    50% {
+      background: var(--app-skeleton-background-end);
+    }
+    100% {
+      background: var(--app-skeleton-background-begin);
+    }
+  }
+}

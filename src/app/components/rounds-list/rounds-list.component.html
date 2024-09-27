@@ -1,96 +1,76 @@
-<div class="container" [@fadeZoomInOutTrigger]>
-  <div class="col">
+@if (!_isOnline() && !_roundsList()!.length) {
+  <div class="app-rounds-list__communicate">
+    <div class="app-rounds-list__communicate__description">You are offline. Waiting for connection...</div>
+  </div>
+}
 
-    @if (!_isOnline() && !_roundsList()!.length) {
-      <div class="row message">
-        <div class="col">
-          <span>You are offline. Waiting for connection...</span>
-        </div>
+@if (_isOnline() && _loadingRoundsMap() && _loadingUser()) {
+  @defer {
+  } @loading (after 100ms; minimum 500ms) {
+    <table class="app-rounds-list__table">
+      <thead>
+        <tr>
+          <th><app-skeleton width="37px" height="16px"/></th>
+          <th><app-skeleton width="32px" height="16px"/></th>
+          <th><app-skeleton width="71px" height="16px"/></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th><app-skeleton width="33px" height="19px"/></th>
+          <th><app-skeleton width="9px" height="19px"/></th>
+          <th><app-skeleton width="72px" height="19px"/></th>
+          <th><app-skeleton width="16px" height="19px"/></th>
+        </tr>
+      </tbody>
+    </table>
+  }
+} @else if (_isOnline()) {
+  <ng-container *ngTemplateOutlet="showItems"></ng-container>
+}
+
+<ng-template #showItems>
+
+  @if (_roundsList(); as roundsList) {
+
+    @if (roundsList.length > 0) {
+
+      <table #roundListTable class="app-rounds-list__table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Tasks</th>
+            <th>Times of day</th>
+            <th [ngStyle]="{width: '39px'}"></th>
+          </tr>
+        </thead>
+        <tbody cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListDisabled]="!_isOnline()">
+          @for (round of roundsList; track round) {
+            <tr
+              cdkDrag
+              (click)="goToRound(round.id)"
+              [class.disabled]="_loadingUser() || ((!_isOnline() || _loadingUser()) && (!_isOnline() && !!_round() && _round()?.id !== round.id)) || ((!_isOnline() || _loading()) && !_round())"
+            >
+              <th>{{ round.name }}</th>
+              <th>{{ round.tasksIds.length }}</th>
+              <th>{{ round.timesOfDay.join(', ') || '---' }}</th>
+              <th class="edit-button" (click)="editRound(round)"><fa-icon [icon]="_faEdit"></fa-icon></th>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+    } @else {
+      <div class="app-rounds-list__communicate">
+        <div class="app-rounds-list__communicate__header">There is no rounds</div>
+        <button
+          class="app-rounds-list__communicate__button"
+          app-button
+          appearance="primary"
+          (click)="addRound()"
+        >Add new round</button>
       </div>
     }
-
-    @if (_isOnline() && _loadingRoundsMap() && _loadingUser()) {
-      @defer {
-      } @loading (after 100ms; minimum 500ms) {
-        <div class="row message">
-          <div class="col">
-            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-          </div>
-        </div>
-      }
-    } @else if (_isOnline()) {
-      <ng-container *ngTemplateOutlet="showItems"></ng-container>
-    }
-
-    <ng-template #showItems>
-
-      @if (_roundsList(); as roundsList) {
-
-        @if (roundsList.length > 0) {
-          <div class="row" #roundListTableWrapper>
-            <table  [trackBy]="trackRoundList"
-                    class="rounds-list no-select"
-                    mat-table
-                    [dataSource]="roundsList"
-                    cdkDropList
-                    (cdkDropListDropped)="drop($event)"
-                    [cdkDropListDisabled]="!_isOnline()">
-
-              <ng-container matColumnDef="roundName">
-                <th mat-header-cell *matHeaderCellDef>Round</th>
-                <td mat-cell *matCellDef="let element">{{ element.name }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="tasks">
-                <th mat-header-cell *matHeaderCellDef>Tasks</th>
-                <td mat-cell *matCellDef="let element">{{ element.tasksIds.length }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="timesOfDay">
-                <th mat-header-cell *matHeaderCellDef>Times of day</th>
-                <td mat-cell *matCellDef="let element">{{ element.timesOfDay.join(', ') || '---' }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="edit">
-                <th mat-header-cell *matHeaderCellDef></th>
-                <td mat-cell class="edit-button" *matCellDef="let element" (click)="editRound(element)">
-                  <fa-icon [icon]="_faEdit"></fa-icon>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="_displayedColumns"></tr>
-              <tr cdkDrag [class.disabled]="_loadingUser() || ((!_isOnline() || _loadingUser()) && (!_isOnline() && !!_round() && _round()?.id !== row.id)) || ((!_isOnline() || _loading()) && !_round())" mat-row
-                  *matRowDef="let row; columns: _displayedColumns;" (click)="goToRound(row.id)"></tr>
-
-            </table>
-
-            <div class="add-round">
-              <button mat-flat-button
-                      color="primary"
-                      (click)="addRound()">Add new
-              </button>
-            </div>
-          </div>
-        } @else {
-          <div class="row message">
-            <div class="col">
-              <span>Add some rounds to this empty list</span>
-            </div>
-            <div class="col">
-              <div class="add-round">
-                <button mat-flat-button
-                        color="primary"
-                        (click)="addRound()">Add new round
-                </button>
-              </div>
-            </div>
-          </div>
-        }
-      }
-    </ng-template>
-  </div>
-</div>
-
-@if (_loading()) {
-  <mat-spinner [diameter]="50" [strokeWidth]="5"></mat-spinner>
-}
+  }
+</ng-template>

@@ -1,11 +1,24 @@
-import {Component, ElementRef, Input, OnChanges, OnInit, Renderer2, SimpleChanges} from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Input,
+  OnChanges,
+  OnInit,
+  Renderer2,
+  SimpleChanges,
+  ViewEncapsulation
+} from '@angular/core';
 
 @Component({
   selector: 'app-skeleton',
   standalone: true,
   imports: [],
   templateUrl: './skeleton.component.html',
-  styleUrl: './skeleton.component.scss'
+  styleUrl: './skeleton.component.scss',
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-skeleton'
+  }
 })
 export class SkeletonComponent implements OnChanges, OnInit {
 
@@ -19,14 +32,8 @@ export class SkeletonComponent implements OnChanges, OnInit {
   }
 
   private _applySize() {
-
     this._rendered.setStyle(this._host.nativeElement, 'max-width', this.width);
     this._rendered.setStyle(this._host.nativeElement, 'height', this.height);
-
-    // this._host.nativeElement.style.width = this.width;
-    // this._host.nativeElement.style.height = this.height;
-
-    // console.log(this._host.nativeElement.style.width, this._host.nativeElement.style.height);
   }
 
   ngOnInit(): void {

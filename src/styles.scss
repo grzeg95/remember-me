@@ -4,6 +4,8 @@
 @use 'app/components/menu/menu' as menu;
 @use 'app/components/menu/menu-item/menu-item' as menu-item;
 @use 'app/components/rounds/rounds' as rounds;
+@use 'app/components/skeleton/skeleton' as skeleton;
+@use 'styles/typography-mixins' as typography-mixins;
 
 @import 'styles/typography';
 @import 'styles/overlay';
@@ -68,11 +70,76 @@ a[href] {
   flex-direction: row-reverse;
 }
 
+table {
+
+  border-collapse: collapse;
+
+  thead {
+
+    border-bottom: solid 1px;
+
+    tr {
+      th {
+        font-size: 12px !important;
+        padding: 11px 14px;
+        @include typography-mixins.font-normal();
+        text-align: left;
+      }
+    }
+  }
+}
+
+tr {
+  th {
+    font-size: 14px !important;
+    padding: 11px 14px;
+    @include typography-mixins.font-normal();
+    text-align: left;
+  }
+}
+
+@mixin table($theme) {
+
+  $font-family: map-get($theme, 'font-family');
+  $thead-color: map-get($theme, 'thead-color');
+  $thead-border-color: map-get($theme, 'thead-border-color');
+  $tbody-color: map-get($theme, 'tbody-color');
+
+  table {
+
+    thead {
+
+      border-bottom: solid 1px $thead-border-color;
+
+      tr {
+        th {
+          color: $thead-color;
+          font-family: $font-family;
+        }
+      }
+    }
+  }
+
+  tr {
+    th {
+      color: $tbody-color;
+      font-family: $font-family;
+    }
+  }
+}
+
 .light {
 
   a[href] {
     color: #2C6FDD;
   }
+
+  @include table((
+    font-family: $font-family,
+    thead-color: #636363,
+    thead-border-color: #636363,
+    tbody-color: #09090A
+  ));
 
   @include auth-form.theme((
     font-family: $font-family,
@@ -124,6 +191,11 @@ a[href] {
   @include rounds.theme((
     anchor-color: #09090A
   ));
+
+  @include skeleton.theme((
+    background-begin: #EFEFEF,
+    background-end: #A3A3A3
+  ));
 }
 
 .dark {
@@ -131,6 +203,13 @@ a[href] {
   a[href] {
     color: #DDEA32;
   }
+
+  @include table((
+    font-family: $font-family,
+    thead-color: #9EA5B0,
+    thead-border-color: #9EA5B0,
+    tbody-color: #DFEBFF
+  ));
 
   @include auth-form.theme((
     font-family: $font-family,
@@ -181,5 +260,10 @@ a[href] {
 
   @include rounds.theme((
     anchor-color: #DFEBFF
+  ));
+
+  @include skeleton.theme((
+    background-begin: #808FA6,
+    background-end: #2A3C57
   ));
 }

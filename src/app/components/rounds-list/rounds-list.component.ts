@@ -1,6 +1,14 @@
 import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
-import {NgTemplateOutlet} from '@angular/common';
-import {AfterViewChecked, Component, ElementRef, HostListener, Renderer2, signal, ViewChild} from '@angular/core';
+import {NgStyle, NgTemplateOutlet} from '@angular/common';
+import {
+  AfterViewChecked,
+  Component, effect,
+  ElementRef,
+  HostListener,
+  Renderer2,
+  ViewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -18,6 +26,8 @@ import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
 import {Sig} from '../../utils/sig';
+import {ButtonComponent} from '../button/button.component';
+import {SkeletonComponent} from '../skeleton/skeleton.component';
 
 @Component({
   selector: 'app-rounds-list',
@@ -31,18 +41,25 @@ import {Sig} from '../../utils/sig';
     MatButtonModule,
     CdkDrag,
     MatProgressSpinnerModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    SkeletonComponent,
+    NgStyle,
+    ButtonComponent
   ],
   styleUrl: './rounds-list.component.scss',
   animations: [
     fadeZoomInOutTrigger
-  ]
+  ],
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-rounds-list container'
+  }
 })
 export class RoundsListComponent implements AfterViewChecked {
 
   protected readonly _displayedColumns: string[] = ['roundName', 'tasks', 'timesOfDay', 'edit'];
   protected readonly _faEdit = faEdit;
-  @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper!: ElementRef;
+  @ViewChild('roundListTable', {static: false}) roundListTable!: ElementRef;
 
   protected readonly _isOnline = this._connectionsService.isOnlineSig.get();
 
@@ -60,7 +77,7 @@ export class RoundsListComponent implements AfterViewChecked {
 
   @HostListener('window:resize', ['$event'])
   onResize() {
-    this.applyCellsWidths();
+    setTimeout(() => this.applyCellsWidths());
   }
 
   constructor(
@@ -73,6 +90,15 @@ export class RoundsListComponent implements AfterViewChecked {
     private readonly _connectionsService: ConnectionService,
     private readonly _authService: AuthService
   ) {
+
+    effect(() => {
+
+      const roundsList = this._roundsService.roundsList();
+
+      if (roundsList) {
+        setTimeout(() => this.applyCellsWidths());
+      }
+    });
   }
 
   addRound(): void {
@@ -119,10 +145,9 @@ export class RoundsListComponent implements AfterViewChecked {
   }
 
   applyCellsWidths(): void {
-    if (this.roundListTableWrapper) {
+    if (this.roundListTable) {
 
-      const elements: HTMLElement[] = Array.from(this.roundListTableWrapper.nativeElement.children);
-      const table = elements.find((e: HTMLElement) => e.classList.contains('rounds-list')) as HTMLTableElement;
+      const table = this.roundListTable.nativeElement as HTMLTableElement;
 
       if (table) {
         for (const row of Array.from(table.rows) as HTMLTableRowElement[]) {
