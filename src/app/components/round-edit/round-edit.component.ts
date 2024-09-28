@@ -1,9 +1,9 @@
+import {Dialog} from '@angular/cdk/dialog';
 import {NgIf} from '@angular/common';
 import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatDialog} from '@angular/material/dialog';
 import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -21,6 +21,8 @@ import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {Sig} from '../../utils/sig';
+import {ButtonComponent} from '../button/button.component';
+import {InputComponent} from '../input/input.component';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 
 @Component({
@@ -32,7 +34,9 @@ import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/
     MatProgressBarModule,
     MatInputModule,
     MatButtonModule,
-    NgIf
+    NgIf,
+    InputComponent,
+    ButtonComponent
   ],
   styleUrl: './round-edit.component.scss',
   animations: [
@@ -71,7 +75,7 @@ export class RoundEditComponent implements OnDestroy {
     private readonly _snackBar: MatSnackBar,
     private readonly _router: Router,
     private readonly _route: ActivatedRoute,
-    protected readonly _dialog: MatDialog,
+    protected readonly _dialog: Dialog,
     private readonly _connectionService: ConnectionService,
     @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
     private readonly _authService: AuthService,
@@ -189,7 +193,7 @@ export class RoundEditComponent implements OnDestroy {
 
     const dialogRef = this._dialog.open(RoundDialogConfirmDeleteComponent);
 
-    dialogRef.afterClosed().subscribe((isConfirmed) => {
+    dialogRef.closed.subscribe((isConfirmed) => {
 
       if (isConfirmed) {
         this._roundForm.disable();

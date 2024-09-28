@@ -1,0 +1,13 @@
+@mixin theme($theme) {
+
+  $font-family: map-get($theme, 'font-family');
+  $color: map-get($theme, 'color');
+  $background-color: map-get($theme, 'background-color');
+
+  .dialog {
+
+    background: $background-color;
+    color: $color;
+    font-family: $font-family;
+  }
+}

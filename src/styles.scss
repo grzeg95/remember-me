@@ -1,5 +1,6 @@
 @use 'app/components/auth-form/auth-form' as auth-form;
 @use 'app/components/button/button' as button;
+@use 'app/components/dialog/dialog' as dialog;
 @use 'app/components/input/input' as input;
 @use 'app/components/menu/menu' as menu;
 @use 'app/components/menu/menu-item/menu-item' as menu-item;
@@ -10,6 +11,7 @@
 @import 'styles/typography';
 @import 'styles/overlay';
 @import 'styles/layout';
+@import 'app/components/dialog/dialog.component';
 
 *,
 *::before,
@@ -63,11 +65,6 @@ a[href] {
   margin-top: 2px;
   height: 18px;
   color: #F51512;
-}
-
-.action-buttons {
-  display: flex;
-  flex-direction: row-reverse;
 }
 
 table {
@@ -164,6 +161,12 @@ tr {
     warn-hover-color: #DFEBFF
   ));
 
+  @include dialog.theme((
+    font-family: $font-family,
+    color: #09090A,
+    background: white
+  ));
+
   @include input.theme((
     font-family: $font-family,
     background-color: #F8F5F5,
@@ -232,6 +235,12 @@ tr {
     warn-color: #DFEBFF,
     warn-hover-background: #FF6161,
     warn-hover-color: #DFEBFF
+  ));
+
+  @include dialog.theme((
+    font-family: $font-family,
+    color: #DFEBFF,
+    background: #2A3C57
   ));
 
   @include input.theme((

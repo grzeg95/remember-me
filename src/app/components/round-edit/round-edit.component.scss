@@ -1,6 +1,21 @@
-.container {
-  & > .col {
+.round-edit {
+
+  &__form {
+
+    margin-top: 34px;
+    margin-left: auto;
+    margin-right: auto;
     max-width: 500px;
-    margin: auto;
+
+    &__mat-progress-bar {
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+
+    &__action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
   }
 }

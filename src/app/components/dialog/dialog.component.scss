@@ -1,0 +1,17 @@
+@use 'styles/typography-mixins' as typography;
+
+.dialog {
+
+  padding: 20px;
+  max-width: 340px;
+  max-height: calc(100vh - 32px);
+  display: block;
+  width: calc(100vw - 32px);
+  border-radius: 3px;
+  overflow: auto;
+
+  &__title {
+    @include typography.heading-l();
+    margin-bottom: 20px;
+  }
+}
