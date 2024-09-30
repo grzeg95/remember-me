@@ -7,7 +7,7 @@
 
   &__nav {
 
-    box-shadow: inset 0 -1px 0 var(--color-separator);
+    box-shadow: inset 0 -1px 0 black;
     margin-bottom: 2rem;
 
     &__button {
@@ -26,14 +26,4 @@
     }
   }
 
-}
-
-.selectedForm {
-  max-width: 370px;
-  margin: auto;
-}
-
-.nav {
-  box-shadow: inset 0 -1px 0 var(--color-separator);
-  margin-bottom: 2rem;
 }

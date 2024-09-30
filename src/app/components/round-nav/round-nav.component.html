@@ -1,18 +1,13 @@
-<div class="container">
-  <div class="row">
-    <div class="col">
-      <div class="round-nav">
-        <button
-          [routerLink]="'./' + _RouterDict.todayTasks"
-          routerLinkActive="active"
-          (mousedown)="_todayTasksViewActive(); beginUnmarkTodayTasks()"
-          (touchstart)="_todayTasksViewActive(); beginUnmarkTodayTasks()"
-          (mouseup)="_todayTasksViewActive(); endUnmarkTodayTasks()"
-          (touchend)="_todayTasksViewActive(); endUnmarkTodayTasks()">Today</button>
-        <button [routerLink]="'./' + _RouterDict.tasksList" routerLinkActive="active">Tasks</button>
-        <button [routerLink]="'./' + _RouterDict.taskEditor" routerLinkActive="active">Editor</button>
-        <button [routerLink]="'./' + _RouterDict.timesOfDayOrder" routerLinkActive="active">Order</button>
-      </div>
-    </div>
-  </div>
+<div class="app-auth-form__nav">
+  <button
+    [routerLink]="'./' + _RouterDict.todayTasks"
+    routerLinkActive="app-round-nav__nav__button--active"
+    (mousedown)="_todayTasksViewActive(); beginUnmarkTodayTasks()"
+    (touchstart)="_todayTasksViewActive(); beginUnmarkTodayTasks()"
+    (mouseup)="_todayTasksViewActive(); endUnmarkTodayTasks()"
+    (touchend)="_todayTasksViewActive(); endUnmarkTodayTasks()"
+    class="app-round-nav__nav__button">Today</button>
+  <button [routerLink]="'./' + _RouterDict.tasksList" routerLinkActive="app-round-nav__nav__button--active" class="app-round-nav__nav__button">Tasks</button>
+  <button [routerLink]="'./' + _RouterDict.taskEditor" routerLinkActive="app-round-nav__nav__button--active" class="app-round-nav__nav__button">Editor</button>
+  <button [routerLink]="'./' + _RouterDict.timesOfDayOrder" routerLinkActive="app-round-nav__nav__button--active" class="app-round-nav__nav__button">Order</button>
 </div>

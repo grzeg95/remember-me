@@ -1,4 +1,4 @@
-import {Component, signal} from '@angular/core';
+import {Component, signal, ViewEncapsulation} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, RouterLink, RouterLinkActive} from '@angular/router';
 import {interval, Subscription} from 'rxjs';
@@ -15,7 +15,11 @@ import {RoundsService} from '../../services/rounds.service';
     RouterLink,
     RouterLinkActive
   ],
-  styleUrls: ['./round-nav.component.scss']
+  styleUrls: ['./round-nav.component.scss'],
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-round-nav'
+  }
 })
 export class RoundNavComponent {
 

@@ -4,6 +4,7 @@
 @use 'app/components/input/input' as input;
 @use 'app/components/menu/menu' as menu;
 @use 'app/components/menu/menu-item/menu-item' as menu-item;
+@use 'app/components/round-nav/round-nav' as round-nav;
 @use 'app/components/rounds/rounds' as rounds;
 @use 'app/components/skeleton/skeleton' as skeleton;
 @use 'styles/typography-mixins' as typography-mixins;
@@ -191,6 +192,13 @@ tr {
     background-hover: #D9D9D9
   ));
 
+  @include round-nav.theme((
+    font-family: $font-family,
+    color: #636363,
+    color-active: #09090A,
+    line-color: #636363
+  ));
+
   @include rounds.theme((
     anchor-color: #09090A
   ));
@@ -265,6 +273,13 @@ tr {
 
   @include menu-item.theme((
     background-hover: #2A384F
+  ));
+
+  @include round-nav.theme((
+    font-family: $font-family,
+    color: #8C98AD,
+    color-active: #DFEBFF,
+    line-color: #8C98AD
   ));
 
   @include rounds.theme((
