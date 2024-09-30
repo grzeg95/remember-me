@@ -61,6 +61,7 @@ export class NavComponent {
   protected readonly _closePopUpButtonRef = this._layoutService.closePopUpButtonRefSig.get();
 
   protected readonly _user = this._authService.userSig.get();
+  protected readonly _firebaseUser = this._authService.firebaseUser;
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
   protected readonly _loadingUser = this._authService.loadingUserSig.get();
   protected readonly _whileLoginIn = this._authService.whileLoginInSig.get();

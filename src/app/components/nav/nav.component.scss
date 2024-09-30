@@ -42,3 +42,22 @@
     }
   }
 }
+
+.opacity-loading {
+  animation-name:opacity-loading-keyframes;
+  animation-iteration-count:infinite;
+  animation-timing-function:linear;
+  animation-duration:1s
+}
+
+@keyframes opacity-loading-keyframes {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
