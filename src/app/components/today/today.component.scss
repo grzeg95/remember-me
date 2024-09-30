@@ -1,43 +1,66 @@
-.container {
-  margin: 0 auto 1rem;
-  padding: 1rem;
+@use 'styles/typography-mixins' as typography-mixins;
 
-  .col .row {
-    &.message {
-      padding: 1rem;
+.app-today {
+
+  &__communicate {
+
+    width: 100%;
+    margin-top: 19px;
+
+    &__header {
+      text-align: center;
+      margin-bottom: 8px;
+      @include typography-mixins.heading-l();
     }
 
-    .add-task {
-      text-align: right;
+    &__description {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    &__button {
+      margin: auto;
     }
   }
 
-  .col.time-of-day-col {
-    margin-bottom: 0;
+  &__today-items {
 
-    .time-of-day {
-      margin-top: 2rem;
+    margin-top: 30px;
 
-      &:first-child {
-        margin-top: 1rem;
+    &:first-child {
+      margin-top: 25px;
+    }
+
+    &__time-of-day {
+
+      &__title {
+        @include typography-mixins.heading-l();
+        margin-bottom: 12px;
       }
 
-      .title {
-        font-size: 1.5rem;
-        font-weight: 400;
-      }
+      &__tasks {
 
-      .tasks {
-        margin-top: 1rem;
+        &__button {
 
-        .form-check {
-          display: inline-flex;
-          position: relative;
-          padding: 0;
+          padding: 9px 17px;
+          @include typography-mixins.body-m();
+          @include typography-mixins.font-semibold();
+          border-radius: 8px;
 
-          .mat-mdc-button-base {
-            margin: 0.15rem;
+          &[disabled] {
+            opacity: 0.6;
+            pointer-events: none;
           }
+
+          &--active {
+            border: none;
+          }
+
+          &--inactive {
+            border: solid 1px;
+            background: transparent;
+          }
+
         }
       }
     }

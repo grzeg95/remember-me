@@ -1,0 +1,52 @@
+@mixin theme($theme) {
+
+  $font-family: map-get($theme, 'font-family');
+  $button-active-color: map-get($theme, 'button-active-color');
+  $button-active-background-color: map-get($theme, 'button-active-background-color');
+  $button-active-background-color-hover: map-get($theme, 'button-active-background-color-hover');
+  $button-inactive-color: map-get($theme, 'button-inactive-color');
+  $button-inactive-border-color: map-get($theme, 'button-inactive-boder-color');
+  $button-inactive-color-hover: map-get($theme, 'button-inactive-color-hover');
+  $button-inactive-border-color-hover: map-get($theme, 'button-inactive-border-color-hover');
+
+  .app-today {
+
+    &__today-items {
+
+      &__time-of-day {
+
+        &__tasks {
+
+          &__button {
+
+            font-family: $font-family;
+
+            &--active {
+
+              color: $button-active-color;
+              background: $button-active-background-color;
+
+              &:hover {
+                background: $button-active-background-color-hover;
+              }
+            }
+
+            &--inactive {
+
+              color: $button-inactive-color;
+              border-color: $button-inactive-border-color;
+
+              background: transparent;
+
+              &:hover {
+                color: $button-inactive-color-hover;
+                border-color: $button-inactive-border-color-hover;
+                background: transparent;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -23,6 +23,7 @@ import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {collectionSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
+import {ButtonComponent} from '../button/button.component';
 
 @Component({
   selector: 'app-today',
@@ -33,7 +34,8 @@ import {RoundsService} from '../../services/rounds.service';
     FontAwesomeModule,
     MatProgressSpinnerModule,
     MatProgressBarModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    ButtonComponent
   ],
   styleUrl: './today.component.scss',
   animations: [

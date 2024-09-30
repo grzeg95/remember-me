@@ -7,6 +7,7 @@
 @use 'app/components/round-nav/round-nav' as round-nav;
 @use 'app/components/rounds/rounds' as rounds;
 @use 'app/components/skeleton/skeleton' as skeleton;
+@use 'app/components/today/today' as today;
 @use 'styles/typography-mixins' as typography-mixins;
 
 @import 'styles/typography';
@@ -207,6 +208,17 @@ tr {
     background-begin: #EFEFEF,
     background-end: #A3A3A3
   ));
+
+  @include today.theme((
+    font-family: $font-family,
+    button-active-color: #DFEBFF,
+    button-active-background-color: #00BA91,
+    button-active-background-color-hover: #2CE0B6,
+    button-inactive-color: #00BA91,
+    button-inactive-border-color: #00BA91,
+    button-inactive-color-hover: #2CE0B6,
+    button-inactive-border-color-hover: #2CE0B6
+  ));
 }
 
 .dark {
@@ -289,5 +301,16 @@ tr {
   @include skeleton.theme((
     background-begin: #808FA6,
     background-end: #2A3C57
+  ));
+
+  @include today.theme((
+    font-family: $font-family,
+    button-active-color: #DFEBFF,
+    button-active-background-color: #00BA91,
+    button-active-background-color-hover: #2CE0B6,
+    button-inactive-color: #DFEBFF,
+    button-inactive-border-color: #00BA91,
+    button-inactive-color-hover: #DFEBFF,
+    button-inactive-border-color-hover: #2CE0B6
   ));
 }
