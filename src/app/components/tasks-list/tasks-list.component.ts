@@ -1,5 +1,6 @@
-import {NgTemplateOutlet} from '@angular/common';
-import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {CdkDrag, CdkDropList} from '@angular/cdk/drag-drop';
+import {NgStyle, NgTemplateOutlet} from '@angular/common';
+import {Component, DestroyRef, effect, Inject, OnDestroy, ViewEncapsulation} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -12,8 +13,8 @@ import {Firestore, limit} from 'firebase/firestore';
 import {catchError, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
-import {FirestoreInjectionToken} from '../../models/firebase';
 import {Day} from '../../models/day';
+import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round} from '../../models/round';
 import {Task} from '../../models/task';
 import {User} from '../../models/user';
@@ -21,9 +22,11 @@ import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {collectionSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service'
+import {ButtonComponent} from '../button/button.component';
+import {SkeletonComponent} from '../skeleton/skeleton.component';
 
 @Component({
-  selector: 'app-tasks',
+  selector: 'app-tasks-list',
   standalone: true,
   templateUrl: './tasks-list.component.html',
   imports: [
@@ -31,18 +34,28 @@ import {RoundsService} from '../../services/rounds.service'
     MatTableModule,
     MatButtonModule,
     FontAwesomeModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    SkeletonComponent,
+    CdkDrag,
+    CdkDropList,
+    NgStyle,
+    ButtonComponent
   ],
   styleUrls: ['./tasks-list.component.scss'],
   animations: [
     fadeZoomInOutTrigger
-  ]
+  ],
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-tasks-list container'
+  }
 })
 export class TasksListComponent implements OnDestroy {
 
   protected readonly _isOnline = this._connectionService.isOnlineSig.get();
   protected readonly _round = this._roundsService.roundSig.get();
   protected readonly _tasks = this._roundsService.tasksSig.get();
+  protected readonly _tasksLoading = this._roundsService.tasksLoadingSig.get();
 
   protected readonly _user = this._authService.userSig.get();
   protected readonly _cryptoKey = this._authService.cryptoKeySig.get();

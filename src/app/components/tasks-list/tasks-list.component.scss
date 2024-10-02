@@ -1,23 +1,44 @@
-.container {
-  padding: 1rem;
+@use 'styles/typography-mixins' as typography-mixins;
 
-  .col .row {
-    max-width: 45rem !important; // sass-lint:disable-line no-important
-    margin: 0 auto 1rem;
+.app-tasks-list {
 
-    &.message {
-      padding: 1rem;
+  &__table {
+    width: 100%;
+    max-width: 720px;
+    margin-top: 27px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  &__communicate {
+
+    width: 100%;
+    margin-top: 19px;
+
+    &__header {
+      text-align: center;
+      margin-bottom: 8px;
+      @include typography-mixins.heading-l();
     }
 
-    .add-task-button {
+    &__description {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    &__button__wrapper {
       width: 100%;
-      text-align: right;
+      max-width: 720px;
+      margin-top: 15px;
+      margin-right: auto;
+      margin-left: auto;
     }
 
-    .add-task {
-      text-align: right;
+    &__button {
+      float: right;
     }
   }
+
 }
 
 .edit-button {

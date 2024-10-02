@@ -1,89 +1,84 @@
-<div class="container">
-  <div class="col">
+@if (!_isOnline() && !_tasks()) {
+  <div class="app-tasks-list__communicate">
+    <div class="app-tasks-list__communicate__description">You are offline. Waiting for connection...</div>
+  </div>
+}
 
-    @if (!_isOnline() && !_tasks()) {
-      <div class="row message">
-        <div class="col">
-          <span>You are offline. Waiting for connection...</span>
-        </div>
+@defer (when !!_tasks()) {
+  <ng-template *ngTemplateOutlet="showItems"></ng-template>
+} @placeholder {
+  @defer (when _isOnline() && _tasksLoading(); on timer(250ms)){
+    <table class="app-tasks-list__table">
+      <thead>
+        <tr>
+          <th><app-skeleton width="65px" height="16px"/></th>
+          <th><app-skeleton width="28px" height="16px"/></th>
+          <th><app-skeleton width="71px" height="16px"/></th>
+          <th [ngStyle]="{width: '39px'}"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th><app-skeleton width="100px" height="19px"/></th>
+          <th><app-skeleton width="61px" height="19px"/></th>
+          <th><app-skeleton width="72px" height="19px"/></th>
+          <th><app-skeleton width="16px" height="19px"/></th>
+        </tr>
+      </tbody>
+    </table>
+  }
+}
+
+<ng-template #showItems>
+
+  @if (_tasks(); as tasks) {
+
+    @if (tasks.length > 0) {
+
+      @if ((_round()!.timesOfDay || []); as timesOfDay) {
+        <table class="app-tasks-list__table" [@fadeZoomInOutTrigger]>
+
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Days</th>
+              <th>Times of day</th>
+              <th [ngStyle]="{width: '39px'}"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (task of tasks; track task) {
+              <tr>
+                <th>{{ task.description }}</th>
+                <th>{{ getDaysOfTheWeek(task.daysOfTheWeek) }}</th>
+                <th>{{ getTimesOfDay(timesOfDay, task.timesOfDay).join(', ') }}</th>
+                <th class="edit-button" (click)="goToTask(task.id)"><fa-icon [icon]="_faEdit"></fa-icon></th>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <div class="app-tasks-list__communicate__button__wrapper">
+        <button
+          class="app-tasks-list__communicate__button"
+          app-button
+          appearance="primary"
+          (click)="goToTask()"
+        >Add new</button>
+      </div>
+
+    } @else {
+
+      <div class="app-tasks-list__communicate" [@fadeZoomInOutTrigger]>
+        <div class="app-tasks-list__communicate__header">There is no tasks</div>
+        <button
+          class="app-tasks-list__communicate__button"
+          app-button
+          appearance="primary"
+          (click)="goToTask()"
+        >Add new task</button>
       </div>
     }
-
-    @defer (when !!_tasks()) {
-      <ng-template *ngTemplateOutlet="showItems"></ng-template>
-    } @placeholder {
-      @defer (when _isOnline(); on timer(250ms)){
-        <div class="row message">
-          <div class="col">
-            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-          </div>
-        </div>
-      }
-    }
-
-    <ng-template #showItems>
-
-      @if (_tasks(); as tasks) {
-
-        @if (tasks.length > 0) {
-
-          <div class="row" [@fadeZoomInOutTrigger]>
-
-            @if ((_round()!.timesOfDay || []); as timesOfDay) {
-              <table mat-table [dataSource]="_tasks()!">
-
-                <ng-container matColumnDef="description">
-                  <th mat-header-cell *matHeaderCellDef>Description</th>
-                  <td mat-cell *matCellDef="let element">{{ element.description }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="daysOfTheWeek">
-                  <th mat-header-cell *matHeaderCellDef>Days</th>
-                  <td mat-cell *matCellDef="let element">{{ getDaysOfTheWeek(element.daysOfTheWeek) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="timesOfDays">
-                  <th mat-header-cell *matHeaderCellDef>Times of day</th>
-                  <td mat-cell *matCellDef="let element">{{ getTimesOfDay(timesOfDay, element.timesOfDay).join(', ') }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="edit">
-                  <th mat-header-cell *matHeaderCellDef></th>
-                  <td mat-cell class="edit-button" *matCellDef="let element" (click)="goToTask(element.id)">
-                    <fa-icon [icon]="_faEdit"></fa-icon>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="_displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: _displayedColumns;"></tr>
-
-              </table>
-            }
-
-            <div class="add-task-button">
-              <button mat-flat-button
-                      color="primary"
-                      (click)="goToTask()">Add new</button>
-            </div>
-          </div>
-
-        } @else {
-
-          <div class="row message" [@fadeZoomInOutTrigger]>
-            <div class="col">
-              <span>Add some tasks to this empty list</span>
-            </div>
-            <div class="col">
-              <div class="add-task">
-                <button mat-flat-button
-                        color="primary"
-                        (click)="goToTask()">Add new task
-                </button>
-              </div>
-            </div>
-          </div>
-        }
-      }
-    </ng-template>
-  </div>
-</div>
+  }
+</ng-template>
