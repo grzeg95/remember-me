@@ -4,9 +4,10 @@
   </div>
 }
 
-@if (_isOnline() && _loadingRoundsMap() && _loadingUser()) {
-  @defer {
-  } @loading (after 100ms; minimum 500ms) {
+@defer (when !!_roundsList()) {
+  <ng-container *ngTemplateOutlet="showItems"></ng-container>
+} @loading (after 100ms; minimum 500ms) {
+  @if (_isOnline() && (_loadingRoundsMap() || _loadingUser())) {
     <table class="app-rounds-list__table">
       <thead>
         <tr>
@@ -26,8 +27,6 @@
       </tbody>
     </table>
   }
-} @else if (_isOnline()) {
-  <ng-container *ngTemplateOutlet="showItems"></ng-container>
 }
 
 <ng-template #showItems>

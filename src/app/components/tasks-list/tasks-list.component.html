@@ -5,9 +5,9 @@
 }
 
 @defer (when !!_tasks()) {
-  <ng-template *ngTemplateOutlet="showItems"></ng-template>
-} @placeholder {
-  @defer (when _isOnline() && _tasksLoading(); on timer(250ms)){
+  <ng-container *ngTemplateOutlet="showItems"></ng-container>
+} @loading (after 100ms; minimum 500ms) {
+  @if (_isOnline() && _tasksLoading()){
     <table class="app-tasks-list__table">
       <thead>
         <tr>
