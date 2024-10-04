@@ -212,12 +212,12 @@ tr {
   @include today.theme((
     font-family: $font-family,
     button-active-color: #DFEBFF,
-    button-active-background-color: #00BA91,
-    button-active-background-color-hover: #2CE0B6,
-    button-inactive-color: #00BA91,
-    button-inactive-border-color: #00BA91,
-    button-inactive-color-hover: #2CE0B6,
-    button-inactive-border-color-hover: #2CE0B6
+    button-active-background-color: #1aa183,
+    button-active-background-color-hover: #15876e,
+    button-inactive-color: #005d48,
+    button-inactive-border-color: #005d48,
+    button-inactive-color-hover: #00251c,
+    button-inactive-border-color-hover: #00251c
   ));
 }
 
@@ -306,8 +306,8 @@ tr {
   @include today.theme((
     font-family: $font-family,
     button-active-color: #DFEBFF,
-    button-active-background-color: #00BA91,
-    button-active-background-color-hover: #2CE0B6,
+    button-active-background-color: #009372,
+    button-active-background-color-hover: #00a17b,
     button-inactive-color: #DFEBFF,
     button-inactive-border-color: #00BA91,
     button-inactive-color-hover: #DFEBFF,
