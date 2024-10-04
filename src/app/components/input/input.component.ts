@@ -1,22 +1,14 @@
-import {NgClass} from '@angular/common';
-import {
-  AfterViewInit,
-  Component,
-  computed,
-  forwardRef,
-  HostBinding,
-  Injector,
-  Input,
-  signal,
-  ViewEncapsulation
-} from '@angular/core';
+import {AsyncPipe, NgClass} from '@angular/common';
+import {AfterViewInit, Component, forwardRef, HostBinding, Injector, Input, ViewEncapsulation} from '@angular/core';
 import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, NgControl} from '@angular/forms';
+import {BehaviorSubject, combineLatest, map} from 'rxjs';
 
 @Component({
   selector: 'app-input',
   standalone: true,
   imports: [
-    NgClass
+    NgClass,
+    AsyncPipe
   ],
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss',
@@ -34,31 +26,33 @@ import {ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, NgControl} from '@
 })
 export class InputComponent implements ControlValueAccessor, AfterViewInit {
 
-  protected _inputFocused = signal<boolean>(false);
-  protected _errors = signal<{ [key in string]: string } | null>(null);
+  protected _value$ = new BehaviorSubject<string>('');
 
-  protected _placeholderActive = computed(() => {
+  protected _inputFocused$ = new BehaviorSubject<boolean>(false);
+  protected _errors$ = new BehaviorSubject<{ [key in string]: string } | null>(null);
 
-    const label = this.label;
-    const inputFocused = this._inputFocused();
+  protected _placeholderActive$ = this._inputFocused$.pipe(
+    map((inputFocused) => {
+      const label = this.label;
+      return inputFocused || !label;
+    })
+  );
 
-    return inputFocused || !label;
-  });
-
-  protected _labelActive = computed(() => {
-
-    const value = this.value;
-    const inputFocused = this._inputFocused();
-
-    return inputFocused || value.length;
-  });
+  protected _labelActive$ = combineLatest([
+    this._inputFocused$,
+    this._value$
+  ]).pipe(
+    map(([inputFocused, value]) => {
+      return inputFocused || value.length;
+    })
+  )
 
   @Input() placeholder = '';
   @Input() label: string | undefined;
   @Input() type: 'text' | 'password' | 'email' = 'text';
 
   @HostBinding('class.app-input--disabled') @Input() disabled!: boolean;
-  value = '';
+
 
   private control: FormControl | undefined;
 
@@ -97,11 +91,11 @@ export class InputComponent implements ControlValueAccessor, AfterViewInit {
   }
 
   writeValue(value: string): void {
-    this.value = value;
+    this._value$.next(value);
   }
 
   protected _onFocus() {
-    this._inputFocused.set(true);
+    this._inputFocused$.next(true);
   }
 
   protected _onChange($event: Event) {
@@ -118,7 +112,7 @@ export class InputComponent implements ControlValueAccessor, AfterViewInit {
     this.onChange(value);
     this.writeValue(value);
 
-    this._errors.set((this.control?.touched && this.control?.errors) || null);
+    this._errors$.next((this.control?.touched && this.control?.errors) || null);
   }
 
   protected _onInput($event: Event) {
@@ -135,12 +129,12 @@ export class InputComponent implements ControlValueAccessor, AfterViewInit {
     this.onChange(value);
     this.writeValue(value);
 
-    this._errors.set((this.control?.touched && this.control?.errors) || null);
+    this._errors$.next((this.control?.touched && this.control?.errors) || null);
   }
 
   protected _onTouched() {
     this.onTouched();
-    this._inputFocused.set(false);
-    this._errors.set((this.control?.touched && this.control?.errors) || null);
+    this._inputFocused$.next(false);
+    this._errors$.next((this.control?.touched && this.control?.errors) || null);
   }
 }

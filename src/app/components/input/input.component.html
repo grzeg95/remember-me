@@ -1,17 +1,17 @@
 <input
   type="text"
   class="app-input__input"
-  [ngClass]="{'app-input__input--error': _errors()}"
+  [ngClass]="{'app-input__input--error': _errors$ | async}"
   (change)="_onChange($event)"
   (input)="_onInput($event)"
   (blur)="_onTouched()"
   (focus)="_onFocus()"
   [type]="type"
   [disabled]="disabled"
-  [value]="value"
-  [placeholder]="_placeholderActive() ? placeholder : ''"
+  [value]="_value$ | async"
+  [placeholder]="(_placeholderActive$ | async) ? placeholder : ''"
 />
 
 @if (label) {
-  <div class="app-input__label" [ngClass]="{'app-input__label--active': _labelActive(), 'app-input__label--error': _errors()}">{{ label }}</div>
+  <div class="app-input__label" [ngClass]="{'app-input__label--active': _labelActive$ | async, 'app-input__label--error': _errors$ | async}">{{ label }}</div>
 }
