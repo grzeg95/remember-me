@@ -1,6 +1,6 @@
 import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
 import {NgClass, NgTemplateOutlet} from '@angular/common';
-import {Component, signal} from '@angular/core';
+import {Component, signal, ViewEncapsulation} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -13,6 +13,8 @@ import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
+import {ButtonComponent} from '../button/button.component';
+import {SkeletonComponent} from '../skeleton/skeleton.component';
 
 @Component({
   selector: 'app-times-of-day-order',
@@ -27,11 +29,17 @@ import {RoundsService} from '../../services/rounds.service';
     FontAwesomeModule,
     CdkDrag,
     NgTemplateOutlet,
+    SkeletonComponent,
+    ButtonComponent,
   ],
   styleUrls: ['./times-of-day-order.component.scss'],
   animations: [
     fadeZoomInOutTrigger
-  ]
+  ],
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'app-times-of-day-order'
+  }
 })
 export class TimesOfDayOrderComponent {
 

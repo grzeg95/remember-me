@@ -1,0 +1,32 @@
+@mixin theme($theme) {
+
+  $items-header-color: map-get($theme, 'items-header-color');
+  $items-cell-background: map-get($theme, 'items-cell-background');
+  $items-cell-background-hover: map-get($theme, 'items-cell-background-hover');
+  $items-cell-color: map-get($theme, 'items-cell-color');
+  $items-cell-border-color: map-get($theme, 'items-cell-border-color');
+
+  .app-times-of-day-order {
+
+    &__items {
+
+      &__header {
+        color: $items-header-color;
+      }
+
+      &__wrapper {
+
+        &__cell {
+
+          background: $items-cell-background;
+          color: $items-cell-color;
+          border-color: $items-cell-border-color;
+
+          &:hover {
+            background: $items-cell-background-hover;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,35 +1,62 @@
-.container {
-  max-width: 33.75rem !important; // sass-lint:disable-line no-important
-  margin: 0 auto 1rem;
-  padding: 1rem;
+@use 'styles/typography-mixins' as typography-mixins;
 
-  .col .row {
-    &.message {
-      padding: 1rem;
+.app-times-of-day-order {
+
+  &__communicate {
+
+    width: 100%;
+    margin-top: 19px;
+
+    &__header {
+      text-align: center;
+      margin-bottom: 8px;
+      @include typography-mixins.heading-l();
     }
 
-    &.title {
-      margin-bottom: 1rem;
+    &__description {
+      text-align: center;
+      margin-bottom: 8px;
     }
 
-    .add-task {
-      text-align: right;
+    &__button {
+      margin: auto;
+    }
+  }
+
+  &__items {
+
+    max-width: 540px;
+    margin: 21px auto 0 auto;
+    cursor: move;
+    overflow: hidden;
+
+    &__header {
+      padding: 11px 13px;
+      font-size: 12px;
+      @include typography-mixins.font-normal();
+      border-bottom: solid 1px;
+    }
+
+    &__wrapper {
+
+      &__cell {
+
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 13px;
+
+        @include typography-mixins.body-m();
+        @include typography-mixins.font-normal();
+        border-bottom: solid 1px;
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
     }
   }
 }
 
-mat-spinner {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: auto;
+.app-times-of-day-order__items__wrapper.cdk-drop-list-dragging .app-times-of-day-order__items__wrapper__cell:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
-
-@media (max-width: 37.75rem) {
-  .times-of-day-row-content, .times-of-day-list {
-    width: calc(100% - 5rem);
-  }
-}
-

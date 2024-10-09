@@ -7,6 +7,7 @@
 @use 'app/components/round-nav/round-nav' as round-nav;
 @use 'app/components/rounds/rounds' as rounds;
 @use 'app/components/skeleton/skeleton' as skeleton;
+@use 'app/components/times-of-day-order/times-of-day-order' as times-of-day-order;
 @use 'app/components/today/today' as today;
 @use 'styles/typography-mixins' as typography-mixins;
 
@@ -127,6 +128,23 @@ tr {
   }
 }
 
+.cdk-drag-preview.drag-item {
+  border: none;
+}
+
+.cdk-drag-preview {
+  border-radius: 4px;
+  box-shadow: 0 5px 5px -3px #0003, 0 8px 10px 1px #00000024, 0 3px 14px 2px #0000001f;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
 .light {
 
   a[href] {
@@ -207,6 +225,14 @@ tr {
   @include skeleton.theme((
     background-begin: #EFEFEF,
     background-end: #A3A3A3
+  ));
+
+  @include times-of-day-order.theme((
+    items-header-color: #636363,
+    items-cell-background: white,
+    items-cell-background-hover: #F8F5F5,
+    items-cell-color: #09090A,
+    items-cell-border-color: #636363
   ));
 
   @include today.theme((
@@ -301,6 +327,14 @@ tr {
   @include skeleton.theme((
     background-begin: #808FA6,
     background-end: #2A3C57
+  ));
+
+  @include times-of-day-order.theme((
+    items-header-color: #9EA5B0,
+    items-cell-background: #1A2536,
+    items-cell-background-hover: #2A3C57,
+    items-cell-color: #DFEBFF,
+    items-cell-border-color: #9EA5B0
   ));
 
   @include today.theme((
