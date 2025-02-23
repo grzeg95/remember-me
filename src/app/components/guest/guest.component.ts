@@ -1,5 +1,6 @@
 import {Component, Inject, signal} from '@angular/core';
 import {RemoteConfig} from 'firebase/remote-config';
+import {SvgDirective} from '../../directives/svg.directive';
 import {RemoteConfigInjectionToken} from '../../models/firebase';
 import {AuthService} from '../../services/auth.service';
 import {getValue} from '../../services/firebase/remote-config';
@@ -13,7 +14,7 @@ interface GuestComponentConfig {
   selector: 'app-guest',
   standalone: true,
   templateUrl: './guest.component.html',
-  imports: [UserDataPolicyComponent],
+  imports: [UserDataPolicyComponent, SvgDirective],
   styleUrls: ['./guest.component.scss']
 })
 export class GuestComponent {

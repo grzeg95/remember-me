@@ -6,7 +6,7 @@
     <h6>
       <a (click)="toggleIsHiddenUserDataPolicy()" class="no-select">
         User data policy
-        <img src="/assets/img/incognito.svg" class="icon top-incognito"/>
+        <svg appSvg="incognito" class="icon top-incognito"/>
       </a>
     </h6>
   </div>
@@ -18,24 +18,24 @@
   <div class="features-clean">
     <div class="container">
       <div class="intro">
-        <h2 class="text-center">Rounds&nbsp;<img [style]="{width: '64px'}" src="/assets/img/rounds.svg">
+        <h2 class="text-center">Rounds&nbsp;<svg [style]="{width: '64px', height: 'auto'}" appSvg="rounds"/>
         </h2>
         <p class="text-center">Welcome to Rounds – Your Productivity Hub</p>
         <p class="text-center">Empower your productivity with the ability to create up to 5 rounds of tasks. Structure your day with distinct sets of activities and enhance your efficiency.</p>
       </div>
       <div class="row features">
         <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/today.svg" class="icon">
+          <svg appSvg="today" class="icon"/>
           <h3 class="name">Today's Tasks</h3>
           <p class="description">Stay organized and focused by managing your daily tasks. Review and mark completed tasks to keep your progress on track.</p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/clock.svg" class="icon">
+          <svg appSvg="clock" class="icon"/>
           <h3 class="name">Sortable Task Groups</h3>
           <p class="description">Efficiently organize your day with up to 10 customizable task groups. Set the order that works best for your workflow.</p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/list.svg" class="icon">
+          <svg appSvg="list" class="icon"/>
           <h3 class="name">Tasks List</h3>
           <p class="description">Maintain a comprehensive list of up to 25 tasks. Easily prioritize and manage your workload with our intuitive task management system.</p>
         </div>
@@ -56,7 +56,7 @@
           <p class="description">Rely on the power of Angular for seamless scalability and top-notch performance. Our platform works effortlessly at any scale.</p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/bug.svg" class="icon bug"/>
+          <svg appSvg="bug" class="icon bug"/>
           <h3 class="name">Bug Bounty Program 🧐</h3>
           <p class="description">Join us in uncovering the unknown! Participate in our bug bounty program and contribute to the continuous improvement of our platform.</p>
         </div>
@@ -77,7 +77,7 @@
           </p>
         </div>
         <div class="col-sm-6 col-lg-4 item">
-          <img src="/assets/img/csp.svg" class="icon csp">
+          <svg appSvg="csp" class="icon csp"/>
           <h3 class="name">Content-security-policy</h3>
           <p class="description">
             Protecting your data against theft, site damage, and malware distribution. Our stringent content-security-policy safeguards your online experience.

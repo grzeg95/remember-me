@@ -1,0 +1,34 @@
+[
+  {
+    "name": "bug",
+    "src": "bug.svg"
+  },
+  {
+    "name": "clock",
+    "src": "clock.svg"
+  },
+  {
+    "name": "csp",
+    "src": "csp.svg"
+  },
+  {
+    "name": "incognito",
+    "src": "incognito.svg"
+  },
+  {
+    "name": "list",
+    "src": "list.svg"
+  },
+  {
+    "name": "logo",
+    "src": "logo.svg"
+  },
+  {
+    "name": "rounds",
+    "src": "rounds.svg"
+  },
+  {
+    "name": "today",
+    "src": "today.svg"
+  }
+]

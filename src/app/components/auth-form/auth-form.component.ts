@@ -4,6 +4,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatDialogRef} from '@angular/material/dialog';
 import {MatTabGroup} from '@angular/material/tabs';
 import {MatToolbarModule} from '@angular/material/toolbar';
+import {SvgDirective} from '../../directives/svg.directive';
 import {AuthService} from '../../services/auth.service';
 import {LoginComponent} from '../login/login.component';
 import {RegisterComponent} from '../register/register.component';
@@ -12,7 +13,7 @@ import {SendPasswordResetEmailComponent} from '../send-password-reset-email/send
 @Component({
   selector: 'app-auth-form',
   standalone: true,
-  imports: [LoginComponent, RegisterComponent, SendPasswordResetEmailComponent, MatToolbarModule, MatButtonModule, NgClass],
+  imports: [LoginComponent, RegisterComponent, SendPasswordResetEmailComponent, MatToolbarModule, MatButtonModule, NgClass, SvgDirective],
   templateUrl: './auth-form.component.html',
   styleUrl: './auth-form.component.scss'
 })

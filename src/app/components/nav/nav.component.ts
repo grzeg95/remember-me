@@ -17,6 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import {catchError, NEVER} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
+import {SvgDirective} from '../../directives/svg.directive';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {AuthFormComponent} from '../auth-form/auth-form.component';
@@ -25,7 +26,7 @@ import {UserSettingsComponent} from '../user-settings/user-settings.component';
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, SvgDirective],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss'
 })
