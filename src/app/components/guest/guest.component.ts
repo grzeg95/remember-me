@@ -4,7 +4,6 @@ import {SvgDirective} from '../../directives/svg.directive';
 import {RemoteConfigInjectionToken} from '../../models/firebase';
 import {AuthService} from '../../services/auth.service';
 import {getValue} from '../../services/firebase/remote-config';
-import {UserDataPolicyComponent} from '../user-data-policy/user-data-policy.component';
 
 interface GuestComponentConfig {
   footerLines: string[]
@@ -14,12 +13,11 @@ interface GuestComponentConfig {
   selector: 'app-guest',
   standalone: true,
   templateUrl: './guest.component.html',
-  imports: [UserDataPolicyComponent, SvgDirective],
+  imports: [SvgDirective],
   styleUrls: ['./guest.component.scss']
 })
 export class GuestComponent {
 
-  protected readonly _isHiddenUserDataPolicy = signal(true);
   protected readonly _loadingUser = this._authService.loadingUserSig.get();
   protected readonly _firebaseUser = this._authService.firebaseUser;
 
@@ -30,9 +28,5 @@ export class GuestComponent {
     @Inject(RemoteConfigInjectionToken) private readonly _remoteConfig: RemoteConfig
   ) {
     this._guestComponentConfig = getValue<GuestComponentConfig>(this._remoteConfig, 'guestComponent');
-  }
-
-  toggleIsHiddenUserDataPolicy() {
-    this._isHiddenUserDataPolicy.update((val) => !val);
   }
 }
