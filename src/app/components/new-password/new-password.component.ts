@@ -1,17 +1,27 @@
 import {Component, OnInit} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatInputModule} from '@angular/material/input';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {catchError, NEVER} from 'rxjs';
+import {InputDirective} from '../../directives/form/input.directive';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {CustomValidators} from '../../services/custom-validators';
+import {ErrorComponent} from '../error/error.component';
+import {FormFieldComponent} from '../form/form-field/form-field.component';
+import {LabelComponent} from '../form/label/label.component';
 
 @Component({
   selector: 'app-new-password',
   standalone: true,
-  imports: [ReactiveFormsModule, MatInputModule, MatButtonModule],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    FormFieldComponent,
+    LabelComponent,
+    ErrorComponent,
+    InputDirective
+  ],
   templateUrl: './new-password.component.html'
 })
 export class NewPasswordComponent implements OnInit {
