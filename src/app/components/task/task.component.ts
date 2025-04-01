@@ -10,15 +10,9 @@ import {
   ReactiveFormsModule,
   ValidationErrors
 } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-  MatAutocompleteTrigger
-} from '@angular/material/autocomplete';
 import {MatButtonModule} from '@angular/material/button';
 import {MatChipInputEvent, MatChipsModule} from '@angular/material/chips';
 import {MatDialog} from '@angular/material/dialog';
-import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -28,8 +22,10 @@ import {DocumentReference, Firestore} from 'firebase/firestore';
 import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
-import {FirestoreInjectionToken} from '../../models/firebase';
+import {AutocompleteTriggerDirective} from '../../directives/form/autocomplete-trigger.directive';
+import {InputDirective} from '../../directives/form/input.directive';
 import {Day} from '../../models/day';
+import {FirestoreInjectionToken} from '../../models/firebase';
 import {HTTPError, HTTPSuccess} from '../../models/http';
 import {Round, RoundDoc} from '../../models/round';
 import {Task, TaskDoc} from '../../models/task';
@@ -41,6 +37,11 @@ import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
 import {Sig} from '../../utils/Sig';
+import {ErrorComponent} from '../error/error.component';
+import {AutocompleteComponent} from '../form/autocomplete/autocomplete.component';
+import {FormFieldComponent} from '../form/form-field/form-field.component';
+import {LabelComponent} from '../form/label/label.component';
+import {OptionComponent} from '../option/option.component';
 import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/task-dialog-confirm-delete.component';
 
 export interface TaskForm {
@@ -56,13 +57,18 @@ export interface TaskForm {
   imports: [
     ReactiveFormsModule,
     NgClass,
-    MatInputModule,
     MatSlideToggleModule,
     TitleCasePipe,
     MatChipsModule,
-    MatAutocompleteModule,
     MatProgressBarModule,
-    MatButtonModule
+    MatButtonModule,
+    LabelComponent,
+    FormFieldComponent,
+    InputDirective,
+    ErrorComponent,
+    AutocompleteComponent,
+    AutocompleteTriggerDirective,
+    OptionComponent
   ],
   styleUrls: ['./task.component.scss'],
   animations: [
@@ -131,7 +137,6 @@ export class TaskComponent implements OnDestroy {
 
   protected readonly _separatorKeysCodes: number[] = [ENTER];
 
-  @ViewChild(MatAutocompleteTrigger, {read: MatAutocompleteTrigger}) input!: MatAutocompleteTrigger;
   @ViewChild('basicInput') basicInput!: ElementRef<HTMLInputElement>;
 
   private _taskSub: Subscription | undefined;
@@ -284,8 +289,8 @@ export class TaskComponent implements OnDestroy {
     }
   }
 
-  handleOptionSelected(event: MatAutocompleteSelectedEvent): void {
-    this._timesOfDay.push(new FormControl<string>(event.option.viewValue));
+  handleOptionSelected(event: any): void {
+    this._timesOfDay.push(new FormControl<string>(event));
     this._timeOfDayId.setValue(null);
   }
 
