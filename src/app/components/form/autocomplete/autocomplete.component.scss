@@ -1,0 +1,12 @@
+.app-autocomplete {
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  width: 100%;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+app-option {
+  width: 100%;
+  display: block;
+  cursor: pointer;
+}
