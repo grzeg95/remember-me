@@ -1,10 +1,8 @@
-import {NgIf} from '@angular/common';
 import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
-import {MatInputModule} from '@angular/material/input';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -12,6 +10,7 @@ import {Firestore} from 'firebase/firestore';
 import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
+import {InputDirective} from '../../directives/form/input.directive';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round, RoundDoc} from '../../models/round';
 import {User} from '../../models/user';
@@ -21,6 +20,9 @@ import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {Sig} from '../../utils/Sig';
+import {ErrorComponent} from '../error/error.component';
+import {FormFieldComponent} from '../form/form-field/form-field.component';
+import {LabelComponent} from '../form/label/label.component';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 
 @Component({
@@ -30,9 +32,11 @@ import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/
   imports: [
     ReactiveFormsModule,
     MatProgressBarModule,
-    MatInputModule,
     MatButtonModule,
-    NgIf
+    FormFieldComponent,
+    ErrorComponent,
+    LabelComponent,
+    InputDirective
   ],
   styleUrl: './round-edit.component.scss',
   animations: [
