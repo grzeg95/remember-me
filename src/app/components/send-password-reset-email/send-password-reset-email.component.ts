@@ -1,17 +1,26 @@
 import {Component, EventEmitter, Output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatInputModule} from '@angular/material/input';
-import {MatProgressBar} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {catchError, NEVER} from 'rxjs';
+import {InputDirective} from '../../directives/form/input.directive';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
+import {ErrorComponent} from '../error/error.component';
+import {FormFieldComponent} from '../form/form-field/form-field.component';
+import {LabelComponent} from '../form/label/label.component';
 
 @Component({
   selector: 'app-send-password-reset-email',
   standalone: true,
-  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule, MatProgressBar],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    FormFieldComponent,
+    InputDirective,
+    ErrorComponent,
+    LabelComponent
+  ],
   templateUrl: './send-password-reset-email.component.html'
 })
 export class SendPasswordResetEmailComponent {
