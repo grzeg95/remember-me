@@ -1,0 +1,17 @@
+<label class="app-form-field-label" [for]="id">
+  <ng-content select="app-label"/>
+</label>
+
+<div
+  class="app-form-field-input-wrapper"
+  [class.app-form-field-input-wrapper--focus]="!!inputDirective?.isFocused"
+  [class.app-form-field-input-wrapper--invalid]="!!inputDirective?.invalid && !inputDirective?.untouched"
+  #triggerHandler
+>
+  <ng-content/>
+</div>
+
+<div class="app-form-field-error-wrapper">
+  <ng-content select="app-error"></ng-content>
+</div>
+
