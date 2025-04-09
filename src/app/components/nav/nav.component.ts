@@ -1,4 +1,4 @@
-import {NgClass, NgStyle} from '@angular/common';
+import {AsyncPipe, NgClass, NgStyle} from '@angular/common';
 import {Component, computed, ElementRef, ViewChild} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
@@ -15,7 +15,7 @@ import {
   faGear,
   faUser
 } from '@fortawesome/free-solid-svg-icons';
-import {catchError, NEVER} from 'rxjs';
+import {catchError, NEVER, combineLatest, map} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
 import {SvgDirective} from '../../directives/svg.directive';
 import {AuthService} from '../../services/auth.service';
@@ -26,18 +26,23 @@ import {UserSettingsComponent} from '../user-settings/user-settings.component';
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, SvgDirective],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, SvgDirective, AsyncPipe],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss'
 })
 export class NavComponent {
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
-  protected readonly _loadingUser = this._authService.loadingUserSig.get();
-  protected readonly _whileLoginIn = this._authService.whileLoginInSig.get();
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _loadingUser$ = this._authService.loadingUser$;
+  protected readonly _whileLoginIn$ = this._authService.whileLoginIn$;
 
-  protected readonly _isButtonDisabled = computed(() => !this._isOnline() || this._loadingUser());
+  protected readonly _isButtonDisabled$ = combineLatest([
+    this._isOnline$,
+    this._loadingUser$
+  ]).pipe(
+    map(([isOnline, loadingUser]) => isOnline || loadingUser)
+  );
 
   protected readonly _faUser = faUser;
   protected readonly _faGoogle = faGoogle;

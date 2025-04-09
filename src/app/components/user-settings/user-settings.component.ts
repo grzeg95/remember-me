@@ -1,5 +1,6 @@
-import {NgClass, NgStyle} from '@angular/common';
-import {Component, effect, signal} from '@angular/core';
+import {AsyncPipe, NgClass, NgStyle} from '@angular/common';
+import {error} from '@angular/compiler-cli/src/transformers/util';
+import {Component, effect, input, OnDestroy, OnInit, signal} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog, MatDialogActions, MatDialogRef} from '@angular/material/dialog';
 import {MatExpansionModule} from '@angular/material/expansion';
@@ -7,7 +8,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faGear, faUser} from '@fortawesome/free-solid-svg-icons';
-import {catchError, NEVER} from 'rxjs';
+import {catchError, NEVER, combineLatest, Subscription} from 'rxjs';
 import {InternalImgSecureDirective} from '../../directives/internal-img-secure.directive';
 import {AuthService} from '../../services/auth.service';
 import {UserService} from '../../services/user.service';
@@ -17,18 +18,20 @@ import {UserDialogConfirmDeleteComponent} from '../user-dialog-confirm-delete/us
 @Component({
   selector: 'app-user-settings',
   standalone: true,
-  imports: [MatDialogActions, MatExpansionModule, FontAwesomeModule, InternalImgSecureDirective, MatButtonModule, MatProgressSpinnerModule, NewPasswordComponent, NgStyle, NgClass],
+  imports: [MatDialogActions, MatExpansionModule, FontAwesomeModule, InternalImgSecureDirective, MatButtonModule, MatProgressSpinnerModule, NewPasswordComponent, NgStyle, NgClass, AsyncPipe],
   templateUrl: './user-settings.component.html',
   styleUrl: './user-settings.component.scss'
 })
-export class UserSettingsComponent {
+export class UserSettingsComponent implements OnInit, OnDestroy{
 
   protected readonly _faUser = faUser;
   protected readonly _faGear = faGear;
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _firebaseUser = this._authService.firebaseUser;
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _firebaseUser$ = this._authService.firebaseUser$
   protected readonly _isPhotoUploading = signal(false);
+
+  private _ngOnInitUserSub: Subscription | undefined;
 
   constructor(
     protected readonly _dialogRef: MatDialogRef<UserSettingsComponent>,
@@ -37,8 +40,13 @@ export class UserSettingsComponent {
     private readonly _snackBar: MatSnackBar,
     private readonly _userService: UserService
   ) {
-    effect(() => {
-      const user = this._user();
+  }
+
+  ngOnInit(): void {
+
+    this._ngOnInitUserSub = combineLatest([
+      this._user$
+    ]).subscribe(([user]) => {
       if (!user) {
         this._dialogRef.close();
       }
@@ -51,7 +59,7 @@ export class UserSettingsComponent {
     dialog.afterClosed().subscribe((isConfirmed) => {
 
       if (isConfirmed) {
-        if (this._user()) {
+        if (this._user$.value) {
           this._authService.deleteUser().pipe(catchError(() => {
             this._snackBar.open('Some went wrong 🤫 Try again 🙂');
             return NEVER;
@@ -83,5 +91,9 @@ export class UserSettingsComponent {
 
   removePhoto() {
     this._userService.removePhoto().subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this._ngOnInitUserSub?.unsubscribe();
   }
 }

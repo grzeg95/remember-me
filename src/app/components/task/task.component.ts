@@ -1,6 +1,6 @@
 import {ENTER} from '@angular/cdk/keycodes';
-import {NgClass, TitleCasePipe} from '@angular/common';
-import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, ViewChild} from '@angular/core';
+import {AsyncPipe, NgClass, TitleCasePipe} from '@angular/common';
+import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -19,7 +19,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import 'global.prototype';
 import {DocumentReference, Firestore} from 'firebase/firestore';
-import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {BehaviorSubject, catchError, NEVER, of, Subscription, switchMap, takeWhile, combineLatest} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {AutocompleteTriggerDirective} from '../../directives/form/autocomplete-trigger.directive';
@@ -36,7 +36,6 @@ import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
-import {Sig} from '../../utils/Sig';
 import {ErrorComponent} from '../error/error.component';
 import {AutocompleteComponent} from '../form/autocomplete/autocomplete.component';
 import {FormFieldComponent} from '../form/form-field/form-field.component';
@@ -68,29 +67,27 @@ export interface TaskForm {
     ErrorComponent,
     AutocompleteComponent,
     AutocompleteTriggerDirective,
-    OptionComponent
+    OptionComponent,
+    AsyncPipe
   ],
   styleUrls: ['./task.component.scss'],
   animations: [
     fadeZoomInOutTrigger
   ]
 })
-export class TaskComponent implements OnDestroy {
+export class TaskComponent implements OnInit, OnDestroy {
 
-  protected readonly _taskIdSig = new Sig<string>();
-  protected readonly _taskId = this._taskIdSig.get();
+  protected readonly _taskId$ = new BehaviorSubject<string | undefined>(undefined);
 
-  protected readonly _round = this._roundsService.roundSig.get();
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _round$ = this._roundsService.round$;
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
 
-  private readonly _loadingSig = new Sig(false);
-  protected readonly _loading = this._loadingSig.get();
+  protected readonly _loading$ = new BehaviorSubject(false);
 
-  private readonly _taskSig = new Sig<Task>();
-  protected readonly _task = this._taskSig.get();
+  protected readonly _task$ = new BehaviorSubject<Task | undefined>(undefined);
 
   private _initValues: TaskForm = {
     daysOfTheWeek: {
@@ -106,14 +103,11 @@ export class TaskComponent implements OnDestroy {
     timesOfDay: []
   };
 
-  private readonly _isNothingChangedSig = new Sig<boolean>(true);
-  protected readonly _isNothingChanged = this._isNothingChangedSig.get();
+  protected readonly _isNothingChanged$ = new BehaviorSubject<boolean>(true);
 
-  private readonly _filteredOptionsSig = new Sig<string[]>([]);
-  protected readonly _filteredOptions = this._filteredOptionsSig.get();
+  protected readonly _filteredOptions$ = new BehaviorSubject<string[]>([]);
 
-  private readonly _allOptionsSig = new Sig<string[]>([]);
-  protected readonly _allOptions = this._allOptionsSig.get();
+  private readonly _allOptions$ = new BehaviorSubject<string[]>([]);
 
   protected readonly _taskForm = new FormGroup({
     description: new FormControl('', CustomValidators.maxRequired(256)),
@@ -141,6 +135,9 @@ export class TaskComponent implements OnDestroy {
 
   private _taskSub: Subscription | undefined;
 
+  private _ngOnInitRoundSub: Subscription | undefined;
+  private _ngOnInitTaskSub: Subscription | undefined;
+
   constructor(
     public readonly dialog: MatDialog,
     private readonly _snackBar: MatSnackBar,
@@ -157,7 +154,7 @@ export class TaskComponent implements OnDestroy {
     this._taskForm.disable();
 
     this._route.paramMap.subscribe((paramMap) => {
-      this._taskIdSig.set(paramMap.get('id') || undefined);
+      this._taskId$.next(paramMap.get('id') || undefined);
     });
 
     this._taskForm.valueChanges.subscribe(() => {
@@ -175,56 +172,60 @@ export class TaskComponent implements OnDestroy {
         this._initValues.daysOfTheWeek.fri === daysOfTheWeek.fri &&
         this._initValues.daysOfTheWeek.sat === daysOfTheWeek.sat &&
         this._initValues.daysOfTheWeek.sun === daysOfTheWeek.sun;
-      this._isNothingChangedSig.set(!isValueInit);
-    });
-
-    effect(() => {
-
-      const round = this._round();
-
-      if (!round) {
-        return;
-      }
-
-      const timesOfDays = (new Set(round.timesOfDay).difference(new Set(this._timesOfDay.value))).toArray();
-      this._allOptionsSig.set(timesOfDays);
-      this.applyFilter(this._timeOfDayId.value || '');
+      this._isNothingChanged$.next(!isValueInit);
     });
 
     this._timesOfDay.valueChanges.subscribe((timesOfDay: string[]) => {
 
-      const round = this._round();
+      const round = this._round$.value;
 
       if (!round) {
         return;
       }
 
       const timesOfDays = (new Set(round.timesOfDay).difference(new Set(timesOfDay))).toArray();
-      this._allOptionsSig.set(timesOfDays);
+      this._allOptions$.next(timesOfDays);
       this.applyFilter(this._timeOfDayId.value || '');
     });
 
     this._timeOfDayId.valueChanges.subscribe((timeOfDayId) => {
       this.applyFilter(timeOfDayId || '');
     });
+  }
+
+  ngOnInit() {
+
+    // round
+    this._ngOnInitRoundSub = combineLatest([
+      this._round$
+    ]).subscribe(([round]) => {
+
+      if (!round) {
+        return;
+      }
+
+      const timesOfDays = (new Set(round.timesOfDay).difference(new Set(this._timesOfDay.value))).toArray();
+      this._allOptions$.next(timesOfDays);
+      this.applyFilter(this._timeOfDayId.value || '');
+    });
 
     // task
     let task_roundId: string | undefined;
     let task_taskId: string | undefined;
     let task_userId: string | undefined;
-    effect(() => {
-
-      const user = this._user();
-      const round = this._round();
-      const taskId = this._taskId();
-      const cryptoKey = this._cryptoKey();
+    this._ngOnInitTaskSub = combineLatest([
+      this._user$,
+      this._round$,
+      this._taskId$,
+      this._cryptoKey$
+    ]).subscribe(([user, round, taskId, cryptoKey]) => {
 
       if (!user || !round || !taskId || !cryptoKey) {
         task_userId = undefined;
         task_roundId = undefined;
         task_taskId = undefined;
         this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
-        this._taskSig.set(undefined);
+        this._task$.next(undefined);
         this._taskForm.enable();
         return;
       }
@@ -245,25 +246,24 @@ export class TaskComponent implements OnDestroy {
       const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
       const taskRef = Task.ref(roundRef, taskId) as DocumentReference<Task, TaskDoc>;
 
-      this._loadingSig.set(true);
+      this._loading$.next(true);
       this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
       this._taskSub = docSnapshots(taskRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user() || !!this._round() || !this._taskId()),
+        takeWhile(() => !!this._user$.value || !!this._round$.value || !this._taskId$.value),
         switchMap((docSnap) => Task.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((task) => {
 
-        this._loadingSig.set(false);
+        this._loading$.next(false);
 
         if (task) {
-          this._taskSig.set(task);
+          this._task$.next(task);
           this.setAll(task);
         }
 
         this._taskForm.enable();
       });
-
     });
   }
 
@@ -302,15 +302,15 @@ export class TaskComponent implements OnDestroy {
   applyFilter(value: string): void {
     if (value) {
       const filterValue = value.toLowerCase();
-      this._filteredOptionsSig.set(this._allOptions()?.filter((option) => option.toLowerCase().includes(filterValue)));
+      this._filteredOptions$.next(this._allOptions$.value?.filter((option) => option.toLowerCase().includes(filterValue)));
     } else {
-      this._filteredOptionsSig.set(this._allOptions());
+      this._filteredOptions$.next(this._allOptions$.value);
     }
   }
 
   saveTask(): void {
 
-    this._loadingSig.set(true);
+    this._loading$.next(true);
     this._taskForm.disable();
 
     const task = this._taskForm.getRawValue();
@@ -324,10 +324,10 @@ export class TaskComponent implements OnDestroy {
         daysOfTheWeek: this._taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
         timesOfDay: task.timesOfDay
       },
-      taskId: this._task()?.id || 'null',
-      roundId: this._round()!.id
+      taskId: this._task$.value?.id || 'null',
+      roundId: this._round$.value!.id
     }).pipe(catchError((error: HTTPError) => {
-      this._loadingSig.set(false);
+      this._loading$.next(false);
       this._taskForm.enable();
       this._snackBar.open(error.message || 'Some went wrong 🤫 Try again 🙂');
       return NEVER;
@@ -336,7 +336,7 @@ export class TaskComponent implements OnDestroy {
       this._snackBar.open(success.details || 'Your operation has been done 😉');
 
       if (success.created) {
-        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, this._round()!.id, RouterDict.taskEditor, success.taskId], {relativeTo: this._route});
+        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, this._round$.value!.id, RouterDict.taskEditor, success.taskId], {relativeTo: this._route});
       }
     });
   }
@@ -381,19 +381,19 @@ export class TaskComponent implements OnDestroy {
 
       if (isConfirmed) {
         this._taskForm.disable();
-        this._loadingSig.set(true);
+        this._loading$.next(true);
 
         this._roundsService.deleteTask({
-          taskId: this._task()!.id,
-          roundId: this._round()!.id
+          taskId: this._task$.value!.id,
+          roundId: this._round$.value!.id
         }).pipe(catchError((error: HTTPError) => {
-          this._loadingSig.set(false);
+          this._loading$.next(false);
           this._taskForm.enable();
           this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           return NEVER;
         })).subscribe((success: HTTPSuccess) => {
           this._snackBar.open(success.details || 'Your operation has been done 😉');
-          this._taskIdSig.set(undefined);
+          this._taskId$.next(undefined);
         });
       }
     });
@@ -426,7 +426,9 @@ export class TaskComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._taskIdSig.set(undefined);
-    this._taskSig.set(undefined);
+    this._ngOnInitRoundSub?.unsubscribe();
+    this._ngOnInitTaskSub?.unsubscribe();
+    this._taskId$.next(undefined);
+    this._task$.next(undefined);
   }
 }

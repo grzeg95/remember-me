@@ -1,15 +1,15 @@
-import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
+import {Component, DestroyRef, Inject, OnDestroy, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
-import {DocumentReference, Firestore} from 'firebase/firestore';
-import {catchError, map, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {Firestore} from 'firebase/firestore';
+import {catchError, combineLatest, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round, RoundDoc} from '../../models/round';
 import {User} from '../../models/user';
 import {AuthService} from '../../services/auth.service';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
-import {Sig} from '../../utils/Sig';
 import {RoundNavComponent} from '../round-nav/round-nav.component';
 
 @Component({
@@ -17,23 +17,24 @@ import {RoundNavComponent} from '../round-nav/round-nav.component';
   standalone: true,
   imports: [
     RoundNavComponent,
-    RouterOutlet
+    RouterOutlet,
+    AsyncPipe
   ],
   templateUrl: './round.component.html'
 })
-export class RoundComponent implements OnDestroy {
+export class RoundComponent implements OnInit, OnDestroy {
 
-  protected readonly _loadingRound = this._roundsService.loadingRoundSig.get();
+  protected readonly _loadingRound$ = this._roundsService.loadingRound$;
 
-  protected readonly _round = this._roundsService.roundSig.get();
+  protected readonly _round$ = this._roundsService.round$;
   private _roundSub: Subscription | undefined;
 
-  protected readonly _roundId = this._roundsService.roundIdSig.get();
+  protected readonly _roundId$ = this._roundsService.roundId$;
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
 
-  readonly loadedSig = new Sig(false);
+  private _ngOnInitRoundSub: Subscription | undefined;
 
   constructor(
     private readonly _activatedRoute: ActivatedRoute,
@@ -45,17 +46,20 @@ export class RoundComponent implements OnDestroy {
   ) {
 
     this._activatedRoute.paramMap.subscribe(
-      (params) => this._roundsService.roundIdSig.set(params.get('id'))
+      (params) => this._roundsService.roundId$.next(params.get('id'))
     );
+  }
+
+  ngOnInit() {
 
     // round
     let round_userId: string | undefined;
     let round_boardId: string | undefined;
-    effect(() => {
-
-      const user = this._user();
-      const cryptoKey = this._cryptoKey();
-      const roundId = this._roundId();
+    this._ngOnInitRoundSub = combineLatest([
+      this._user$,
+      this._cryptoKey$,
+      this._roundId$
+    ]).subscribe(([user, cryptoKey, roundId]) => {
 
       if (user === undefined || roundId === undefined || !cryptoKey) {
         return;
@@ -63,7 +67,7 @@ export class RoundComponent implements OnDestroy {
 
       if (!user || !roundId) {
         this._router.navigate(['/']);
-        this._roundsService.roundSig.set(undefined);
+        this._roundsService.round$.next(undefined);
         round_userId = undefined;
         round_boardId = undefined;
         this._roundSub && !this._roundSub.closed && this._roundSub.unsubscribe();
@@ -83,33 +87,34 @@ export class RoundComponent implements OnDestroy {
       const userRef = User.ref(this._firestore, user.id);
       const roundRef = Round.ref(userRef, roundId);
 
-      this._roundsService.loadingRoundSig.set(true);
+      this._roundsService.loadingRound$.next(true);
       this._roundSub && !this._roundSub.closed && this._roundSub.unsubscribe();
       this._roundSub = docSnapshots<Round, RoundDoc>(roundRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._roundId()),
+        takeWhile(() => !!this._roundId$.value),
         switchMap((docSnap) => Round.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((round) => {
 
-        this._roundsService.loadingRoundSig.set(false);
+        this._roundsService.loadingRound$.next(false);
 
         if (!round || !round.exists) {
-          this._roundsService.roundSig.set(undefined);
-          this._roundsService.roundIdSig.set(undefined);
+          this._roundsService.round$.next(undefined);
+          this._roundsService.roundId$.next(undefined);
           round_userId = undefined;
           round_boardId = undefined;
           this._roundSub && !this._roundSub.closed && this._roundSub.unsubscribe();
           return;
         }
 
-        this._roundsService.roundSig.set(round);
+        this._roundsService.round$.next(round);
       });
     });
   }
 
   ngOnDestroy(): void {
-    this._roundsService.roundIdSig.set(undefined);
-    this._roundsService.roundSig.set(undefined);
+    this._ngOnInitRoundSub?.unsubscribe();
+    this._roundsService.roundId$.next(undefined);
+    this._roundsService.round$.next(undefined);
   }
 }

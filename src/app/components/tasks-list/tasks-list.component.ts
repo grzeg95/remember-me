@@ -1,5 +1,5 @@
-import {NgTemplateOutlet} from '@angular/common';
-import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
+import {Component, DestroyRef, Inject, OnDestroy, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -9,11 +9,11 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import 'global.prototype';
 import {Firestore, limit} from 'firebase/firestore';
-import {catchError, of, Subscription, takeWhile} from 'rxjs';
+import {catchError, combineLatest, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
-import {FirestoreInjectionToken} from '../../models/firebase';
 import {Day} from '../../models/day';
+import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round} from '../../models/round';
 import {Task} from '../../models/task';
 import {User} from '../../models/user';
@@ -31,27 +31,30 @@ import {RoundsService} from '../../services/rounds.service'
     MatTableModule,
     MatButtonModule,
     FontAwesomeModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    AsyncPipe
   ],
   styleUrls: ['./tasks-list.component.scss'],
   animations: [
     fadeZoomInOutTrigger
   ]
 })
-export class TasksListComponent implements OnDestroy {
+export class TasksListComponent implements OnInit, OnDestroy {
 
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
-  protected readonly _round = this._roundsService.roundSig.get();
-  protected readonly _tasks = this._roundsService.tasksSig.get();
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _round$ = this._roundsService.round$;
+  protected readonly _tasks$ = this._roundsService.tasks$;
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
 
   protected readonly _RouterDict = RouterDict;
   protected readonly _faEdit = faEdit;
   protected readonly _displayedColumns: string[] = ['description', 'daysOfTheWeek', 'timesOfDays', 'edit'];
 
   private _tasksListSub: Subscription | undefined;
+
+  private _ngOnInitTasksListSub: Subscription | undefined;
 
   constructor(
     private readonly _roundsService: RoundsService,
@@ -62,21 +65,24 @@ export class TasksListComponent implements OnDestroy {
     @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
     private readonly _destroyRef: DestroyRef
   ) {
+  }
+
+  ngOnInit(): void {
 
     // tasksList
     let tasksList_userId: string | undefined;
     let tasksList_roundId: string | undefined;
-    effect(() => {
-
-      const user = this._user();
-      const round = this._round();
-      const cryptoKey = this._cryptoKey();
+    this._ngOnInitTasksListSub = combineLatest([
+      this._user$,
+      this._round$,
+      this._cryptoKey$
+    ]).subscribe(([user, round, cryptoKey]) => {
 
       if (!user || !round || !cryptoKey) {
         tasksList_userId = undefined;
         tasksList_roundId = undefined;
         this._tasksListSub && !this._tasksListSub.closed && this._tasksListSub.unsubscribe();
-        this._roundsService.tasksSig.set(undefined);
+        this._roundsService.tasks$.next(undefined);
         return;
       }
 
@@ -94,18 +100,18 @@ export class TasksListComponent implements OnDestroy {
       const roundRef = Round.ref(userRef, round.id);
       const tasksRef = Task.refs(roundRef);
 
-      this._roundsService.todayTasksLoadingSig.set(true);
+      this._roundsService.todayTasksLoading$.next(true);
       this._tasksListSub && !this._tasksListSub.closed && this._tasksListSub.unsubscribe();
       this._tasksListSub = collectionSnapshots(tasksRef, limit(25)).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user() || !!this._round()),
+        takeWhile(() => !!this._user$.value || !!this._round$.value),
         catchError(() => of(null))
       ).subscribe(async (querySnapTasks) => {
 
-        this._roundsService.tasksLoadingSig.set(false);
+        this._roundsService.tasksLoading$.next(false);
 
         if (!querySnapTasks) {
-          this._roundsService.tasksLoadingSig.set(undefined);
+          this._roundsService.tasksLoading$.next(undefined);
           return;
         }
 
@@ -115,7 +121,7 @@ export class TasksListComponent implements OnDestroy {
           tasks.push(await Task.data(querySnapTask, cryptoKey));
         }
 
-        this._roundsService.tasksSig.set(tasks);
+        this._roundsService.tasks$.next(tasks);
       });
     });
   }
@@ -143,7 +149,8 @@ export class TasksListComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._roundsService.tasksSig.set(undefined);
-    this._roundsService.tasksLoadingSig.set(false);
+    this._ngOnInitTasksListSub?.unsubscribe();
+    this._roundsService.tasks$.next(undefined);
+    this._roundsService.tasksLoading$.next(false);
   }
 }

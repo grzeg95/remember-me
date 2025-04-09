@@ -1,7 +1,7 @@
 <div class="container">
   <div class="row" style="position: relative;">
 
-    @if (!_isOnline() && !_todayView()) {
+    @if (!(_isOnline$ | async) && !(_todayView$ | async)) {
       <div class="col time-of-day-col">
         <div class="message">
           <span>You are offline. Waiting for connection...</span>
@@ -9,10 +9,10 @@
       </div>
     }
 
-    @defer (when !!_todayView()) {
+    @defer (when !!(_todayView$ | async)) {
       <ng-template *ngTemplateOutlet="showItems"></ng-template>
     } @placeholder {
-      @defer (when _isOnline(); on timer(250ms)) {
+      @defer (when _isOnline$ | async; on timer(250ms)) {
         <div style="position: absolute; width: 100%;" [@fadeZoomInOutTrigger]>
           <mat-progress-bar mode="indeterminate"/>
         </div>
@@ -21,7 +21,7 @@
 
     <ng-template #showItems>
       <div class="col time-of-day-col">
-        @if (_todayView(); as todayView) {
+        @if (_todayView$ | async; as todayView) {
 
           @if (todayView.length > 0) {
 
@@ -66,7 +66,7 @@
 
             <div class="row message" [@fadeZoomInOutTrigger]>
               <div class="col">
-                <span>Add some tasks for {{_today()?.full}}</span>
+                <span>Add some tasks for {{(_today$ | async)?.full}}</span>
               </div>
               <div class="col">
                 <div class="add-task">

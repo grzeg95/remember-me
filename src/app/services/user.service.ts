@@ -10,7 +10,7 @@ import {FunctionsService} from './functions.service';
 })
 export class UserService {
 
-  private readonly _user = this._authService.userSig.get();
+  private readonly _user$ = this._authService.user$;
 
   constructor(
     private readonly _functionsService: FunctionsService,
@@ -53,7 +53,7 @@ export class UserService {
 
     return defer(() => {
 
-      const user = this._user();
+      const user = this._user$.value;
 
       if (!user) {
         return Promise.resolve();

@@ -1,16 +1,16 @@
 import {Injectable} from '@angular/core';
-import {fromEvent, merge} from 'rxjs';
-import {Sig} from '../utils/Sig';
+import {fromEvent, map, merge, startWith} from 'rxjs';
 
 @Injectable()
 export class ConnectionService {
 
-  readonly isOnlineSig = new Sig(true);
-
-  constructor() {
-    merge(
-      fromEvent(window, 'online'),
-      fromEvent(window, 'offline')
-    ).subscribe((event) => this.isOnlineSig.set(event.type === 'online'));
-  }
+  readonly isOnline$ = merge(
+    fromEvent(window, 'online'),
+    fromEvent(window, 'offline')
+  ).pipe(
+    startWith({type: 'online'}),
+    map((event: {type: string}) => {
+      return event.type === 'online'
+    })
+  )
 }

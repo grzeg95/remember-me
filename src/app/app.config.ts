@@ -168,7 +168,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideClientHydration(),
-    provideExperimentalZonelessChangeDetection(),
     provideHttpClient(),
     provideAnimationsAsync(),
     provideFirebase(),

@@ -23,11 +23,11 @@ export class RoundNavComponent {
 
   private _unmarkTodayTasksIntervalSub: Subscription | undefined;
 
-  protected readonly _user = this._authService.userSig.get();
+  protected readonly _user$ = this._authService.user$;
 
-  protected readonly _round = this._roundsService.roundSig.get();
-  protected readonly _todayMap = this._roundsService.todayMapSig.get();
-  protected readonly _today = this._roundsService.todaySig.get();
+  protected readonly _round$ = this._roundsService.round$;
+  protected readonly _todayMap$ = this._roundsService.todayMap$;
+  protected readonly _today$ = this._roundsService.today$;
 
   protected readonly _todayTasksViewActive = signal(false);
 
@@ -46,27 +46,30 @@ export class RoundNavComponent {
 
   unmarkTodayTasks() {
 
-    const round = this._round();
-    const _todayMap = this._todayMap();
-    const today = this._today();
+    this._today$.pipe(take(1)).subscribe((today) => {
 
-    if (!round || !_todayMap || !today) {
-      return;
-    }
+      const round = this._round$.value;
+      const _todayMap = this._todayMap$.value;
 
-    const todayId = _todayMap.get(today.short)?.id;
+      if (!round || !_todayMap || !today) {
+        return;
+      }
 
-    if (!todayId) {
-      return;
-    }
+      const todayId = _todayMap.get(today.short)?.id;
 
-    this._matSnackBar.open('Unmarking today tasks 👀');
+      if (!todayId) {
+        return;
+      }
 
-    this._roundsService.unmarkTodayTasks({
-      roundId: round.id,
-      todayId
-    }).subscribe((success) => {
-      this._matSnackBar.open(success.details);
+      this._matSnackBar.open('Unmarking today tasks 👀');
+
+      this._roundsService.unmarkTodayTasks({
+        roundId: round.id,
+        todayId
+      }).subscribe((success) => {
+        this._matSnackBar.open(success.details);
+      });
+
     });
   }
 

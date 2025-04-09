@@ -1,3 +1,4 @@
+import {AsyncPipe} from '@angular/common';
 import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
@@ -22,7 +23,8 @@ import {LabelComponent} from '../form/label/label.component';
     FormFieldComponent,
     LabelComponent,
     ErrorComponent,
-    InputDirective
+    InputDirective,
+    AsyncPipe
   ],
   templateUrl: './register.component.html'
 })
@@ -38,7 +40,7 @@ export class RegisterComponent implements OnInit {
   protected readonly _password = this._registerForm.get('password');
   protected readonly _confirmPassword = this._registerForm.get('confirmPassword');
 
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
 
   @Output() doneEmitter = new EventEmitter<void>();
 

@@ -12,8 +12,8 @@ export const authGuardLoggedIn = (): Observable<true | UrlTree> => {
   const authService = inject(AuthService);
 
   return combineLatest([
-    toObservable(authService.userSig.get()),
-    toObservable(authService.authStateReady)
+    authService.user$,
+    authService.authStateReady$
   ]).pipe(
     filter(([user, authStateReady]) => user !== undefined && authStateReady !== undefined),
     take(1),
