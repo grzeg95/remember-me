@@ -1,5 +1,5 @@
 import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
-import {NgTemplateOutlet} from '@angular/common';
+import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
 import {AfterViewChecked, Component, ElementRef, HostListener, Renderer2, signal, ViewChild} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
@@ -10,14 +10,14 @@ import {MatTableModule} from '@angular/material/table';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
-import {catchError, NEVER} from 'rxjs';
+import {BehaviorSubject, catchError, combineLatest, NEVER} from 'rxjs';
+import {take} from 'rxjs/operators';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {Round} from '../../models/round';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {RoundsService} from '../../services/rounds.service';
-import {Sig} from '../../utils/Sig';
 
 @Component({
   selector: 'app-rounds-list',
@@ -31,7 +31,8 @@ import {Sig} from '../../utils/Sig';
     MatButtonModule,
     CdkDrag,
     MatProgressSpinnerModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    AsyncPipe
   ],
   styleUrl: './rounds-list.component.scss',
   animations: [
@@ -44,19 +45,18 @@ export class RoundsListComponent implements AfterViewChecked {
   protected readonly _faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper!: ElementRef;
 
-  protected readonly _isOnline = this._connectionsService.isOnlineSig.get();
+  protected readonly _isOnline$ = this._connectionsService.isOnline$;
 
-  private readonly _loadingSig = new Sig<boolean>(false);
-  protected readonly _loading = this._loadingSig.get();
+  protected readonly _loading$ = new BehaviorSubject<boolean>(false);
 
-  protected readonly _loadingRoundsMap = this._roundsService.loadingRoundsMapSig.get();
+  protected readonly _loadingRoundsMap$ = this._roundsService.loadingRoundsMap$;
 
-  protected readonly _round = this._roundsService.roundSig.get();
+  protected readonly _round$ = this._roundsService.round$;
 
-  protected readonly _roundsList = this._roundsService.roundsList;
-  protected readonly _roundsOrder = this._roundsService.roundsOrder;
+  protected readonly _roundsList$ = this._roundsService.roundsList$;
+  protected readonly _roundsOrder$ = this._roundsService.roundsOrder$;
 
-  protected readonly _loadingUser = this._authService.loadingUserSig.get();
+  protected readonly _loadingUser$ = this._authService.loadingUser$;
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -89,32 +89,37 @@ export class RoundsListComponent implements AfterViewChecked {
 
   drop(event: CdkDragDrop<any, any>): void {
 
-    if (event.previousIndex === event.currentIndex) {
-      return;
-    }
+    combineLatest([
+      this._roundsOrder$
+    ]).pipe(
+      take(1)
+    ).subscribe(([roundsOrder]) => {
 
-    const roundsOrder = this._roundsOrder();
+      if (event.previousIndex === event.currentIndex) {
+        return;
+      }
 
-    if (!roundsOrder) {
-      return;
-    }
+      if (!roundsOrder) {
+        return;
+      }
 
-    this._loadingSig.set(true);
-    const moveBy = event.currentIndex - event.previousIndex;
-    const roundId = roundsOrder[event.previousIndex];
+      this._loading$.next(true);
+      const moveBy = event.currentIndex - event.previousIndex;
+      const roundId = roundsOrder[event.previousIndex];
 
-    moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
-    this._roundsService.roundsOrderUpdatedSig.set([...roundsOrder]);
+      moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
+      this._roundsService.roundsOrderUpdated$.next([...roundsOrder]);
 
-    this._roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
-      this._loadingSig.set(false);
-      this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-      moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
-      this._roundsService.roundsOrderUpdatedSig.set([...roundsOrder]);
-      return NEVER;
-    })).subscribe((success) => {
-      this._loadingSig.set(false);
-      this._snackBar.open(success.details || 'Your operation has been done 😉');
+      this._roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
+        this._loading$.next(false);
+        this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+        moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
+        this._roundsService.roundsOrderUpdated$.next([...roundsOrder]);
+        return NEVER;
+      })).subscribe((success) => {
+        this._loading$.next(false);
+        this._snackBar.open(success.details || 'Your operation has been done 😉');
+      });
     });
   }
 

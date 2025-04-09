@@ -1,5 +1,4 @@
-import {effect, Inject, Injectable} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {Inject, Injectable} from '@angular/core';
 import {Router} from '@angular/router';
 import {
   Auth,
@@ -20,43 +19,40 @@ import {
   UserCredential
 } from 'firebase/auth';
 import {Firestore} from 'firebase/firestore';
-import {catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap} from 'rxjs';
+import {BehaviorSubject, catchError, defer, firstValueFrom, from, map, Observable, Subscription, switchMap, combineLatest, iif, of} from 'rxjs';
 import {RouterDict} from '../app.constants';
 import {AuthInjectionToken, FirestoreInjectionToken} from '../models/firebase';
 import {User} from '../models/user';
 import {getCryptoKey} from '../utils/crypto';
-import {Sig} from '../utils/Sig';
 import {docSnapshots} from './firebase/firestore';
 import {FunctionsService} from './functions.service';
 
 @Injectable()
 export class AuthService {
 
-  readonly authStateReady = toSignal(from(this._auth.authStateReady()).pipe(
+  readonly authStateReady$ = from(this._auth.authStateReady()).pipe(
     map(() => true)
-  ));
+  );
 
-  readonly firebaseUser = toSignal(new Observable<FirebaseUser | null>((subscriber) => {
+  readonly firebaseUser$ = new Observable<FirebaseUser | null>((subscriber) => {
     const unsubscribe = onAuthStateChanged(this._auth, {
       next: subscriber.next.bind(subscriber),
       error: subscriber.error.bind(subscriber),
       complete: subscriber.complete.bind(subscriber)
     });
     return {unsubscribe};
-  }));
+  });
 
-  readonly loadingUserSig = new Sig<boolean>(false);
+  readonly loadingUser$ = new BehaviorSubject<boolean>(false);
 
-  readonly userSig = new Sig<User | null>();
+  readonly user$ = new BehaviorSubject<User | null | undefined>(undefined);
   private _userSub: Subscription | undefined;
 
-  readonly hasEncryptedSecretKeySig = new Sig<boolean>(false);
-  private readonly _hasEncryptedSecretKey = this.hasEncryptedSecretKeySig.get();
+  readonly cryptoKey$ = new BehaviorSubject<CryptoKey | undefined>(undefined);
 
-  readonly cryptoKeySig = new Sig<CryptoKey>();
-  private readonly _cryptoKey = this.cryptoKeySig.get();
+  readonly hasEncryptedSecretKey$ = new BehaviorSubject<boolean | undefined>(false);
 
-  readonly whileLoginInSig = new Sig<boolean>(false);
+  readonly whileLoginIn$ = new BehaviorSubject<boolean>(false);
 
   private _wasUserCreatedWithEmailAndPassword = false;
 
@@ -70,20 +66,19 @@ export class AuthService {
     // user
     let user_userId: string | undefined;
     let user_cryptoKey: CryptoKey | undefined;
-    effect(async () => {
-
-      const firebaseUser = this.firebaseUser();
-      const cryptoKey = this._cryptoKey();
-      const authStateReady = this.authStateReady();
+    combineLatest([
+      this.firebaseUser$,
+      this.cryptoKey$,
+      this.authStateReady$
+    ]).subscribe(([firebaseUser, cryptoKey, authStateReady]) => {
 
       if (authStateReady === undefined || firebaseUser === undefined) {
         return;
       }
 
       if (!firebaseUser) {
-        this.userSig.set(null);
-        this.hasEncryptedSecretKeySig.set(undefined);
-        this.loadingUserSig.set(false);
+        this.user$.next(null);
+        this.loadingUser$.next(false);
         user_userId = undefined;
         user_cryptoKey = undefined;
         this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
@@ -102,11 +97,10 @@ export class AuthService {
 
       const userRef = User.ref(this._firestore, firebaseUser.uid);
 
-      this.loadingUserSig.set(true);
+      this.loadingUser$.next(true);
       this._userSub && !this._userSub.closed && this._userSub.unsubscribe();
       this._userSub = docSnapshots(userRef).pipe(
         catchError((error) => {
-          console.error(error);
           if (error.code === 'permission-denied') {
             this.signOut().subscribe();
           }
@@ -115,7 +109,7 @@ export class AuthService {
       ).subscribe(async (userDocSnap) => {
 
         if (!cryptoKey) {
-          this.hasEncryptedSecretKeySig.set(userDocSnap.data()?.hasEncryptedSecretKey);
+          this.hasEncryptedSecretKey$.next(userDocSnap.data()?.hasEncryptedSecretKey);
           return;
         }
 
@@ -129,9 +123,9 @@ export class AuthService {
         }
 
         if (user.hasInitialData) {
-          this.userSig.set(user);
-          this.loadingUserSig.set(false);
-          this.whileLoginInSig.set(false);
+          this.user$.next(user);
+          this.loadingUser$.next(false);
+          this.whileLoginIn$.next(false);
         }
 
         // this._router.routerState.snapshot.url is empty for user round views
@@ -142,15 +136,19 @@ export class AuthService {
           setTimeout(() => this._router.navigate(['/', RouterDict.user]));
         }
       });
+
     });
 
     // cryptoKey
     let cryptoKey_firebaseUserId: string | undefined;
     let cryptoKey_userHasEncryptedSecretKey: boolean | undefined;
-    effect(async () => {
+    combineLatest([
+      this.firebaseUser$,
+      this.hasEncryptedSecretKey$
+    ]).subscribe(async ([firebaseUser, hasEncryptedSecretKey]) => {
 
       const defend = () => {
-        this.cryptoKeySig.set(undefined);
+        this.cryptoKey$.next(undefined);
         cryptoKey_firebaseUserId = undefined;
         cryptoKey_userHasEncryptedSecretKey = undefined;
         this.signOut().subscribe();
@@ -162,9 +160,6 @@ export class AuthService {
         defend();
         return;
       }
-
-      const firebaseUser = this.firebaseUser();
-      const hasEncryptedSecretKey = this._hasEncryptedSecretKey();
 
       if (firebaseUser === undefined || !hasEncryptedSecretKey) {
         return;
@@ -201,9 +196,9 @@ export class AuthService {
         // secretKey
         idTokenResult = await getIdTokenResult(userCredential.user, true);
 
-        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
+        this.cryptoKey$.next(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
       } else {
-        this.cryptoKeySig.set(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
+        this.cryptoKey$.next(await getCryptoKey(idTokenResult!.claims['secretKey'] as string));
       }
     });
   }
@@ -211,9 +206,9 @@ export class AuthService {
   googleSignIn() {
 
     return defer(() => {
-      this.whileLoginInSig.set(true);
+      this.whileLoginIn$.next(true);
       return signInWithPopup(this._auth, new GoogleAuthProvider()).catch((e) => {
-        this.whileLoginInSig.set(false);
+        this.whileLoginIn$.next(false);
         throw e;
       });
     });
@@ -270,25 +265,37 @@ export class AuthService {
 
   updatePassword(newPassword: string): Observable<{code: string; message: string;}> {
 
-    return defer(() => {
+    return this.firebaseUser$.pipe(
+      switchMap((firebaseUser) =>
+        iif(
+          () => !!firebaseUser,
 
-      const firebaseUser = this.firebaseUser();
+          defer(() => {
 
-      // was created by email password
-      if (!firebaseUser || firebaseUser.providerData[0]?.providerId !== 'password') {
-        throw {
-          code: 'auth/unauthorized',
-          message: `Password hasn't been updated 🤫`
-        }
-      }
+            if (firebaseUser!.providerData[0]?.providerId !== 'password') {
+              throw {
+                code: 'auth/unauthorized',
+                message: `Password hasn't been updated 🤫`
+              }
+            }
 
-      return updatePassword(firebaseUser, newPassword).then(() => {
-        return {
-          code: 'auth/password-updated',
-          message: 'Password has been updated 🤫'
-        }
-      });
-    });
+            return updatePassword(firebaseUser!, newPassword).then(() => {
+              return {
+                code: 'auth/password-updated',
+                message: 'Password has been updated 🤫'
+              }
+            })
+
+          }),
+          defer(() => {
+            throw {
+              code: 'auth/unauthorized',
+              message: `Password hasn't been updated 🤫`
+            }
+          })
+        )
+      )
+    );
   }
 
   signOut(): Observable<void> {
@@ -297,15 +304,14 @@ export class AuthService {
 
   deleteUser(): Observable<void> {
 
-    return defer(() => {
-
-      const firebaseUser = this.firebaseUser();
-
-      if (!firebaseUser) {
-        return Promise.resolve();
-      }
-
-      return deleteUser(firebaseUser);
-    });
+    return this.firebaseUser$.pipe(
+      switchMap((firebaseUser) =>
+        iif(
+          () => !!firebaseUser,
+          deleteUser(firebaseUser!),
+          Promise.reject()
+        )
+      )
+    );
   }
 }

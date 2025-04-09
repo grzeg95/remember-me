@@ -3,8 +3,8 @@
   Setting
 </div>
 
-@if (_user(); as user) {
-  @if (_firebaseUser(); as firebaseUser) {
+@if (_user$ | async; as user) {
+  @if (_firebaseUser$ | async; as firebaseUser) {
 
     <div class="section">
       <div class="title">Basic info</div>

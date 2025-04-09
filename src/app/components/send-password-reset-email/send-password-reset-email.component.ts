@@ -1,3 +1,4 @@
+import {AsyncPipe} from '@angular/common';
 import {Component, EventEmitter, Output} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
@@ -19,7 +20,8 @@ import {FormFieldComponent} from '../ui/form-field/form-field.component';
     FormFieldComponent,
     LabelDirective,
     InputDirective,
-    ErrorDirective
+    ErrorDirective,
+    AsyncPipe
   ],
   templateUrl: './send-password-reset-email.component.html'
 })
@@ -31,7 +33,7 @@ export class SendPasswordResetEmailComponent {
 
   protected readonly _email = this._recoveryForm.get('email');
 
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
 
   @Output() doneEmitter = new EventEmitter<void>();
 

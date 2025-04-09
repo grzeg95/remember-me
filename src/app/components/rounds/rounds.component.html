@@ -17,14 +17,14 @@
           <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor]">Round edit</a>
         }
 
-        @if (roundEdit.isActive && _editRound()) {
+        @if (roundEdit.isActive && (_editRound$ | async)) {
           <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor, _editRound()?.id]">{{ _editRound()?.name }}</a>
+          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _RouterDict.roundEditor, (_editRound$ | async)?.id]">{{ (_editRound$ | async)?.name }}</a>
         }
 
-        @if (!roundEdit.isActive && _round()) {
+        @if (!roundEdit.isActive && (_round$ | async)) {
           <span> | </span>
-          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, _round()?.id, _RouterDict.todayTasks]"> {{ _round()?.name }}</a>
+          <a class="vertical-link" [routerLink]="['/', _RouterDict.user, _RouterDict.rounds, (_round$ | async)?.id, _RouterDict.todayTasks]"> {{ (_round$ | async)?.name }}</a>
         }
 
       </div>

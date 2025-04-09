@@ -1,3 +1,4 @@
+import {AsyncPipe} from '@angular/common';
 import {Component, OnInit} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
@@ -20,7 +21,8 @@ import {FormFieldComponent} from '../ui/form-field/form-field.component';
     FormFieldComponent,
     LabelDirective,
     InputDirective,
-    ErrorDirective
+    ErrorDirective,
+    AsyncPipe
   ],
   templateUrl: './new-password.component.html'
 })
@@ -34,7 +36,7 @@ export class NewPasswordComponent implements OnInit {
   protected readonly _newPassword = this._newPasswordForm.get('newPassword') as FormControl;
   protected readonly _confirmNewPassword = this._newPasswordForm.get('confirmNewPassword') as FormControl;
 
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
 
   constructor(
     private readonly _authService: AuthService,

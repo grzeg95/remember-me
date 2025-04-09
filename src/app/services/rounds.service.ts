@@ -1,113 +1,121 @@
-import {computed, effect, Injectable, signal} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Injectable, signal} from '@angular/core';
+import {BehaviorSubject, combineLatest, map, Observable} from 'rxjs';
 import {Day} from '../models/day';
 import {HTTPSuccess} from '../models/http';
 import {Round} from '../models/round';
+import {Task} from '../models/task';
 import {Today} from '../models/today';
 import {TodayItem} from '../models/today-item';
 import {TodayTask} from '../models/today-task';
-import {Sig} from '../utils/Sig';
 import {AuthService} from './auth.service';
-import { Task } from '../models/task';
 import {FunctionsService} from './functions.service';
 
 @Injectable()
 export class RoundsService {
 
-  private readonly _user = this._authService.userSig.get();
+  private readonly _user$ = this._authService.user$;
 
   //
   // Rounds
   //
 
-  readonly loadingRoundSig = new Sig<boolean>(false);
+  readonly loadingRound$ = new BehaviorSubject<boolean>(false);
 
-  readonly roundSig = new Sig<Round>();
-  private readonly _round = this.roundSig.get();
+  readonly round$ = new BehaviorSubject<Round | undefined>(undefined);
 
-  readonly roundIdSig = new Sig<string | null>();
+  readonly roundId$ = new BehaviorSubject<string | null | undefined>(null);
 
-  readonly editRoundSig = new Sig<Round>();
-  readonly editRoundIdSig = new Sig<string | null>();
-  readonly loadingEditRoundSig = new Sig<boolean>(false);
+  readonly editRound$ = new BehaviorSubject<Round | undefined>(undefined);
+  readonly editRoundId$ = new BehaviorSubject<string | null | undefined>(null);
+  readonly loadingEditRound$ = new BehaviorSubject<boolean>(false);
 
-  readonly roundsMapSig = new Sig<Map<string, Round>>();
-  private readonly _roundsMap = this.roundsMapSig.get();
-  readonly loadingRoundsMapSig = new Sig<boolean>(false);
+  readonly roundsMap$ = new BehaviorSubject<Map<string, Round> | undefined>(undefined);
+  readonly loadingRoundsMap$ = new BehaviorSubject<boolean>(false);
 
-  readonly roundsOrderUpdatedSig = new Sig<string[]>();
-  private readonly _roundsOrderUpdated = this.roundsOrderUpdatedSig.get();
+  readonly roundsOrderUpdated$ = new BehaviorSubject<string[] | undefined>(undefined);
 
-  readonly roundsOrder = computed(() => {
+  readonly roundsOrder$ = combineLatest([
+    this._user$,
+    this.roundsOrderUpdated$
+  ]).pipe(
+    map(([user, roundsOrderUpdated]) => {
 
-    const user = this._user();
-    const roundsOrderUpdated = this._roundsOrderUpdated();
+      if (!user) {
+        return undefined;
+      }
 
-    if (!user) {
-      return undefined;
-    }
+      if (roundsOrderUpdated) {
+        this.roundsOrderUpdated$.next(undefined);
+        return roundsOrderUpdated;
+      }
 
-    if (roundsOrderUpdated) {
-      this.roundsOrderUpdatedSig.set(undefined);
-      return roundsOrderUpdated;
-    }
+      return user.decryptedRounds;
+    })
+  );
 
-    return user.decryptedRounds;
-  });
+  readonly roundsList$ = combineLatest([
+    this.roundsOrder$,
+    this.roundsMap$
+  ]).pipe(
+    map(([roundsOrder, roundsMap]) => {
 
-  readonly roundsList = computed(() => {
+      if (!roundsOrder || !roundsMap) {
+        return undefined;
+      }
 
-    const roundsOrder = this.roundsOrder();
-    const roundsMap = this._roundsMap();
+      return roundsOrder.filter((roundId) => roundsMap.get(roundId)).map((roundId) => roundsMap.get(roundId)) as Round[];
 
-    if (!roundsOrder || !roundsMap) {
-      return undefined;
-    }
-
-    return roundsOrder.filter((roundId) => roundsMap.get(roundId)).map((roundId) => roundsMap.get(roundId)) as Round[];
-  });
+    })
+  );
 
   //
   // Today items
   //
 
-  readonly todayTasksLoadingSig = new Sig<boolean>(false);
-  readonly todayTasksSig = new Sig<TodayTask[]>();
+  readonly todayTasksLoading$ = new BehaviorSubject<boolean>(false);
+  readonly todayTasks$ = new BehaviorSubject<TodayTask[] | undefined>(undefined);
 
-  private _todayItems = signal<{[p: string]: TodayItem[]}>({});
+  private _todayItems$ = new BehaviorSubject<{[p: string]: TodayItem[]}>({});
 
-  readonly todayItems = computed(() => {
+  readonly todayItems$ = combineLatest([
+    this.round$,
+    this._todayItems$
+  ]).pipe(
+    map(([round, todayItems]) => {
 
-    const round = this._round();
-    const todayItems = this._todayItems();
+      if (!round || !todayItems) {
+        return undefined;
+      }
 
-    if (!round || !todayItems) {
-      return undefined;
-    }
+      return round.timesOfDay.filter((timeOfDay) => todayItems[timeOfDay]).map((timeOfDay) => ({
+        timeOfDay,
+        tasks: todayItems[timeOfDay]
+      }));
+    })
+  )
 
-    return round.timesOfDay.filter((timeOfDay) => todayItems[timeOfDay]).map((timeOfDay) => ({
-      timeOfDay,
-      tasks: todayItems[timeOfDay]
-    }));
-  });
+  readonly now$ = new BehaviorSubject<Date>(new Date());
 
-  readonly todaySig = new Sig<{full: string, short: Day}>();
-  readonly dayToSetInEditorSig = new Sig<Day>();
+  readonly today$ = this.now$.pipe(
+    map((now) => {
+      return {
+        full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()],
+        short: (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as Day[])[now.getDay()]
+      };
+    })
+  )
 
-  readonly nowSig = new Sig<Date>(new Date());
-  private readonly _now = this.nowSig.get();
+  readonly day$ = new BehaviorSubject<{full: string, short: Day} | undefined>(undefined);
 
-  readonly daySig = new Sig<{full: string, short: Day}>();
-
-  readonly todayMapSig = new Sig<Map<string, Today>>();
-  readonly todayMapLoadingSig = new Sig<boolean>(false);
+  readonly todayMap$ = new BehaviorSubject<Map<string, Today> | undefined>(undefined);
+  readonly todayMapLoading$ = new BehaviorSubject<boolean>(false);
 
   //
   // Tasks list
   //
 
-  readonly tasksSig = new Sig<Task[]>();
-  readonly tasksLoadingSig = new Sig(false);
+  readonly tasks$ = new BehaviorSubject<Task[] | undefined>(undefined);
+  readonly tasksLoading$ = new BehaviorSubject<boolean | undefined>(false);
 
   //
   // Task edit
@@ -118,20 +126,6 @@ export class RoundsService {
     private readonly _functionsService: FunctionsService,
     private readonly _authService: AuthService
   ) {
-
-    effect(() => {
-
-      const now = this._now();
-
-      if (!now) {
-        return;
-      }
-
-      this.todaySig.set({
-        full: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()],
-        short: (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as Day[])[now.getDay()]
-      });
-    });
   }
 
   saveRound(name: string, roundId: string = 'null') {

@@ -1,7 +1,7 @@
 import {Component, signal} from '@angular/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, RouterLink, RouterLinkActive} from '@angular/router';
-import {interval, Subscription} from 'rxjs';
+import {combineLatest, interval, Subscription} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {RouterDict} from '../../app.constants';
 import {AuthService} from '../../services/auth.service';
@@ -23,11 +23,9 @@ export class RoundNavComponent {
 
   private _unmarkTodayTasksIntervalSub: Subscription | undefined;
 
-  protected readonly _user = this._authService.userSig.get();
-
-  protected readonly _round = this._roundsService.roundSig.get();
-  protected readonly _todayMap = this._roundsService.todayMapSig.get();
-  protected readonly _today = this._roundsService.todaySig.get();
+  protected readonly _round$ = this._roundsService.round$;
+  protected readonly _todayMap$ = this._roundsService.todayMap$;
+  protected readonly _today$ = this._roundsService.today$;
 
   protected readonly _todayTasksViewActive = signal(false);
 
@@ -46,27 +44,32 @@ export class RoundNavComponent {
 
   unmarkTodayTasks() {
 
-    const round = this._round();
-    const _todayMap = this._todayMap();
-    const today = this._today();
+    combineLatest([
+      this._round$,
+      this._todayMap$,
+      this._today$
+    ]).pipe(
+      take(1)
+    ).subscribe(([round, _todayMap, today]) => {
 
-    if (!round || !_todayMap || !today) {
-      return;
-    }
+      if (!round || !_todayMap || !today) {
+        return;
+      }
 
-    const todayId = _todayMap.get(today.short)?.id;
+      const todayId = _todayMap.get(today.short)?.id;
 
-    if (!todayId) {
-      return;
-    }
+      if (!todayId) {
+        return;
+      }
 
-    this._matSnackBar.open('Unmarking today tasks 👀');
+      this._matSnackBar.open('Unmarking today tasks 👀');
 
-    this._roundsService.unmarkTodayTasks({
-      roundId: round.id,
-      todayId
-    }).subscribe((success) => {
-      this._matSnackBar.open(success.details);
+      this._roundsService.unmarkTodayTasks({
+        roundId: round.id,
+        todayId
+      }).subscribe((success) => {
+        this._matSnackBar.open(success.details);
+      });
     });
   }
 

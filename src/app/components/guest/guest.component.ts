@@ -1,4 +1,5 @@
-import {Component, Inject, signal} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
+import {Component, Inject} from '@angular/core';
 import {RemoteConfig} from 'firebase/remote-config';
 import {SvgDirective} from '../../directives/svg.directive';
 import {RemoteConfigInjectionToken} from '../../models/firebase';
@@ -13,13 +14,16 @@ interface GuestComponentConfig {
   selector: 'app-guest',
   standalone: true,
   templateUrl: './guest.component.html',
-  imports: [SvgDirective],
+  imports: [
+    SvgDirective,
+    AsyncPipe
+  ],
   styleUrls: ['./guest.component.scss']
 })
 export class GuestComponent {
 
-  protected readonly _loadingUser = this._authService.loadingUserSig.get();
-  protected readonly _firebaseUser = this._authService.firebaseUser;
+  protected readonly _loadingUser$ = this._authService.loadingUser$;
+  protected readonly _firebaseUser$ = this._authService.firebaseUser$;
 
   protected readonly _guestComponentConfig: GuestComponentConfig | undefined;
 

@@ -1,7 +1,7 @@
 <div class="container" [@fadeZoomInOutTrigger]>
   <div class="col">
 
-    @if (!_isOnline() && !_roundsList()!.length) {
+    @if (!(_isOnline$ | async) && !(_roundsList$ | async)?.length) {
       <div class="row message">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
@@ -9,7 +9,7 @@
       </div>
     }
 
-    @if (_isOnline() && _loadingRoundsMap() && _loadingUser()) {
+    @if ((_isOnline$ | async) && (_loadingRoundsMap$ | async) && (_loadingUser$ | async)) {
       @defer {
       } @loading (after 100ms; minimum 500ms) {
         <div class="row message">
@@ -18,13 +18,13 @@
           </div>
         </div>
       }
-    } @else if (_isOnline()) {
+    } @else if (_isOnline$ | async) {
       <ng-container *ngTemplateOutlet="showItems"></ng-container>
     }
 
     <ng-template #showItems>
 
-      @if (_roundsList(); as roundsList) {
+      @if (_roundsList$ | async; as roundsList) {
 
         @if (roundsList.length > 0) {
           <div class="row" #roundListTableWrapper>
@@ -34,7 +34,7 @@
                     [dataSource]="roundsList"
                     cdkDropList
                     (cdkDropListDropped)="drop($event)"
-                    [cdkDropListDisabled]="!_isOnline()">
+                    [cdkDropListDisabled]="!(_isOnline$ | async)">
 
               <ng-container matColumnDef="roundName">
                 <th mat-header-cell *matHeaderCellDef>Round</th>
@@ -59,7 +59,7 @@
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="_displayedColumns"></tr>
-              <tr cdkDrag [class.disabled]="_loadingUser() || ((!_isOnline() || _loadingUser()) && (!_isOnline() && !!_round() && _round()?.id !== row.id)) || ((!_isOnline() || _loading()) && !_round())" mat-row
+              <tr cdkDrag [class.disabled]="(_loadingUser$ | async) || ((!(_isOnline$ | async) || (_loadingUser$ | async) && (!(_isOnline$ | async) && !!(_round$ | async) && (_round$ | async)?.id !== row.id)) || ((!(_isOnline$ | async) || (_loading$ | async)) && !(_round$ | async)))" mat-row
                   *matRowDef="let row; columns: _displayedColumns;" (click)="goToRound(row.id)"></tr>
 
             </table>
@@ -91,6 +91,6 @@
   </div>
 </div>
 
-@if (_loading()) {
+@if (_loading$ | async) {
   <mat-spinner [diameter]="50" [strokeWidth]="5"></mat-spinner>
 }

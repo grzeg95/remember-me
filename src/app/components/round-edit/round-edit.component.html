@@ -13,23 +13,23 @@
     </div>
     <div class="row">
       <div class="col">
-        <mat-progress-bar [style.opacity]="_isLoading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+        <mat-progress-bar [style.opacity]="(_isLoading$ | async) ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
       </div>
     </div>
     <div class="row">
       <div class="col text-center actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="_roundForm.disabled || _roundForm.invalid || !_isOnline() || !_isNothingChanged()"
-                (click)="saveRound()">{{ !_editRound() ? 'Create' : 'Save' }}</button>
-        @if (_editRound()) {
+                [disabled]="_roundForm.disabled || _roundForm.invalid || !(_isOnline$ | async) || !(_isNothingChanged$ | async)"
+                (click)="saveRound()">{{ !(_editRound$ | async) ? 'Create' : 'Save' }}</button>
+        @if (_editRound$ | async) {
           <button mat-stroked-button
                   color="primary"
-                  [disabled]="_roundForm.disabled || !_isOnline()"
-                  (click)="_editRoundIdSig.set(null)">New</button>
+                  [disabled]="_roundForm.disabled || !(_isOnline$ | async)"
+                  (click)="_editRoundId$.next(null)">New</button>
           <button mat-stroked-button
                   color="warn"
-                  [disabled]="_roundForm.disabled || !_isOnline()"
+                  [disabled]="_roundForm.disabled || !(_isOnline$ | async)"
                   (click)="deleteRound()">Delete</button>
         }
       </div>

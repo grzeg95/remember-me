@@ -17,7 +17,7 @@
         <div formGroupName="daysOfTheWeek" class="col offset-md-0 text-center days-of-the-week">
           @for (dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; track $index) {
             <mat-slide-toggle [checked]="_daysOfTheWeek.get(dayOfTheWeek)!.value == true"
-                              [class.disabled]="_taskForm.disabled || !_isOnline()"
+                              [class.disabled]="_taskForm.disabled || !(_isOnline$ | async)"
                               [formControlName]="dayOfTheWeek">{{ dayOfTheWeek | titlecase }}</mat-slide-toggle>
           }
         </div>
@@ -33,7 +33,7 @@
           <mat-chip-grid #chipGrid>
             <div formArrayName="timesOfDay">
               @for (timeOfDayId of _timesOfDay.controls; track timeOfDayId.value; let i = $index) {
-                <mat-chip-row [class.disabled]="_taskForm.disabled || !_isOnline()"
+                <mat-chip-row [class.disabled]="_taskForm.disabled || !(_isOnline$ | async)"
                               [formGroupName]="i"
                               [value]="timeOfDayId.value"
                               [removable]="true"
@@ -54,7 +54,7 @@
                    [matChipInputAddOnBlur]="true"
                    (matChipInputTokenEnd)="handleAddTimeOfDayId($event)">
             <mat-autocomplete #auto="matAutocomplete" (optionSelected)="handleOptionSelected($event)">
-              @for (option of _filteredOptions(); track option) {
+              @for (option of _filteredOptions$ | async; track option) {
                 <mat-option [value]="option">{{ option }}</mat-option>
               }
             </mat-autocomplete>
@@ -64,23 +64,23 @@
     </div>
     <div class="row">
       <div class="col">
-        <mat-progress-bar [style.opacity]="_loading() ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
+        <mat-progress-bar [style.opacity]="(_loading$ | async) ? '1' : '0'" mode="indeterminate"></mat-progress-bar>
       </div>
     </div>
     <div class="row">
       <div class="col text-center actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="_taskForm.disabled || _taskForm.invalid || !_isOnline() || !_isNothingChanged()"
-                (click)="saveTask()">{{ !_task() ? 'Create' : 'Save' }}</button>
-          @if (_task()) {
+                [disabled]="_taskForm.disabled || _taskForm.invalid || !(_isOnline$ | async) || !(_isNothingChanged$ | async)"
+                (click)="saveTask()">{{ !(_task$ | async) ? 'Create' : 'Save' }}</button>
+          @if (_task$ | async) {
             <button mat-stroked-button
               color="primary"
-              [disabled]="_taskForm.disabled || !_isOnline()"
-              (click)="_taskIdSig.set(undefined)">New</button>
+              [disabled]="_taskForm.disabled || !(_isOnline$ | async)"
+              (click)="_taskId$.next(undefined)">New</button>
             <button mat-stroked-button
               color="warn"
-              [disabled]="_taskForm.disabled || !_isOnline()"
+              [disabled]="_taskForm.disabled || !(_isOnline$ | async)"
               (click)="deleteTask()">Delete</button>
           }
       </div>

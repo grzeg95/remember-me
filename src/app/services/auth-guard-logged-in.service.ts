@@ -1,5 +1,4 @@
 import {inject} from '@angular/core';
-import {toObservable} from '@angular/core/rxjs-interop';
 import {Router, UrlTree} from '@angular/router';
 import {combineLatest, Observable, skip, tap} from 'rxjs';
 import {filter, map, take} from 'rxjs/operators';
@@ -12,8 +11,8 @@ export const authGuardLoggedIn = (): Observable<true | UrlTree> => {
   const authService = inject(AuthService);
 
   return combineLatest([
-    toObservable(authService.userSig.get()),
-    toObservable(authService.authStateReady)
+    authService.user$,
+    authService.authStateReady$
   ]).pipe(
     filter(([user, authStateReady]) => user !== undefined && authStateReady !== undefined),
     take(1),

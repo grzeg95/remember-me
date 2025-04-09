@@ -1,4 +1,5 @@
-import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
+import {Component, DestroyRef, Inject, OnDestroy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
@@ -7,7 +8,7 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Firestore} from 'firebase/firestore';
-import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {BehaviorSubject, catchError, combineLatest, NEVER, of, Subscription, switchMap} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
@@ -18,7 +19,6 @@ import {ConnectionService} from '../../services/connection.service';
 import {CustomValidators} from '../../services/custom-validators';
 import {docSnapshots} from '../../services/firebase/firestore';
 import {RoundsService} from '../../services/rounds.service';
-import {Sig} from '../../utils/Sig';
 import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/round-dialog-confirm-delete.component';
 import {ErrorDirective, InputDirective, LabelDirective} from '../ui/form-field/directives';
 import {FormFieldComponent} from '../ui/form-field/form-field.component';
@@ -34,7 +34,8 @@ import {FormFieldComponent} from '../ui/form-field/form-field.component';
     FormFieldComponent,
     LabelDirective,
     InputDirective,
-    ErrorDirective
+    ErrorDirective,
+    AsyncPipe
   ],
   styleUrl: './round-edit.component.scss',
   animations: [
@@ -43,22 +44,19 @@ import {FormFieldComponent} from '../ui/form-field/form-field.component';
 })
 export class RoundEditComponent implements OnDestroy {
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
 
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
 
-  private readonly _isLoadingSig = new Sig<boolean>(false);
-  protected readonly _isLoading = this._isLoadingSig.get();
+  protected readonly _isLoading$ = new BehaviorSubject<boolean>(false);
 
-  protected readonly _editRoundIdSig = this._roundsService.editRoundIdSig;
-  protected readonly _editRoundId = this._editRoundIdSig.get();
-  protected readonly _editRound = this._roundsService.editRoundSig.get();
+  protected readonly _editRoundId$ = this._roundsService.editRoundId$;
+  protected readonly _editRound$ = this._roundsService.editRound$;
 
   protected _initValues = {name: ''};
 
-  private readonly _isNothingChangedSig = new Sig<boolean>(true);
-  protected readonly _isNothingChanged = this._isNothingChangedSig.get();
+  protected readonly _isNothingChanged$ = new BehaviorSubject<boolean>(true);
 
   protected readonly _roundForm: FormGroup = new FormGroup({
     name: new FormControl('', [CustomValidators.maxRequired(256)])
@@ -81,30 +79,37 @@ export class RoundEditComponent implements OnDestroy {
   ) {
     this._roundForm.enable();
 
-    effect(() => {
-      if (this._isOnline()) {
-        this._roundsService.editRoundIdSig.set(this._activeRoute.snapshot.params['id'] || undefined);
+    combineLatest([
+      this._isOnline$
+    ]).pipe(
+      takeUntilDestroyed(this._destroyRef)
+    ).subscribe(([isOnline]) => {
+      if (isOnline) {
+        this._roundsService.editRoundId$.next(this._activeRoute.snapshot.params['id'] || undefined);
       } else {
         this._roundForm.disable();
       }
     });
 
     this._route.paramMap.subscribe((paramMap) => {
-      this._roundsService.editRoundIdSig.set(paramMap.get('id'));
+      this._roundsService.editRoundId$.next(paramMap.get('id'));
     });
 
     this._name?.valueChanges.subscribe((val) => {
-      this._isNothingChangedSig.set(this._initValues.name !== val);
+      this._isNothingChanged$.next(this._initValues.name !== val);
     });
 
     // editRound
     let editRound_userId: string | undefined;
     let editRound_editRoundId: string | undefined;
-    effect(() => {
 
-      const user = this._user();
-      const cryptoKey = this._cryptoKey();
-      const editRoundId = this._editRoundId();
+    combineLatest([
+      this._user$,
+      this._cryptoKey$,
+      this._editRoundId$
+    ]).pipe(
+      takeUntilDestroyed(this._destroyRef)
+    ).subscribe(([user, cryptoKey, editRoundId]) => {
 
       if (user === undefined || editRoundId === undefined || !cryptoKey) {
         return;
@@ -113,8 +118,8 @@ export class RoundEditComponent implements OnDestroy {
       if (!user || !editRoundId) {
         this.resetForm();
         this._router.navigate(['/', RouterDict.user, RouterDict.rounds, RouterDict.roundEditor]);
-        this._roundsService.roundSig.set(undefined);
-        this._roundsService.roundIdSig.set(undefined);
+        this._roundsService.round$.next(undefined);
+        this._roundsService.roundId$.next(undefined);
         this._roundForm.enable();
         editRound_userId = undefined;
         editRound_editRoundId = undefined;
@@ -135,25 +140,24 @@ export class RoundEditComponent implements OnDestroy {
       const userRef = User.ref(this._firestore, user.id);
       const roundRef = Round.ref(userRef, editRoundId);
 
-      this._roundsService.loadingEditRoundSig.set(true);
+      this._roundsService.loadingEditRound$.next(true);
       this._editRoundSub && !this._editRoundSub.closed && this._editRoundSub.unsubscribe();
       this._editRoundSub = docSnapshots<Round, RoundDoc>(roundRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user() || !!this._editRoundId()),
         switchMap((docSnap) => Round.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((round) => {
 
-        this._roundsService.loadingEditRoundSig.set(false);
+        this._roundsService.loadingEditRound$.next(false);
 
         if (!round) {
-          this._roundsService.roundIdSig.set(undefined);
+          this._roundsService.roundId$.next(undefined);
           return;
         }
 
-        this._isLoadingSig.set(false);
+        this._isLoading$.next(false);
 
-        this._roundsService.editRoundSig.set(round);
+        this._roundsService.editRound$.next(round);
 
         this._roundForm.get('name')?.setValue(round.name);
         this._initValues = {
@@ -161,18 +165,17 @@ export class RoundEditComponent implements OnDestroy {
         };
         this._roundForm.enable();
       });
-
     });
   }
 
   saveRound(): void {
 
-    this._isLoadingSig.set(true);
+    this._isLoading$.next(true);
     this._roundForm.disable();
 
-    this._roundsService.saveRound(this._name?.value, this._editRound()?.id).pipe(
+    this._roundsService.saveRound(this._name?.value, this._editRound$.value?.id).pipe(
       catchError((error) => {
-        this._isLoadingSig.set(false);
+        this._isLoading$.next(false);
         this._roundForm.enable();
         this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         return NEVER;
@@ -195,18 +198,18 @@ export class RoundEditComponent implements OnDestroy {
 
       if (isConfirmed) {
         this._roundForm.disable();
-        this._isLoadingSig.set(true);
+        this._isLoading$.next(true);
 
-        this._roundsService.deleteRound(this._editRound()?.id as string).pipe(
+        this._roundsService.deleteRound(this._editRound$.value?.id as string).pipe(
           catchError((error) => {
-            this._isLoadingSig.set(false);
+            this._isLoading$.next(false);
             this._roundForm.enable();
             this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
             return NEVER;
           })
         ).subscribe((success) => {
           this._snackBar.open(success.details || 'Your operation has been done 😉');
-          this._roundsService.editRoundIdSig.set(undefined);
+          this._roundsService.editRoundId$.next(undefined);
         });
       }
     });
@@ -218,8 +221,8 @@ export class RoundEditComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._roundsService.editRoundIdSig.set(undefined);
-    this._roundsService.editRoundSig.set(undefined);
-    this._roundsService.loadingEditRoundSig.set(false);
+    this._roundsService.editRoundId$.next(undefined);
+    this._roundsService.editRound$.next(undefined);
+    this._roundsService.loadingEditRound$.next(false);
   }
 }

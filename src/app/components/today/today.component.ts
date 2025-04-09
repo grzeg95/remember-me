@@ -1,4 +1,4 @@
-import {NgTemplateOutlet} from '@angular/common';
+import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
 import {Component, computed, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
@@ -9,7 +9,8 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {DocumentReference, FieldPath, Firestore, limit, updateDoc} from 'firebase/firestore';
-import {catchError, defer, NEVER, of, Subscription, takeWhile} from 'rxjs';
+import {catchError, combineLatest, defer, map, NEVER, of, share, Subscription, takeWhile} from 'rxjs';
+import {take} from 'rxjs/operators';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {FirestoreInjectionToken} from '../../models/firebase';
@@ -33,7 +34,8 @@ import {RoundsService} from '../../services/rounds.service';
     FontAwesomeModule,
     MatProgressSpinnerModule,
     MatProgressBarModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    AsyncPipe
   ],
   styleUrl: './today.component.scss',
   animations: [
@@ -46,54 +48,55 @@ export class TodayComponent implements OnDestroy {
   private _todaySub: Subscription | undefined;
   private _todayTasksMapSub: Subscription | undefined;
 
-  protected readonly _todayMap = this._roundsService.todayMapSig.get();
-  protected readonly _todayTasks = this._roundsService.todayTasksSig.get();
+  protected readonly _todayMap$ = this._roundsService.todayMap$;
+  protected readonly _todayTasks$ = this._roundsService.todayTasks$;
 
-  protected readonly _today = this._roundsService.todaySig.get();
-  protected readonly _isOnline = this._connectionService.isOnlineSig.get();
-  protected readonly _round = this._roundsService.roundSig.get();
+  protected readonly _today$ = this._roundsService.today$;
+  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _round$ = this._roundsService.round$;
 
-  protected readonly _user = this._authService.userSig.get();
-  protected readonly _cryptoKey = this._authService.cryptoKeySig.get();
+  protected readonly _user$ = this._authService.user$;
+  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
 
-  protected readonly _todayView = computed(() => {
+  protected readonly _todayView$ = combineLatest([
+    this._round$,
+    this._todayTasks$,
+    this._today$,
+    this._todayMap$
+  ]).pipe(
+    map(([round, todayTasks, today, todayMap]) => {
+      if (!round || !todayTasks || !today || !todayMap) {
+        return undefined;
+      }
 
-    const round = this._round();
-    const todayTasks = this._todayTasks();
-    const today = this._today();
-    const todayMap = this._todayMap();
+      const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
 
-    if (!round || !todayTasks || !today || !todayMap) {
-      return undefined;
-    }
+      for (const todayTask of todayTasks) {
 
-    const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
+        Object.keys(todayTask.timesOfDayEncryptedMap).forEach((timeOfDay) => {
 
-    for (const todayTask of todayTasks) {
+          if (!todayTasksByTimeOfDay[timeOfDay]) {
+            todayTasksByTimeOfDay[timeOfDay] = [];
+          }
 
-      Object.keys(todayTask.timesOfDayEncryptedMap).forEach((timeOfDay) => {
-
-        if (!todayTasksByTimeOfDay[timeOfDay]) {
-          todayTasksByTimeOfDay[timeOfDay] = [];
-        }
-
-        todayTasksByTimeOfDay[timeOfDay].push({
-          description: todayTask.decryptedDescription,
-          done: todayTask.timesOfDay[todayTask.timesOfDayEncryptedMap[timeOfDay]],
-          id: todayTask.id,
-          disabled: false,
-          dayOfTheWeekId: todayMap.get(today.short)?.id || '',
-          timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
+          todayTasksByTimeOfDay[timeOfDay].push({
+            description: todayTask.decryptedDescription,
+            done: todayTask.timesOfDay[todayTask.timesOfDayEncryptedMap[timeOfDay]],
+            id: todayTask.id,
+            disabled: false,
+            dayOfTheWeekId: todayMap.get(today.short)?.id || '',
+            timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
+          });
         });
-      });
-    }
+      }
 
-    return round.timesOfDay.filter((timeOfDayId) => todayTasksByTimeOfDay[timeOfDayId]).map((timeOfDay) => ({
-      timeOfDay,
-      done: todayTasksByTimeOfDay[timeOfDay].every((task) => task.done),
-      tasks: todayTasksByTimeOfDay[timeOfDay]
-    })) || [];
-  });
+      return round.timesOfDay.filter((timeOfDayId) => todayTasksByTimeOfDay[timeOfDayId]).map((timeOfDay) => ({
+        timeOfDay,
+        done: todayTasksByTimeOfDay[timeOfDay].every((task) => task.done),
+        tasks: todayTasksByTimeOfDay[timeOfDay]
+      })) || [];
+    })
+  );
 
   protected readonly _faCheckCircle = faCheckCircle;
 
@@ -111,16 +114,18 @@ export class TodayComponent implements OnDestroy {
     // todayMap
     let todayMap_userId: string | undefined;
     let todayMap_roundId: string | undefined;
-    effect(() => {
-
-      const user = this._user();
-      const round = this._round();
-      const cryptoKey = this._cryptoKey();
+    combineLatest([
+      this._user$,
+      this._round$,
+      this._cryptoKey$
+    ]).pipe(
+      takeUntilDestroyed(this._destroyRef)
+    ).subscribe(([user, round, cryptoKey]) => {
 
       if (!user || !round || !cryptoKey) {
         this._router.navigate(['/']);
-        this._roundsService.todayMapSig.set(undefined);
-        this._roundsService.todayMapLoadingSig.set(false);
+        this._roundsService.todayMap$.next(undefined);
+        this._roundsService.todayMapLoading$.next(false);
         todayMap_userId = undefined;
         todayMap_roundId = undefined;
         this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
@@ -141,18 +146,17 @@ export class TodayComponent implements OnDestroy {
       const roundRef = Round.ref(userRef, round.id);
       const todayRef = Today.refs(roundRef);
 
-      this._roundsService.todayMapLoadingSig.set(true);
+      this._roundsService.todayMapLoading$.next(true);
       this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
       this._todayMapSub = collectionSnapshots(todayRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user() || !!this._round()),
         // catchError(() => of(null))
       ).subscribe(async (querySnapTodayList) => {
 
-        this._roundsService.todayMapLoadingSig.set(false);
+        this._roundsService.todayMapLoading$.next(false);
 
         if (!querySnapTodayList) {
-          this._roundsService.todayMapSig.set(undefined);
+          this._roundsService.todayMap$.next(undefined);
           return;
         }
 
@@ -164,26 +168,28 @@ export class TodayComponent implements OnDestroy {
           todayMap.set(today.name, today);
         }
 
-        this._roundsService.todayMapSig.set(todayMap);
+        this._roundsService.todayMap$.next(todayMap);
       });
     });
 
     // todayTasks
     let todayTasks_userId: string | undefined;
     let todayTasks_todayNameShort: Day | undefined;
-    effect(() => {
-
-      const user = this._user();
-      const round = this._round();
-      const today = this._today();
-      const todayMap = this._todayMap();
-      const cryptoKey = this._cryptoKey();
+    combineLatest([
+      this._user$,
+      this._round$,
+      this._today$,
+      this._todayMap$,
+      this._cryptoKey$
+    ]).pipe(
+      takeUntilDestroyed(this._destroyRef)
+    ).subscribe(([user, round, today, todayMap, cryptoKey]) => {
 
       if (!user || !round || !today || !todayMap || !cryptoKey) {
         todayTasks_userId = undefined;
         todayTasks_todayNameShort = undefined;
         this._todaySub && !this._todaySub.closed && this._todaySub.unsubscribe();
-        this._roundsService.todayTasksSig.set(undefined);
+        this._roundsService.todayTasks$.next(undefined);
         return;
       }
 
@@ -200,7 +206,7 @@ export class TodayComponent implements OnDestroy {
       const todayMapItem = todayMap.get(today.short);
 
       if (!todayMapItem) {
-        this._roundsService.todayTasksSig.set([]);
+        this._roundsService.todayTasks$.next([]);
         return;
       }
 
@@ -209,18 +215,17 @@ export class TodayComponent implements OnDestroy {
       const todayRef = Today.ref(roundRef, todayMapItem.id);
       const todayTasksRefs = TodayTask.refs(todayRef);
 
-      this._roundsService.todayTasksLoadingSig.set(true);
+      this._roundsService.todayTasksLoading$.next(true);
       this._todayTasksMapSub && !this._todayTasksMapSub.closed && this._todayTasksMapSub.unsubscribe();
       this._todayTasksMapSub = collectionSnapshots(todayTasksRefs, limit(25)).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user()),
         catchError(() => of(null))
       ).subscribe(async (querySnapTodayTasks) => {
 
-        this._roundsService.todayTasksLoadingSig.set(false);
+        this._roundsService.todayTasksLoading$.next(false);
 
         if (!querySnapTodayTasks) {
-          this._roundsService.todayTasksSig.set(undefined);
+          this._roundsService.todayTasks$.next(undefined);
           return;
         }
 
@@ -230,7 +235,7 @@ export class TodayComponent implements OnDestroy {
           todayTasks.push(await TodayTask.data(querySnapTodayTask, cryptoKey));
         }
 
-        this._roundsService.todayTasksSig.set(todayTasks);
+        this._roundsService.todayTasks$.next(todayTasks);
       });
     });
   }
@@ -243,53 +248,62 @@ export class TodayComponent implements OnDestroy {
       return;
     }
 
-    const firebaseUser = this._authService.firebaseUser();
-    const round = this._roundsService.roundSig.get()();
+    combineLatest([
+      this._authService.firebaseUser$,
+      this._roundsService.round$
+    ]).pipe(
+      take(1)
+    ).subscribe(([firebaseUser, round]) => {
 
-    if (!firebaseUser || !round) {
-      return;
-    }
+      if (!firebaseUser || !round) {
+        return;
+      }
 
-    const userRef = User.ref(this._firestore, firebaseUser.uid);
-    const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>
-    const todayRef = Today.ref(roundRef, todayItem.dayOfTheWeekId) as DocumentReference<Today, TodayDoc>;
-    const todayTaskRef = TodayTask.ref(todayRef, todayItem.id) as DocumentReference<TodayTask, TodayTaskDoc>;
+      const userRef = User.ref(this._firestore, firebaseUser.uid);
+      const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>
+      const todayRef = Today.ref(roundRef, todayItem.dayOfTheWeekId) as DocumentReference<Today, TodayDoc>;
+      const todayTaskRef = TodayTask.ref(todayRef, todayItem.id) as DocumentReference<TodayTask, TodayTaskDoc>;
 
-    todayItem.disabled = true;
-    defer(() => updateDoc(
-      todayTaskRef,
-      new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
-      !todayItem.done
-    )).pipe(catchError(() => {
-      todayItem.disabled = false;
-      this._snackBar.open('Some went wrong 🤫 Try again 🙂');
-      return NEVER;
-    })).subscribe(() => {
-      todayItem.disabled = false;
+      todayItem.disabled = true;
+      defer(() => updateDoc(
+        todayTaskRef,
+        new FieldPath('timesOfDay', todayItem.timeOfDayEncrypted),
+        !todayItem.done
+      )).pipe(catchError(() => {
+        todayItem.disabled = false;
+        this._snackBar.open('Some went wrong 🤫 Try again 🙂');
+        return NEVER;
+      })).subscribe(() => {
+        todayItem.disabled = false;
+      });
+
+      if (!this._isOnline$.value) {
+        todayItem.disabled = false;
+        todayItem.done = !todayItem.done;
+      }
     });
-
-    if (!this._isOnline()) {
-      todayItem.disabled = false;
-      todayItem.done = !todayItem.done;
-    }
   }
 
   addNewTask(): void {
 
-    const todayName = this._roundsService.todaySig.get()();
+    combineLatest([
+      this._roundsService.today$
+    ]).pipe(
+      take(1)
+    ).subscribe(([today]) => {
 
-    if (!todayName) {
-      return;
-    }
+      if (!today) {
+        return;
+      }
 
-    this._roundsService.dayToSetInEditorSig.set(todayName.short);
-    this._router.navigate(['../', RouterDict.taskEditor], {relativeTo: this._route});
+      this._router.navigate(['../', RouterDict.taskEditor], {relativeTo: this._route});
+    });
   }
 
   ngOnDestroy(): void {
-    this._roundsService.todayMapSig.set(undefined);
-    this._roundsService.todayMapLoadingSig.set(false);
-    this._roundsService.todayTasksSig.set(undefined);
-    this._roundsService.todayTasksLoadingSig.set(false);
+    this._roundsService.todayMap$.next(undefined);
+    this._roundsService.todayMapLoading$.next(false);
+    this._roundsService.todayTasks$.next(undefined);
+    this._roundsService.todayTasksLoading$.next(false);
   }
 }

@@ -1,16 +1,15 @@
 import {Injectable} from '@angular/core';
-import {fromEvent, merge} from 'rxjs';
-import {Sig} from '../utils/Sig';
+import {BehaviorSubject, fromEvent, merge} from 'rxjs';
 
 @Injectable()
 export class ConnectionService {
 
-  readonly isOnlineSig = new Sig(true);
+  readonly isOnline$ = new BehaviorSubject(true);
 
   constructor() {
     merge(
       fromEvent(window, 'online'),
       fromEvent(window, 'offline')
-    ).subscribe((event) => this.isOnlineSig.set(event.type === 'online'));
+    ).subscribe((event) => this.isOnline$.next(event.type === 'online'));
   }
 }
