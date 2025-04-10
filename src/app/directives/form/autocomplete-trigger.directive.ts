@@ -2,7 +2,7 @@ import {Directionality} from '@angular/cdk/bidi';
 import {ConnectedPosition, Overlay, OverlayConfig, OverlayRef, PositionStrategy} from '@angular/cdk/overlay';
 import {TemplatePortal} from '@angular/cdk/portal';
 import {DOCUMENT} from '@angular/common';
-import {Directive, ElementRef, HostListener, inject, Input, ViewContainerRef} from '@angular/core';
+import {ChangeDetectorRef, Directive, ElementRef, HostListener, inject, Input, ViewContainerRef} from '@angular/core';
 import {fromEvent, merge, Observable, startWith, Subscription, switchMap} from 'rxjs';
 import {filter} from 'rxjs/operators';
 import {AutocompleteComponent} from '../../components/form/autocomplete/autocomplete.component';
@@ -20,6 +20,7 @@ export class AutocompleteTriggerDirective {
 
   @Input('appAutocomplete') autocomplete?: AutocompleteComponent;
 
+  private _cdr = inject(ChangeDetectorRef);
   private _viewContainerRef = inject(ViewContainerRef);
   private _overlay = inject(Overlay);
   private _overlayRef?: OverlayRef;
@@ -100,6 +101,7 @@ export class AutocompleteTriggerDirective {
       overlayRef.detach();
       this._outsideClickStreamSub?.unsubscribe();
       this._autocompleteOptionsChangeSub?.unsubscribe();
+      this._cdr.detectChanges();
     }
   }
 
