@@ -2,7 +2,7 @@
 
   <div class="col" [ngClass]="{'disabled': _isLoading()}">
 
-    @if (!(_isOnline$ | async) && !(_round$ | async)) {
+    @if (!_isOnline() && !_round()) {
       <div class="row message">
         <div class="col">
           <span>You are offline. Waiting for connection...</span>
@@ -10,7 +10,7 @@
       </div>
     }
 
-    @if ((_isOnline$ | async) && (_loadingRound$ | async)) {
+    @if (_isOnline() && _loadingRound()) {
       @defer {
       } @loading (after 100ms; minimum 500ms) {
         <div class="row message">
@@ -19,22 +19,22 @@
           </div>
         </div>
       }
-    } @else if (_isOnline$ | async) {
+    } @else if (_isOnline()) {
       <ng-template *ngTemplateOutlet="showItems"></ng-template>
     }
 
     <ng-template #showItems>
 
-      @if (_round$ | async; as round) {
+      @if (_round(); as round) {
 
         @if (round.timesOfDay.length) {
 
           <div class="row">
             <div class="drag-container">
               <div class="drag-container-header mat-header-cell">Change the order of the times of the day</div>
-              <div [cdkDropListDisabled]="!(_isOnline$ | async)" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
+              <div [cdkDropListDisabled]="!_isOnline()" class="drag-list" cdkDropList (cdkDropListDropped)="drop($event)">
                 @for (timesOfDay of round.timesOfDay; let i = $index; track timesOfDay) {
-                  <div cdkDrag class="drag-item mat-cell" [class.disabled]="!(_isOnline$ | async)">
+                  <div cdkDrag class="drag-item mat-cell" [class.disabled]="!_isOnline()">
                     <span class="drag-span">{{ timesOfDay }}</span>
                     <fa-icon class="drag-icon" [icon]="_faGripLines"></fa-icon>
                   </div>

@@ -1,6 +1,6 @@
-import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
-import {Component, DestroyRef, Inject, OnDestroy, OnInit} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {NgTemplateOutlet} from '@angular/common';
+import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatTableModule} from '@angular/material/table';
@@ -9,7 +9,7 @@ import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
 import 'global.prototype';
 import {Firestore, limit} from 'firebase/firestore';
-import {catchError, combineLatest, of, Subscription, takeWhile} from 'rxjs';
+import {catchError, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {Day} from '../../models/day';
@@ -31,22 +31,21 @@ import {RoundsService} from '../../services/rounds.service'
     MatTableModule,
     MatButtonModule,
     FontAwesomeModule,
-    NgTemplateOutlet,
-    AsyncPipe
+    NgTemplateOutlet
   ],
   styleUrls: ['./tasks-list.component.scss'],
   animations: [
     fadeZoomInOutTrigger
   ]
 })
-export class TasksListComponent implements OnInit, OnDestroy {
+export class TasksListComponent implements OnDestroy {
 
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
-  protected readonly _round$ = this._roundsService.round$;
-  protected readonly _tasks$ = this._roundsService.tasks$;
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
+  protected readonly _round = toSignal(this._roundsService.round$);
+  protected readonly _tasks = toSignal(this._roundsService.tasks$);
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _cryptoKey = toSignal(this._authService.cryptoKey$);
 
   protected readonly _RouterDict = RouterDict;
   protected readonly _faEdit = faEdit;
@@ -65,18 +64,15 @@ export class TasksListComponent implements OnInit, OnDestroy {
     @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
     private readonly _destroyRef: DestroyRef
   ) {
-  }
-
-  ngOnInit(): void {
 
     // tasksList
     let tasksList_userId: string | undefined;
     let tasksList_roundId: string | undefined;
-    this._ngOnInitTasksListSub = combineLatest([
-      this._user$,
-      this._round$,
-      this._cryptoKey$
-    ]).subscribe(([user, round, cryptoKey]) => {
+    effect(() => {
+
+      const user = this._user();
+      const round = this._round();
+      const cryptoKey = this._cryptoKey();
 
       if (!user || !round || !cryptoKey) {
         tasksList_userId = undefined;
@@ -104,7 +100,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
       this._tasksListSub && !this._tasksListSub.closed && this._tasksListSub.unsubscribe();
       this._tasksListSub = collectionSnapshots(tasksRef, limit(25)).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user$.value || !!this._round$.value),
+        takeWhile(() => !!this._user() || !!this._round()),
         catchError(() => of(null))
       ).subscribe(async (querySnapTasks) => {
 
@@ -123,7 +119,7 @@ export class TasksListComponent implements OnInit, OnDestroy {
 
         this._roundsService.tasks$.next(tasks);
       });
-    });
+    }, {allowSignalWrites: true});
   }
 
   getDaysOfTheWeek(daysOfTheWeek: Day[]) {

@@ -1,4 +1,4 @@
-@if (!(_loadingUser$ | async) && !(_firebaseUser$ | async)) {
+@if (!_loadingUser() && !_firebaseUser()) {
 
   <div class="features-clean">
     <div class="container">

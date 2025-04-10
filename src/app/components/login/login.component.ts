@@ -1,5 +1,5 @@
-import {AsyncPipe} from '@angular/common';
 import {Component, EventEmitter, Output, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBar} from '@angular/material/progress-bar';
@@ -23,8 +23,7 @@ import {LabelComponent} from '../form/label/label.component';
     FormFieldComponent,
     LabelComponent,
     ErrorComponent,
-    InputDirective,
-    AsyncPipe
+    InputDirective
   ],
   templateUrl: './login.component.html'
 })
@@ -38,7 +37,7 @@ export class LoginComponent {
   protected readonly _email = this._loginForm.get('email');
   protected readonly _password = this._loginForm.get('password');
 
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
   protected readonly _userCredential = signal<UserCredential | undefined>(undefined);
 
   @Output() doneEmitter = new EventEmitter<void>();

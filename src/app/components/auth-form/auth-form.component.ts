@@ -1,5 +1,6 @@
-import {AsyncPipe, NgClass} from '@angular/common';
+import {NgClass} from '@angular/common';
 import {Component, signal, ViewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialogRef} from '@angular/material/dialog';
 import {MatTabGroup} from '@angular/material/tabs';
@@ -13,15 +14,15 @@ import {SendPasswordResetEmailComponent} from '../send-password-reset-email/send
 @Component({
   selector: 'app-auth-form',
   standalone: true,
-  imports: [LoginComponent, RegisterComponent, SendPasswordResetEmailComponent, MatToolbarModule, MatButtonModule, NgClass, SvgDirective, AsyncPipe],
+  imports: [LoginComponent, RegisterComponent, SendPasswordResetEmailComponent, MatToolbarModule, MatButtonModule, NgClass, SvgDirective],
   templateUrl: './auth-form.component.html',
   styleUrl: './auth-form.component.scss'
 })
 export class AuthFormComponent {
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _loadingUser$ = this._authService.loadingUser$;
-  protected readonly _whileLoginIn$ = this._authService.whileLoginIn$;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _loadingUser = toSignal(this._authService.loadingUser$);
+  protected readonly _whileLoginIn = toSignal(this._authService.whileLoginIn$);
 
   protected readonly _forms = [
     {

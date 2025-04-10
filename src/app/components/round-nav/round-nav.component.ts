@@ -1,4 +1,5 @@
 import {Component, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router, RouterLink, RouterLinkActive} from '@angular/router';
 import {interval, Subscription} from 'rxjs';
@@ -23,11 +24,11 @@ export class RoundNavComponent {
 
   private _unmarkTodayTasksIntervalSub: Subscription | undefined;
 
-  protected readonly _user$ = this._authService.user$;
+  protected readonly _user = toSignal(this._authService.user$);
 
-  protected readonly _round$ = this._roundsService.round$;
-  protected readonly _todayMap$ = this._roundsService.todayMap$;
-  protected readonly _today$ = this._roundsService.today$;
+  protected readonly _round = toSignal(this._roundsService.round$);
+  protected readonly _todayMap = toSignal(this._roundsService.todayMap$);
+  protected readonly _today = toSignal(this._roundsService.today$);
 
   protected readonly _todayTasksViewActive = signal(false);
 
@@ -46,30 +47,27 @@ export class RoundNavComponent {
 
   unmarkTodayTasks() {
 
-    this._today$.pipe(take(1)).subscribe((today) => {
+    const today = this._today();
+    const round = this._round();
+    const _todayMap = this._todayMap();
 
-      const round = this._round$.value;
-      const _todayMap = this._todayMap$.value;
+    if (!round || !_todayMap || !today) {
+      return;
+    }
 
-      if (!round || !_todayMap || !today) {
-        return;
-      }
+    const todayId = _todayMap.get(today.short)?.id;
 
-      const todayId = _todayMap.get(today.short)?.id;
+    if (!todayId) {
+      return;
+    }
 
-      if (!todayId) {
-        return;
-      }
+    this._matSnackBar.open('Unmarking today tasks 👀');
 
-      this._matSnackBar.open('Unmarking today tasks 👀');
-
-      this._roundsService.unmarkTodayTasks({
-        roundId: round.id,
-        todayId
-      }).subscribe((success) => {
-        this._matSnackBar.open(success.details);
-      });
-
+    this._roundsService.unmarkTodayTasks({
+      roundId: round.id,
+      todayId
+    }).subscribe((success) => {
+      this._matSnackBar.open(success.details);
     });
   }
 

@@ -1,6 +1,7 @@
 import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
-import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
-import {AfterViewChecked, Component, ElementRef, HostListener, Renderer2, ViewChild} from '@angular/core';
+import {NgTemplateOutlet} from '@angular/common';
+import {AfterViewChecked, Component, ElementRef, HostListener, Renderer2, signal, ViewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
@@ -10,8 +11,7 @@ import {MatTableModule} from '@angular/material/table';
 import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faEdit} from '@fortawesome/free-regular-svg-icons';
-import {BehaviorSubject, catchError, NEVER} from 'rxjs';
-import {take} from 'rxjs/operators';
+import {catchError, NEVER} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {Round} from '../../models/round';
@@ -31,8 +31,7 @@ import {RoundsService} from '../../services/rounds.service';
     MatButtonModule,
     CdkDrag,
     MatProgressSpinnerModule,
-    NgTemplateOutlet,
-    AsyncPipe
+    NgTemplateOutlet
   ],
   styleUrl: './rounds-list.component.scss',
   animations: [
@@ -45,18 +44,18 @@ export class RoundsListComponent implements AfterViewChecked {
   protected readonly _faEdit = faEdit;
   @ViewChild('roundListTableWrapper', {static: false}) roundListTableWrapper!: ElementRef;
 
-  protected readonly _isOnline$ = this._connectionsService.isOnline$;
+  protected readonly _isOnline = toSignal(this._connectionsService.isOnline$);
 
-  protected readonly _loading$ = new BehaviorSubject<boolean>(false);
+  protected readonly _loading = signal<boolean>(false);
 
-  protected readonly _loadingRoundsMap$ = this._roundsService.loadingRoundsMap$
+  protected readonly _loadingRoundsMap = toSignal(this._roundsService.loadingRoundsMap$);
 
-  protected readonly _round$ = this._roundsService.round$
+  protected readonly _round = toSignal(this._roundsService.round$);
 
-  protected readonly _roundsList$ = this._roundsService.roundsList$;
-  protected readonly _roundsOrder$ = this._roundsService.roundsOrder$;
+  protected readonly _roundsList = toSignal(this._roundsService.roundsList$);
+  protected readonly _roundsOrder = toSignal(this._roundsService.roundsOrder$);
 
-  protected readonly _loadingUser$ = this._authService.loadingUser$;
+  protected readonly _loadingUser = toSignal(this._authService.loadingUser$);
 
   @HostListener('window:resize', ['$event'])
   onResize() {
@@ -93,29 +92,28 @@ export class RoundsListComponent implements AfterViewChecked {
       return;
     }
 
-    this._roundsOrder$.pipe(take(1)).subscribe((roundsOrder) => {
+    const roundsOrder = this._roundsOrder();
 
-      if (!roundsOrder) {
-        return;
-      }
+    if (!roundsOrder) {
+      return;
+    }
 
-      this._loading$.next(true);
-      const moveBy = event.currentIndex - event.previousIndex;
-      const roundId = roundsOrder[event.previousIndex];
+    this._loading.set(true);
+    const moveBy = event.currentIndex - event.previousIndex;
+    const roundId = roundsOrder[event.previousIndex];
 
-      moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
+    moveItemInArray(roundsOrder, event.previousIndex, event.currentIndex);
+    this._roundsService.roundsOrderUpdated$.next([...roundsOrder]);
+
+    this._roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
+      this._loading.set(false);
+      this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
+      moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
       this._roundsService.roundsOrderUpdated$.next([...roundsOrder]);
-
-      this._roundsService.setRoundsOrder({moveBy, roundId}).pipe(catchError((error) => {
-        this._loading$.next(false);
-        this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
-        moveItemInArray(roundsOrder, event.currentIndex, event.previousIndex);
-        this._roundsService.roundsOrderUpdated$.next([...roundsOrder]);
-        return NEVER;
-      })).subscribe((success) => {
-        this._loading$.next(false);
-        this._snackBar.open(success.details || 'Your operation has been done 😉');
-      });
+      return NEVER;
+    })).subscribe((success) => {
+      this._loading.set(false);
+      this._snackBar.open(success.details || 'Your operation has been done 😉');
     });
   }
 

@@ -36,7 +36,7 @@
       <div class="action-buttons actions">
         <button mat-flat-button
                 color="primary"
-                [disabled]="_registerForm.disabled || _registerForm.invalid || !(_isOnline$ | async)"
+                [disabled]="_registerForm.disabled || _registerForm.invalid || !_isOnline()"
                 (click)="register()">Register</button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
-import {AsyncPipe, NgClass, NgTemplateOutlet} from '@angular/common';
+import {NgClass, NgTemplateOutlet} from '@angular/common';
 import {Component, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -26,8 +27,7 @@ import {RoundsService} from '../../services/rounds.service';
     MatProgressSpinnerModule,
     FontAwesomeModule,
     CdkDrag,
-    NgTemplateOutlet,
-    AsyncPipe,
+    NgTemplateOutlet
   ],
   styleUrls: ['./times-of-day-order.component.scss'],
   animations: [
@@ -36,13 +36,12 @@ import {RoundsService} from '../../services/rounds.service';
 })
 export class TimesOfDayOrderComponent {
 
-  protected readonly _round$ = this._roundsService.round$;
-  protected readonly _loadingRound$ = this._roundsService.loadingRound$;
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _round = toSignal(this._roundsService.round$);
+  protected readonly _loadingRound = toSignal(this._roundsService.loadingRound$);
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
   protected readonly _isLoading = signal<boolean>(false);
 
   protected readonly _faGripLines = faGripLines;
-  protected readonly _RouterDict = RouterDict;
 
   constructor(
     private readonly _roundsService: RoundsService,
@@ -59,7 +58,7 @@ export class TimesOfDayOrderComponent {
       return;
     }
 
-    const order = this._round$.value!.timesOfDay;
+    const order = this._round()!.timesOfDay;
     const timeOfDay = order[event.previousIndex];
     const moveBy = event.currentIndex - event.previousIndex;
 
@@ -77,7 +76,7 @@ export class TimesOfDayOrderComponent {
     this._roundsService.setTimesOfDayOrder({
       timeOfDay,
       moveBy,
-      roundId: this._round$.value!.id
+      roundId: this._round()!.id
     }).pipe(catchError((error) => {
       this._isLoading.set(false);
       this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');

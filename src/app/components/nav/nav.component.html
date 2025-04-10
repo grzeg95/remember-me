@@ -3,39 +3,39 @@
     <div class="col d-flex">
       <mat-toolbar>
         <mat-toolbar-row>
-          <div class="app-name-logo-wrapper" [ngClass]="{'opacity-loading': ((_user$ | async) === undefined || (_whileLoginIn$ | async) || (_loadingUser$ | async))}">
+          <div class="app-name-logo-wrapper" [ngClass]="{'opacity-loading': (_user() === undefined || _whileLoginIn() || _loadingUser())}">
             <span class="app-name">Remember Me</span>
             <svg appSvg="logo" class="logo"/>
           </div>
           <span class="example-spacer"></span>
 
-          @if ((_user$ | async) !== undefined) {
+          @if (_user() !== undefined) {
             <div>
-              @if (!(_user$ | async)) {
+              @if (!_user()) {
                 <div class="d-flex align-items-center right">
                   <button mat-flat-button
                           color="primary"
                           [matMenuTriggerFor]="menu"
-                          [disabled]="_isButtonDisabled$ | async"
+                          [disabled]="_isButtonDisabled()"
                           aria-label="Log in">
                     <span class="loginButton">Sign in <fa-icon [icon]="_faEllipsisV" [ngStyle]="{marginLeft: '0.5rem'}"></fa-icon></span>
                   </button>
 
                   <mat-menu #menu="matMenu" xPosition="before">
                     <button mat-menu-item
-                            [disabled]="_isButtonDisabled$ | async"
+                            [disabled]="_isButtonDisabled()"
                             (click)="googleSignIn()">
                       <span><fa-icon [icon]="_faGoogle" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Google</span>
                     </button>
 
                     <button mat-menu-item
-                            [disabled]="_isButtonDisabled$ | async"
+                            [disabled]="_isButtonDisabled()"
                             (click)="openAuthFormComponent()">
                       <span><fa-icon [icon]="_faAt" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Email</span>
                     </button>
 
                     <button mat-menu-item
-                            [disabled]="_isButtonDisabled$ | async"
+                            [disabled]="_isButtonDisabled()"
                             (click)="anonymouslySignIn()">
                       <span><fa-icon [icon]="_faEyeSlash" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>Try it</span>
                     </button>
@@ -43,7 +43,7 @@
                 </div>
               }
 
-              @if (_user$ | async; as user) {
+              @if (_user(); as user) {
                 <div class="d-flex align-items-center right">
 
                   @if (user.photoURL) {

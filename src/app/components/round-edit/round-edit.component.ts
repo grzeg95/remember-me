@@ -1,6 +1,5 @@
-import {AsyncPipe} from '@angular/common';
-import {Component, DestroyRef, Inject, OnDestroy, OnInit} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, DestroyRef, effect, Inject, OnDestroy, signal} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {FormControl, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
@@ -8,7 +7,7 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Firestore} from 'firebase/firestore';
-import {BehaviorSubject, catchError, combineLatest, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {BehaviorSubject, catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {InputDirective} from '../../directives/form/input.directive';
@@ -36,29 +35,28 @@ import {RoundDialogConfirmDeleteComponent} from '../round-dialog-confirm-delete/
     FormFieldComponent,
     ErrorComponent,
     LabelComponent,
-    InputDirective,
-    AsyncPipe
+    InputDirective
   ],
   styleUrl: './round-edit.component.scss',
   animations: [
     fadeZoomInOutTrigger
   ]
 })
-export class RoundEditComponent implements OnInit, OnDestroy {
+export class RoundEditComponent implements OnDestroy {
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _cryptoKey = toSignal(this._authService.cryptoKey$);
 
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
 
-  protected readonly _isLoading$ = new BehaviorSubject<boolean>(false);
+  protected readonly _isLoading = signal<boolean>(false);
 
-  protected readonly _editRoundId$ = this._roundsService.editRoundId$;
-  protected readonly _editRound$ = this._roundsService.editRound$;
+  protected readonly _editRoundId = toSignal(this._roundsService.editRoundId$);
+  protected readonly _editRound = toSignal(this._roundsService.editRound$);
 
   protected _initValues = {name: ''};
 
-  protected readonly _isNothingChanged$ = new BehaviorSubject<boolean>(true);
+  protected readonly _isNothingChanged = signal<boolean>(true);
 
   protected readonly _roundForm: FormGroup = new FormGroup({
     name: new FormControl('', [CustomValidators.maxRequired(256)])
@@ -66,9 +64,6 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
   protected readonly _name = this._roundForm.get('name');
   private _editRoundSub: Subscription | undefined;
-
-  private _ngOnInitOnlineSub: Subscription | undefined;
-  private _ngOnInitEditRoundSub: Subscription | undefined;
 
   constructor(
     private readonly _activeRoute: ActivatedRoute,
@@ -89,31 +84,29 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     });
 
     this._name?.valueChanges.subscribe((val) => {
-      this._isNothingChanged$.next(this._initValues.name !== val);
+      this._isNothingChanged.set(this._initValues.name !== val);
     });
-  }
-
-  ngOnInit() {
 
     // online
-    this._ngOnInitOnlineSub = combineLatest([
-      this._isOnline$
-    ]).subscribe(([isOnline]) => {
+    effect(() => {
+
+      const isOnline = this._isOnline();
+
       if (isOnline) {
         this._roundsService.editRoundId$.next(this._activeRoute.snapshot.params['id'] || undefined);
       } else {
         this._roundForm.disable();
       }
-    });
+    }, {allowSignalWrites: true});
 
     // editRound
     let editRound_userId: string | undefined;
     let editRound_editRoundId: string | undefined;
-    this._ngOnInitEditRoundSub = combineLatest([
-      this._user$,
-      this._cryptoKey$,
-      this._editRoundId$
-    ]).subscribe(([user, cryptoKey, editRoundId]) => {
+    effect(() => {
+
+      const user = this._user();
+      const editRoundId = this._editRoundId();
+      const cryptoKey = this._cryptoKey();
 
       if (user === undefined || editRoundId === undefined || !cryptoKey) {
         return;
@@ -148,7 +141,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
       this._editRoundSub && !this._editRoundSub.closed && this._editRoundSub.unsubscribe();
       this._editRoundSub = docSnapshots<Round, RoundDoc>(roundRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user$.value || !!this._editRoundId$.value),
+        takeWhile(() => !!this._user() || !!this._editRoundId()),
         switchMap((docSnap) => Round.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((round) => {
@@ -160,7 +153,7 @@ export class RoundEditComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this._isLoading$.next(false);
+        this._isLoading.set(false);
 
         this._roundsService.editRound$.next(round);
 
@@ -170,17 +163,17 @@ export class RoundEditComponent implements OnInit, OnDestroy {
         };
         this._roundForm.enable();
       });
-    })
+    }, {allowSignalWrites: true});
   }
 
   saveRound(): void {
 
-    this._isLoading$.next(true);
+    this._isLoading.set(true);
     this._roundForm.disable();
 
-    this._roundsService.saveRound(this._name?.value, this._editRound$.value?.id).pipe(
+    this._roundsService.saveRound(this._name?.value, this._editRound()?.id).pipe(
       catchError((error) => {
-        this._isLoading$.next(false);
+        this._isLoading.set(false);
         this._roundForm.enable();
         this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
         return NEVER;
@@ -203,11 +196,11 @@ export class RoundEditComponent implements OnInit, OnDestroy {
 
       if (isConfirmed) {
         this._roundForm.disable();
-        this._isLoading$.next(true);
+        this._isLoading.set(true);
 
-        this._roundsService.deleteRound(this._editRound$.value?.id as string).pipe(
+        this._roundsService.deleteRound(this._editRound()?.id as string).pipe(
           catchError((error) => {
-            this._isLoading$.next(false);
+            this._isLoading.set(false);
             this._roundForm.enable();
             this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
             return NEVER;
@@ -225,9 +218,11 @@ export class RoundEditComponent implements OnInit, OnDestroy {
     this._initValues = {name: ''};
   }
 
+  handleNewButtonClick() {
+    this._roundsService.editRoundId$.next(null);
+  }
+
   ngOnDestroy(): void {
-    this._ngOnInitOnlineSub?.unsubscribe();
-    this._ngOnInitEditRoundSub?.unsubscribe();
     this._roundsService.editRoundId$.next(undefined);
     this._roundsService.editRound$.next(undefined);
     this._roundsService.loadingEditRound$.next(false);

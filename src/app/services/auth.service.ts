@@ -85,8 +85,6 @@ export class AuthService {
       this.authStateReady$
     ]).subscribe(([firebaseUser, cryptoKey, authStateReady]) => {
 
-      console.log(firebaseUser, cryptoKey, authStateReady);
-
       if (authStateReady === undefined || firebaseUser === undefined) {
         return;
       }

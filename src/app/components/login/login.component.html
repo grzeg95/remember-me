@@ -28,13 +28,13 @@
     <div class="action-buttons actions">
       <button mat-flat-button
               color="primary"
-              [disabled]="_loginForm.disabled || _loginForm.invalid || !(_isOnline$ | async)"
+              [disabled]="_loginForm.disabled || _loginForm.invalid || !_isOnline()"
               (click)="login()">Login</button>
 
       @if (_userCredential()) {
         <button mat-stroked-button
                 color="primary"
-                [disabled]="_loginForm.disabled || _loginForm.invalid || !(_isOnline$ | async)"
+                [disabled]="_loginForm.disabled || _loginForm.invalid || !_isOnline()"
                 (click)="sendEmailVerification()">Send email verification</button>
       }
     </div>

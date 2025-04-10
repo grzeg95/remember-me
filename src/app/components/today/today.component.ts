@@ -1,6 +1,6 @@
-import {AsyncPipe, NgTemplateOutlet} from '@angular/common';
-import {Component, DestroyRef, Inject, OnDestroy, OnInit} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {NgTemplateOutlet} from '@angular/common';
+import {Component, computed, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
@@ -9,7 +9,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {faCheckCircle} from '@fortawesome/free-solid-svg-icons';
 import {DocumentReference, FieldPath, Firestore, limit, updateDoc} from 'firebase/firestore';
-import {catchError, combineLatest, defer, map, NEVER, of, Subscription, takeWhile} from 'rxjs';
+import {catchError, defer, NEVER, of, Subscription, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {Day} from '../../models/day';
@@ -33,76 +33,69 @@ import {RoundsService} from '../../services/rounds.service';
     FontAwesomeModule,
     MatProgressSpinnerModule,
     MatProgressBarModule,
-    NgTemplateOutlet,
-    AsyncPipe
+    NgTemplateOutlet
   ],
   styleUrl: './today.component.scss',
   animations: [
     fadeZoomInOutTrigger
   ]
 })
-export class TodayComponent implements OnInit, OnDestroy {
+export class TodayComponent implements OnDestroy {
 
   private _todayMapSub: Subscription | undefined;
   private _todaySub: Subscription | undefined;
   private _todayTasksMapSub: Subscription | undefined;
 
-  protected readonly _todayMap$ = this._roundsService.todayMap$;
-  protected readonly _todayTasks$ = this._roundsService.todayTasks$;
+  protected readonly _todayMap = toSignal(this._roundsService.todayMap$);
+  protected readonly _todayTasks = toSignal(this._roundsService.todayTasks$);
 
-  protected readonly _today$ = this._roundsService.today$;
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
-  protected readonly _round$ = this._roundsService.round$;
+  protected readonly _today = toSignal(this._roundsService.today$);
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
+  protected readonly _round = toSignal(this._roundsService.round$);
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _cryptoKey = toSignal(this._authService.cryptoKey$);
 
-  protected readonly _todayView$ = combineLatest(([
-    this._round$,
-    this._todayTasks$,
-    this._today$,
-    this._todayMap$
-  ])).pipe(
-    map(([round, todayTasks, today, todayMap]) => {
+  protected readonly _todayView = computed(() => {
 
-      if (!round || !todayTasks || !today || !todayMap) {
-        return undefined;
-      }
+    const round = this._round();
+    const todayTasks = this._todayTasks();
+    const today = this._today();
+    const todayMap = this._todayMap();
 
-      const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
+    if (!round || !todayTasks || !today || !todayMap) {
+      return undefined;
+    }
 
-      for (const todayTask of todayTasks) {
+    const todayTasksByTimeOfDay: {[timeOfDay: string]: TodayItem[]} = {};
 
-        Object.keys(todayTask.timesOfDayEncryptedMap).forEach((timeOfDay) => {
+    for (const todayTask of todayTasks) {
 
-          if (!todayTasksByTimeOfDay[timeOfDay]) {
-            todayTasksByTimeOfDay[timeOfDay] = [];
-          }
+      Object.keys(todayTask.timesOfDayEncryptedMap).forEach((timeOfDay) => {
 
-          todayTasksByTimeOfDay[timeOfDay].push({
-            description: todayTask.decryptedDescription,
-            done: todayTask.timesOfDay[todayTask.timesOfDayEncryptedMap[timeOfDay]],
-            id: todayTask.id,
-            disabled: false,
-            dayOfTheWeekId: todayMap.get(today.short)?.id || '',
-            timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
-          });
+        if (!todayTasksByTimeOfDay[timeOfDay]) {
+          todayTasksByTimeOfDay[timeOfDay] = [];
+        }
+
+        todayTasksByTimeOfDay[timeOfDay].push({
+          description: todayTask.decryptedDescription,
+          done: todayTask.timesOfDay[todayTask.timesOfDayEncryptedMap[timeOfDay]],
+          id: todayTask.id,
+          disabled: false,
+          dayOfTheWeekId: todayMap.get(today.short)?.id || '',
+          timeOfDayEncrypted: todayTask.timesOfDayEncryptedMap[timeOfDay]
         });
-      }
+      });
+    }
 
-      return round.timesOfDay.filter((timeOfDayId) => todayTasksByTimeOfDay[timeOfDayId]).map((timeOfDay) => ({
-        timeOfDay,
-        done: todayTasksByTimeOfDay[timeOfDay].every((task) => task.done),
-        tasks: todayTasksByTimeOfDay[timeOfDay]
-      })) || [];
-
-    })
-  );
+    return round.timesOfDay.filter((timeOfDayId) => todayTasksByTimeOfDay[timeOfDayId]).map((timeOfDay) => ({
+      timeOfDay,
+      done: todayTasksByTimeOfDay[timeOfDay].every((task) => task.done),
+      tasks: todayTasksByTimeOfDay[timeOfDay]
+    })) || [];
+  });
 
   protected readonly _faCheckCircle = faCheckCircle;
-
-  private _ngOnInitTodayMapSub: Subscription | undefined;
-  private _ngOnInitTodayTasksSub: Subscription | undefined;
 
   constructor(
     private readonly _authService: AuthService,
@@ -114,18 +107,15 @@ export class TodayComponent implements OnInit, OnDestroy {
     @Inject(FirestoreInjectionToken) private readonly _firestore: Firestore,
     private readonly _destroyRef: DestroyRef
   ) {
-  }
-
-  ngOnInit(): void {
 
     // todayMap
     let todayMap_userId: string | undefined;
     let todayMap_roundId: string | undefined;
-    this._ngOnInitTodayMapSub = combineLatest([
-      this._user$,
-      this._round$,
-      this._cryptoKey$
-    ]).subscribe(([user, round, cryptoKey]) => {
+    effect(() => {
+
+      const user = this._user();
+      const round = this._round();
+      const cryptoKey = this._cryptoKey();
 
       if (!user || !round || !cryptoKey) {
         this._router.navigate(['/']);
@@ -155,7 +145,7 @@ export class TodayComponent implements OnInit, OnDestroy {
       this._todayMapSub && !this._todayMapSub.closed && this._todayMapSub.unsubscribe();
       this._todayMapSub = collectionSnapshots(todayRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user$.value || !!this._round$.value),
+        takeWhile(() => !!this._user() || !!this._round()),
         // catchError(() => of(null))
       ).subscribe(async (querySnapTodayList) => {
 
@@ -176,18 +166,18 @@ export class TodayComponent implements OnInit, OnDestroy {
 
         this._roundsService.todayMap$.next(todayMap);
       });
-    });
+    }, {allowSignalWrites: true});
 
     // todayTasks
     let todayTasks_userId: string | undefined;
     let todayTasks_todayNameShort: Day | undefined;
-    this._ngOnInitTodayTasksSub = combineLatest([
-      this._user$,
-      this._round$,
-      this._today$,
-      this._todayMap$,
-      this._cryptoKey$
-    ]).subscribe(([user, round, today, todayMap, cryptoKey]) => {
+    effect(() => {
+
+      const user = this._user();
+      const round = this._round();
+      const today = this._today();
+      const todayMap = this._todayMap();
+      const cryptoKey = this._cryptoKey();
 
       if (!user || !round || !today || !todayMap || !cryptoKey) {
         todayTasks_userId = undefined;
@@ -223,7 +213,7 @@ export class TodayComponent implements OnInit, OnDestroy {
       this._todayTasksMapSub && !this._todayTasksMapSub.closed && this._todayTasksMapSub.unsubscribe();
       this._todayTasksMapSub = collectionSnapshots(todayTasksRefs, limit(25)).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user$.value),
+        takeWhile(() => !!this._user()),
         catchError(() => of(null))
       ).subscribe(async (querySnapTodayTasks) => {
 
@@ -242,8 +232,7 @@ export class TodayComponent implements OnInit, OnDestroy {
 
         this._roundsService.todayTasks$.next(todayTasks);
       });
-
-    });
+    }, {allowSignalWrites: true});
   }
 
   setProgress(todayItem: TodayItem, event: Event): void {
@@ -254,7 +243,7 @@ export class TodayComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const uid = this._user$.value?.id;
+    const uid = this._user()?.id;
     const round = this._roundsService.round$.value;
 
     if (!uid || !round) {
@@ -279,12 +268,12 @@ export class TodayComponent implements OnInit, OnDestroy {
       todayItem.disabled = false;
     });
 
-    this._isOnline$.subscribe((isOnline) => {
-      if (!isOnline) {
-        todayItem.disabled = false;
-        todayItem.done = !todayItem.done;
-      }
-    });
+    const isOnline = this._isOnline();
+
+    if (!isOnline) {
+      todayItem.disabled = false;
+      todayItem.done = !todayItem.done;
+    }
   }
 
   addNewTask(): void {
@@ -301,8 +290,6 @@ export class TodayComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._ngOnInitTodayMapSub?.unsubscribe();
-    this._ngOnInitTodayTasksSub?.unsubscribe();
     this._roundsService.todayMap$.next(undefined);
     this._roundsService.todayMapLoading$.next(false);
     this._roundsService.todayTasks$.next(undefined);

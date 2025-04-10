@@ -1,9 +1,8 @@
-import {AsyncPipe} from '@angular/common';
-import {Component, DestroyRef, Inject, OnDestroy, OnInit} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Component, DestroyRef, effect, Inject, OnDestroy} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
 import {Firestore} from 'firebase/firestore';
-import {catchError, combineLatest, of, Subscription, switchMap, takeWhile} from 'rxjs';
+import {catchError, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {FirestoreInjectionToken} from '../../models/firebase';
 import {Round, RoundDoc} from '../../models/round';
 import {User} from '../../models/user';
@@ -17,24 +16,19 @@ import {RoundNavComponent} from '../round-nav/round-nav.component';
   standalone: true,
   imports: [
     RoundNavComponent,
-    RouterOutlet,
-    AsyncPipe
+    RouterOutlet
   ],
   templateUrl: './round.component.html'
 })
-export class RoundComponent implements OnInit, OnDestroy {
+export class RoundComponent implements OnDestroy {
 
-  protected readonly _loadingRound$ = this._roundsService.loadingRound$;
-
-  protected readonly _round$ = this._roundsService.round$;
+  protected readonly _round = toSignal(this._roundsService.round$);
   private _roundSub: Subscription | undefined;
 
-  protected readonly _roundId$ = this._roundsService.roundId$;
+  protected readonly _roundId = toSignal(this._roundsService.roundId$);
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
-
-  private _ngOnInitRoundSub: Subscription | undefined;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _cryptoKey = toSignal(this._authService.cryptoKey$);
 
   constructor(
     private readonly _activatedRoute: ActivatedRoute,
@@ -48,18 +42,15 @@ export class RoundComponent implements OnInit, OnDestroy {
     this._activatedRoute.paramMap.subscribe(
       (params) => this._roundsService.roundId$.next(params.get('id'))
     );
-  }
-
-  ngOnInit() {
 
     // round
     let round_userId: string | undefined;
     let round_boardId: string | undefined;
-    this._ngOnInitRoundSub = combineLatest([
-      this._user$,
-      this._cryptoKey$,
-      this._roundId$
-    ]).subscribe(([user, cryptoKey, roundId]) => {
+    effect(() => {
+
+      const user = this._user();
+      const roundId = this._roundId();
+      const cryptoKey = this._cryptoKey();
 
       if (user === undefined || roundId === undefined || !cryptoKey) {
         return;
@@ -91,7 +82,7 @@ export class RoundComponent implements OnInit, OnDestroy {
       this._roundSub && !this._roundSub.closed && this._roundSub.unsubscribe();
       this._roundSub = docSnapshots<Round, RoundDoc>(roundRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._roundId$.value),
+        takeWhile(() => !!this._roundId()),
         switchMap((docSnap) => Round.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((round) => {
@@ -109,11 +100,10 @@ export class RoundComponent implements OnInit, OnDestroy {
 
         this._roundsService.round$.next(round);
       });
-    });
+    }, {allowSignalWrites: true});
   }
 
   ngOnDestroy(): void {
-    this._ngOnInitRoundSub?.unsubscribe();
     this._roundsService.roundId$.next(undefined);
     this._roundsService.round$.next(undefined);
   }

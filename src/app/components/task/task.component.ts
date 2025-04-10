@@ -1,7 +1,7 @@
 import {ENTER} from '@angular/cdk/keycodes';
-import {AsyncPipe, NgClass, TitleCasePipe} from '@angular/common';
-import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {NgClass, TitleCasePipe} from '@angular/common';
+import {Component, DestroyRef, effect, ElementRef, Inject, OnDestroy, signal, ViewChild} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormArray,
@@ -19,7 +19,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {ActivatedRoute, Router} from '@angular/router';
 import 'global.prototype';
 import {DocumentReference, Firestore} from 'firebase/firestore';
-import {BehaviorSubject, catchError, NEVER, of, Subscription, switchMap, takeWhile, combineLatest} from 'rxjs';
+import {catchError, NEVER, of, Subscription, switchMap, takeWhile} from 'rxjs';
 import {fadeZoomInOutTrigger} from '../../animations/fade-zoom-in-out.trigger';
 import {RouterDict} from '../../app.constants';
 import {AutocompleteTriggerDirective} from '../../directives/form/autocomplete-trigger.directive';
@@ -67,27 +67,26 @@ export interface TaskForm {
     ErrorComponent,
     AutocompleteComponent,
     AutocompleteTriggerDirective,
-    OptionComponent,
-    AsyncPipe
+    OptionComponent
   ],
   styleUrls: ['./task.component.scss'],
   animations: [
     fadeZoomInOutTrigger
   ]
 })
-export class TaskComponent implements OnInit, OnDestroy {
+export class TaskComponent implements OnDestroy {
 
-  protected readonly _taskId$ = new BehaviorSubject<string | undefined>(undefined);
+  protected readonly _taskId = signal<string | undefined>(undefined);
 
-  protected readonly _round$ = this._roundsService.round$;
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
+  protected readonly _round = toSignal(this._roundsService.round$);
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _cryptoKey$ = this._authService.cryptoKey$;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _cryptoKey = toSignal(this._authService.cryptoKey$);
 
-  protected readonly _loading$ = new BehaviorSubject(false);
+  protected readonly _loading = signal(false);
 
-  protected readonly _task$ = new BehaviorSubject<Task | undefined>(undefined);
+  protected readonly _task = signal<Task | undefined>(undefined);
 
   private _initValues: TaskForm = {
     daysOfTheWeek: {
@@ -103,11 +102,11 @@ export class TaskComponent implements OnInit, OnDestroy {
     timesOfDay: []
   };
 
-  protected readonly _isNothingChanged$ = new BehaviorSubject<boolean>(true);
+  protected readonly _isNothingChanged = signal<boolean>(true);
 
-  protected readonly _filteredOptions$ = new BehaviorSubject<string[]>([]);
+  protected readonly _filteredOptions = signal<string[]>([]);
 
-  private readonly _allOptions$ = new BehaviorSubject<string[]>([]);
+  private readonly _allOptions = signal<string[]>([]);
 
   protected readonly _taskForm = new FormGroup({
     description: new FormControl('', CustomValidators.maxRequired(256)),
@@ -135,9 +134,6 @@ export class TaskComponent implements OnInit, OnDestroy {
 
   private _taskSub: Subscription | undefined;
 
-  private _ngOnInitRoundSub: Subscription | undefined;
-  private _ngOnInitTaskSub: Subscription | undefined;
-
   constructor(
     public readonly dialog: MatDialog,
     private readonly _snackBar: MatSnackBar,
@@ -154,7 +150,7 @@ export class TaskComponent implements OnInit, OnDestroy {
     this._taskForm.disable();
 
     this._route.paramMap.subscribe((paramMap) => {
-      this._taskId$.next(paramMap.get('id') || undefined);
+      this._taskId.set(paramMap.get('id') || undefined);
     });
 
     this._taskForm.valueChanges.subscribe(() => {
@@ -172,60 +168,57 @@ export class TaskComponent implements OnInit, OnDestroy {
         this._initValues.daysOfTheWeek.fri === daysOfTheWeek.fri &&
         this._initValues.daysOfTheWeek.sat === daysOfTheWeek.sat &&
         this._initValues.daysOfTheWeek.sun === daysOfTheWeek.sun;
-      this._isNothingChanged$.next(!isValueInit);
+      this._isNothingChanged.set(!isValueInit);
     });
 
     this._timesOfDay.valueChanges.subscribe((timesOfDay: string[]) => {
 
-      const round = this._round$.value;
+      const round = this._round();
 
       if (!round) {
         return;
       }
 
       const timesOfDays = (new Set(round.timesOfDay).difference(new Set(timesOfDay))).toArray();
-      this._allOptions$.next(timesOfDays);
+      this._allOptions.set(timesOfDays);
       this.applyFilter(this._timeOfDayId.value || '');
     });
 
     this._timeOfDayId.valueChanges.subscribe((timeOfDayId) => {
       this.applyFilter(timeOfDayId || '');
     });
-  }
 
-  ngOnInit() {
+    effect(() => {
 
-    // round
-    this._ngOnInitRoundSub = combineLatest([
-      this._round$
-    ]).subscribe(([round]) => {
+      const round = this._round();
 
       if (!round) {
         return;
       }
 
       const timesOfDays = (new Set(round.timesOfDay).difference(new Set(this._timesOfDay.value))).toArray();
-      this._allOptions$.next(timesOfDays);
+      this._allOptions.set(timesOfDays);
       this.applyFilter(this._timeOfDayId.value || '');
-    });
+
+    }, {allowSignalWrites: true});
 
     // task
     let task_roundId: string | undefined;
     let task_taskId: string | undefined;
     let task_userId: string | undefined;
-    this._ngOnInitTaskSub = combineLatest([
-      this._user$,
-      this._round$,
-      this._taskId$,
-      this._cryptoKey$
-    ]).subscribe(([user, round, taskId, cryptoKey]) => {
+    effect(() => {
+
+      const user = this._user();
+      const round = this._round();
+      const taskId = this._taskId();
+      const cryptoKey = this._cryptoKey();
 
       if (!user || !round || !taskId || !cryptoKey) {
         task_userId = undefined;
         task_roundId = undefined;
         task_taskId = undefined;
         this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
-        this._task$.next(undefined);
+        this._task.set(undefined);
         this._taskForm.enable();
         return;
       }
@@ -246,25 +239,25 @@ export class TaskComponent implements OnInit, OnDestroy {
       const roundRef = Round.ref(userRef, round.id) as DocumentReference<Round, RoundDoc>;
       const taskRef = Task.ref(roundRef, taskId) as DocumentReference<Task, TaskDoc>;
 
-      this._loading$.next(true);
+      this._loading.set(true);
       this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
       this._taskSub = docSnapshots(taskRef).pipe(
         takeUntilDestroyed(this._destroyRef),
-        takeWhile(() => !!this._user$.value || !!this._round$.value || !this._taskId$.value),
+        takeWhile(() => !!this._user() || !!this._round() || !this._taskId()),
         switchMap((docSnap) => Task.data(docSnap, cryptoKey)),
         catchError(() => of(null))
       ).subscribe((task) => {
 
-        this._loading$.next(false);
+        this._loading.set(false);
 
         if (task) {
-          this._task$.next(task);
+          this._task.set(task);
           this.setAll(task);
         }
 
         this._taskForm.enable();
       });
-    });
+    }, {allowSignalWrites: true});
   }
 
   handleAddTimeOfDayId(event: MatChipInputEvent): void {
@@ -302,15 +295,15 @@ export class TaskComponent implements OnInit, OnDestroy {
   applyFilter(value: string): void {
     if (value) {
       const filterValue = value.toLowerCase();
-      this._filteredOptions$.next(this._allOptions$.value?.filter((option) => option.toLowerCase().includes(filterValue)));
+      this._filteredOptions.set(this._allOptions()?.filter((option) => option.toLowerCase().includes(filterValue)));
     } else {
-      this._filteredOptions$.next(this._allOptions$.value);
+      this._filteredOptions.set(this._allOptions());
     }
   }
 
   saveTask(): void {
 
-    this._loading$.next(true);
+    this._loading.set(true);
     this._taskForm.disable();
 
     const task = this._taskForm.getRawValue();
@@ -324,10 +317,10 @@ export class TaskComponent implements OnInit, OnDestroy {
         daysOfTheWeek: this._taskService.daysBooleanMapToDayArray(task.daysOfTheWeek),
         timesOfDay: task.timesOfDay
       },
-      taskId: this._task$.value?.id || 'null',
-      roundId: this._round$.value!.id
+      taskId: this._task()?.id || 'null',
+      roundId: this._round()!.id
     }).pipe(catchError((error: HTTPError) => {
-      this._loading$.next(false);
+      this._loading.set(false);
       this._taskForm.enable();
       this._snackBar.open(error.message || 'Some went wrong 🤫 Try again 🙂');
       return NEVER;
@@ -336,7 +329,7 @@ export class TaskComponent implements OnInit, OnDestroy {
       this._snackBar.open(success.details || 'Your operation has been done 😉');
 
       if (success.created) {
-        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, this._round$.value!.id, RouterDict.taskEditor, success.taskId], {relativeTo: this._route});
+        this._router.navigate(['/', RouterDict.user, RouterDict.rounds, this._round()!.id, RouterDict.taskEditor, success.taskId], {relativeTo: this._route});
       }
     });
   }
@@ -381,19 +374,19 @@ export class TaskComponent implements OnInit, OnDestroy {
 
       if (isConfirmed) {
         this._taskForm.disable();
-        this._loading$.next(true);
+        this._loading.set(true);
 
         this._roundsService.deleteTask({
-          taskId: this._task$.value!.id,
-          roundId: this._round$.value!.id
+          taskId: this._task()!.id,
+          roundId: this._round()!.id
         }).pipe(catchError((error: HTTPError) => {
-          this._loading$.next(false);
+          this._loading.set(false);
           this._taskForm.enable();
           this._snackBar.open(error.details || 'Some went wrong 🤫 Try again 🙂');
           return NEVER;
         })).subscribe((success: HTTPSuccess) => {
           this._snackBar.open(success.details || 'Your operation has been done 😉');
-          this._taskId$.next(undefined);
+          this._taskId.set(undefined);
         });
       }
     });
@@ -426,9 +419,7 @@ export class TaskComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this._ngOnInitRoundSub?.unsubscribe();
-    this._ngOnInitTaskSub?.unsubscribe();
-    this._taskId$.next(undefined);
-    this._task$.next(undefined);
+    this._taskId.set(undefined);
+    this._task.set(undefined);
   }
 }

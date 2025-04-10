@@ -1,5 +1,6 @@
-import {AsyncPipe, NgClass, NgStyle} from '@angular/common';
+import {NgClass, NgStyle} from '@angular/common';
 import {Component, computed, ElementRef, ViewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatMenuModule} from '@angular/material/menu';
@@ -26,23 +27,20 @@ import {UserSettingsComponent} from '../user-settings/user-settings.component';
 @Component({
   selector: 'app-nav',
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, SvgDirective, AsyncPipe],
+  imports: [MatToolbarModule, MatButtonModule, MatMenuModule, FontAwesomeModule, InternalImgSecureDirective, NgStyle, NgClass, SvgDirective],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss'
 })
 export class NavComponent {
 
-  protected readonly _user$ = this._authService.user$;
-  protected readonly _isOnline$ = this._connectionService.isOnline$;
-  protected readonly _loadingUser$ = this._authService.loadingUser$;
-  protected readonly _whileLoginIn$ = this._authService.whileLoginIn$;
+  protected readonly _user = toSignal(this._authService.user$);
+  protected readonly _isOnline = toSignal(this._connectionService.isOnline$);
+  protected readonly _loadingUser = toSignal(this._authService.loadingUser$);
+  protected readonly _whileLoginIn = toSignal(this._authService.whileLoginIn$);
 
-  protected readonly _isButtonDisabled$ = combineLatest([
-    this._isOnline$,
-    this._loadingUser$
-  ]).pipe(
-    map(([isOnline, loadingUser]) => isOnline || loadingUser)
-  );
+  protected readonly _isButtonDisabled = computed(() => {
+    return !this._isOnline() || this._loadingUser();
+  });
 
   protected readonly _faUser = faUser;
   protected readonly _faGoogle = faGoogle;
