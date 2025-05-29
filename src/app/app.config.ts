@@ -3,7 +3,7 @@ import {
   APP_INITIALIZER,
   ApplicationConfig,
   Injector,
-  provideExperimentalZonelessChangeDetection,
+  provideZonelessChangeDetection,
   Provider
 } from '@angular/core';
 import {MAT_SNACK_BAR_DEFAULT_OPTIONS} from '@angular/material/snack-bar';
@@ -168,7 +168,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideClientHydration(),
-    provideExperimentalZonelessChangeDetection(),
+    provideZonelessChangeDetection(),
     provideHttpClient(),
     provideAnimationsAsync(),
     provideFirebase(),
