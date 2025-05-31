@@ -7,11 +7,21 @@ import {catchError, NEVER} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
 import {CustomValidators} from '../../services/custom-validators';
+import {ErrorDirective, InputDirective, LabelDirective} from '../ui/form-field/directives';
+import {FormFieldComponent} from '../ui/form-field/form-field.component';
 
 @Component({
   selector: 'app-new-password',
   standalone: true,
-  imports: [ReactiveFormsModule, MatInputModule, MatButtonModule],
+  imports: [
+    ReactiveFormsModule,
+    MatInputModule,
+    MatButtonModule,
+    FormFieldComponent,
+    LabelDirective,
+    InputDirective,
+    ErrorDirective
+  ],
   templateUrl: './new-password.component.html'
 })
 export class NewPasswordComponent implements OnInit {

@@ -42,6 +42,8 @@ import {RoundsService} from '../../services/rounds.service';
 import {TaskService} from '../../services/task.service';
 import {Sig} from '../../utils/Sig';
 import {TaskDialogConfirmDeleteComponent} from '../task-dialog-confirm-delete/task-dialog-confirm-delete.component';
+import {ErrorDirective, InputDirective, LabelDirective} from '../ui/form-field/directives';
+import {FormFieldComponent} from '../ui/form-field/form-field.component';
 
 export interface TaskForm {
   description: string | null;
@@ -62,7 +64,11 @@ export interface TaskForm {
     MatChipsModule,
     MatAutocompleteModule,
     MatProgressBarModule,
-    MatButtonModule
+    MatButtonModule,
+    FormFieldComponent,
+    LabelDirective,
+    InputDirective,
+    ErrorDirective
   ],
   styleUrls: ['./task.component.scss'],
   animations: [

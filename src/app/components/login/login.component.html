@@ -1,22 +1,22 @@
 <div class="container">
   <div class="col" [formGroup]="_loginForm">
     <div class="row">
-      <mat-form-field>
-        <mat-label>Email</mat-label>
-        <input autocomplete="off" matInput formControlName="email" type="email">
-        @if (!_loginForm.disabled && !_email?.valid && (_email?.dirty || !_password?.untouched)) {
-          <mat-error>Enter email</mat-error>
+      <app-form-field>
+        <app-label>Email</app-label>
+        <input autocomplete="off" appInput formControlName="email" type="email">
+        @if (!_loginForm.disabled && !_email?.valid && !_email?.untouched) {
+          <app-error>Enter email</app-error>
         }
-      </mat-form-field>
+      </app-form-field>
     </div>
     <div class="row">
-      <mat-form-field>
-        <mat-label>Password</mat-label>
-        <input autocomplete="off" matInput formControlName="password" type="password">
-        @if (!_loginForm.disabled && !_password?.valid && (_password?.dirty || !_password?.untouched)) {
-          <mat-error>Enter password</mat-error>
+      <app-form-field>
+        <app-label>Password</app-label>
+        <input autocomplete="off" appInput formControlName="password" type="password">
+        @if (!_loginForm.disabled && !_password?.valid && !_password?.untouched) {
+          <app-error>Enter password</app-error>
         }
-      </mat-form-field>
+      </app-form-field>
     </div>
     <div class="row">
       <div class="col">

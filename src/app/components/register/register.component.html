@@ -1,31 +1,31 @@
 <div class="container">
   <div class="col" [formGroup]="_registerForm">
     <div class="row">
-      <mat-form-field>
-        <mat-label>Email</mat-label>
-        <input autocomplete="off" matInput formControlName="email" type="email">
+      <app-form-field>
+        <app-label>Email</app-label>
+        <input autocomplete="off" appInput formControlName="email" type="email">
         @if (!_registerForm.disabled && !_email?.valid && (_email?.dirty || !_email?.untouched)) {
-          <mat-error>Enter email</mat-error>
+          <app-error>Enter email</app-error>
         }
-      </mat-form-field>
+      </app-form-field>
     </div>
     <div class="row">
-      <mat-form-field>
-        <mat-label>Password</mat-label>
-        <input autocomplete="off" matInput formControlName="password" type="password">
+      <app-form-field>
+        <app-label>Password</app-label>
+        <input autocomplete="off" appInput formControlName="password" type="password">
         @if (!_registerForm.disabled && !_password?.valid && (_password?.dirty || !_password?.untouched)) {
-          <mat-error>Enter password</mat-error>
+          <app-error>Enter password</app-error>
         }
-      </mat-form-field>
+      </app-form-field>
     </div>
     <div class="row">
-      <mat-form-field>
-        <mat-label>Confirm password</mat-label>
-        <input autocomplete="off" matInput formControlName="confirmPassword" type="password">
+      <app-form-field>
+        <app-label>Confirm password</app-label>
+        <input autocomplete="off" appInput formControlName="confirmPassword" type="password">
         @if (!_registerForm.disabled && !_confirmPassword?.valid && (_confirmPassword?.dirty || !_confirmPassword?.untouched)) {
-          <mat-error>Confirm password</mat-error>
+          <app-error>Confirm password</app-error>
         }
-      </mat-form-field>
+      </app-form-field>
     </div>
     <div class="row">
       <div class="col">

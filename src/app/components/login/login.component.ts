@@ -1,18 +1,27 @@
 import {Component, EventEmitter, Output, signal} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatInputModule} from '@angular/material/input';
 import {MatProgressBar} from '@angular/material/progress-bar';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {UserCredential} from 'firebase/auth';
 import {catchError, NEVER} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
 import {ConnectionService} from '../../services/connection.service';
+import {ErrorDirective, InputDirective, LabelDirective} from '../ui/form-field/directives';
+import {FormFieldComponent} from '../ui/form-field/form-field.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [MatInputModule, ReactiveFormsModule, MatButtonModule, MatProgressBar],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatProgressBar,
+    FormFieldComponent,
+    LabelDirective,
+    InputDirective,
+    ErrorDirective
+  ],
   templateUrl: './login.component.html'
 })
 export class LoginComponent {

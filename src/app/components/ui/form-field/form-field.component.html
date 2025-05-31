@@ -1,0 +1,35 @@
+<div
+  class="app-form-field-text"
+  [class.app-form-field-text--disabled]="_disabled"
+  [class.app-form-field-text--focused]="_focused"
+  [class.app-form-field-text--has-error]="_hasError"
+  (click)="_focus()"
+>
+  @if (_hasFloatingLabel()) {
+    <label
+      class="app-form-field-label"
+      [class.app-form-field-label--floating]="_shouldLabelFloat"
+    >
+      <ng-content select="app-label"/>
+    </label>
+  }
+  <div
+    class="app-form-field-input-wrapper"
+    [class.app-form-field-input-wrapper--no-placeholder]="_hasFloatingLabel() && !_shouldLabelFloat"
+  >
+    <div class="app-form-field-flex">
+      <div class="app-form-field-infix">
+        <ng-content/>
+      </div>
+    </div>
+  </div>
+  <div class="app-form-field-underline"></div>
+</div>
+
+<div class="app-form-field-subscript-wrapper">
+  @if (_hasSubscript()) {
+    <div class="app-form-field-subscript">
+      <ng-content select="app-error"/>
+    </div>
+  }
+</div>

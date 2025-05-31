@@ -1,0 +1,114 @@
+@mixin theme($theme) {
+
+  $font-family: map-get($theme, 'font-family');
+  $underline-color-default: map-get($theme, 'underline-color-default');
+  $underline-color-hover: map-get($theme, 'underline-color-hover');
+  $underline-color-focused: map-get($theme, 'underline-color-focused');
+  $underline-color-error: map-get($theme, 'underline-color-error');
+  $label-color-default: map-get($theme, 'label-color-default');
+  $label-color-floating: map-get($theme, 'label-color-floating');
+  $label-color-error: map-get($theme, 'label-color-error');
+  $label-background-floating: map-get($theme, 'label-background-floating');
+  $background-default: map-get($theme, 'background-default');
+  $background-hover: map-get($theme, 'background-hover');
+  $background-focused: map-get($theme, 'background-focused');
+  $input-color: map-get($theme, 'input-color');
+  $placeholder-color: map-get($theme, 'placeholder-color');
+  $error-color: map-get($theme, 'error-color');
+
+  .app-form-field-text {
+
+    background: $background-default;
+
+    .app-form-field-underline {
+      background: $underline-color-default;
+    }
+
+    &:hover:not(.app-form-field-text--focused) {
+
+      background: $background-hover;
+
+      .app-form-field-underline {
+        background: $underline-color-hover;
+      }
+    }
+
+    &.app-form-field-text--has-error:not(.app-form-field-text--focused):hover {
+      .app-form-field-underline {
+        background: $underline-color-error;
+      }
+    }
+
+    &--focused {
+
+      background: $background-focused;
+
+      .app-form-field-underline {
+        height: 2px;
+        background: $underline-color-focused;
+      }
+    }
+
+    &--has-error {
+      .app-form-field-underline {
+        background: $underline-color-error;
+      }
+    }
+
+    &--has-error.app-form-field-text--focused {
+
+      .app-form-field-underline {
+        height: 2px;
+        background: $underline-color-error;
+      }
+
+      .app-form-field-label {
+        color: $label-color-error;
+      }
+    }
+  }
+
+  .app-form-field-underline {
+    background: $underline-color-default;
+  }
+
+  .app-form-field-label {
+
+    color: $label-color-default;
+    font-family: $font-family;
+
+    &--floating {
+      color: $label-color-floating;
+      background: $label-background-floating;
+    }
+  }
+
+  .app-form-field-input-wrapper {
+
+    input {
+
+      color: $input-color;
+      font-family: $font-family;
+
+      &::placeholder {
+        color: $placeholder-color;
+        font-family: $font-family;
+      }
+    }
+
+    &--no-placeholder {
+      input::placeholder {
+        color: transparent !important
+      }
+    }
+  }
+
+  .app-form-field-subscript {
+
+    font-family: $font-family;
+
+    app-error {
+      color: $error-color;
+    }
+  }
+}

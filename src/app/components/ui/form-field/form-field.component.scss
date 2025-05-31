@@ -1,0 +1,138 @@
+.app-form-field {
+
+  display: inline-flex;
+  flex-direction: column;
+  margin-top: 10px;
+
+  &--disabled {
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+}
+
+.app-form-field-text {
+
+  display: inline-flex;
+  flex-direction: column;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  padding: 0 16px;
+  position: relative;
+
+  &--focused:not(.app-form-field-text--has-error) {
+    background: #E4E4E4;
+    outline: none;
+  }
+
+  &--has-error {
+    .app-form-field-label {
+      color: #F51512;
+    }
+  }
+
+  &--has-error:not(.ui-form-field-text--focused) {
+    .app-form-field-label {
+      color: #F51512;
+    }
+  }
+}
+
+.app-form-field-label {
+
+  position: absolute;
+  top: 9px;
+  font-size: 1rem;
+  transition: all 0.1s ease-out;
+  user-select: none;
+
+  &--floating {
+    top: -10px;
+    font-size: 0.6875rem;
+    line-height: 15px;
+    border-radius: 3px;
+    padding: 1px;
+  }
+}
+
+.app-form-field-input-wrapper {
+
+  padding: 11px 0 5px 0;
+  position: relative;
+
+  &--no-placeholder {
+
+    input::placeholder {
+      color: transparent;
+    }
+  }
+
+  input {
+
+    border: none;
+    outline: none;
+    background: none;
+    font-size: 1rem;
+    padding: 0;
+    width: 100%;
+
+    &::placeholder {
+      user-select: none;
+      font-weight: normal;
+    }
+  }
+}
+
+.app-form-field-flex {
+  display: inline-flex;
+  align-items: baseline;
+  width: 100%;
+}
+
+.app-form-field-infix {
+  flex: auto;
+  min-width: 0;
+  width: 180px;
+  position: relative;
+}
+
+.app-form-field-underline {
+  position: absolute;
+  height: 1px;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  transition: all 0.1s ease-out;
+}
+
+.app-form-field-subscript-wrapper {
+
+  position: relative;
+  font-size: 0.8125rem;
+  min-height: 25px;
+
+  .app-form-field-subscript {
+    display: block;
+    margin-top: 5px;
+    padding: 0 16px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+}
+
+.app-form-field-subscript {
+  animation: subscript-animation 0.1s ease-out;
+}
+
+@keyframes subscript-animation {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
