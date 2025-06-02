@@ -12,30 +12,12 @@
 }
 
 .app-form-field-text {
-
   display: inline-flex;
   flex-direction: column;
   border-top-left-radius: 3px;
   border-top-right-radius: 3px;
   padding: 0 16px;
   position: relative;
-
-  &--focused:not(.app-form-field-text--has-error) {
-    background: #E4E4E4;
-    outline: none;
-  }
-
-  &--has-error {
-    .app-form-field-label {
-      color: #F51512;
-    }
-  }
-
-  &--has-error:not(.ui-form-field-text--focused) {
-    .app-form-field-label {
-      color: #F51512;
-    }
-  }
 }
 
 .app-form-field-label {

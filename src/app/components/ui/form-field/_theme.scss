@@ -50,20 +50,20 @@
     }
 
     &--has-error {
-      .app-form-field-underline {
-        background: $underline-color-error;
-      }
-    }
-
-    &--has-error.app-form-field-text--focused {
 
       .app-form-field-underline {
-        height: 2px;
         background: $underline-color-error;
       }
 
       .app-form-field-label {
         color: $label-color-error;
+      }
+    }
+
+    &--has-error.app-form-field-text--focused {
+      .app-form-field-underline {
+        height: 2px;
+        background: $underline-color-error;
       }
     }
   }
