@@ -1,4 +1,13 @@
-import {Component, computed, contentChild, InjectionToken, input, ViewEncapsulation} from '@angular/core';
+import {
+  Component,
+  computed,
+  contentChild,
+  ElementRef,
+  InjectionToken,
+  input,
+  viewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import {ErrorDirective, FormFieldControl, LabelDirective} from './directives';
 
 export const APP_FORM_FIELD = new InjectionToken<FormFieldComponent>('FormFieldComponent');
@@ -26,6 +35,8 @@ export class FormFieldComponent {
 
   protected _hasFloatingLabel = computed(() => !!this._labelChild());
   protected _hasSubscript = computed(() => !!this._error());
+
+  triggerHandler = viewChild<ElementRef<HTMLInputElement>>('triggerHandler');
 
   protected get _shouldLabelFloat() {
     return this._formFieldControl()?.shouldLabelFloat || this.floatLabel() === 'always';

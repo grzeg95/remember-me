@@ -1,0 +1,16 @@
+@mixin theme($theme) {
+
+  $font-family: map-get($theme, 'font-family');
+  $background-color-default: map-get($theme, 'background-color-default');
+  $background-color-hover: map-get($theme, 'background-color-hover');
+
+  .app-option {
+
+    font-family: $font-family;
+    background-color: $background-color-default;
+
+    &:hover {
+      background-color: $background-color-hover;
+    }
+  }
+}

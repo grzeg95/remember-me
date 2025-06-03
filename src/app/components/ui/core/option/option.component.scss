@@ -1,0 +1,11 @@
+.app-option {
+
+  width: 100%;
+  display: block;
+  cursor: pointer;
+  padding: 10px 15px;
+
+  &:hover {
+    background-color: #ECECEC;
+  }
+}

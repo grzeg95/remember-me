@@ -1,0 +1,9 @@
+@mixin theme($theme) {
+
+  $font-family: map-get($theme, 'font-family');
+  $background-color-default: map-get($theme, 'background-color-default');
+
+  .app-autocomplete {
+    background-color: $background-color-default;
+  }
+}

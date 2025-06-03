@@ -1,4 +1,6 @@
 @use './app/components/ui/form-field/theme' as form-field-theme;
+@use './app/components/ui/autocomplete/theme' as autocomplete-theme;
+@use './app/components/ui/core/option/theme' as option-theme;
 @import '../node_modules/@angular/material/prebuilt-themes/indigo-pink.css';
 @import '../node_modules/bootstrap/scss/bootstrap-grid';
 @import '../node_modules/bootstrap/scss/mixins';
@@ -20,6 +22,8 @@ body {
   margin: auto;
 }
 
+$font-family: 'Roboto', sans-serif;
+
 @include form-field-theme.theme ((
   underline-color-default: #8E8E8E,
   underline-color-hover: #1A2536,
@@ -37,6 +41,16 @@ body {
   error-color: #F51512
 ));
 
+@include autocomplete-theme.theme((
+  font-family: $font-family,
+  background-color-default: #FFFFFF
+));
+
+@include option-theme.theme((
+  font-family: $font-family,
+  background-color-default: #FFFFFF,
+  background-color-hover: #ECECEC
+));
 
 .button[disabled], input[disabled], .disabled {
   cursor: default;
