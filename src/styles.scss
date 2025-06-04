@@ -25,6 +25,7 @@ body {
 $font-family: 'Roboto', sans-serif;
 
 @include form-field-theme.theme ((
+  font-family: $font-family,
   underline-color-default: #8E8E8E,
   underline-color-hover: #1A2536,
   underline-color-focused: #1A2536,
