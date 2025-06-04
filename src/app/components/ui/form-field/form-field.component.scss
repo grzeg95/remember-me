@@ -2,7 +2,6 @@
 
   display: inline-flex;
   flex-direction: column;
-  margin-top: 10px;
 
   &--disabled {
     user-select: none;
@@ -23,13 +22,13 @@
 .app-form-field-label {
 
   position: absolute;
-  top: 9px;
+  top: 20px;
   font-size: 1rem;
   transition: all 0.1s ease-out;
   user-select: none;
 
   &--floating {
-    top: -10px;
+    top: 3px;
     font-size: 0.6875rem;
     line-height: 15px;
     border-radius: 3px;
@@ -39,7 +38,7 @@
 
 .app-form-field-input-wrapper {
 
-  padding: 11px 0 5px 0;
+  padding: 24px 0 8px 0;
   position: relative;
 
   &--no-placeholder {

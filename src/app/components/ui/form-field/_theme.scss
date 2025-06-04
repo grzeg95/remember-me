@@ -8,7 +8,6 @@
   $label-color-default: map-get($theme, 'label-color-default');
   $label-color-floating: map-get($theme, 'label-color-floating');
   $label-color-error: map-get($theme, 'label-color-error');
-  $label-background-floating: map-get($theme, 'label-background-floating');
   $background-default: map-get($theme, 'background-default');
   $background-hover: map-get($theme, 'background-hover');
   $background-focused: map-get($theme, 'background-focused');
@@ -79,7 +78,6 @@
 
     &--floating {
       color: $label-color-floating;
-      background: $label-background-floating;
     }
   }
 
