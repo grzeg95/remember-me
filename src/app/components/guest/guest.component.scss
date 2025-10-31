@@ -1,0 +1,94 @@
+@import 'styles/layout';
+@import 'styles/typography-mixins';
+
+:host {
+
+  @include container();
+}
+
+.features {
+
+  &__intro {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 350px;
+    margin: auto;
+
+    &__heading-xl {
+
+      @include heading-xl();
+      @include font-semibold();
+      display: flex;
+    }
+
+    &__heading-m {
+
+      @include heading-m();
+      margin-top: 3px;
+    }
+
+    &__body-m {
+
+      @include body-m();
+      margin-top: 16px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+  }
+
+  &__items {
+
+    display: flex;
+    flex-wrap: wrap;
+
+    &__item {
+
+      margin-bottom: 32px;
+      padding-left: 71px;
+
+      &__icon {
+        margin-left: -49px;
+        float: left;
+        max-width: 32px;
+      }
+
+      &__name {
+
+        @include heading-m();
+        @include font-semibold();
+        margin-bottom: 4px;
+
+        @include from-medium() {
+          width: 289px;
+        }
+
+        @include from-large() {
+          width: 249px;
+        }
+
+        @include from-extra-large() {
+          width: 309px;
+        }
+      }
+
+      &__description {
+
+        @include body-m();
+
+        @include from-medium() {
+          width: 289px;
+        }
+
+        @include from-large() {
+          width: 249px;
+        }
+
+        @include from-extra-large() {
+          width: 309px;
+        }
+      }
+    }
+  }
+}

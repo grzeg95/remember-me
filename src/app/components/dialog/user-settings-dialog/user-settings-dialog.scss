@@ -1,0 +1,185 @@
+@use 'sass:math';
+
+.app-user-settings {
+  display: block;
+  height: 100%;
+  background: var(--white);
+}
+
+.title {
+  display: flex;
+  max-width: 600px;
+  margin: auto;
+  font-size: 1.5rem;
+  align-items: center;
+}
+
+.section {
+
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #dadce0;
+  max-width: 600px;
+  margin: 20px auto;
+  box-shadow: none;
+
+  .title {
+
+    font-size: 1.25rem;
+    padding: 15px 24px 16px;
+
+    &.advanced {
+      font-size: 1rem;
+    }
+  }
+
+  .items {
+
+    display: block;
+
+    .item {
+
+      display: flex;
+      align-items: center;
+      margin: 0 24px;
+      padding: 15px 0;
+      border-bottom: 1px solid #dadce0;
+
+      @media (max-width: 700px) {
+
+        &:not(.photo) {
+
+          flex-direction: column;
+          align-items: baseline;
+
+          .name {
+            flex-basis: 0.6875rem;
+          }
+        }
+
+        &.photo {
+          justify-content: space-between;
+        }
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .name {
+        line-height: 1rem;
+        text-transform: uppercase;
+        font-size: .6875rem;
+        font-weight: 600;
+        flex-basis: 160px;
+        display: flex;
+        gap: 1rem;
+      }
+
+      .data {
+
+        display: block;
+        word-break: break-all;
+        position: relative;
+
+        &.photo {
+
+          width: 40px;
+          height: 40px;
+          border-radius: 100%;
+
+          img {
+            width: 40px;
+            height: 40px;
+            border-radius: 100%;
+            border: solid 1px rgba(212, 212, 212, 0.5);
+          }
+
+          fa-icon {
+            font-size: 1.5rem;
+          }
+
+          fa-icon ::ng-deep svg {
+            display: block;
+            margin: auto;
+            color: #212529;
+          }
+
+          label {
+
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 100%;
+
+            &.photo-uploading {
+
+              img, fa-icon {
+                opacity: 0.4;
+              }
+
+              &:hover {
+                cursor: default;
+              }
+            }
+
+            &:hover {
+              cursor: pointer;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.app-chip-remove {
+
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    svg circle {
+      fill: var(--gray-900);
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 20px auto;
+
+  .close-button {
+    align-self: flex-end;
+  }
+}
+
+.photo-app-spinner {
+  position: absolute;
+  width: 100%;
+}
+
+html[data-theme="dark"] {
+  .app-user-settings {
+    background: var(--steel-blue-990);
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

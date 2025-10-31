@@ -1,0 +1,81 @@
+<div class="title">
+  <fa-icon [icon]="_faGear" [ngStyle]="{marginRight: '0.5rem'}"></fa-icon>
+  Setting
+</div>
+
+<div class="section">
+  <div class="title">Basic info</div>
+  <div class="items">
+    @if (!_authUser()?.isAnonymous) {
+      @if (_authUser()?.displayName) {
+        <div class="item">
+          <div class="name">Name</div>
+          <div class="data" [innerHTML]="_authUser()?.displayName"></div>
+        </div>
+      }
+      @if (_authUser()?.email) {
+        <div class="item">
+          <div class="name">Email</div>
+          <div class="data" [innerHTML]="_authUser()?.email"></div>
+        </div>
+      }
+    }
+    <div class="item photo">
+      <div class="name">
+        <span>Photo</span>
+        @if (!!_firestoreUser()?.photoUrl && !_isPhotoUploading()) {
+          <button class="app-chip-remove" (click)="removePhoto()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="8" fill="#737373"/>
+              <line x1="4.62015" y1="4.9797" x2="11.0202" y2="11.3797" stroke="#E0E0E0"/>
+              <line x1="4.9797" y1="11.3798" x2="11.3797" y2="4.97985" stroke="#E0E0E0"/>
+            </svg>
+          </button>
+        }
+      </div>
+      <div class="data photo">
+        <label [ngClass]="{'photo-uploading': _isPhotoUploading()}">
+
+          @if (_firestoreUser()?.photoUrl) {
+            <img [src]="_firestoreUser()?.photoUrl"/>
+          } @else {
+            <fa-icon [icon]="_faUser"></fa-icon>
+          }
+
+          <input hidden [disabled]="_isPhotoUploading()" type="file" (change)="fileChange($event)" accept=".jpg,.jpeg,.png">
+
+          @if (_isPhotoUploading()) {
+            <app-spinner class="photo-app-spinner"/>
+          }
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User by password -->
+
+@if ((this._authUser()?.providerData || [])[0]?.providerId === 'password') {
+  <div class="section">
+    <div class="title advanced">Password</div>
+    <div class="items">
+      <div class="item">
+        <app-new-password/>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="section">
+  <div class="title advanced">Advanced</div>
+  <div class="items">
+    <div class="item close-account">
+      <div class="name">Delete account :(</div>
+      <a class="data" (click)="openRemoveAccountConfirmPrompt()">I'm not quite sure</a>
+    </div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="close-button" app-button (click)="_dialogRef.close()">Close</button>
+</div>

@@ -1,0 +1,129 @@
+@use 'styles/typography-mixins' as typography-mixins;
+
+.today-items {
+
+  .time-of-day {
+
+    margin-top: 30px;
+
+    &:first-child {
+      margin-top: 25px;
+    }
+
+    .title {
+      @include typography-mixins.heading-l();
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tasks {
+
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+
+      .button {
+
+        padding: 9px 17px;
+        @include typography-mixins.body-m();
+        @include typography-mixins.font-semibold();
+        border-radius: 8px;
+        color: var(--teal-600);
+        border: solid 1px;
+        background: transparent;
+
+        &[disabled] {
+          opacity: 0.6;
+          pointer-events: none;
+        }
+
+        &--active {
+          background: var(--teal-600);
+          border: solid 1px var(--teal-600);
+          color: var(--sky-blue-100);
+        }
+      }
+    }
+  }
+}
+
+.communicate {
+
+  width: 100%;
+  margin-top: 19px;
+
+  .header {
+    text-align: center;
+    margin-bottom: 8px;
+    @include typography-mixins.heading-l();
+  }
+
+  .description {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .button {
+    margin: auto;
+  }
+}
+
+.today-skeleton {
+
+  margin-top: 1.6875rem; // 27px
+  display: flex;
+  flex-direction: column;
+  gap: 1.875rem; // 30px
+
+  .today-skeleton-row {
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; // 12px
+    margin-bottom: 1rem;
+
+    .today-skeleton-row-title {
+      width: 100%;
+      display: flex;
+      gap: 0.375rem; // 6px
+    }
+
+    .today-skeleton-row-tasks {
+      width: 100%;
+      display: flex;
+      gap: 0.375rem; // 6px
+    }
+  }
+}
+
+html[data-theme="dark"] {
+
+  .today-items {
+
+    .time-of-day {
+
+      .tasks {
+
+        .button {
+          color: var(--sky-blue-100);
+          border: solid 1px var(--teal-600);
+        }
+      }
+    }
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

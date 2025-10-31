@@ -1,0 +1,107 @@
+@use 'styles/typography-mixins' as typography-mixins;
+
+.app-tasks-list {
+
+  &__communicate {
+
+    width: 100%;
+    margin-top: 19px;
+
+    &__header {
+      text-align: center;
+      margin-bottom: 8px;
+      @include typography-mixins.heading-l();
+    }
+
+    &__description {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    &__button__wrapper {
+      width: 100%;
+      max-width: 720px;
+      margin-top: 15px;
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    &__button {
+      margin: auto;
+    }
+  }
+
+}
+
+.app-tasks-list-table {
+  width: 100%;
+  max-width: 720px;
+  margin: 5px auto 9px;
+  border-spacing: 0;
+}
+
+.header-cell {
+
+  font-size: 0.75rem;
+  padding: 0.75rem 0.8125rem;
+  border: none;
+  vertical-align: bottom;
+  font-family: inherit;
+  color: var(--gray-820);
+  font-weight: normal;
+  text-align: left;
+
+  &:first-child {
+    padding-left: 1rem;
+  }
+
+  &:last-child {
+    padding-right: 1rem;
+  }
+}
+
+.body-cell {
+  padding: 0.75rem 0.8125rem;
+  border-top: solid 1px var(--gray-820);
+  vertical-align: middle;
+  font-size: .875rem;
+  height: inherit;
+  text-align: left;
+  overflow: hidden;
+}
+
+.edit-button {
+
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+html[data-theme="dark"] {
+
+  .header-cell {
+    color: var(--stale-gray-200);
+  }
+
+  .body-row {
+
+    .body-cell {
+      border-top: solid 1px var(--stale-gray-200);
+    }
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,6 @@
+<h1 class="title">Are you sure to delete task?</h1>
+<p class="description">This action will permanently remove this task.</p>
+<div class="actions">
+  <button app-button appearance="stroked" (click)="_dialogRef.close(false)">Cancel</button>
+  <button app-button appearance="danger" (click)="_dialogRef.close(true)">Delete</button>
+</div>

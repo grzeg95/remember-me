@@ -1,0 +1,36 @@
+@use 'styles/layout' as layout;
+
+.app-rounds {
+
+  @include layout.container();
+
+  .rounds-bar {
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .rounds-icon {
+      width: 33px;
+      height: 33px;
+    }
+
+    .vertical-link {
+
+      color: var(--gray-990);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+html[data-theme="dark"] {
+  .rounds-bar {
+    .vertical-link {
+      color: var(--sky-blue-100);
+    }
+  }
+}

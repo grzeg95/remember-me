@@ -1,0 +1,30 @@
+<div class="rounds-bar">
+
+  <!--
+  Rounds | Round edit | Round name
+  Rounds | Round name
+  -->
+
+  <img [src]="'assets/imgs/' + (_isDarkMode() ? 'rounds-dark' : 'rounds') + '.svg'" class="rounds-icon">
+
+  <a class="vertical-link" [routerLink]="['/', _RouterDict.rounds, _RouterDict.roundsList]">Rounds</a>
+
+  <input type="hidden" [routerLink]="['/', _RouterDict.rounds, _RouterDict.roundEditor]" routerLinkActive="roundEdit" #roundEdit="routerLinkActive"/>
+
+  @if (roundEdit.isActive) {
+    <span> | </span>
+    <a class="vertical-link" [routerLink]="['/', _RouterDict.rounds, _RouterDict.roundEditor]">Round edit</a>
+  }
+
+  @if (roundEdit.isActive && _editingRound()) {
+    <span> | </span>
+    <a class="vertical-link" [routerLink]="['/', _RouterDict.rounds, _RouterDict.roundEditor, _editingRound()?.id]">{{ _editingRound()?.name }}</a>
+  }
+
+  @if (!roundEdit.isActive && _selectedRound()) {
+    <span> | </span>
+    <a class="vertical-link" [routerLink]="['/', _RouterDict.rounds, _selectedRound()?.id, _RouterDict.todayTasks]"> {{ _selectedRound()?.name }}</a>
+  }
+</div>
+
+<router-outlet></router-outlet>

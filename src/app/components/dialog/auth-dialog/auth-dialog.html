@@ -1,0 +1,46 @@
+<div class="nav">
+  <div class="logo">
+    <div class="logo-label">Remember Me</div>
+    <div class="logo-img">
+      <img [src]="_isDarkMode() ? 'assets/imgs/logo-dark.svg' : 'assets/imgs/logo.svg'" alt="logo">
+    </div>
+  </div>
+
+  <div class="actions">
+    <button app-button appearance="stroked" (click)="_dialogRef.close()">Close</button>
+  </div>
+</div>
+
+<div class="selector">
+  <button
+    class="selector-item"
+    [class.selector-item-active]="_view() === 'login'"
+    (click)="_view.set('login')"
+  >Login
+  </button>
+  <button
+    class="selector-item"
+    [class.selector-item-active]="_view() === 'register'"
+    (click)="_view.set('register')"
+  >Register
+  </button>
+  <button
+    class="selector-item"
+    [class.selector-item-active]="_view() === 'recovery'"
+    (click)="_view.set('recovery')"
+  >Recovery
+  </button>
+  <div class="selector-indicator"></div>
+</div>
+
+@switch (_view()) {
+  @case ('login') {
+    <app-auth-dialog-login/>
+  }
+  @case ('register') {
+    <app-auth-dialog-register/>
+  }
+  @case ('recovery') {
+    <app-auth-dialog-recovery/>
+  }
+}

@@ -1,0 +1,57 @@
+@use './typography-mixins' as typography-mixins;
+
+@font-face {
+  font-family: 'Open Sans';
+  src:
+    local('Open Sans'),
+    url('/assets/fonts/OpenSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  src:
+    local('Open Sans'),
+    url('/assets/fonts/OpenSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  src:
+    local('Open Sans'),
+    url('/assets/fonts/OpenSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+}
+
+.font-normal {
+  @include typography-mixins.font-normal();
+}
+
+.font-semibold {
+  @include typography-mixins.font-normal();
+}
+
+.heading-xl {
+  @include typography-mixins.heading-xl();
+}
+
+.heading-l {
+  @include typography-mixins.heading-l();
+}
+
+.heading-m {
+  @include typography-mixins.heading-m();
+}
+
+.body-l {
+  @include typography-mixins.body-l();
+}
+
+.body-m {
+  @include typography-mixins.body-m();
+}
+
+.text-center {
+  text-align: center;
+}

@@ -1,0 +1,25 @@
+.app-option {
+
+  padding: 10px 15px;
+  font-size: 14px;
+  color: var(--gray-820);
+  background: var(--white);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--gray-25);
+  }
+}
+
+html[data-theme="dark"] {
+
+  .app-option {
+
+    color: var(--sky-blue-100);
+    background: var(--steel-blue-700);
+
+    &:hover {
+      background: var(--steel-blue-900);
+    }
+  }
+}

@@ -1,18 +1,47 @@
-rules_version='2'
+// https://firebase.google.com/docs/firestore/pricing#firestore-rules
+// You are only charged one read per dependent document even if your rules refer to that document more than once
+
+rules_version = '2';
 
 service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 10, 28);
+
+  match /databases/{database}/documents/users/{userId} {
+
+    function isOwner() {
+      return userId == request.auth.uid;
+    }
+
+    allow get: if isOwner();
+
+    match /rounds/{roundId} {
+
+      allow get: if isOwner();
+      allow list: if isOwner() && request.query.limit == 5;
+
+      match /todays/{day} {
+
+        allow list: if isOwner();
+
+        match /todayTasks/{taskId} {
+
+          allow list: if isOwner() && request.query.limit == 25;
+
+          // set progress
+          allow update: if (
+            isOwner() &&
+            exists(/databases/$(database)/documents/users/$(userId)/rounds/$(roundId)/tasks/$(taskId)) &&
+            request.resource.data.diff(resource.data).affectedKeys() == ['timesOfDay'].toSet() &&
+            request.resource.data.timesOfDay.diff(resource.data.timesOfDay).affectedKeys().size() == 1 &&
+            request.resource.data.timesOfDay.diff(resource.data.timesOfDay).changedKeys().size() == 1 &&
+            request.resource.data.timesOfDay.values().toSet().hasOnly([true, false])
+          );
+        }
+      }
+
+      match /tasks/{taskId} {
+        allow get: if isOwner();
+        allow list: if isOwner() && request.query.limit == 25;
+      }
     }
   }
 }

@@ -1,0 +1,92 @@
+@if (!_isOnline() && !_todayView()) {
+  <div class="communicate" animate.enter="enter-animation">
+    <div class="description">You are offline. Waiting for connection...</div>
+  </div>
+}
+
+<app-loader>
+  <app-loader-defer [when]="!!_todayView()">
+    <ng-template *ngTemplateOutlet="showItems"></ng-template>
+  </app-loader-defer>
+  <app-loader-loading [after]="250" [minimum]="500">
+    <div class="today-skeleton" animate.enter="enter-animation">
+      <div class="today-skeleton-row">
+        <div class="today-skeleton-row-title">
+          <app-skeleton width="25px" height="25px"/>
+          <app-skeleton width="112px" height="25px"/>
+        </div>
+        <div class="today-skeleton-row-tasks">
+          <app-skeleton width="133px" height="36px"/>
+        </div>
+      </div>
+      <div class="today-skeleton-row">
+        <div class="today-skeleton-row-title">
+          <app-skeleton width="98px" height="27px"/>
+        </div>
+        <div class="today-skeleton-row-tasks">
+          <app-skeleton width="72px" height="36px"/>
+        </div>
+      </div>
+    </div>
+  </app-loader-loading>
+</app-loader>
+
+<ng-template #showItems>
+  <div class="today-items" animate.enter="enter-animation">
+    @if (_todayView(); as todayView) {
+
+      @if (todayView.length > 0) {
+
+        @for (todayItem of todayView; let i = $index; track i + todayItem.timeOfDay) {
+
+          <div class="time-of-day">
+
+            <div class="title">
+              <fa-icon [hidden]="!todayItem.done" [icon]="_faCheckCircle"/>
+              {{todayItem.timeOfDay}}
+            </div>
+
+            <div class="tasks">
+
+              @for (todayTask of todayItem.tasks; let j = $index; track j + ('' + todayTask.done) + todayTask.description) {
+                <div class="form-check">
+
+                  @if (todayTask.done) {
+                    <button
+                      class="button button--active"
+                      [disabled]="false"
+                      (click)="setProgress(todayTask, $event)">
+                      {{ todayTask.description }}
+                    </button>
+                  }
+
+                  @if (!todayTask.done) {
+                    <button
+                      class="button"
+                      [disabled]="false"
+                      (click)="setProgress(todayTask, $event)">
+                      {{ todayTask.description }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      @if (todayView.length === 0) {
+
+        <div class="communicate" animate.enter="enter-animation">
+          <div class="header">Add some tasks for {{_today()?.full}}</div>
+          <button
+            class="button"
+            app-button
+            appearance="primary"
+            (click)="addNewTask()"
+          >Add new task</button>
+        </div>
+      }
+    }
+  </div>
+</ng-template>

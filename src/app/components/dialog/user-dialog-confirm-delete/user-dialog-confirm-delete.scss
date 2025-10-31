@@ -1,0 +1,46 @@
+@use 'styles/typography-mixins' as typography-mixins;
+
+.app-user-dialog-confirm-delete {
+
+  display: block;
+  padding: 1.25rem;
+  background-color: var(--white);
+  border-radius: 3px;
+
+  .title {
+    @include typography-mixins.heading-l();
+    margin: 0 0 1.25rem;
+  }
+
+  .description {
+    @include typography-mixins.body-m();
+    margin: 0 0 2rem;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    max-width: none;
+    margin: 0;
+  }
+}
+
+html[data-theme="dark"] {
+  .app-user-dialog-confirm-delete {
+    background: var(--steel-blue-700);
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

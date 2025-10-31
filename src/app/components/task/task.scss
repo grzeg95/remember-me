@@ -1,0 +1,79 @@
+@use 'styles/layout' as layout;
+
+.app-task {
+  //@include layout.container();
+  display: block;
+  max-width: 500px;
+  margin: auto;
+}
+
+.app-task-form {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-task-days-container {
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 30px;
+  margin-bottom: 50px;
+
+  .days-description.error {
+    color: var(--crimson-red-600);
+  }
+
+  .days {
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.625rem;
+
+    .day {
+
+    }
+  }
+}
+
+.app-task-times-of-day-container {
+
+  display: flex;
+  flex-direction: column;
+
+  .app-chip-remove {
+
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+
+    &:hover {
+      svg circle {
+        fill: var(--gray-900);
+      }
+    }
+  }
+}
+
+.app-task-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.625rem;
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

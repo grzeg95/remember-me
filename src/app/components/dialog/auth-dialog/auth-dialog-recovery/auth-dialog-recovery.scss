@@ -1,0 +1,29 @@
+.app-auth-dialog-recovery {
+
+  form {
+
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 33px;
+    margin-inline: auto;
+    max-width: 340px;
+
+    .app-auth-dialog-recovery-form-submit {
+      align-self: flex-end;
+    }
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

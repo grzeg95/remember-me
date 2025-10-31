@@ -1,0 +1,78 @@
+@if (!_isOnline() && !(_roundsList())!.length) {
+  <div class="communicate" animate.enter="enter-animation">
+    <div class="communicate-description">You are offline. Waiting for connection...</div>
+  </div>
+}
+
+@defer (when !!(_roundsList())) {
+  <ng-container *ngTemplateOutlet="showItems"></ng-container>
+} @loading (after 100ms; minimum 500ms) {
+  @if ((_isOnline()) && _userInitialized()) {
+    <table class="app-rounds-list-table" animate.enter="enter-animation">
+      <thead>
+        <tr>
+          <th><app-skeleton width="37px" height="16px"/></th>
+          <th><app-skeleton width="32px" height="16px"/></th>
+          <th><app-skeleton width="71px" height="16px"/></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th><app-skeleton width="33px" height="19px"/></th>
+          <th><app-skeleton width="9px" height="19px"/></th>
+          <th><app-skeleton width="72px" height="19px"/></th>
+          <th><app-skeleton width="16px" height="19px"/></th>
+        </tr>
+      </tbody>
+    </table>
+  }
+}
+
+<ng-template #showItems>
+
+  @if (_roundsList(); as roundsList) {
+
+    @if (roundsList.length > 0) {
+
+      <table #roundListTable class="app-rounds-list-table" animate.enter="enter-animation">
+        <thead>
+          <tr>
+            <th class="header-cell">Round</th>
+            <th class="header-cell">Tasks</th>
+            <th class="header-cell">Times of day</th>
+            <th class="header-cell" [ngStyle]="{width: '39px'}"></th>
+          </tr>
+        </thead>
+        <tbody class="" cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListDisabled]="!(_isOnline())">
+          @for (round of roundsList; track round) {
+            <tr
+              cdkDrag
+              (click)="goToRound(round.id)"
+              [class.disabled]="!_isOnline()"
+              class="body-row"
+            >
+              <th class="body-cell">{{ round.name }}</th>
+              <th class="body-cell">{{ round.tasksIds.length }}</th>
+              <th class="body-cell">{{ round.timesOfDay.join(', ') || '---' }}</th>
+              <th class="body-cell edit-button" (click)="editRound(round)"><fa-icon [icon]="_faEdit"></fa-icon></th>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <button animate.enter="enter-animation" class="add-new-button" app-button (click)="addRound()" [disabled]="!_isOnline()">Add new</button>
+
+    } @else {
+      <div class="communicate" animate.enter="enter-animation">
+        <div class="header">There is no rounds</div>
+        <button
+          class="button"
+          app-button
+          appearance="primary"
+          (click)="addRound()"
+        >Add new round</button>
+      </div>
+    }
+  }
+</ng-template>

@@ -1,0 +1,28 @@
+.app-skeleton {
+  --app-skeleton-background-begin: var(--gray-50);
+  --app-skeleton-background-end: var(--gray-650);
+  display: block;
+  background: var(--app-skeleton-background-begin);
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 3px;
+  width: 100%;
+}
+
+@keyframes pulse {
+  0% {
+    background: var(--app-skeleton-background-begin);
+  }
+  50% {
+    background: var(--app-skeleton-background-end);
+  }
+  100% {
+    background: var(--app-skeleton-background-begin);
+  }
+}
+
+html[data-theme="dark"] {
+  .app-skeleton {
+    --app-skeleton-background-begin: var(--steel-blue-300);
+    --app-skeleton-background-end: var(--steel-blue-700);
+  }
+}

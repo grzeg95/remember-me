@@ -1,0 +1,82 @@
+@if (!_isOnline() && !_tasks()) {
+  <div class="app-tasks-list__communicate" animate.enter="enter-animation">
+    <div class="app-tasks-list__communicate__description">You are offline. Waiting for connection...</div>
+  </div>
+}
+
+<app-loader>
+  <app-loader-defer [when]="!_tasksLoading()">
+    <ng-template *ngTemplateOutlet="showItems"></ng-template>
+  </app-loader-defer>
+  <app-loader-loading [after]="250" [minimum]="500">
+    <table class="app-tasks-list-table" animate.enter="enter-animation">
+      <thead>
+      <tr>
+        <th><app-skeleton width="65px" height="16px"/></th>
+        <th><app-skeleton width="28px" height="16px"/></th>
+        <th><app-skeleton width="71px" height="16px"/></th>
+        <th [ngStyle]="{width: '39px'}"></th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <th><app-skeleton width="100px" height="19px"/></th>
+        <th><app-skeleton width="61px" height="19px"/></th>
+        <th><app-skeleton width="72px" height="19px"/></th>
+        <th><app-skeleton width="16px" height="19px"/></th>
+      </tr>
+      </tbody>
+    </table>
+  </app-loader-loading>
+</app-loader>
+
+<ng-template #showItems>
+
+  @if (_tasks(); as tasks) {
+
+    @if (tasks.length > 0) {
+
+      @if ((_selectedRound()!.timesOfDay || []); as timesOfDay) {
+        <table class="app-tasks-list-table" animate.enter="enter-animation">
+          <thead>
+          <tr>
+            <th class="header-cell">Description</th>
+            <th class="header-cell">Days</th>
+            <th class="header-cell">Times of day</th>
+            <th class="header-cell" [ngStyle]="{width: '39px'}"></th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (task of tasks; track task) {
+              <tr>
+                <th class="body-cell">{{ task.description }}</th>
+                <th class="body-cell">{{ getDaysOfTheWeek(task.days) }}</th>
+                <th class="body-cell">{{ getTimesOfDay(timesOfDay, task.timesOfDay).join(', ') }}</th>
+                <th class="body-cell edit-button" (click)="goToTask(task.id)"><fa-icon [icon]="_faEdit"></fa-icon></th>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <div class="app-tasks-list__communicate__button__wrapper" animate.enter="enter-animation">
+        <button
+          class="app-tasks-list__communicate__button"
+          app-button
+          (click)="goToTask()"
+        >Add new</button>
+      </div>
+
+    } @else {
+
+      <div class="app-tasks-list__communicate" animate.enter="enter-animation">
+        <div class="app-tasks-list__communicate__header">There is no tasks</div>
+        <button
+          class="app-tasks-list__communicate__button"
+          app-button
+          (click)="goToTask()"
+        >Add new task</button>
+      </div>
+    }
+  }
+</ng-template>

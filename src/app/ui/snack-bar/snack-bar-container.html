@@ -1,0 +1,11 @@
+<div class="message">{{ _message }}</div>
+
+@if (_closeable) {
+  <button class="close-button" (click)="dismiss()">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="8" r="8" fill="#737373"/>
+      <line x1="4.62015" y1="4.9797" x2="11.0202" y2="11.3797" stroke="#E0E0E0"/>
+      <line x1="4.9797" y1="11.3798" x2="11.3797" y2="4.97985" stroke="#E0E0E0"/>
+    </svg>
+  </button>
+}

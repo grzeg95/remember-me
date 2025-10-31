@@ -1,0 +1,55 @@
+.app-spinner {
+  display: block;
+  overflow: hidden;
+}
+
+.app-spinner-svg-wrapper {
+  animation: app-spinner-svg-wrapper 1.333s linear infinite;
+}
+
+@keyframes app-spinner-svg-wrapper {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.app-spinner-svg {
+  --time: 1.333s;
+  --cubic-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+  animation: app-spinner-svg calc(var(--time) * 4) var(--cubic-bezier) infinite;
+  overflow: hidden;
+}
+
+@keyframes app-spinner-svg {
+  @for $i from 1 through 8 {
+    #{$i * 12.5%} {
+      transform: rotate(135deg * $i)
+    }
+  }
+}
+
+.app-spinner-circle-part {
+  overflow: hidden;
+  stroke-dasharray: 711;
+  stroke-dashoffset: 710.5;
+  animation: app-spinner-circle-part var(--time) var(--cubic-bezier) infinite;
+  stroke: var(--steel-blue-500);
+}
+
+.app-spinner-circle-part-one {
+  transform: scale(1, -1);
+  transform-origin: center;
+}
+
+@keyframes app-spinner-circle-part {
+  50% {
+    stroke-dashoffset: 610.5;
+  }
+}
+
+html[data-theme="dark"] {
+
+  .app-spinner-circle-part {
+    stroke: var(--gray-650);
+  }
+}

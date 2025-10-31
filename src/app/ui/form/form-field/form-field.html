@@ -1,0 +1,32 @@
+<div
+  class="form-field"
+  (click)="_controlFocus()"
+  [class.form-field-focused]="_focused"
+  [class.ng-invalid]="_control()?.invalid"
+  [class.ng-valid]="!_control()?.invalid"
+  [class.ng-touched]="_control()?.touched"
+  [class.ng-untouched]="!_control()?.touched"
+  [class.disabled]="_disabled"
+  #triggerHandler
+>
+  @if (_label()) {
+    <label
+      class="label"
+      [id]="_controlId()"
+      [class.label-floating]="_shouldLabelFloat"
+    >
+      <ng-content select="app-label"/>
+    </label>
+  }
+
+  <div
+    class="content-wrapper"
+    [class.hidden-placeholder]="!_isPlaceholderVisible"
+  >
+    <ng-content/>
+  </div>
+</div>
+
+<div class="error-wrapper">
+  <ng-content select="app-error"/>
+</div>

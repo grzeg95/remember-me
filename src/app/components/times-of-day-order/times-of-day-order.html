@@ -1,0 +1,68 @@
+@if (!_isOnline() && !_selectedRound()) {
+  <div class="app-times-of-day-order__communicate" animate.enter="enter-animation">
+    <div class="app-times-of-day-order__communicate__description">You are offline. Waiting for connection...</div>
+  </div>
+}
+
+<app-loader>
+  <app-loader-defer [when]="!_loadingSelectedRound()">
+    <ng-template *ngTemplateOutlet="showItems"></ng-template>
+  </app-loader-defer>
+  <app-loader-loading [after]="250" [minimum]="500">
+    <div class="app-times-of-day-order__items" animate.enter="enter-animation">
+      <div class="app-times-of-day-order__items__header">
+        <app-skeleton width="190px" height="16px"/>
+      </div>
+      <div
+        class="app-times-of-day-order__items__wrapper">
+        <div class="app-times-of-day-order__items__wrapper__cell">
+          <app-skeleton width="80px" height="19px"/>
+        </div>
+        <div class="app-times-of-day-order__items__wrapper__cell">
+          <app-skeleton width="105px" height="19px"/>
+        </div>
+      </div>
+    </div>
+  </app-loader-loading>
+</app-loader>
+
+<ng-template #showItems>
+  @if (_selectedRound(); as round) {
+
+    @if (round.timesOfDay.length) {
+
+      <div class="app-times-of-day-order-items" animate.enter="enter-animation">
+        <div class="header">
+          Change the order of the times of the day
+        </div>
+        <div
+          class="app-times-of-day-order-items-list"
+          cdkDropList
+          #timesOfDays
+          (cdkDropListDropped)="drop($event)"
+          [cdkDropListDisabled]="!_isOnline()"
+        >
+          @for (timesOfDay of round.timesOfDay; let i = $index; track timesOfDay) {
+            <div
+              cdkDrag
+              class="app-times-of-day-order-items-cell">
+              <span>{{ timesOfDay }}</span>
+              <fa-icon [icon]="_faGripLines"></fa-icon>
+            </div>
+          }
+        </div>
+      </div>
+
+    } @else {
+      <div class="app-times-of-day-order__communicate" animate.enter="enter-animation">
+        <div class="app-times-of-day-order__communicate__header">Add some tasks</div>
+        <button
+          class="app-times-of-day-order__communicate__button"
+          app-button
+          appearance="primary"
+          (click)="addNewTask()"
+        >Add new task</button>
+      </div>
+    }
+  }
+</ng-template>

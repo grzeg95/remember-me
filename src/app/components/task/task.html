@@ -1,0 +1,89 @@
+<form class="app-task-form" [formGroup]="_taskForm" animate.enter="enter-animation">
+
+  <app-form-field>
+    <app-label>Task description</app-label>
+    <input autocomplete="off" appInput formControlName="description" [placeholder]="'Your task description'">
+    @if (!_taskForm.disabled && !_description.valid && _description.touched) {
+      <app-error>Enter description from 1 to 256 characters</app-error>
+    }
+  </app-form-field>
+
+  <div class="app-task-days-container">
+    <div
+      class="days-description"
+      [ngClass]="!_taskForm.disabled && !_days.valid && _days.dirty ? 'error' : ''"
+      [ngStyle]="{'opacity': (_taskForm.disabled ? 0.6 : 1)}"
+    >Mark days</div>
+    <div formGroupName="days" class="days">
+      @for (dayOfTheWeek of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']; track $index) {
+        <div class="day">
+          <app-slide-toggle
+            [checked]="_days.get(dayOfTheWeek)!.value == true"
+            [class.disabled]="_taskForm.disabled || !_isOnline()"
+            [formControlName]="dayOfTheWeek">
+            {{ dayOfTheWeek | titlecase }}
+          </app-slide-toggle>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="app-task-times-of-day-container">
+    <app-form-field formArrayName="timesOfDay">
+      <app-label>Times of day</app-label>
+      <app-chips-set #chipsSet >
+        @for (timeOfDayId of _timesOfDay.controls; track timeOfDayId.value; let i = $index) {
+          <app-chip [removable]="true" (removed)="handleRemoveTimeOfDay(i)" [value]="timeOfDayId.value">
+            {{ timeOfDayId.value }}
+            <button class="app-chip-remove" appChipRemove>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="8" fill="#737373"/>
+                <line x1="4.62015" y1="4.9797" x2="11.0202" y2="11.3797" stroke="#E0E0E0"/>
+                <line x1="4.9797" y1="11.3798" x2="11.3797" y2="4.97985" stroke="#E0E0E0"/>
+              </svg>
+            </button>
+          </app-chip>
+        }
+        <input
+          [disabled]="_timesOfDay.disabled || !_isOnline()"
+          [appAutocomplete]="auto"
+          [appChipInputFor]="chipsSet"
+          (appChipInputTokenEnd)="handleAddTimeOfDayId($event)"
+          autocomplete="off"
+          (input)="_onTimeOfDayInputChange(timeOfDayInput.value)"
+          #timeOfDayInput
+          >
+        <app-autocomplete #auto="autocomplete" (optionSelected)="handleOptionSelected($event)">
+          @for (option of _filteredOptions(); track option) {
+            <app-option [value]="option">{{ option }}</app-option>
+          }
+        </app-autocomplete>
+      </app-chips-set>
+      @if (!_taskForm.disabled && _timesOfDay.hasError('required') && _timesOfDay.dirty) {
+        <app-error>Enter at leas one time of day</app-error>
+      }
+    </app-form-field>
+  </div>
+
+  <app-progress-bar-indeterminate [style.opacity]="_loading() ? '1' : '0'"></app-progress-bar-indeterminate>
+
+  <div class="app-task-actions">
+    <button
+      app-button
+      [disabled]="_taskForm.disabled || _taskForm.invalid || !_isOnline() || !_isNothingChanged()"
+      (click)="saveTask()"
+    >{{ !_task() ? 'Create' : 'Save' }}</button>
+    @if (_task()) {
+      <button
+        app-button
+        appearance="stroked"
+        [disabled]="_taskForm.disabled || !_isOnline()"
+        [routerLink]="['../']">New</button>
+      <button
+        app-button
+        appearance="danger"
+        [disabled]="_taskForm.disabled || !_isOnline()"
+        (click)="deleteTask()">Delete</button>
+    }
+  </div>
+</form>

@@ -1,0 +1,12 @@
+<div
+  class="app-chip-content-wrapper"
+  [class.app-chip-content-wrapper--with-remove-button]="_hasRemoveButton()"
+>
+  <ng-content/>
+</div>
+
+@if (_hasRemoveButton()) {
+  <div class="app-chip-remove-wrapper">
+    <ng-content select="[appChipRemove]"/>
+  </div>
+}

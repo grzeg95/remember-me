@@ -1,0 +1,13 @@
+.app-chips-set {
+
+  min-width: calc(100% + 16px);
+  margin-left: -8px;
+  margin-right: 0;
+  display: flex;
+  flex-wrap: wrap;
+
+  input {
+    margin-left: 8px;
+    flex: 150px 1;
+  }
+}

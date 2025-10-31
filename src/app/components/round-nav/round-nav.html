@@ -1,0 +1,24 @@
+<div class="selector">
+  <button
+    class="selector-item"
+    [routerLink]="'./' + _RouterDict.todayTasks"
+    routerLinkActive="selector-item-active"
+  >Today
+  </button>
+  <button
+    class="selector-item"
+    [routerLink]="'./' + _RouterDict.tasksList"
+    routerLinkActive="selector-item-active"
+  >Tasks</button>
+  <button
+    class="selector-item"
+    [routerLink]="'./' + _RouterDict.taskEditor"
+    routerLinkActive="selector-item-active"
+  >Editor</button>
+  <button
+    class="selector-item"
+    [routerLink]="'./' + _RouterDict.timesOfDayOrder"
+    routerLinkActive="selector-item-active"
+  >Order</button>
+  <div class="selector-indicator"></div>
+</div>

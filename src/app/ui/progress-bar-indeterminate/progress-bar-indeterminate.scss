@@ -1,0 +1,71 @@
+// https://primeng.org/progressbar
+
+.app-progress-bar-indeterminate {
+
+  width: 100%;
+  height: 0.375rem; // 6px
+  background: var(--gray-50);
+  position: relative;
+  overflow: hidden;
+  transition: 0.5s;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    background: var(--steel-blue-500);
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inset-block-end: 0;
+  }
+
+  &::before {
+    animation: p-progressbar-indeterminate-anim 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+  }
+
+  &::after {
+    animation: p-progressbar-indeterminate-anim-short 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) infinite;
+    animation-delay: 1.15s;
+  }
+}
+
+@keyframes p-progressbar-indeterminate-anim {
+  0% {
+    inset-inline-start: -35%;
+    inset-inline-end: 100%;
+  }
+  60% {
+    inset-inline-start: 100%;
+    inset-inline-end: -90%;
+  }
+  100% {
+    inset-inline-start: 100%;
+    inset-inline-end: -90%;
+  }
+}
+
+@keyframes p-progressbar-indeterminate-anim-short {
+  0% {
+    inset-inline-start: -200%;
+    inset-inline-end: 100%;
+  }
+  60% {
+    inset-inline-start: 107%;
+    inset-inline-end: -8%;
+  }
+  100% {
+    inset-inline-start: 107%;
+    inset-inline-end: -8%;
+  }
+}
+
+html[data-theme="dark"] {
+
+  .app-progress-bar-indeterminate {
+
+    background: var(--steel-blue-800);
+
+    &::before, &::after {
+      background: var(--gray-650);
+    }
+  }
+}

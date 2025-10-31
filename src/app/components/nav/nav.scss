@@ -1,0 +1,107 @@
+@use 'styles/layout' as layout;
+
+.app-nav {
+
+  @include layout.container();
+
+  display: flex;
+  justify-content: space-between;
+  height: 2.25rem; // 36px
+  margin: 0.875rem auto 1rem auto; // 23px auto 16px auto
+
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+  }
+
+  .logo-label {
+    line-height: 22px;
+  }
+
+  .app-nav-actions {
+
+    display: flex;
+    gap: 10px;
+
+    .user-button {
+      padding: 0;
+      border: none;
+      background: none;
+      font-size: 2rem;
+      width: 100%;
+
+      img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: solid 1px rgba(212, 212, 212, 0.5);
+      }
+    }
+  }
+}
+
+.app-nav-menu {
+
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+
+  .app-nav-menu-button {
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 12px 11px;
+    border-radius: 3px;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--gray-150);
+    }
+
+    .moon path {
+      fill: var(--sky-blue-100);
+    }
+
+    .sun path {
+      fill: var(--steel-blue-990);
+    }
+  }
+}
+
+html[data-theme="dark"] {
+
+  .app-nav-menu {
+
+    background-color: var(--steel-blue-990);
+
+    .app-nav-menu-button {
+
+      &:hover,
+      &:focus-visible {
+        background: var(--steel-blue-950);
+      }
+    }
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

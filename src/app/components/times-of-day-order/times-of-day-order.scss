@@ -1,0 +1,93 @@
+@use 'styles/typography-mixins' as typography-mixins;
+
+.app-times-of-day-order {
+  &__communicate {
+
+    width: 100%;
+    margin-top: 19px;
+
+    &__header {
+      text-align: center;
+      margin-bottom: 8px;
+      @include typography-mixins.heading-l();
+    }
+
+    &__description {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    &__button {
+      margin: auto;
+    }
+  }
+}
+
+.app-times-of-day-order-items {
+
+  max-width: 540px;
+  margin: 21px auto 0 auto;
+  cursor: move;
+  overflow: hidden;
+
+  .header {
+    padding: 11px 13px;
+    font-size: 12px;
+    @include typography-mixins.font-normal();
+  }
+}
+
+.app-times-of-day-order-items-list {
+
+  width: 100%;
+
+  &.cdk-drop-list-dragging .app-times-of-day-order-items-cell:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.app-times-of-day-order-items-cell {
+
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 13px;
+
+  @include typography-mixins.body-m();
+  @include typography-mixins.font-normal();
+  border-top: solid 1px;
+  background: var(--white);
+
+  &.cdk-drag-preview {
+    box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.2);
+    border-radius: 0.1875rem;
+    cursor: move;
+    border: none;
+  }
+
+  &.cdk-drag-placeholder {
+    opacity: 0;
+  }
+
+  &.cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+html[data-theme="dark"] {
+  .app-times-of-day-order-items-cell {
+    background: var(--steel-blue-990);
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

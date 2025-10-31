@@ -1,0 +1,131 @@
+.app-slide-toggle {
+
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  .app-slide-toggle-container {
+
+    position: relative;
+    cursor: pointer;
+    display: block;
+    height: 14px;
+    width: 36px;
+
+    input {
+      display: block;
+      opacity: 0;
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    input:checked + .app-slide-toggle-slider:before {
+      transform: translateX(18px);
+      background-color: var(--teal-600);
+    }
+
+    input:focus-visible + .app-slide-toggle-slider::after {
+      content: "";
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      height: 100%;
+      padding: 1px;
+      border: solid 2px black;
+      width: 38px;
+    }
+
+    .app-slide-toggle-slider {
+
+      height: 100%;
+      width: 100%;
+      background: var(--gray-300);
+      cursor: pointer;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      transition: 0.2s;
+      border-radius: 48px;
+
+      &::before {
+        background-color: var(--gray-820);
+        bottom: -2px;
+        left: -0.5px;
+        content: "";
+        width: 19px;
+        height: 19px;
+        position: absolute;
+        transition: 0.2s;
+        border-radius: 10px;
+      }
+    }
+
+    &:hover {
+
+      .app-slide-toggle-slider {
+
+        background: var(--gray-600);
+
+        &::before {
+          background-color: var(--gray-900);
+        }
+      }
+
+      input:checked + .app-slide-toggle-slider:before {
+        background-color: var(--teal-400);
+      }
+    }
+  }
+
+  &.disabled {
+    cursor: initial;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+html[data-theme="dark"] {
+
+  .app-slide-toggle {
+
+    .app-slide-toggle-container {
+
+      input:checked + .app-slide-toggle-slider:before {
+        background-color: var(--teal-600);
+      }
+
+      input:focus-visible + .app-slide-toggle-slider::after {
+        border: solid 2px black;
+      }
+
+      .app-slide-toggle-slider {
+
+        background: var(--gray-300);
+
+        &::before {
+          background-color: var(--stale-gray-700);
+        }
+      }
+
+      &:hover {
+
+        .app-slide-toggle-slider {
+
+          background: var(--gray-650);
+
+          &::before {
+            background-color: var(--steel-blue-500);
+          }
+        }
+
+        input:checked + .app-slide-toggle-slider:before {
+          background-color: var(--teal-400);
+        }
+      }
+    }
+  }
+}

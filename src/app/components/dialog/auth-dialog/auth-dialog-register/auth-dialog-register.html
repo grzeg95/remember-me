@@ -1,0 +1,46 @@
+<form [formGroup]="_form" (ngSubmit)="_onSubmit()" animate.enter="enter-animation">
+  <app-form-field>
+    <app-label>Email</app-label>
+    <input
+      appInput
+      type="text"
+      formControlName="email"
+      placeholder="Email"
+    />
+    @if (_form.get('email')?.errors?.['required'] && _form.get('email')?.touched) {
+      <app-error>Email is required</app-error>
+    }
+    @if (_form.get('email')?.errors?.['email'] && _form.get('email')?.touched) {
+      <app-error>Enter email address</app-error>
+    }
+  </app-form-field>
+  <app-form-field>
+    <app-label>Password</app-label>
+    <input
+      appInput
+      type="password"
+      formControlName="password"
+      placeholder="Password"
+    />
+    @if (_form.get('password')?.errors?.['required'] && _form.get('password')?.touched) {
+      <app-error>Password is required</app-error>
+    }
+    @if (_form.get('password')?.errors?.['minlength'] && _form.get('password')?.touched) {
+      <app-error>Enter at least 8 characters</app-error>
+    }
+  </app-form-field>
+  <app-form-field>
+    <app-label>Confirm password</app-label>
+    <input
+      appInput
+      type="password"
+      formControlName="confirmPassword"
+      placeholder="Confirm password"
+    />
+    @if (_form.get('confirmPassword')?.errors?.['notEquals'] && _form.get('password')?.touched) {
+      <app-error>Passwords must match</app-error>
+    }
+  </app-form-field>
+
+  <button class="app-auth-dialog-register-form-submit" app-button type="submit">Register</button>
+</form>

@@ -1,0 +1,35 @@
+<form [formGroup]="_roundForm" class="round-edit__form" animate.enter="enter-animation">
+
+  <app-form-field>
+    <app-label>Name</app-label>
+    <input appInput formControlName="name">
+
+    @if (!_roundForm.disabled && !_name?.valid && !_name?.untouched) {
+      <app-error>Enter name from 1 to 64 characters</app-error>
+    }
+  </app-form-field>
+
+  <app-progress-bar-indeterminate [style.opacity]="_isRoundRequesting() ? '1' : '0'"/>
+
+  <div class="round-edit__form__action-buttons">
+
+    <button
+      app-button
+      appearance="primary"
+      [disabled]="_roundForm.disabled || _roundForm.invalid || !_isOnline() || !_wasNothingChanged()"
+      (click)="saveRound()">{{ !_editingRound() ? 'Create' : 'Save' }}</button>
+
+    @if (_editingRound()) {
+      <button
+        app-button
+        [disabled]="_roundForm.disabled || !_isOnline()"
+        (click)="handleNewRound()">New</button>
+
+      <button
+        app-button
+        appearance="danger"
+        [disabled]="_roundForm.disabled || !_isOnline()"
+        (click)="deleteRound()">Delete</button>
+    }
+  </div>
+</form>

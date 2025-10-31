@@ -1,0 +1,60 @@
+.app-snack-bar-container {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--gray-50);
+  padding: 0.75rem 1rem;
+  border-radius: 0.1875rem; // 3
+  gap: 1rem;
+  width: 300px;
+  box-shadow: 0 0.25rem 0.25rem 0 rgba(0, 0, 0, 0.25);
+  font-size: 0.8125rem; // 13
+
+  // enter styles
+  opacity: 0.8;
+  scale: 0.9;
+
+  transition: opacity 0.3s, scale 0.3s;
+
+  .message {
+    color: var(--gray-990);
+  }
+
+  .close-button {
+
+    display: flex;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+
+    &:hover {
+      svg circle {
+        fill: var(--gray-900);
+      }
+    }
+  }
+}
+
+.app-snack-bar-container-enter {
+  opacity: 1;
+  scale: 1;
+}
+
+.app-snack-bar-container-exit {
+  opacity: 0;
+  scale: 0.9;
+}
+
+html[data-theme="dark"] {
+
+  .app-snack-bar-container {
+
+    background: var(--steel-blue-700);
+
+    .message {
+      color: var(--sky-blue-100);
+    }
+  }
+}

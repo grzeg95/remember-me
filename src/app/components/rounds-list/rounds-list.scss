@@ -1,0 +1,136 @@
+@use 'styles/typography-mixins' as typography-mixins;
+
+.app-rounds-list {
+
+  display: flex;
+  flex-direction: column;
+
+  .communicate {
+
+    width: 100%;
+    margin-top: 19px;
+
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+      @include typography-mixins.heading-l();
+    }
+
+    .description {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .button {
+      margin: auto;
+    }
+  }
+}
+
+.edit-button {
+  cursor: pointer;
+}
+
+.add-new-button {
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+.app-rounds-list-table {
+
+  width: 100%;
+  max-width: 720px;
+  margin: 5px auto 9px;
+  border-spacing: 0;
+
+  .cdk-drop-list-dragging .body-row:not(.cdk-drag-placeholder) {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.header-cell {
+
+  font-size: 0.75rem;
+  padding: 0.75rem 0.8125rem;
+  border: none;
+  vertical-align: bottom;
+  font-family: inherit;
+  color: var(--gray-820);
+  font-weight: normal;
+  text-align: left;
+
+  &:first-child {
+    padding-left: 1rem;
+  }
+
+  &:last-child {
+    padding-right: 1rem;
+  }
+}
+
+.body-cell {
+  padding: 0.75rem 0.8125rem;
+  border-top: solid 1px var(--gray-820);
+  vertical-align: middle;
+  font-size: .875rem;
+  height: inherit;
+  text-align: left;
+  overflow: hidden;
+  background-color: var(--white);
+}
+
+.body-row {
+
+  &.cdk-drag-preview {
+
+    box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.2);
+    border-radius: 0.1875rem;
+    cursor: move;
+
+    .body-cell {
+      border: none;
+    }
+  }
+
+  &.cdk-drag-placeholder {
+    opacity: 0;
+  }
+
+  &.cdk-drag-animating {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+html[data-theme="dark"] {
+
+  .header-cell {
+    color: var(--stale-gray-200);
+  }
+
+  .body-row {
+
+    &.cdk-drag-preview {
+      .body-cell {
+        border: none;
+      }
+    }
+
+    .body-cell {
+      border-top: solid 1px var(--stale-gray-200);
+      background-color: var(--steel-blue-990);
+    }
+  }
+}
+
+.enter-animation {
+  animation: fade-in 0.15s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}

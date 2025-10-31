@@ -1,0 +1,17 @@
+<div class="app-slide-toggle-container">
+  <input
+    type="checkbox"
+    (change)="_onChange($event)"
+    (blur)="_onTouched()"
+    (click)="_onClick($event)"
+    [checked]="checked"
+    [id]="_id"
+  />
+  <div
+    class="app-slide-toggle-slider"
+    (click)="_onClick($event)"
+  ></div>
+</div>
+<label [for]="_id">
+  <ng-content/>
+</label>
