@@ -82,7 +82,16 @@ export const handler = async (request: CallableRequest) => {
       testRequirement(!todaySnap.exists, {code: 'invalid-argument'});
       const today = todaySnap.data()!;
 
-      transactionWrite.delete(todaySnap.ref);
+      // delete only if there are no other tasks for today
+
+      if (today.todayTasksIds.length === 1) {
+        transactionWrite.delete(todaySnap.ref);
+      } else {
+        transactionWrite.set(todaySnap.ref, {
+          ...today,
+          todayTasksIds: today.todayTasksIds.filter((todayTaskId) => todayTaskId !== data.task.id)
+        });
+      }
 
       // get and delete /todays/[mon...sun]/todaysTasks/todayTaskId
 
