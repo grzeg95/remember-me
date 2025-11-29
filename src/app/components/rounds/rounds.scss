@@ -19,10 +19,18 @@
 
       color: var(--gray-990);
       text-decoration: none;
+      flex-shrink: 0;
 
       &:hover {
         text-decoration: underline;
       }
+    }
+
+    .text-shrink {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
     }
   }
 }
