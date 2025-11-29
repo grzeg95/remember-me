@@ -181,6 +181,13 @@ export class Task implements OnInit {
         this._taskSub && !this._taskSub.closed && this._taskSub.unsubscribe();
         this._task.set(undefined);
         this._taskForm.enable();
+
+        if (selectedRound) {
+          this._router.navigate(['/', RouterDict.rounds, selectedRound.id, RouterDict.taskEditor], {relativeTo: this._route});
+        } else {
+          this._router.navigate(['/', RouterDict.rounds], {relativeTo: this._route});
+        }
+
         return;
       }
 
@@ -214,6 +221,8 @@ export class Task implements OnInit {
         if (task) {
           this._task.set(task);
           this.setAll(task);
+        } else {
+          this._taskId.set(undefined);
         }
 
         this._taskForm.enable();
