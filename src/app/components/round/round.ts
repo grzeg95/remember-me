@@ -4,6 +4,7 @@ import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
 import {catchError, map, Subscription, takeWhile} from 'rxjs';
 import {getRoundRef} from '../../models/firestore/Round';
 import {getFirestoreUserRef} from '../../models/firestore/User';
+import {RouterDict} from '../../models/router-dict';
 import {Auth} from '../../services/auth';
 import {Rounds} from '../../services/rounds';
 import {FirestoreInjectionToken} from '../../tokens/firebase';
@@ -91,6 +92,7 @@ export class Round implements OnInit, OnDestroy {
           round_userId = undefined;
           round_selectedRoundId = undefined;
           this._roundSub && !this._roundSub.closed && this._roundSub.unsubscribe();
+          this._router.navigate(['/', RouterDict.rounds]);
           return;
         }
 
