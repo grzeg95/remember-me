@@ -82,8 +82,15 @@ export const handler = async (request: CallableRequest) => {
     }
 
     for (const timeOfDayToAdd of timesOfDaysToAdd) {
-      newTimesOfDay.push(timeOfDayToAdd);
-      newTimesOfDayCardinality.push(1);
+
+      const index = newTimesOfDay.indexOf(timeOfDayToAdd);
+
+      if (index === -1) {
+        newTimesOfDay.push(timeOfDayToAdd);
+        newTimesOfDayCardinality.push(1);
+      } else {
+        newTimesOfDayCardinality[index]++;
+      }
     }
 
     transactionWrite.set(roundSnap.ref, {
