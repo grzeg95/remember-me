@@ -45,7 +45,8 @@ export const roundsRoutes: Routes = [
           {path: RouterDict.tasksList, component: TasksList},
           {path: RouterDict.taskEditor + '/:id', component: Task},
           {path: RouterDict.taskEditor, component: Task},
-          {path: RouterDict.timesOfDayOrder, component: TimesOfDayOrder}
+          {path: RouterDict.timesOfDayOrder, component: TimesOfDayOrder},
+          {path: '**', redirectTo: RouterDict.todayTasks}
         ]
       }
     ]
