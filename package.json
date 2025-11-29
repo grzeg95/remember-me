@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "gcloud:switch": " gcloud config set project remember-me-a3021",
     "start:angular": "ng serve",
     "start:emulators": "firebase emulators:start",
     "build:hosting:static": "ng build --configuration=production && node scripts/index-html-parser.js",
