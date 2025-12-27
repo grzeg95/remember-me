@@ -93,15 +93,11 @@ export const handler = async (request: CallableRequest) => {
         });
       }
 
-      // get and delete /todays/[mon...sun]/todaysTasks/todayTaskId
-
-      for (const todayTaskId of today.todayTasksIds) {
-
-        const todayTask = getTodayTaskRef(todaySnap.ref, todayTaskId);
-        const todayTaskSnap = await transaction.get(todayTask);
-        testRequirement(!todayTaskSnap.exists, {code: 'invalid-argument'});
-        transactionWrite.delete(todayTaskSnap.ref);
-      }
+      // get and delete /todays/[mon...sun]/todaysTasks/data.task.id
+      const todayTask = getTodayTaskRef(todaySnap.ref, data.task.id);
+      const todayTaskSnap = await transaction.get(todayTask);
+      testRequirement(!todayTaskSnap.exists, {code: 'invalid-argument'});
+      transactionWrite.delete(todayTaskSnap.ref);
     }
 
     await transactionWrite.execute();
